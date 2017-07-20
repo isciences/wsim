@@ -2,48 +2,8 @@ require('testthat')
 
 context("GEV calculations")
 
-isciences_internal <- function() {
-  if (!file.exists('/mnt/fig/WSIM')) {
-    skip()
-  }
-}
-
-expect_same_extent_crs <- function(r1, r2) {
-  expect_equal(raster::extent(r1), raster::extent(r2))
-  expect_equal(raster::crs(r1),    raster::crs(r2))
-}
-
 #gevParams <- c("xi", "alpha", "kappa") # location, scale, shape
 gevParams <- c("location", "scale", "shape")
-
-test_that('This module computes equivalent anomalies to previous WSIM code', {
-  isciences_internal()
-
-  prefix <- '/mnt/fig/WSIM/WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Sum_24mo_PE3GEV/Bt_RO_Sum_24mo_gev-'
-  location <- raster::raster(paste0(prefix, 'xi_12.img'))
-  scale <- raster::raster(paste0(prefix, 'alpha_12.img'))
-  shape <- raster::raster(paste0(prefix, 'kappa_12.img'))
-
-  gev_params <- raster::brick(location, scale, shape)
-
-  observed <- raster::raster('/mnt/fig/WSIM/WSIM_derived_V1.2/Observed/SCI/Bt_RO_Sum_24mo/Bt_RO_Sum_24mo_trgt201612.img')
-
-  anomalies <- gevStandardize(gev_params, observed)
-
-  expected_anomalies <- raster::raster('/mnt/fig/WSIM/WSIM_derived_V1.2/Observed/Anom/Bt_RO_Sum_24mo_anom/Bt_RO_Sum_24mo_anom_trgt201612.img')
-
-  expect_equal(raster::values(anomalies), raster::values(expected_anomalies), 1e-6)
-  expect_same_extent_crs(observed, anomalies)
-
-  # Also excercise code for stacked inputs
-  anomalies2 <- gevStandardize(gev_params, raster::brick(observed, observed))
-
-  expect_equal(raster::values(anomalies), raster::values(anomalies2[[1]]))
-  expect_equal(raster::values(anomalies), raster::values(anomalies2[[2]]))
-
-  expect_same_extent_crs(anomalies, anomalies2[[1]])
-  expect_same_extent_crs(anomalies, anomalies2[[2]])
-})
 
 test_that('We can fit a GEV on a RasterStack representing time-series observations', {
   obs <- raster::brick(replicate(30, raster::raster(matrix(rnorm(100, mean=73, sd=5), nrow=5),
@@ -59,7 +19,7 @@ test_that('We can fit a GEV on a RasterStack representing time-series observatio
   expect_same_extent_crs(fits, obs)
 })
 
-test_that('We can compute the standard anomales for a raster of obsservations given a RasterStack with the GEV fit parameters', {
+test_that('We can compute the standard anomales for a raster of observations given a RasterStack with the GEV fit parameters', {
   # Take some GEV parameters
   # (Source: WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Max_24mo_PE3GEV/Bt_RO_Max_24mo_gev)
   # Cell 42,59
