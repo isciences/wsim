@@ -68,11 +68,8 @@ fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
   }
 
   # Generate rasters of distribution parameters
-  location <- raster::raster(as.matrix(dist.fit[,,1]), template=stk)
-  scale    <- raster::raster(as.matrix(dist.fit[,,2]), template=stk)
-  shape    <- raster::raster(as.matrix(dist.fit[,,3]), template=stk)
+  fits <- raster::stack(apply(dist.fit, 3, function(v) raster::raster(v, template=stk)))
 
-  fits <- raster::stack(location, scale, shape)
   names(fits) <- gev.params
 
   return (fits)
