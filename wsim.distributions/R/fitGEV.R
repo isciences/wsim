@@ -24,16 +24,9 @@
 #'         parameters of the GEV for each pixel
 #'
 fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) {
-  # Record the dimensions of our inputs
-  nrow.in <- nrow(stk)
-  ncol.in <- ncol(stk)
-
-  # Copy our inputs to an in-memory matrix, for speed
-  data <- raster::as.array(stk)
-
   gev.params  <- c("location", "scale", "shape")
 
-  dist.fit <- apply(data, c(1,2), function(pvals) {
+  gev_work <- function(pvals) {
       # Figure whether the pixel is missing more than nmin values.
       enough.defined <- sum(!is.na(pvals)) >= nmin.defined
 
@@ -63,12 +56,7 @@ fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
       }
 
       return(ret)
-  })
+  }
 
-  # Generate rasters of distribution parameters
-  fits <- raster::stack(apply(dist.fit, 1, function(v) raster::raster(v, template=stk)))
-
-  names(fits) <- gev.params
-
-  return (fits)
+  return (rsapply(stk, gev_work, gev.params))
 }
