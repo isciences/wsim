@@ -31,19 +31,16 @@ fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
   # Copy our inputs to an in-memory matrix, for speed
   data <- raster::as.array(stk)
 
-  # Create an array to hold the parameter values of the GEV (3 per cell)
-  dist.fit <- array(dim=c(nrow.in, ncol.in, 3))
   gev.params  <- c("location", "scale", "shape")
 
-  for (i in 1:nrow.in) {
-    for (j in 1:ncol.in) {
-      pvals <- data[i, j, ]
-
+  dist.fit <- apply(data, c(1,2), function(pvals) {
       # Figure whether the pixel is missing more than nmin values.
       enough.defined <- sum(!is.na(pvals)) >= nmin.defined
 
       # Figure whether the pixel has enough unique values
       enough.unique <- length(na.omit(unique(pvals))) >= nmin.unique
+
+      ret <- rep(NA, length(gev.params))
 
       if (enough.defined) {
         if (enough.unique) {
@@ -51,24 +48,26 @@ fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
           # TODO document why nmom=5
 
           lmr <- lmom::samlmu(pvals, nmom = 5)
-          try(dist.fit[i, j, ] <- lmom::pelgev(lmr), silent = FALSE)
+          ret <- try(lmom::pelgev(lmr), silent=FALSE)
         } else {
           # If there are not enough unique values, but there are enough
           # defined values, estimate the location with the median value
           # of those observed.
 
-          dist.fit[i, j, ] <- c(median(pvals, na.rm = TRUE), NA, NA)
+          ret <- c(median(pvals, na.rm = TRUE), NA, NA)
         }
       }
 
-      if (zero.scale.to.na & !is.na(dist.fit[i, j, 2]) & dist.fit[i, j, 2] == 0) {
-        dist.fit[pix, i, j, 2] <- NA
+      #if (zero.scale.to.na & !is.na(dist.fit[i, j, 2]) & dist.fit[i, j, 2] == 0) {
+      if (zero.scale.to.na & !is.na(pvals[2]) & pvals[2] == 0) {
+        ret <- rep(NA, length(gev.params))
       }
-    }
-  }
+
+      return(ret)
+  })
 
   # Generate rasters of distribution parameters
-  fits <- raster::stack(apply(dist.fit, 3, function(v) raster::raster(v, template=stk)))
+  fits <- raster::stack(apply(dist.fit, 1, function(v) raster::raster(v, template=stk)))
 
   names(fits) <- gev.params
 
