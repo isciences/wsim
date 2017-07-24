@@ -58,7 +58,6 @@ fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
         }
       }
 
-      #if (zero.scale.to.na & !is.na(dist.fit[i, j, 2]) & dist.fit[i, j, 2] == 0) {
       if (zero.scale.to.na & !is.na(pvals[2]) & pvals[2] == 0) {
         ret <- rep(NA, length(gev.params))
       }
