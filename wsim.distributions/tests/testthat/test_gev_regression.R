@@ -69,16 +69,9 @@ test_that('This module bias-corrects a forecast equivalently to previous WSIM co
   forecast <- forecast - 273.15
   forecast <- raster::flip(forecast, 'y')
 
-  quantiles <- raw2quantile(forecast, retroGEV)
-
-	extreme.cutoff <- 100
-	quantiles[quantiles >= (1 - 1/extreme.cutoff) & !is.na(quantiles)] <- round((1 - 1/extreme.cutoff), digits = 4)
-	quantiles[quantiles <= (0 + 1/extreme.cutoff) & !is.na(quantiles)] <- round((0 + 1/extreme.cutoff), digits = 4)
-
-  corrected <- quantile2correct(quantiles, obsGEV)
+  corrected <- forecastCorrect(forecast, retroGEV, obsGEV)
   expected_corrected <- raster::raster('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/corrected_img/T/target_201706/tmp2m.trgt201706.lead6.ic2016122506.img')
 
-  # corrected forecast
   expect_same_extent_crs(corrected, forecast)
   expect_equal(raster::values(corrected), raster::values(expected_corrected))
 })
