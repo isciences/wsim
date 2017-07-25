@@ -31,7 +31,7 @@ fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
       enough.defined <- sum(!is.na(pvals)) >= nmin.defined
 
       # Figure whether the pixel has enough unique values
-      enough.unique <- length(na.omit(unique(pvals))) >= nmin.unique
+      enough.unique <- length(stats::na.omit(unique(pvals))) >= nmin.unique
 
       ret <- rep(NA, length(gev.params))
 
@@ -47,7 +47,7 @@ fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
           # defined values, estimate the location with the median value
           # of those observed.
 
-          ret <- c(median(pvals, na.rm = TRUE), NA, NA)
+          ret <- c(stats::median(pvals, na.rm = TRUE), NA, NA)
         }
       }
 
