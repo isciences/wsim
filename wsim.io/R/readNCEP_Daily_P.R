@@ -4,7 +4,8 @@
 #' Gauge-Based  #' Analysis of Global Daily Precipitation project, as described at
 #' ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/DOCU/PRCP_CU_GAUGE_V1.0GLB_0.50deg_README.txt
 #'
-#' The files are in a GrADS format.
+#' The files are in a GrADS format.  URL to download an example file:
+#' ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/RT/2017/
 #'
 #' @param fname filename to read
 #' @param mv NODATA value
