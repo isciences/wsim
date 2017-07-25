@@ -53,3 +53,32 @@ test_that('This module fits a GEV distribution equivalently to previous WSIM cod
   expect_equal(unname(raster::as.matrix(gev_params)), unname(raster::as.matrix(expected_gev_params)))
 })
 
+test_that('This module bias-corrects a forecast equivalently to previous WSIM code', {
+  isciences_internal()
+
+  # load observed and retro GEV fit parameters for June
+  obsGEV <- raster::brick('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/observed/gevParams/T/gev.stack_T_month06.grd')
+  retroGEV <- raster::brick('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/retro/gevParams/tmp2m/gev.stack_tmp2m_month06_lead6.grd')
+
+  # pull a raw forecast from end of December with a 6-month lead (June)
+  forecast <- raster::raster('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc')
+
+  # TODO create wsim.io package and move this stuff in
+  extent(forecast) <- c(0, 360, -90, 90)
+  forecast <- rotate(forecast)
+  forecast <- forecast - 273.15
+  forecast <- flip(forecast, 'y')
+
+  quantiles <- raw2quantile(forecast, retroGEV)
+
+	extreme.cutoff <- 100
+	quantiles[quantiles >= (1 - 1/extreme.cutoff) & !is.na(quantiles)] <- round((1 - 1/extreme.cutoff), digits = 4)
+	quantiles[quantiles <= (0 + 1/extreme.cutoff) & !is.na(quantiles)] <- round((0 + 1/extreme.cutoff), digits = 4)
+
+  cr <- quantile2correct(quantiles, obsGEV, forecast)
+
+  # corrected forecast
+  corrected <- raster::raster('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/corrected_img/T/target_201706/tmp2m.trgt201706.lead6.ic2016122506.img')
+
+  expect_equal(raster::values(cr), raster::values(corrected))
+})
