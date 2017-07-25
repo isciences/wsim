@@ -64,10 +64,10 @@ test_that('This module bias-corrects a forecast equivalently to previous WSIM co
   forecast <- raster::raster('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc')
 
   # TODO create wsim.io package and move this stuff in
-  extent(forecast) <- c(0, 360, -90, 90)
-  forecast <- rotate(forecast)
+  raster::extent(forecast) <- c(0, 360, -90, 90)
+  forecast <- raster::rotate(forecast)
   forecast <- forecast - 273.15
-  forecast <- flip(forecast, 'y')
+  forecast <- raster::flip(forecast, 'y')
 
   quantiles <- raw2quantile(forecast, retroGEV)
 
@@ -75,10 +75,10 @@ test_that('This module bias-corrects a forecast equivalently to previous WSIM co
 	quantiles[quantiles >= (1 - 1/extreme.cutoff) & !is.na(quantiles)] <- round((1 - 1/extreme.cutoff), digits = 4)
 	quantiles[quantiles <= (0 + 1/extreme.cutoff) & !is.na(quantiles)] <- round((0 + 1/extreme.cutoff), digits = 4)
 
-  cr <- quantile2correct(quantiles, obsGEV, forecast)
+  corrected <- quantile2correct(quantiles, obsGEV)
+  expected_corrected <- raster::raster('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/corrected_img/T/target_201706/tmp2m.trgt201706.lead6.ic2016122506.img')
 
   # corrected forecast
-  corrected <- raster::raster('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/corrected_img/T/target_201706/tmp2m.trgt201706.lead6.ic2016122506.img')
-
-  expect_equal(raster::values(cr), raster::values(corrected))
+  expect_same_extent_crs(corrected, forecast)
+  expect_equal(raster::values(corrected), raster::values(expected_corrected))
 })
