@@ -1,12 +1,12 @@
 Package: wsim.distributions
-Title: WSIM functions for generating and apply
+Title: WSIM functions for fitting and applying statistical distributions
 Version: 0.0.0.9000
 Authors@R: person("ISciences, L.L.C.", email = "dbaston@isciences.com", role = c("aut", "cre", "cph"))
 Description: The wsim.distributions package provides functionality to fit and apply statistical distributions for WSIM.
 Depends: R (>= 3.4.0)
 License: file LICENSE
 Imports: raster, lmom, stats, methods
-Suggests: testthat
+Suggests: testthat, wsim.io
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1

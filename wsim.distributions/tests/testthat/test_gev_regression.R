@@ -61,13 +61,7 @@ test_that('This module bias-corrects a forecast equivalently to previous WSIM co
   retroGEV <- raster::brick('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/retro/gevParams/tmp2m/gev.stack_tmp2m_month06_lead6.grd')
 
   # pull a raw forecast from end of December with a 6-month lead (June)
-  forecast <- raster::raster('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc')
-
-  # TODO create wsim.io package and move this stuff in
-  raster::extent(forecast) <- c(0, 360, -90, 90)
-  forecast <- raster::rotate(forecast)
-  forecast <- forecast - 273.15
-  forecast <- raster::flip(forecast, 'y')
+  forecast <- wsim.io::readCFSv2('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc')
 
   corrected <- forecastCorrect(forecast, retroGEV, obsGEV)
   expected_corrected <- raster::raster('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/corrected_img/T/target_201706/tmp2m.trgt201706.lead6.ic2016122506.img')
