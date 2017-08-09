@@ -1,0 +1,15 @@
+Package: wsim.lsm
+Title: WSIM Land Surface Model
+Version: 0.0.0.9000
+Authors@R: person("ISciences, L.L.C.", email = "dbaston@isciences.com", role = c("aut", "cre", "cph"))
+Description: The wsim.lsm provides the land surface model used by WSIM
+Depends: R (>= 3.4.0)
+License: file LICENSE
+Imports: 
+  Rcpp (>= 0.12.12),
+  raster
+LinkingTo: Rcpp
+Suggests: testthat
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
