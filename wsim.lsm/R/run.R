@@ -4,6 +4,7 @@
 #' @param state a list containing an input state for the model
 #' @param forcing a list containing forcing data for the model
 #' @return a list containing model outputs and a state for the next time step.
+#' @useDynLib wsim.lsm, .registration=TRUE
 #' @export
 run <- function(static, state, forcing) {
   obs <- list()
@@ -33,26 +34,10 @@ run <- function(static, state, forcing) {
 
   E0 <- e_potential(daylength, T, forcing$nDays)
 
-  dWdt <- vector(mode='numeric', length=length(P))
-  E <- vector(mode='numeric', length=length(P))
-  R <- vector(mode='numeric', length=length(P))
-  dWdt[] <- NA
-  E[] <- NA
-  R[] <- NA
-
-  print('Entering hydro loop.')
-  all_defined <- !is.na(Pr) & !is.na(Sm) & !is.na(E0) & !is.na(Ws) & !is.na(Wc)
-  for (i in 1:length(P)) {
-    if (i %% 2592 == 0) {
-      cat(i / 2592, '\n')
-    }
-    if (all_defined[i]) {
-      hydro <- daily_hydro(P[i], Sm[i], E0[i], Ws[i], Wc[i], forcing$nDays, pWetDays[i])
-      dWdt[i] <- hydro$dWdt
-      E[i] <- hydro$E
-      R[i] <- hydro$R
-    }
-  }
+  hydro <- daily_hydro_loop(P, Sm, E0, Ws, Wc, forcing$nDays, pWetDays);
+  dWdt <- hydro$dWdt;
+  E <- hydro$E;
+  R <- hydro$R;
 
   Xr <- calc_Xr(R, Pr, P)
   Xs <- calc_Xs(Sm, R, P)
@@ -67,8 +52,8 @@ run <- function(static, state, forcing) {
   dDsdt = Xs - Rs
 
   make_raster <- function(vals) {
-    r <- raster::raster(nrows=nrow(state$snowpack),
-                ncol=ncol(state$snowpack))
+    r <- raster::raster(nrows=nrow(forcing$P),
+                        ncols=ncol(forcing$P))
     raster::values(r) <- vals
     raster::projection(r) <- raster::projection(state$snowpack)
     raster::extent(r) <- raster::extent(state$snowpack)

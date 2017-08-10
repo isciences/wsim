@@ -79,3 +79,15 @@ test_that('above 500 m elev, snowmelt depends on melt month', {
   )
   expect_equal(20, do.call(snow_melt, args))
 })
+
+test_that('daily precip is returned for the correct number of days', {
+  expect_equal(13, length(make_daily_precip(0.77, 13, 1.0)));
+  expect_equal(13, length(make_daily_precip(0.77, 13, 0.7)));
+  expect_equal(13, length(make_daily_precip(0.77, 13, 0.0)));
+})
+
+test_that('daily precipitation adds up to monthly precipitation', {
+  expect_equal(0.77, sum(make_daily_precip(0.77, 13, 1.0)));
+  expect_equal(0.77, sum(make_daily_precip(0.77, 13, 0.7)));
+  expect_equal(0.77, sum(make_daily_precip(0.77, 30, 0.0)));
+})

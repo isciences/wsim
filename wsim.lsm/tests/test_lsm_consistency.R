@@ -1,5 +1,3 @@
-require(testthat)
-
 nadiff <- function(r1, r2) {
   v1 <- raster::values(r1)
   v2 <- raster::values(r2)
@@ -16,10 +14,6 @@ nadiff <- function(r1, r2) {
 compare <- function(param) {
  test <- raster::raster(paste0('/home/dbaston/2_', param, '.img'))
  actual <- raster::raster(paste0('/home/dbaston/SCI/', param, '_trgt201705.img'))
- #last[[param]] <<- actual
-
- #print(test)
- #print(actual)
 
  max_diff <- raster::cellStats(abs(actual-test), 'max')
 
@@ -87,13 +81,13 @@ doIt <- function() {
   forcing$nDays <- 31 # TODO get this automatically
   forcing$pWetDays <- loadNcep('pWetDays_201705.img')#, nodata=-32768.0)
 
-  iter <- wsim.lsm::run(static, state, forcing)
+  print(system.time(iter <- wsim.lsm::run(static, state, forcing)))
 
-  pdf(file='/home/dbaston/lsm_compare.pdf')
+  pdf(file='/home/dbaston/lsm_cpp_compare.pdf')
   for (key in names(iter$obs)) {
     print(key)
     r <- iter$obs[[key]]
-    raster::writeRaster(r, paste0('/home/dbaston/2_', key, '.img'), overwrite=TRUE)
+    raster::writeRaster(r, paste0('/home/dbaston/2_', key, '.img'), datatype='FLT4S', overwrite=TRUE)
     compare(key)
   }
 
