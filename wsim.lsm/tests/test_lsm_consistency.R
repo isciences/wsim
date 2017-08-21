@@ -13,7 +13,9 @@ nadiff <- function(r1, r2) {
 
 compare <- function(date, param) {
  test <- raster::raster(paste0('/tmp/', param, '_', date, '.img'))
- actual <- raster::raster(paste0('/home/dbaston/SCI/', param, '_trgt', date, '.img'))
+ #actual <- raster::raster(paste0('/home/dbaston/SCI/', param, '_trgt', date, '.img'))
+ actual <- raster::raster(loadSci(param, paste0(param, '_trgt', date, '.img')))
+ #actual <- raster::raster(paste0('/mnt/fig/WSIM/WSIM_home/dbaston/SCI/', param, '_trgt', date, '.img'))
 
  max_diff <- raster::cellStats(abs(actual-test), 'max')
 
@@ -37,93 +39,126 @@ compare <- function(date, param) {
 
 load <- function(..., nodata=NULL) {
   path <- do.call(file.path, list(...))
-  raster::raster(path)
+  path
+  #raster::raster(path)
 }
 
 loadSource <- function(...) {
-  do.call(load, append(list('/home', 'dbaston', 'wsim_erdc', 'inputs'), list(...)))
-  #do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_source_V1.2'), list(...)))
+  #do.call(load, append(list('/home', 'dbaston', 'wsim_erdc', 'inputs'), list(...)))
+  do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_source_V1.2'), list(...)))
 }
 
 loadSci <- function(...) {
-  do.call(load, append(list('/home', 'dbaston', 'SCI'), list(...)))
+  #do.call(load, append(list('/home', 'dbaston', 'SCI'), list(...)))
+  do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_derived_V1.2', 'Observed', 'SCI'), list(...)))
 }
 
 loadIniData <- function(...) {
-  do.call(load, append(list('/home', 'dbaston', 'IniData'), list(...)))
+  do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_source_V1.2', 'IniData'), list(...)))
+  #do.call(load, append(list('/home', 'dbaston', 'IniData'), list(...)))
 }
 
 loadNcep <- function(...) {
   do.call(load, append(list('/home', 'dbaston', 'NCEP'), list(...)))
 }
 
+daysInMonth <- function(date) {
+  first_day <- as.Date(paste0(date, '01'), '%Y%m%d')
+  return(unname(lubridate::days_in_month(first_day)))
+}
+
+previousMonth <- function(date) {
+  first_day_of_current_month <- as.Date(paste0(date, '01'), '%Y%m%d')
+  last_day_of_previous_month <- first_day_of_current_month - 1
+  return(strftime(last_day_of_previous_month, '%Y%m'))
+}
+
+nextMonth <- function(date) {
+  first_day_of_current_month <- as.Date(paste0(date, '01'), '%Y%m%d')
+  return(strftime(first_day_of_current_month + daysInMonth(date), '%Y%m'))
+}
+
+forcingForDate <- function(date) {
+  year <- substr(date, 1, 4)
+
+  list(
+      T=loadSource('NCEP', 'T', paste0('CPC_Leaky_T_', date, '.FLT')),
+      daylength=loadSource('Daylength', 'FLT', paste0('daylength-halfdeg-', date, '.flt')),
+      Pr=loadSource('NCEP', 'P', paste0('CPC_Leaky_P_', date, '.FLT')),
+      pWetDays=loadSource('NCEP', 'Daily_precip', 'Adjusted', year, paste0('pWetDays_', date, '.img')),
+      date=date,
+      nDays=daysInMonth(date)
+  )
+}
+
 doIt <- function() {
   static <- list()
   static$flow_directions <- loadSource('UNH_Data', 'g_network.asc')
   static$elevation <- loadSource('SRTM30', 'elevation_half_degree.img')
-  static$area_m2 <- loadSource('area_hlf_deg.img') * 1e6
+  static$area_m2 <- raster::raster(loadSource('area_hlf_deg.img')) * 1e6
   static$Wc <- loadSource('HWSD', 'hwsd_tawc_05deg_noZeroNoVoids.img')
+
+  years <- as.character(1980:2016)
+  months <- sprintf("%02d", 1:12)
+
+  timesteps <- c()
+  for (year in years) {
+    for (month in months) {
+      timesteps <- c(timesteps, paste0(year, month))
+    }
+  }
 
   # State data
   state <- list()
-  state$Snowpack <- loadIniData('Snowpack_in_trgt201703.img')
-  state$Ws <- loadIniData('Ws_in_trgt201703.img')
-  state$Dr <- loadIniData('Dr_in_trgt201703.img')
-  state$Ds <- loadIniData('Ds_in_trgt201703.img')
+  state$Snowpack <- loadIniData('Snowpack_in', paste0('Snowpack_in_trgt', timesteps[3], '.img'))
+  state$Ws <- loadIniData('Ws_in', paste0('Ws_in_trgt', timesteps[3], '.img'))
+  state$Dr <- loadIniData('Dr_in', paste0('Dr_in_trgt', timesteps[3], '.img'))
+  state$Ds <- loadIniData('Ds_in', paste0('Ds_in_trgt', timesteps[3], '.img'))
 
-  t_minus_1 <- loadSci('T_trgt201702.img')
-  t_minus_2 <- loadSci('T_trgt201701.img')
+  t_minus_1 <- loadSci('T', paste0('T_trgt', timesteps[2], '.img'))
+  t_minus_2 <- loadSci('T', paste0('T_trgt', timesteps[1], '.img'))
   state$snowmelt_month <- (t_minus_1 > -1) + (t_minus_1 > -1 & t_minus_2 > -1)
 
   # Forcing data
-  forcing <- list(
-    list(
-      T=loadNcep('CPC_Leaky_T_201703.FLT'),
-      daylength=loadSource('Daylength', 'FLT', 'daylength-halfdeg-201703.flt'),
-      Pr=loadNcep('CPC_Leaky_P_201703.FLT'),
-      pWetDays=loadNcep('pWetDays_201703.img'),
-      nDays=31
-    )
-    ,list(
-      T=loadNcep('CPC_Leaky_T_201704.FLT'),
-      daylength=loadSource('Daylength', 'FLT', 'daylength-halfdeg-201704.flt'),
-      Pr=loadNcep('CPC_Leaky_P_201704.FLT'),
-      pWetDays=loadNcep('pWetDays_201704.img'),
-      nDays=30
-    )
-    ,list(
-      T=loadNcep('CPC_Leaky_T_201705.FLT'),
-      daylength=loadSource('Daylength', 'FLT', 'daylength-halfdeg-201705.flt'),
-      Pr=loadNcep('CPC_Leaky_P_201705.FLT'),
-      pWetDays=loadNcep('pWetDays_201705.img'),
-      nDays=31
-    )
-  )
+  forcing <- lapply(timesteps[-c(1,2)], forcingForDate) # drop first two timesteps that we needed to get snowmelt month
+  cat('Preparing to run', length(forcing), 'timesteps.\n')
 
   wsim.lsm::run_with_rasters(static, state, forcing, iter_fun=function(iter_number, iter) {
-    dates = list('201703', '201704', '201705', '201706')
-    pdf(file=paste0('/home/dbaston/lsm_cpp_compare_', dates[[iter_number]], '.pdf'))
+    date <- iter$forcing$date
 
+    if (!endsWith(date, "01")) {
+      return();
+    }
 
-    for (vartype in names(iter)) {
+    pdf(file=paste0('/home/dbaston/lsm_cpp_compare_', date, '.pdf'))
+
+    for (vartype in c("obs", "next_state")) {
       for (key in names(iter[[vartype]])) {
         if (key != 'snowmelt_month') {
           cat(vartype, ":", key, "\n")
           r <- iter[[vartype]][[key]]
 
           if (vartype == "next_state") {
-            key <- paste0(key, "_in")
-            date <- dates[[iter_number + 1]]
+            #key <- paste0(key, "_in")
+            filedate <- nextMonth(date)
+            #filedate <- date
           } else {
-            date <- dates[[iter_number]]
+            filedate <- date
+          }
+
+          if (key == 'Dr') {
+            key <- 'Dr_in'
+          }
+          if (key == 'Ds') {
+            key <- 'Ds_in'
           }
 
           raster::writeRaster(r, paste0('/tmp/',
                                         key,
                                         '_',
-                                        date,
+                                        filedate,
                                         '.img'), datatype='FLT4S', overwrite=TRUE)
-          compare(date, key)
+          compare(filedate, key)
         }
       }
     }

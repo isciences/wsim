@@ -52,6 +52,7 @@ run_with_rasters <- function(static, state, forcings, iter_fun=NULL) {
 
     if (!is.null(iter_fun)) {
       iter_fun(i, list(
+        forcing=forcing,
         obs=lapply(iter$obs, make_raster),
         next_state=lapply(iter$next_state, make_raster)
       ))
