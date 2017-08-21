@@ -23,6 +23,7 @@
 #' @return A RasterStack representing the fitted (location, scale, shape)
 #'         parameters of the GEV for each pixel
 #'
+#' @export
 fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) {
   gev.params  <- c("location", "scale", "shape")
 
