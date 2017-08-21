@@ -1,11 +1,11 @@
 #' Write distribution fit parameters to a NetCDF file
 #'
 #' @param RasterStack containing named fit parameters
-#' @filename output filename
-#' @attrs list of global attributes to attach to the file,
+#' @param filename output filename
+#' @param attrs list of global attributes to attach to the file,
 #'        e.g., list(distribution='GEV', month=as.integer(1))
-#' @na.value NODATA value
-#'
+#' @param na.value NODATA value
+#' @export
 writeFit2Cdf <- function(fit, filename, attrs=list(), na.value=-3.4e+38) {
   nlat <- dim(fit)[1]
   nlon <- dim(fit)[2]
