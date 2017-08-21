@@ -35,14 +35,14 @@ run <- function(static, state, forcing) {
   revised_runoff <- Rp + Rs
 
   # Calculate changes in detention state variables
-  dDrdt <- 0.5*(state$Dr + Xr)
+  #dDrdt <- Xr - Rp #0.5*(state$Dr + Xr)
   dDsdt = Xs - Rs
 
   next_state <- list(
     Snowpack= state$Snowpack + Sa - Sm,
     snowmelt_month= melt_month,
     Ws= state$Ws + dWdt,
-    Dr= state$Dr + dDrdt,
+    Dr= Rp, #state$Dr + dDrdt,
     Ds= state$Ds + dDsdt
   )
 
