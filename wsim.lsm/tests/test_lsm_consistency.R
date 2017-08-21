@@ -81,7 +81,7 @@ doIt <- function() {
   forcing$nDays <- 31 # TODO get this automatically
   forcing$pWetDays <- loadNcep('pWetDays_201705.img')#, nodata=-32768.0)
 
-  print(system.time(iter <- wsim.lsm::run(static, state, forcing)))
+  iter <- wsim.lsm::run_with_rasters(static, state, forcing)
 
   pdf(file='/home/dbaston/lsm_cpp_compare.pdf')
   for (key in names(iter$obs)) {

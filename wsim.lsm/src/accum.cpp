@@ -316,15 +316,50 @@ static std::vector<FlowDirection> readDirections(const IntegerVector & direction
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector calculateFlow(
+NumericVector calculateFlowVector(
   int numRows,
   int numCols,
-  IntegerVector directionBlockR,
-  NumericVector weightBlockR) {
+  const IntegerVector & directionBlockR,
+  const NumericVector & weightBlockR) {
 
   std::vector<FlowDirection> directionBlock = readDirections(directionBlockR);
   std::vector<FlowQuantity> weightBlock = as<std::vector<FlowQuantity>>(weightBlockR);
   std::vector<FlowQuantity> flows = calculateFlow(numRows, numCols, directionBlock, weightBlock);
 
   return wrap(flows);
+}
+
+//'
+//' @export
+// [[Rcpp::export]]
+NumericMatrix calculateFlow(const IntegerMatrix & directions, const NumericMatrix & weights) {
+  IntegerVector directionVector(directions.size());
+  NumericVector weightVector(weights.size());
+  int numRows = directions.nrow();
+  int numCols = directions.ncol();
+
+  // The flow accumulator is expecting a one-dimensional vector representing
+  // concatenated rows of the input matrices.  Since the as.vector function in R
+  // produces a vector of the concatenated columns, we construct the vectors
+  // manually here.
+  int index = 0;
+  for (int i = 0; i < numRows; i++) {
+    for (int j = 0; j < numCols; j++) {
+      directionVector[index] = directions(i, j);
+      weightVector[index] = weights(i, j);
+
+      index++;
+    }
+  }
+
+  NumericVector results = calculateFlowVector(numRows, numCols, directionVector, weightVector);
+
+  NumericMatrix ret(numRows, numCols);
+  for(index = 0; index < results.size(); index++) {
+    int i = index / numCols;
+    int j = index % numCols;
+    ret(i, j) = results[index];
+  }
+
+  return ret;
 }

@@ -1,4 +1,4 @@
-#' Run the model
+#' Run the model using matrices
 #'
 #' @param static a list containing static inputs to the model
 #' @param state a list containing an input state for the model
@@ -7,82 +7,67 @@
 #' @useDynLib wsim.lsm, .registration=TRUE
 #' @export
 run <- function(static, state, forcing) {
-  obs <- list()
-  next_state <- list()
-
-  T <- raster::values(forcing$T)
-  Pr <- raster::values(forcing$Pr)
-  pWetDays <- raster::values(forcing$pWetDays)
-
-  z <- raster::values(static$elevation)
-  daylength <- raster::values(static$daylength)
-  Wc <- raster::values(static$Wc)
-  area_m2 <- raster::values(static$area_m2)
-
-  snowpack <- raster::values(state$snowpack)
-  Ws <- raster::values(state$Ws)
-  Dr <- raster::values(state$Dr)
-  Ds <- raster::values(state$Ds)
-
-  melt_month <- ifelse(T > -1, raster::values(state$snowmelt_month) + 1, 0)
+  melt_month <- ifelse(
+    forcing$T > -1,
+    state$snowmelt_month + 1,
+    0
+  )
 
   # estimate snow accumulation and snowmelt
-  Sa <- snow_accum(Pr, T)
-  Sm <- snow_melt(snowpack, melt_month, T, z)
+  Sa <- snow_accum(forcing$Pr, forcing$T)
+  Sm <- snow_melt(state$snowpack, melt_month, forcing$T, static$elevation)
 
-  P <- P_effective(Pr, Sa, Sm)
+  P <- P_effective(forcing$Pr, Sa, Sm)
 
-  E0 <- e_potential(daylength, T, forcing$nDays)
+  E0 <- e_potential(static$daylength, forcing$T, forcing$nDays)
 
-  hydro <- daily_hydro_loop(P, Sm, E0, Ws, Wc, forcing$nDays, pWetDays);
-  dWdt <- hydro$dWdt;
-  E <- hydro$E;
-  R <- hydro$R;
+  hydro <- daily_hydro_loop(P, Sm, E0, state$Ws, static$Wc, forcing$nDays, forcing$pWetDays)
+  dWdt <- matrix(hydro$dWdt, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
+  E <- matrix(hydro$E, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
+  R <- matrix(hydro$R, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
 
-  Xr <- calc_Xr(R, Pr, P)
+  Xr <- calc_Xr(R, forcing$Pr, P)
   Xs <- calc_Xs(Sm, R, P)
 
-  Rp <- calc_Rp(Dr, Xr)
-  Rs <- runoff_detained_snowpack(Ds, Xs, melt_month, z)
+  Rp <- calc_Rp(state$Dr, Xr)
+  Rs <- runoff_detained_snowpack(state$Ds, Xs, melt_month, static$elevation)
 
   revised_runoff <- Rp + Rs
 
   # Calculate changes in detention state variables
-  dDrdt <- 0.5*(Dr + Xr)
+  dDrdt <- 0.5*(state$Dr + Xr)
   dDsdt = Xs - Rs
 
-  make_raster <- function(vals) {
-    r <- raster::raster(nrows=nrow(forcing$P),
-                        ncols=ncol(forcing$P))
-    raster::values(r) <- vals
-    raster::projection(r) <- raster::projection(state$snowpack)
-    raster::extent(r) <- raster::extent(state$snowpack)
-    r
-  }
+  next_state <- list(
+    snowpack= state$snowpack + Sa - Sm,
+    snowmelt_month= melt_month,
+    Ws= state$Ws + dWdt,
+    Dr= state$Dr + dDrdt,
+    Ds= state$Ds + dDsdt
+  )
 
-  next_state$snowpack <- make_raster(snowpack + Sa - Sm)
-  next_state$snowmelt_month <- make_raster(melt_month)
-  next_state$Ws <- make_raster(Ws + dWdt)
-  next_state$Dr <- make_raster(Dr + dDrdt)
-  next_state$Ds <- make_raster(Ds + dDsdt)
+  obs <- list(
+    dayLength= static$daylength,
+    dWdt= dWdt,
+    E= E,
+    EmPET= E - E0,
+    P_net= P,
+    PET= E0,
+    PETmE= E0 - E,
+    Pr= forcing$Pr,
+    RO_mm= revised_runoff,
+    RO_m3= revised_runoff*static$area_m2/1000,
+    Runoff_mm= R,
+    Runoff_m3= R*static$area_m2/1000,
+    Sa= Sa,
+    Sm= Sm,
+    T= forcing$T
+  )
+  obs$Bt_RO <- accumulate_flow(obs$RO_m3,  static$flow_directions)
+  obs$Bt_Runoff <- accumulate_flow(obs$Runoff_m3, static$flow_directions)
 
-  obs$dayLength <- make_raster(daylength)
-  obs$dWdt <- make_raster(dWdt)
-  obs$E <- make_raster(E)
-  obs$EmPET <- make_raster(E - E0)
-  obs$P_net <- make_raster(P)
-  obs$PET <- make_raster(E0)
-  obs$PETmE <- make_raster(E0 - E)
-  obs$Pr <- make_raster(Pr)
-  obs$RO_mm <- make_raster(revised_runoff)
-  obs$RO_m3 <- make_raster(revised_runoff*area_m2/1000)
-  obs$Runoff_mm <- make_raster(R)
-  obs$Runoff_m3 <- make_raster(R*area_m2/1000)
-  obs$Sa <- make_raster(Sa)
-  obs$Sm <- make_raster(Sm)
-  obs$T <- make_raster(T)
-  obs$Bt_RO <- make_raster(accumulate_flow(obs$RO_m3,  static$flow_directions))
-  obs$Bt_Runoff <- make_raster(accumulate_flow(obs$Runoff_m3, static$flow_directions))
-
-  return(list(obs=obs, next_state=next_state))
+  return(list(
+    obs=obs,
+    next_state=next_state
+  ))
 }
