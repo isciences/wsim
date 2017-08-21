@@ -11,9 +11,9 @@ nadiff <- function(r1, r2) {
   ndr
 }
 
-compare <- function(param) {
- test <- raster::raster(paste0('/home/dbaston/2_', param, '.img'))
- actual <- raster::raster(paste0('/home/dbaston/SCI/', param, '_trgt201705.img'))
+compare <- function(date, param) {
+ test <- raster::raster(paste0('/tmp/', param, '_', date, '.img'))
+ actual <- raster::raster(paste0('/home/dbaston/SCI/', param, '_trgt', date, '.img'))
 
  max_diff <- raster::cellStats(abs(actual-test), 'max')
 
@@ -28,6 +28,8 @@ compare <- function(param) {
  graphics::title('NA differences')
  graphics::title(paste0(c(
    param,
+   " ",
+   date,
    " (dmax=",
    sprintf("%.e", max_diff),
    ")"), collapse=""), outer=TRUE)
@@ -57,7 +59,6 @@ loadNcep <- function(...) {
 
 doIt <- function() {
   static <- list()
-  static$daylength <- loadSource('Daylength', 'FLT', 'daylength-halfdeg-201705.flt')
   static$flow_directions <- loadSource('UNH_Data', 'g_network.asc')
   static$elevation <- loadSource('SRTM30', 'elevation_half_degree.img')
   static$area_m2 <- loadSource('area_hlf_deg.img') * 1e6
@@ -65,33 +66,71 @@ doIt <- function() {
 
   # State data
   state <- list()
-  state$snowpack <- loadIniData('Snowpack_in_trgt201705.img')
-  state$Ws <- loadIniData('Ws_in_trgt201705.img')
-  state$Dr <- loadIniData('Dr_in_trgt201705.img')
-  state$Ds <- loadIniData('Ds_in_trgt201705.img')
+  state$Snowpack <- loadIniData('Snowpack_in_trgt201703.img')
+  state$Ws <- loadIniData('Ws_in_trgt201703.img')
+  state$Dr <- loadIniData('Dr_in_trgt201703.img')
+  state$Ds <- loadIniData('Ds_in_trgt201703.img')
 
-  t_minus_1 <- loadSci('T_trgt201704.img')
-  t_minus_2 <- loadSci('T_trgt201703.img')
+  t_minus_1 <- loadSci('T_trgt201702.img')
+  t_minus_2 <- loadSci('T_trgt201701.img')
   state$snowmelt_month <- (t_minus_1 > -1) + (t_minus_1 > -1 & t_minus_2 > -1)
 
   # Forcing data
-  forcing <- list()
-  forcing$T <- loadNcep('CPC_Leaky_T_201705.FLT')#, nodata=-999)
-  forcing$Pr <- loadNcep('CPC_Leaky_P_201705.FLT')#, nodata=-999)
-  forcing$nDays <- 31 # TODO get this automatically
-  forcing$pWetDays <- loadNcep('pWetDays_201705.img')#, nodata=-32768.0)
+  forcing <- list(
+    list(
+      T=loadNcep('CPC_Leaky_T_201703.FLT'),
+      daylength=loadSource('Daylength', 'FLT', 'daylength-halfdeg-201703.flt'),
+      Pr=loadNcep('CPC_Leaky_P_201703.FLT'),
+      pWetDays=loadNcep('pWetDays_201703.img'),
+      nDays=31
+    )
+    ,list(
+      T=loadNcep('CPC_Leaky_T_201704.FLT'),
+      daylength=loadSource('Daylength', 'FLT', 'daylength-halfdeg-201704.flt'),
+      Pr=loadNcep('CPC_Leaky_P_201704.FLT'),
+      pWetDays=loadNcep('pWetDays_201704.img'),
+      nDays=30
+    )
+    ,list(
+      T=loadNcep('CPC_Leaky_T_201705.FLT'),
+      daylength=loadSource('Daylength', 'FLT', 'daylength-halfdeg-201705.flt'),
+      Pr=loadNcep('CPC_Leaky_P_201705.FLT'),
+      pWetDays=loadNcep('pWetDays_201705.img'),
+      nDays=31
+    )
+  )
 
-  iter <- wsim.lsm::run_with_rasters(static, state, forcing)
+  wsim.lsm::run_with_rasters(static, state, forcing, iter_fun=function(iter_number, iter) {
+    dates = list('201703', '201704', '201705', '201706')
+    pdf(file=paste0('/home/dbaston/lsm_cpp_compare_', dates[[iter_number]], '.pdf'))
 
-  pdf(file='/home/dbaston/lsm_cpp_compare.pdf')
-  for (key in names(iter$obs)) {
-    print(key)
-    r <- iter$obs[[key]]
-    raster::writeRaster(r, paste0('/home/dbaston/2_', key, '.img'), datatype='FLT4S', overwrite=TRUE)
-    compare(key)
-  }
 
-  dev.off()
+    for (vartype in names(iter)) {
+      for (key in names(iter[[vartype]])) {
+        if (key != 'snowmelt_month') {
+          cat(vartype, ":", key, "\n")
+          r <- iter[[vartype]][[key]]
+
+          if (vartype == "next_state") {
+            key <- paste0(key, "_in")
+            date <- dates[[iter_number + 1]]
+          } else {
+            date <- dates[[iter_number]]
+          }
+
+          raster::writeRaster(r, paste0('/tmp/',
+                                        key,
+                                        '_',
+                                        date,
+                                        '.img'), datatype='FLT4S', overwrite=TRUE)
+          compare(date, key)
+        }
+      }
+    }
+
+    dev.off()
+  })
+
 }
 
 #doIt()

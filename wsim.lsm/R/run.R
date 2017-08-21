@@ -15,11 +15,11 @@ run <- function(static, state, forcing) {
 
   # estimate snow accumulation and snowmelt
   Sa <- snow_accum(forcing$Pr, forcing$T)
-  Sm <- snow_melt(state$snowpack, melt_month, forcing$T, static$elevation)
+  Sm <- snow_melt(state$Snowpack, melt_month, forcing$T, static$elevation)
 
   P <- P_effective(forcing$Pr, Sa, Sm)
 
-  E0 <- e_potential(static$daylength, forcing$T, forcing$nDays)
+  E0 <- e_potential(forcing$daylength, forcing$T, forcing$nDays)
 
   hydro <- daily_hydro_loop(P, Sm, E0, state$Ws, static$Wc, forcing$nDays, forcing$pWetDays)
   dWdt <- matrix(hydro$dWdt, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
@@ -39,7 +39,7 @@ run <- function(static, state, forcing) {
   dDsdt = Xs - Rs
 
   next_state <- list(
-    snowpack= state$snowpack + Sa - Sm,
+    Snowpack= state$Snowpack + Sa - Sm,
     snowmelt_month= melt_month,
     Ws= state$Ws + dWdt,
     Dr= state$Dr + dDrdt,
@@ -47,7 +47,7 @@ run <- function(static, state, forcing) {
   )
 
   obs <- list(
-    dayLength= static$daylength,
+    dayLength= forcing$daylength,
     dWdt= dWdt,
     E= E,
     EmPET= E - E0,
