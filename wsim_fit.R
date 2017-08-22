@@ -21,26 +21,12 @@ args <- tryCatch(docopt(usage), error=function(e) {
   quit(status=1)
 })
 
-readInputs <- function(args) {
-  inputs <- NULL;
-  for (arg in args$input) {
-    globbed <- Sys.glob(arg)
-
-    if (length(globbed) == 0) {
-      die("No input files found matching pattern: ", arg)
-    }
-    inputs <- c(inputs, globbed)
-  }
-
-  return(inputs)
-}
-
 outfile <- args$output
 if (!can_write(outfile)) {
   die_with_message("Cannot open ", outfile, " for writing.")
 }
 
-inputs <- stack(readInputs(args))
+inputs <- stack(expand_inputs(args$input))
 
 distribution <- tolower(args$distribution)
 
