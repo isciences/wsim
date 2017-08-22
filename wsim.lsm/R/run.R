@@ -25,6 +25,7 @@ run <- function(static, state, forcing) {
   dWdt <- matrix(hydro$dWdt, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
   E <- matrix(hydro$E, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
   R <- matrix(hydro$R, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
+  Ws_ave <- matrix(hydro$Ws_ave, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
 
   Xr <- calc_Xr(R, forcing$Pr, P)
   Xs <- calc_Xs(Sm, R, P)
@@ -35,15 +36,14 @@ run <- function(static, state, forcing) {
   revised_runoff <- Rp + Rs
 
   # Calculate changes in detention state variables
-  #dDrdt <- Xr - Rp #0.5*(state$Dr + Xr)
   dDsdt = Xs - Rs
 
   next_state <- list(
-    Snowpack= state$Snowpack + Sa - Sm,
+    Snowpack= state$Snowpack + ifelse(is.na(Sa - Sm), 0.0, Sa - Sm),
     snowmelt_month= melt_month,
-    Ws= state$Ws + dWdt,
-    Dr= Rp, #state$Dr + dDrdt,
-    Ds= state$Ds + dDsdt
+    Ws= state$Ws + ifelse(is.na(dWdt), 0.0, dWdt),
+    Dr= Rp, # TODO resolve discrepancy with manual
+    Ds= state$Ds + ifelse(is.na(dDsdt), 0.0, dDsdt)
   )
 
   obs <- list(
@@ -61,7 +61,8 @@ run <- function(static, state, forcing) {
     Runoff_m3= R*static$area_m2/1000,
     Sa= Sa,
     Sm= Sm,
-    T= forcing$T
+    T= forcing$T,
+    Ws= Ws_ave
   )
   obs$Bt_RO <- accumulate_flow(obs$RO_m3,  static$flow_directions)
   obs$Bt_Runoff <- accumulate_flow(obs$Runoff_m3, static$flow_directions)
