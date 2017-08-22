@@ -16,14 +16,15 @@ can_write <- function(filename) {
     return(unname(file.access(filename, mode=2)) == 0)
   } else {
     tryCatch({
-      file.create(filename)
+      if(!file.create(filename, showWarnings=FALSE)) {
+        return(FALSE)
+      }
       while(!file.exists(filename)) {
         Sys.sleep(0.005)
       }
       file.remove(filename)
       return(TRUE);
     }, error=function() {
-      print('problem')
       return(FALSE);
     })
   }
