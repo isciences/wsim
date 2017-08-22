@@ -1,10 +1,8 @@
 #!/usr/bin/env Rscript
 suppressMessages({
-  require(docopt)
   require(wsim.distributions)
   require(wsim.io)
   require(raster)
-  require(ncdf4)
 })
 
 '
