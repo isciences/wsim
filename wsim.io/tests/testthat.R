@@ -1,4 +1,4 @@
 library(testthat)
-library(wsim.distributions)
+library(wsim.io)
 
-test_check("wsim.distributions")
+test_check("wsim.io")

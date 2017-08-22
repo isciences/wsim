@@ -1,4 +1,5 @@
 require(testthat)
+require(wsim.io)
 
 context("File writability")
 

@@ -5,6 +5,7 @@
 #'
 #' @param filename filename to read
 #' @return RasterLayer of forecast data
+#' @export
 readCFSv2 <- function(filename) {
   forecast <- raster::raster(filename)
   zvar <- forecast@data@zvar

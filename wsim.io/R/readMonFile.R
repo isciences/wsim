@@ -7,7 +7,8 @@
 #'
 #' @param filename filename to read
 #' @param na.value NODATA value, to be replaced with NA
-#' @param RasterLayer representing the contents of the .mon file
+#' @return RasterLayer representing the contents of the .mon file
+#' @export
 readMonFile <- function(filename, na.value=-999) {
     fh <- file(filename, 'rb')
 

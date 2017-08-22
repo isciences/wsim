@@ -1,4 +1,5 @@
 require(testthat)
+require(wsim.io)
 
 context("I/O Regression Tests")
 

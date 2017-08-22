@@ -1,6 +1,6 @@
 #' Write distribution fit parameters to a NetCDF file
 #'
-#' @param RasterStack containing named fit parameters
+#' @param fit RasterStack containing named fit parameters
 #' @param filename output filename
 #' @param attrs list of global attributes to attach to the file,
 #'        e.g., list(distribution='GEV', month=as.integer(1))
@@ -36,7 +36,7 @@ writeFit2Cdf <- function(fit, filename, attrs=list(), na.value=-3.4e+38) {
   ncout <- ncdf4::nc_create(filename, ncvars, force_v4 = FALSE)
 
   for (param in names(fit)) {
-    ncdf4::ncvar_put(ncout, ncvars[[param]], values(raster::flip(fit[[param]], 'y')))
+    ncdf4::ncvar_put(ncout, ncvars[[param]], raster::values(raster::flip(fit[[param]], 'y')))
   }
 
   ncdf4::ncatt_put(ncout, "lon", "axis", "X")

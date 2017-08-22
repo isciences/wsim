@@ -10,6 +10,7 @@
 #' @param fname filename to read
 #' @param mv NODATA value
 #' @return a matrix of daily precipitation values in 0.1 mm/day
+#' @export
 readNCEP_Daily_P <- function(fname, mv=-999.0) {
 
 	# we're expecting 1/2 degree global geographic data
