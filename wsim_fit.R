@@ -15,11 +15,7 @@ Usage: wsim_fit (--distribution=<dist>) (--input=<file>)... (--output=<file>)
 --distribution the statistical distribution to be fit
 '->usage
 
-args <- tryCatch(docopt(usage), error=function(e) {
-  write('Error parsing args.', stderr())
-  write(usage, stdout())
-  quit(status=1)
-})
+args <- parse_args(usage)
 
 outfile <- args$output
 if (!can_write(outfile)) {
