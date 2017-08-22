@@ -1,0 +1,10 @@
+#' Display a message and exit the program
+#'
+#' All arguments will be concatenated together.
+#' Program will exit with status=1
+#'
+#' @export
+die_with_message <- function(...) {
+  write(paste0(list(...), collapse=""), stderr())
+  quit(save='no', status=1, runLast=FALSE)
+}
