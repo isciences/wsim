@@ -30,6 +30,7 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
   double PET_daily = E0 / nDays;
 
   double dWdt = 0;
+  double Ws_ave = 0;
   double E = 0;
   double R = 0;
 
@@ -40,6 +41,7 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
     double dWdt_daily = soil_moisture_change(P_daily, PET_daily, Ws, Wc);
 
     Ws += dWdt_daily;
+    Ws_ave += Ws / nDays;
     dWdt += dWdt_daily;
 
     double E_daily = evapotranspiration(P_daily, PET_daily, dWdt_daily);
@@ -51,6 +53,7 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
 
   List ret;
   ret["dWdt"] = dWdt;
+  ret["Ws_ave"] = Ws_ave;
   ret["E"] = E;
   ret["R"] = R;
   return ret;
@@ -60,17 +63,20 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
 // [[Rcpp::export]]
 List daily_hydro_loop(NumericVector Pr, NumericVector Sm, NumericVector E0, NumericVector Ws, NumericVector Wc, int nDays, NumericVector pWetDays) {
   NumericVector dWdt(Pr.size());
+  NumericVector Ws_ave(Pr.size());
   NumericVector E(Pr.size());
   NumericVector R(Pr.size());
 
   for (int i = 0; i < Pr.size(); i++) {
     if (isnan(Pr[i])|| isnan(Sm[i]) || isnan(E0[i]) || isnan(Ws[i]) || isnan(Wc[i]) || isnan(pWetDays[i])) {
       dWdt[i] = NA_REAL;
+      Ws_ave[i] = NA_REAL;
       E[i] = NA_REAL;
       R[i] = NA_REAL;
     } else {
       List hydro = daily_hydro(Pr[i], Sm[i], E0[i], Ws[i], Wc[i], nDays, pWetDays[i]);
       dWdt[i] = hydro["dWdt"];
+      Ws_ave[i] = hydro["Ws_ave"];
       E[i] = hydro["E"];
       R[i] = hydro["R"];
     }
@@ -78,6 +84,7 @@ List daily_hydro_loop(NumericVector Pr, NumericVector Sm, NumericVector E0, Nume
 
   List ret;
   ret["dWdt"] = dWdt;
+  ret["Ws_ave"] = Ws_ave;
   ret["E"] = E;
   ret["R"] = R;
   return ret;
