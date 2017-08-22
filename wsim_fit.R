@@ -7,30 +7,6 @@ suppressMessages({
   require(ncdf4)
 })
 
-die <- function(...) {
-    write(paste0(list(...), collapse=""), stderr())
-    quit(save='no', status=1, runLast=FALSE)
-}
-
-can_write <- function(filename) {
-  if (file.exists(filename)) {
-    # File exists, can we write to it?
-    return(unname(file.access(filename, mode=2)) == 0)
-  } else {
-    tryCatch({
-      file.create(filename)
-      while(!file.exists(filename)) {
-        Sys.sleep(0.005)
-      }
-      file.remove(filename)
-      return(TRUE);
-    }, error=function() {
-      print('problem')
-      return(FALSE);
-    })
-  }
-}
-
 '
 Fit statistical distributions.
 
@@ -61,7 +37,7 @@ readInputs <- function(args) {
 
 outfile <- args$output
 if (!can_write(outfile)) {
-  die("Cannot open ", outfile, " for writing.")
+  die_with_message("Cannot open ", outfile, " for writing.")
 }
 
 inputs <- stack(readInputs(args))
@@ -71,7 +47,7 @@ distribution <- tolower(args$distribution)
 if (distribution == 'gev') {
   fits <- fitGEV(inputs)
 } else {
-  die(distribution, " is not a supported statistical distribution.")
+  die_with_message(distribution, " is not a supported statistical distribution.")
 }
 
 writeFit2Cdf(fits, outfile, attrs=list(distribution=distribution))
