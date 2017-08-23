@@ -23,8 +23,13 @@
 #' @param when.dist.undefined A value to use when the distribution is
 #'                            undefined
 #' @return A Raster(Brick) of the supplied function applied to the observations
+#' @importFrom foreach "%:%" "%do%" "%dopar%"
 #' @export
 applyDistToStack <- function(dist_params, obs, fn, when.dist.undefined=NA) {
+  if (!foreach::getDoParRegistered()) {
+    foreach::registerDoSEQ()
+  }
+
   nlayers <- raster::nlayers(obs)
   nrow <- nrow(obs)
   ncol <- ncol(obs)
@@ -35,8 +40,8 @@ applyDistToStack <- function(dist_params, obs, fn, when.dist.undefined=NA) {
   obs_array <- raster::as.array(obs)
   results <- array(dim=dim(obs))
 
-  for (ix in 1:nrow(obs)) {
-    for (iy in 1:ncol(obs)) {
+  foreach::foreach(ix= 1:nrow(obs)) %dopar% {
+     for (iy in 1:ncol(obs)) {
       # get the fit parameters for this pixel
       gev.vals <- dist_params[ix,iy,]
 
@@ -46,7 +51,7 @@ applyDistToStack <- function(dist_params, obs, fn, when.dist.undefined=NA) {
       } else {
         results[ix, iy, ] <- when.dist.undefined
       }
-    }
+     }
   }
 
   if (nlayers == 1) {
