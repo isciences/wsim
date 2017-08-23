@@ -3,8 +3,11 @@
 #' @param lyr RasterLayer to write
 #' @param filename output filename
 #' @param varname variable name to use in NetCDF file
-#' @param attrs list of global attributes to attach to the file,
-#'        e.g., list(distribution='GEV', month=as.integer(1))
+#' @param attrs list of attributes to attach to the file,
+#'        e.g., list(
+#'                list(key='distribution', val='GEV'), # global attribute
+#'                list(var='precipitation', key='units', val='mm)
+#'              )
 #' @param na.value NODATA value
 #' @param prec data type for values.  Valid types:
 #'       * short

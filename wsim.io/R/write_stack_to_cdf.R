@@ -2,8 +2,11 @@
 #'
 #' @param stk RasterStack containing named layers
 #' @param filename output filename
-#' @param attrs list of global attributes to attach to the file,
-#'        e.g., list(distribution='GEV', month=as.integer(1))
+#' @param attrs list of attributes to attach to the file,
+#'        e.g., list(
+#'                list(key='distribution', val='GEV'), # global attribute
+#'                list(var='precipitation', key='units', val='mm)
+#'              )
 #' @param na.value NODATA value
 #' @param prec data type for values.  Valid types:
 #'       * short
@@ -49,9 +52,12 @@ write_stack_to_cdf <- function(stk, filename, attrs=list(), na.value=-3.4e+38, p
   ncdf4::ncatt_put(ncout, "lon", "axis", "X")
   ncdf4::ncatt_put(ncout, "lat", "axis", "Y")
 
-  # Write global attributes
-  for (attr in names(attrs)) {
-    ncdf4::ncatt_put(ncout, 0, attr, attrs[[attr]])
+  # Write attributes
+  for (attr in attrs) {
+    ncdf4::ncatt_put(ncout,
+                     ifelse(is.null(attr$var), 0, attr$var),
+                     attr$key,
+                     attr$val)
   }
 
   ncdf4::nc_close(ncout)

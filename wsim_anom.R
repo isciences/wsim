@@ -49,7 +49,5 @@ if (!is.null(args$sa)) {
 
 if (!is.null(args$rp)) {
   rp <- sa2rp(sa)
-  write_layer_cdf(rp, args$rp, "return_period")
+  write_layer_to_cdf(rp, args$rp, "return_period")
 }
-
-
