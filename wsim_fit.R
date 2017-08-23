@@ -30,4 +30,4 @@ if (distribution == 'gev') {
   die_with_message(distribution, " is not a supported statistical distribution.")
 }
 
-writeFit2Cdf(fits, outfile, attrs=list(distribution=distribution))
+write_stack_to_cdf(fits, outfile, attrs=list(distribution=distribution))
