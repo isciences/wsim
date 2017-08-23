@@ -1,20 +1,27 @@
-#' Write distribution fit parameters to a NetCDF file
+#' Write a RasterStack to a NetCDF file
 #'
-#' @param fit RasterStack containing named fit parameters
+#' @param stk RasterStack containing named layers
 #' @param filename output filename
 #' @param attrs list of global attributes to attach to the file,
 #'        e.g., list(distribution='GEV', month=as.integer(1))
 #' @param na.value NODATA value
+#' @param prec data type for values.  Valid types:
+#'       * short
+#'       * integer
+#'       * float
+#'       * double
+#'       * char
+#'       * byte
 #' @export
-writeFit2Cdf <- function(fit, filename, attrs=list(), na.value=-3.4e+38) {
-  nlat <- dim(fit)[1]
-  nlon <- dim(fit)[2]
+write_stack_to_cdf <- function(stk, filename, attrs=list(), na.value=-3.4e+38, prec="double") {
+  nlat <- dim(stk)[1]
+  nlon <- dim(stk)[2]
 
-  minlat <- raster::extent(fit)[3]
-  maxlat <- raster::extent(fit)[4]
+  minlat <- raster::extent(stk)[3]
+  maxlat <- raster::extent(stk)[4]
 
-  minlon <- raster::extent(fit)[1]
-  maxlon <- raster::extent(fit)[2]
+  minlon <- raster::extent(stk)[1]
+  maxlon <- raster::extent(stk)[2]
 
   dlat <- (maxlat - minlat) / nlat
   dlon <- (maxlon - minlon) / nlon
@@ -26,17 +33,17 @@ writeFit2Cdf <- function(fit, filename, attrs=list(), na.value=-3.4e+38) {
   latdim <- ncdf4::ncdim_def("lat", "degrees_north", as.double(lats))
   londim <- ncdf4::ncdim_def("lon", "degrees_east", as.double(lons))
 
-  ncvars <- lapply(names(fit), function(param) {
-    ncdf4::ncvar_def(param, units="unknown", list(londim, latdim), na.value, prec="single")
+  ncvars <- lapply(names(stk), function(param) {
+    ncdf4::ncvar_def(param, units="unknown", list(londim, latdim), na.value, prec=prec)
   })
 
-  names(ncvars) <- names(fit)
+  names(ncvars) <- names(stk)
 
   # TODO which NetCDF version to use?
   ncout <- ncdf4::nc_create(filename, ncvars, force_v4 = FALSE)
 
-  for (param in names(fit)) {
-    ncdf4::ncvar_put(ncout, ncvars[[param]], raster::values(raster::flip(fit[[param]], 'y')))
+  for (param in names(stk)) {
+    ncdf4::ncvar_put(ncout, ncvars[[param]], raster::values(raster::flip(stk[[param]], 'y')))
   }
 
   ncdf4::ncatt_put(ncout, "lon", "axis", "X")
