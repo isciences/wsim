@@ -23,12 +23,13 @@
 #' @param when.dist.undefined A value to use when the distribution is
 #'                            undefined
 #' @return A Raster(Brick) of the supplied function applied to the observations
+#' @export
 applyDistToStack <- function(dist_params, obs, fn, when.dist.undefined=NA) {
   nlayers <- raster::nlayers(obs)
   nrow <- nrow(obs)
   ncol <- ncol(obs)
 
-  # Convert dist_params to an array locally for performance.
+  # Convert dist_params to a 3D array locally for performance.
   # Makes an enormous speed difference.
   dist_params <- raster::as.array(dist_params)
   obs_array <- raster::as.array(obs)

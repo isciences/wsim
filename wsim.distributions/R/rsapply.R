@@ -30,6 +30,7 @@
 #'  c(min(pvals), mean(pvals), max(pvals))
 #'}, names=c('min', 'ave', 'max'))
 #'}
+#'@export
 rsapply <- function(rast, fun, names=NULL) {
   # Copy our inputs to an in-memory matrix, for speed
   data <- raster::as.array(rast)
