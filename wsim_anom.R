@@ -8,9 +8,14 @@ suppressMessages({
 '
 Compute standard anomalies and/or return periods
 
-Usage: wsim_anom --fits=<fits> --obs=<file> [--sa=<file>] [--rp=<file>]
+Usage: wsim_anom --fits=<fits> --obs=<file> [--sa=<file>] [--rp=<file>] [--cores=<num_cores>]
 
---distribution the statistical distribution to be fit
+Options:
+--fits NetCDF file containing distribution fit parameters
+--obs Raster file containing observed values
+--sa output location for NetCDF file of standard anomalies
+--rp output location for NetCDF file of return periods
+--cores Number of CPU cores to use [default: 1]
 '->usage
 
 args <- parse_args(usage)
@@ -23,6 +28,14 @@ for (outfile in c(args$sa, args$rp)) {
   if (!is.null(outfile) && !can_write(outfile)) {
     die_with_message("Cannot open ", outfile, " for writing.")
   }
+}
+
+if (args$cores > 1) {
+  if (!is.element('doParallel', installed.packages()[,1])) {
+    die_with_message('doParallel package must be installed to use multiple cores.')
+  }
+
+  doParallel::registerDoParallel(cores=args$cores)
 }
 
 fits <- read_fit_from_cdf(args$fits)
