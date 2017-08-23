@@ -1,6 +1,6 @@
 isciences_internal <- function() {
   if (!file.exists('/mnt/fig/WSIM')) {
-    skip()
+    skip("Skipping test that requires ISciences internal resource.")
   }
 }
 
