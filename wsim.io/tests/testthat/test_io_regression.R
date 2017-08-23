@@ -4,6 +4,8 @@ require(wsim.io)
 context("I/O Regression Tests")
 
 test_that("We can read a file of NCEP daily precipitation", {
+  isciences_internal()
+
   filename <- '/mnt/fig/WSIM/WSIM_source_V1.2/NCEP/Daily_precip/Originals/2017/PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.20170521.RT'
 
   precip <- readNCEP_Daily_P(filename)
@@ -18,6 +20,8 @@ test_that("We can read a file of NCEP daily precipitation", {
 })
 
 test_that("We can read a CFSv2 forecast", {
+  isciences_internal()
+
   filename <- '/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc'
   forecast_temp <- readCFSv2(filename)
 
@@ -30,6 +34,8 @@ test_that("We can read a CFSv2 forecast", {
 })
 
 test_that("We can read a gridded binary .mon file", {
+  isciences_internal()
+
   filename <- '/mnt/fig/WSIM/WSIM_source_V1.2/NCEP/originals/t.201701.mon'
 
   temp <- readMonFile(filename)
