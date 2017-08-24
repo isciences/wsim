@@ -1,0 +1,38 @@
+FROM centos:7.3.1611
+
+RUN yum update -y \
+	&& yum clean all \
+	&& yum install -y epel-release
+
+RUN yum install -y \
+	R-core \
+	R-devel
+
+RUN yum install -y \
+    libcurl-devel \
+    libssh2-devel \
+    openssl-devel \
+    libxml2-devel \
+    geos-devel \
+    proj-devel \
+    proj-nad \
+    proj-epsg \
+    proj-static \
+    hdf \
+    hdf-devel \
+    hdf5 \
+    hdf5-devel \
+    wgrib \
+    wgrib2 \
+    netcdf \
+    netcdf-devel \
+    gdal \
+    gdal-libs \
+    gdal-devel \
+    geos \
+    geos-devel
+
+RUN Rscript -e 'install.packages(c("devtools","testthat","roxygen2","raster","Rcpp","lmom","docopt"), dependencies = TRUE, repos="http://cran.us.r-project.org")'
+
+RUN Rscript -e 'devtools::install_github("hadley/pkgdown")'
+RUN Rscript -e 'install.packages("foreach", dependencies = TRUE, repos="http://cran.us.r-project.org")'
