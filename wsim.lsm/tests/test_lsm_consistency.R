@@ -11,18 +11,6 @@ nadiff <- function(r1, r2) {
   ndr
 }
 
-to_raster <- function(thing) {
-  if (is.list(thing)) {
-    return(lapply(thing, to_raster))
-  }
-
-  if (typeof(thing) == "character" && file.exists(thing)) {
-    return(raster::raster(thing))
-  }
-
-  return(thing)
-}
-
 compare <- function(date, param) {
  test <- raster::raster(paste0('/tmp/', param, '_', date, '.img'))
  #actual <- raster::raster(paste0('/home/dbaston/SCI/', param, '_trgt', date, '.img'))
@@ -59,24 +47,24 @@ load <- function(..., nodata=NULL) {
 }
 
 loadSource <- function(...) {
-  do.call(load, append(list('/home', 'dbaston', 'wsim_erdc', 'inputs'), list(...)))
+  do.call(load, append(list('/home', 'dan', 'wsim_erdc', 'inputs'), list(...)))
   #do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_source_V1.2'), list(...)))
 }
 
 loadSci <- function(...) {
   #do.call(load, append(list('/home', 'dbaston', 'SCI'), list(...)))
-  do.call(load, append(list('/home', 'dbaston', 'wsim_erdc', 'derived', 'Observed', 'SCI'), list(...)))
+  do.call(load, append(list('/home', 'dan', 'wsim_erdc', 'derived', 'Observed', 'SCI'), list(...)))
   #do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_derived_V1.2', 'Observed', 'SCI'), list(...)))
 }
 
 loadIniData <- function(...) {
   #do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_source_V1.2', 'IniData'), list(...)))
-  do.call(load, append(list('/home', 'dbaston', 'wsim_erdc', 'inputs', 'IniData'), list(...)))
+  do.call(load, append(list('/home', 'dan', 'wsim_erdc', 'inputs', 'IniData'), list(...)))
   #do.call(load, append(list('/home', 'dbaston', 'IniData'), list(...)))
 }
 
 loadNcep <- function(...) {
-  do.call(load, append(list('/home', 'dbaston', 'wsim_erdc', 'inputs', 'NCEP'), list(...)))
+  do.call(load, append(list('/home', 'dan', 'wsim_erdc', 'inputs', 'NCEP'), list(...)))
   #do.call(load, append(list('/home', 'dbaston', 'NCEP'), list(...)))
 }
 
@@ -126,12 +114,72 @@ stateForDate <- function(date) {
   return(state)
 }
 
-doIt <- function(times) {
+saveIter <- function(iter_number, iter) {
+  date <- iter$forcing$date
+  fname <- paste0('/home/dan/wsim_output/lsm_', date, '.rds')
+  saveRDS(iter, file=fname)
+
+  cat(date, '\n')
+}
+
+plotIter <- function(iter_number, iter) {
+  date <- iter$forcing$date
+
+  if (!endsWith(date, "01")) {
+    #return();
+  }
+
+  fname <- paste0('/home/dan/lsm_cpp_compare_', date, '.pdf')
+  pdf(file=fname)
+  cat('Writing ', fname, '\n')
+
+  for (vartype in c("obs", "next_state")) {
+    for (key in names(iter[[vartype]])) {
+      if (key %in% c('dayLength')) {
+        next
+      }
+
+      cat(vartype, ":", key, "\n")
+      r <- iter[[vartype]][[key]]
+
+      if (vartype == "next_state") {
+        #key <- paste0(key, "_in")
+        filedate <- nextMonth(date)
+        #filedate <- date
+      } else {
+        filedate <- date
+      }
+
+      if (vartype == "next_state") {
+        key <- paste0(key, '_in')
+      }
+
+      raster::writeRaster(r, paste0('/tmp/',
+                                    key,
+                                    '_',
+                                    filedate,
+                                    '.img'), datatype='FLT4S', overwrite=TRUE)
+      if (!startsWith(key, 'snowmelt_month')) {
+        compare(filedate, key)
+      }
+    }
+  }
+
+  dev.off()
+}
+
+loadStatic <- function() {
   static <- list()
   static$flow_directions <- loadSource('UNH_Data', 'g_network.asc')
   static$elevation <- loadSource('SRTM30', 'elevation_half_degree.img')
   static$area_m2 <- raster::raster(loadSource('area_hlf_deg.img')) * 1e6
   static$Wc <- loadSource('HWSD', 'hwsd_tawc_05deg_noZeroNoVoids.img')
+
+  return(static)
+}
+
+doIt <- function(times) {
+  static <- loadStatic()
 
   if (nchar(times[1]) == 4) {
     # Run entire years
@@ -157,53 +205,10 @@ doIt <- function(times) {
   forcing <- lapply(timesteps[-c(1,2)], forcingForDate) # drop first two timesteps that we needed to get snowmelt month
   cat('Preparing to run', length(forcing), 'timesteps.\n')
 
-  wsim.lsm::run_with_rasters(static, state, forcing, iter_fun=function(iter_number, iter) {
-    date <- iter$forcing$date
-
-    if (!endsWith(date, "01")) {
-      #return();
-    }
-
-    fname <- paste0('/home/dbaston/lsm_cpp_compare_', date, '.pdf')
-    pdf(file=fname)
-    cat('Writing ', fname, '\n')
-
-    for (vartype in c("obs", "next_state")) {
-      for (key in names(iter[[vartype]])) {
-        if (key %in% c('dayLength')) {
-          next
-        }
-
-        cat(vartype, ":", key, "\n")
-        r <- iter[[vartype]][[key]]
-
-        if (vartype == "next_state") {
-          #key <- paste0(key, "_in")
-          filedate <- nextMonth(date)
-          #filedate <- date
-        } else {
-          filedate <- date
-        }
-
-        if (vartype == "next_state") {
-          key <- paste0(key, '_in')
-        }
-
-        raster::writeRaster(r, paste0('/tmp/',
-                                      key,
-                                      '_',
-                                      filedate,
-                                      '.img'), datatype='FLT4S', overwrite=TRUE)
-        if (!startsWith(key, 'snowmelt_month')) {
-          compare(filedate, key)
-        }
-      }
-    }
-
-    dev.off()
-  })
-
+  wsim.lsm::run_with_rasters(static, state, forcing, iter_fun=saveIter)
+  TRUE
 }
 
-#doIt()
+#doIt(1980:1981)
+#plotIter(0, readRDS('/home/dan/wsim_output/lsm_198110.rds'))
 
