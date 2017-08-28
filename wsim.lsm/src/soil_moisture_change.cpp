@@ -21,7 +21,7 @@ static inline double g2(double Ws, double E0, double P) {
   if (beta <= 1) {
     return E0 - P;
   } else {
-    return Ws * std::expm1(-beta * (E0 - P) / E0) / std::expm1(-beta);
+    return Ws * std::expm1((P-E0) / Ws) / std::expm1(-beta);
   }
 }
 
