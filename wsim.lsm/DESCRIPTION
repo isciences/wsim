@@ -7,7 +7,8 @@ Depends: R (>= 3.4.0)
 License: file LICENSE
 Imports: 
   Rcpp (>= 0.12.12),
-  raster
+  raster,
+  rgdal
 LinkingTo: Rcpp
 Suggests: testthat
 Encoding: UTF-8

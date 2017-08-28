@@ -24,7 +24,14 @@ run_with_rasters <- function(static, state, forcings, iter_fun=NULL) {
     }
 
     if (typeof(thing) == "character" && file.exists(thing)) {
-      return(raster::as.matrix(raster::raster(thing)))
+      if (endsWith(thing, 'nc')) {
+        return(raster::as.matrix(raster::raster(thing)))
+      } else {
+        rast <- rgdal::GDAL.open(thing, read.only=TRUE)
+        vals <- t(rgdal::getRasterData(rast))
+        rgdal::GDAL.close(rast)
+        return(vals)
+      }
     }
 
     return(thing)
