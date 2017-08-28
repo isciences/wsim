@@ -1,17 +1,17 @@
 #' Convert standardized anomaly into a return period
+#'
 #' @param sa vector or RasterLayer of standardized anomalies
-sa2rp <- function(sa) {
-    if (class(sa) != 'numeric') {
-        stop('Non-numeric vector passed to sa2rp')
-    }
+#' @param min.rp minimum value for clamping return period
+#' @param max.rp maximum value for clamping return period
+#' @return return period
+#' @export
+sa2rp <- function(sa, min.rp=-1000, max.rp=1000) {
+    rp <- sign(sa) / (1 - pnorm(abs(sa)))
 
-    R <- sign(sa) / (1 - pnorm(abs(sa)))
+    rp <- pmax(min.rp, rp)
+    rp <- pmin(max.rp, rp)
 
-    # clip values to +/- 1000
-    R <- pmax(-1000, R)
-    R <- pmin(1000, R)
-
-    return (R)
+    return (rp)
 }
 
 methods::setGeneric('sa2rp')

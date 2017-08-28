@@ -1,0 +1,5 @@
+image: isciences/wsim-gitlabci
+
+check:
+        script:
+                - make check
