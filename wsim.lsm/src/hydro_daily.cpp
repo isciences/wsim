@@ -24,13 +24,18 @@ static inline double runoff(double P, double E, double dWdt) {
 	  return P - E - dWdt;
 }
 
-//' @export
-// [[Rcpp::export]]
-List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
+struct HydroVals {
+  double dWdt;
+  double Ws_ave;
+  double E;
+  double R;
+};
+
+static HydroVals daily_hydro_impl(double Pr, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
   double PET_daily = E0 / nDays;
 
   double dWdt = 0;
-  double Ws_ave = 0;
+  double Ws_sum = 0;
   double E = 0;
   double R = 0;
 
@@ -41,7 +46,7 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
     double dWdt_daily = soil_moisture_change(P_daily, PET_daily, Ws, Wc);
 
     Ws += dWdt_daily;
-    Ws_ave += Ws / nDays;
+    Ws_sum += Ws;
     dWdt += dWdt_daily;
 
     double E_daily = evapotranspiration(P_daily, PET_daily, dWdt_daily);
@@ -51,12 +56,25 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
     R += R_daily;
   }
 
-  List ret;
-  ret["dWdt"] = dWdt;
-  ret["Ws_ave"] = Ws_ave;
-  ret["E"] = E;
-  ret["R"] = R;
+  HydroVals ret = {
+    dWdt, Ws_sum / nDays, E, R
+  };
+
   return ret;
+}
+
+//' @export
+// [[Rcpp::export]]
+List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
+  HydroVals vals = daily_hydro_impl(Pr, Sm, E0, Ws, Wc, nDays, pWetDays);
+
+  List ret;
+  ret["dWdt"] = vals.dWdt;
+  ret["Ws_ave"] = vals.Ws_ave;
+  ret["E"] = vals.E;
+  ret["R"] = vals.R;
+  return ret;
+
 }
 
 //' @export
@@ -68,17 +86,17 @@ List daily_hydro_loop(NumericVector Pr, NumericVector Sm, NumericVector E0, Nume
   NumericVector R(Pr.size());
 
   for (int i = 0; i < Pr.size(); i++) {
-    if (isnan(Pr[i])|| isnan(Sm[i]) || isnan(E0[i]) || isnan(Ws[i]) || isnan(Wc[i]) || isnan(pWetDays[i])) {
+    if (std::isnan(Pr[i]) || std::isnan(Sm[i]) || std::isnan(E0[i]) || std::isnan(Ws[i]) || std::isnan(Wc[i]) || std::isnan(pWetDays[i])) {
       dWdt[i] = NA_REAL;
       Ws_ave[i] = NA_REAL;
       E[i] = NA_REAL;
       R[i] = NA_REAL;
     } else {
-      List hydro = daily_hydro(Pr[i], Sm[i], E0[i], Ws[i], Wc[i], nDays, pWetDays[i]);
-      dWdt[i] = hydro["dWdt"];
-      Ws_ave[i] = hydro["Ws_ave"];
-      E[i] = hydro["E"];
-      R[i] = hydro["R"];
+      HydroVals hydro = daily_hydro_impl(Pr[i], Sm[i], E0[i], Ws[i], Wc[i], nDays, pWetDays[i]);
+      dWdt[i] = hydro.dWdt;
+      Ws_ave[i] = hydro.Ws_ave;
+      E[i] = hydro.E;
+      R[i] = hydro.R;
     }
   }
 
