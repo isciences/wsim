@@ -23,7 +23,7 @@ run <- function(static, state, forcing) {
 
   # estimate snow accumulation and snowmelt
   Sa <- snow_accum(forcing$Pr, forcing$T)
-  Sm <- snow_melt(state$Snowpack, melt_month, forcing$T, static$elevation)
+  Sm <- ifelse(is.na(Sa), NA, snow_melt(state$Snowpack, melt_month, forcing$T, static$elevation))
 
   P <- P_effective(forcing$Pr, Sa, Sm)
 
