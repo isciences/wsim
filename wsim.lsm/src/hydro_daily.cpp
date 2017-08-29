@@ -14,12 +14,12 @@ static inline double evapotranspiration(double P, double E0, double dWdt) {
   }
 }
 
-//' Runoff by Thornthwaite water balance equation
-//'
-//' @param P Effective precipication [L]
-//' @param E Evapotranspiration [L]
-//' @param dWdt Change in soil moisture [L]
-//' @return runoff [L]
+// Runoff by Thornthwaite water balance equation
+//
+// @param P Effective precipication [L]
+// @param E Evapotranspiration [L]
+// @param dWdt Change in soil moisture [L]
+// @return runoff [L]
 static inline double runoff(double P, double E, double dWdt) {
 	  return P - E - dWdt;
 }

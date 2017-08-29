@@ -6,7 +6,6 @@ typedef int FlowDirection;
 typedef double FlowQuantity;
 typedef size_t PixelNumber;
 
-//using DirectionBlock=std::vector<unsigned char>;
 static const FlowDirection OUT_EAST = 1;
 static const FlowDirection OUT_SOUTHEAST = 2;
 static const FlowDirection OUT_SOUTH = 4;
@@ -26,6 +25,7 @@ static const FlowDirection IN_NORTHWEST = 2;
 static const FlowDirection IN_NORTH = 4;
 static const FlowDirection IN_NORTHEAST = 8;
 
+NumericVector calculateFlowVector(int numRows, int numCols, const IntegerVector & directionBlockR, const NumericVector & weightBlockR);
 
 static std::vector<int> makeDirectionArray(int numRawCols) {
   std::vector<int> direction(8);
@@ -278,16 +278,10 @@ static std::vector<FlowQuantity> calculateFlow(
   int iteration = 0;
   std::vector<PixelNumber> topElements = findTopElements(inwardFlowBlock);
 
-  //printVector("topElements", topElements);
-
   while (!topElements.empty() && iteration < 50000) {
-    //Rcout << "Iteration " << iteration << ": " << topElements.size() << std::endl;
     topElements = processTopElements(topElements, outputFlowBlock, inwardFlowBlock, weightBlock, directionBlock, numRows, numCols);
     iteration++;
   }
-
-  //System.out.println("Finished in " + iteration + " iterations.");
-  //System.out.println("Processed " + elementsProcessed + " elements.");
 
   return outputFlowBlock;
 }
@@ -301,9 +295,6 @@ static std::vector<FlowDirection> readDirections(const IntegerVector & direction
     if (val == NA_INTEGER) {
       val = OUT_NODATA;
     } else if (val < 0 || val > (int) std::numeric_limits<FlowDirection>::max()) {
-      Rcout << "Bad direction " << val << std::endl;
-      Rcout << "Max is " << std::numeric_limits<FlowDirection>::max() << std::endl;
-      Rcout << "Max int is " << (int) std::numeric_limits<FlowDirection>::max() << std::endl;
       throw "Bad direction";
     }
 
@@ -313,23 +304,27 @@ static std::vector<FlowDirection> readDirections(const IntegerVector & direction
   return directions;
 }
 
+//' Accumulate flow, given flow directions and weights.
 //'
-//' @export
-// [[Rcpp::export]]
-NumericVector calculateFlowVector(
-  int numRows,
-  int numCols,
-  const IntegerVector & directionBlockR,
-  const NumericVector & weightBlockR) {
-
-  std::vector<FlowDirection> directionBlock = readDirections(directionBlockR);
-  std::vector<FlowQuantity> weightBlock = as<std::vector<FlowQuantity>>(weightBlockR);
-  std::vector<FlowQuantity> flows = calculateFlow(numRows, numCols, directionBlock, weightBlock);
-
-  return wrap(flows);
-}
-
+//' @describeIn calculateFlow accumulate flow using matrix inputs/onputs
 //'
+//' @param directions a matrix of flow directions, where directions are represented
+//' by the following values:
+//'
+//' * east: 1
+//' * southeast: 2
+//' * south: 4
+//' * southwest: 8
+//' * west: 16
+//' * northwest: 32
+//' * north: 64
+//' * northeast: 128
+//'
+//' @param weights a matrix of weights, representing the amount of flow originating at
+//' each cell
+//'
+//' @return a matrix of accumulated flow values
+//' @md
 //' @export
 // [[Rcpp::export]]
 NumericMatrix calculateFlow(const IntegerMatrix & directions, const NumericMatrix & weights) {
@@ -363,3 +358,27 @@ NumericMatrix calculateFlow(const IntegerMatrix & directions, const NumericMatri
 
   return ret;
 }
+
+//' @describeIn calculateFlow accumulate flow using vector inputs/outputs
+//' @param numRows number of rows in original matrix
+//' @param numCols number of columns in original matrix
+//' @export
+// [[Rcpp::export]]
+NumericVector calculateFlowVector(
+  int numRows,
+  int numCols,
+  const IntegerVector & directions,
+  const NumericVector & weights) {
+
+  std::vector<FlowDirection> directionBlock = readDirections(directions);
+  std::vector<FlowQuantity> weightBlock = as<std::vector<FlowQuantity>>(weights);
+  std::vector<FlowQuantity> flows = calculateFlow(numRows, numCols, directionBlock, weightBlock);
+
+  // Add original weights to accumulated flow
+  for (size_t i = 0; i < flows.size(); i++) {
+    flows[i] += weights[i];
+  }
+
+  return wrap(flows);
+}
+

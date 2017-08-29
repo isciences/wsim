@@ -5,10 +5,13 @@
 #' If elevation is greater than 500m, snowmelt will be divided over
 #' two timesteps.
 #'
-#' @param snowpack: Snowpack (mm)
-#' @param T: Average temp (C)
-#' @param z: Elevation (m)
-#' @return: Snowmelt (mm/month)
+#' @param snowpack Snowpack (mm)
+#' @param melt_month Number of consecutive months in which melting conditions
+#'                   have been present
+#' @param T Average temp (C)
+#' @param z Elevation (m)
+#' @return Snowmelt (mm/month)
+#' @export
 snow_melt <- function(snowpack, melt_month, T, z) {
   ifelse(!is.na(T) & T >= -1,
          ifelse(z <= 500,

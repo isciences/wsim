@@ -1,3 +1,5 @@
+library(Rcpp)
+
 library(testthat)
 library(wsim.lsm)
 

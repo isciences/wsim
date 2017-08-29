@@ -73,8 +73,8 @@ run <- function(static, state, forcing) {
     T= forcing$T,
     Ws= Ws_ave
   )
-  obs$Bt_RO <- accumulate_flow(obs$RO_m3,  static$flow_directions)
-  obs$Bt_Runoff <- accumulate_flow(obs$Runoff_m3, static$flow_directions)
+  obs$Bt_RO <- calculateFlow(static$flow_directions, obs$RO_m3)
+  obs$Bt_Runoff <- calculateFlow(static$flow_directions, obs$Runoff_m3)
 
   return(list(
     obs=obs,
