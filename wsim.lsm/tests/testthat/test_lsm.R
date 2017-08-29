@@ -91,3 +91,36 @@ test_that('daily precipitation adds up to monthly precipitation', {
   expect_equal(0.77, sum(make_daily_precip(0.77, 13, 0.7)));
   expect_equal(0.77, sum(make_daily_precip(0.77, 30, 0.0)));
 })
+
+test_that('excess precipitation fills soil to capacity', {
+  Ws <- 0.3
+  Wc <- 0.5
+  P <- 1
+  E0 <- 0.7
+
+  expect_equal(Wc, Ws + soil_moisture_change(P, E0, Ws, Wc))
+})
+
+test_that('all extra precipitation is absorbed by soil', {
+  Ws <- 0.3
+  Wc <- 0.5
+  P <- 1
+  E0 <- 0.9
+
+  expect_equal(P-E0, soil_moisture_change(P, E0, Ws, Wc))
+})
+
+test_that('when there is not enough precipitation, the soil dries up to 90%', {
+  Ws <- 0.3
+  Wc <- 0.5
+  P <- 1
+  E0 <- 1.1
+
+  # Compute drying according to our drying functions
+  expect_equal(-0.0835, soil_moisture_change(P, E0, Ws, Wc), tolerance=1e-4)
+
+  E0 <- 2
+  # Severe precipitation deficit.  Hit our 90% cap on drying
+  expect_equal(-0.27, soil_moisture_change(P, E0, Ws, Wc))
+
+})
