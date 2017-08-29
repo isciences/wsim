@@ -24,7 +24,7 @@ compare <- function(date, param) {
 
  tm <- as.matrix(test)
  am <- as.matrix(actual)
- errors <- raster::setValues(test, ifelse( abs(tm - am) < 1e-6 , NA, (tm - am) / am))
+ errors <- raster::setValues(test, ifelse( abs(tm - am) < 1e-3 , NA, (tm - am) / am))
 
  graphics::par(mfrow=c(2,2), oma=c(0,0,2,0))
  raster::plot(test)
@@ -51,24 +51,24 @@ load <- function(..., nodata=NULL) {
 }
 
 loadSource <- function(...) {
-  do.call(load, append(list('/home', 'dan', 'wsim_erdc', 'inputs'), list(...)))
+  do.call(load, append(list('/home', Sys.info()[["user"]], 'wsim_erdc', 'inputs'), list(...)))
   #do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_source_V1.2'), list(...)))
 }
 
 loadSci <- function(...) {
   #do.call(load, append(list('/home', 'dbaston', 'SCI'), list(...)))
-  do.call(load, append(list('/home', 'dan', 'wsim_erdc', 'derived', 'Observed', 'SCI'), list(...)))
+  do.call(load, append(list('/home', Sys.info()[["user"]], 'wsim_erdc', 'derived', 'Observed', 'SCI'), list(...)))
   #do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_derived_V1.2', 'Observed', 'SCI'), list(...)))
 }
 
 loadIniData <- function(...) {
   #do.call(load, append(list('/mnt', 'fig', 'WSIM', 'WSIM_source_V1.2', 'IniData'), list(...)))
-  do.call(load, append(list('/home', 'dan', 'wsim_erdc', 'inputs', 'IniData'), list(...)))
+  do.call(load, append(list('/home', Sys.info()[["user"]], 'wsim_erdc', 'inputs', 'IniData'), list(...)))
   #do.call(load, append(list('/home', 'dbaston', 'IniData'), list(...)))
 }
 
 loadNcep <- function(...) {
-  do.call(load, append(list('/home', 'dan', 'wsim_erdc', 'inputs', 'NCEP'), list(...)))
+  do.call(load, append(list('/home', Sys.info()[["user"]], 'wsim_erdc', 'inputs', 'NCEP'), list(...)))
   #do.call(load, append(list('/home', 'dbaston', 'NCEP'), list(...)))
 }
 
@@ -120,7 +120,7 @@ stateForDate <- function(date) {
 
 saveIter <- function(iter_number, iter) {
   date <- iter$forcing$date
-  fname <- paste0('/home/dan/wsim_output/lsm_', date, '.rds')
+  fname <- paste0('/home/', Sys.info()[["user"]], '/wsim_output/lsm_', date, '.rds')
   saveRDS(iter, file=fname)
 
   cat(date, '\n')
@@ -133,7 +133,7 @@ plotIter <- function(iter_number, iter) {
     #return();
   }
 
-  fname <- paste0('/home/dan/lsm_cpp_compare_', date, '.pdf')
+  fname <- paste0('/home/', Sys.info()[["user"]], '/lsm_cpp_compare_', date, '.pdf')
   pdf(file=fname)
   cat('Writing ', fname, '\n')
 
@@ -215,3 +215,8 @@ doIt <- function(times) {
 #doIt(1980:1981)
 #plotIter(0, readRDS('/home/dan/wsim_output/lsm_198110.rds'))
 
+lookup <- function(rast, x, y) {
+  if (class(rast) != "RasterLayer")
+    rast <- raster::raster(rast)
+  raster::values(rast)[raster::cellFromXY(rast, matrix(c(x, y), nrow=1))]
+}
