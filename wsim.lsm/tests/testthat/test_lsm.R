@@ -155,3 +155,18 @@ test_that('computed state variables are always defined', {
   expect_false(any(is.na(iter$next_state$Ds)))
   expect_false(any(is.na(iter$next_state$Ws)))
 })
+
+test_that('dWdt calculation tolerates NODATA inputs', {
+  P  <- 9.95522403717041
+  Sa <- 0
+  Sm <- as.numeric(NA)
+  E0 <- 94.36259460449219
+  Ws <- 27.140303302177646
+  Wc <- 42
+  nDays <- 30
+  pWetDays <- 0.100000001490116
+
+  hydro <- daily_hydro(P, Sa, Sm, E0, Ws, Wc, nDays, pWetDays)
+
+  expect_false(is.na(hydro$dWdt))
+})
