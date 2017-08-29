@@ -14,13 +14,12 @@ static inline double g1(double Ws, double Wc) {
 }
 
 static inline double g2(double Ws, double E0, double P) {
-  double beta = E0 / Ws;
-
   // TODO the formula below differs from the manual, but is what is implemented
   // in Kepler.  Manual has (E0-P), not (E0-P)/E0
-  if (beta <= 1) {
+  if (E0 < Ws) {
     return E0 - P;
   } else {
+    double beta = E0 / Ws;
     return Ws * std::expm1((P-E0) / Ws) / std::expm1(-beta);
   }
 }
