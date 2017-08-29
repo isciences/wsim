@@ -124,3 +124,34 @@ test_that('when there is not enough precipitation, the soil dries up to 90%', {
   expect_equal(-0.27, soil_moisture_change(P, E0, Ws, Wc))
 
 })
+
+test_that('computed state variables are always defined', {
+  static <- list(
+    elevation=matrix(seq(0, 750, 250), nrow=2),
+    area_m2=matrix(rep.int(100, 4), nrow=2),
+    flow_directions=matrix(rep.int(as.integer(NA), 4), nrow=2),
+    Wc=matrix(rep.int(150, 4), nrow=2)
+  )
+
+  forcing <- list(
+    daylength=matrix(seq(0, 1, 1/3), nrow=2),
+    pWetDays=matrix(rep.int(1, 4), nrow=2),
+    T=matrix(rep.int(NA, 4), nrow=2),
+    Pr=matrix(runif(4), nrow=2),
+    nDays=30
+  )
+
+  state <- list(
+    Snowpack= matrix(runif(4), nrow=2),
+    Dr= matrix(runif(4), nrow=2),
+    Ds= matrix(runif(4), nrow=2),
+    melt_month= matrix(rep.int(0, 4), nrow=2),
+    Ws= static$Wc * runif(1)
+  )
+
+  iter <- run(static, state, forcing)
+  expect_false(any(is.na(iter$next_state$Snowpack)))
+  expect_false(any(is.na(iter$next_state$Dr)))
+  expect_false(any(is.na(iter$next_state$Ds)))
+  expect_false(any(is.na(iter$next_state$Ws)))
+})
