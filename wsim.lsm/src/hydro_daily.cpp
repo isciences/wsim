@@ -33,15 +33,23 @@ struct HydroVals {
   double R;
 };
 
-static HydroVals daily_hydro_impl(double Pr, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
+static HydroVals daily_hydro_impl(double P, double Sa, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
   double PET_daily = E0 / nDays;
 
   double dWdt = 0;
-  double Ws_sum = 0;
+  double Ws_sum = Ws; // TODO this should be initialized to zero.  Initializing to Ws to replicate bug in Kepler version.
   double E = 0;
   double R = 0;
 
-  NumericVector Pr_daily = make_daily_precip(Pr - Sm, nDays, pWetDays);
+  if (std::isnan(Sa)) {
+    Sa = 0.0;
+  }
+
+  if (std::isnan(Sm)) {
+    Sm = 0.0;
+  }
+
+  NumericVector Pr_daily = make_daily_precip(P - Sa, nDays, pWetDays);
   NumericVector Sm_daily = make_daily_precip(Sm, nDays, 1.0);
 
   for (double P_daily : Pr_daily + Sm_daily) {
@@ -70,8 +78,9 @@ static HydroVals daily_hydro_impl(double Pr, double Sm, double E0, double Ws, do
 //' Precipitation is evenly divided over a set of evenly-spaced "wet days."
 //' Snowmelt is evenly divided over the multi-day timestep.
 //'
-//' @param Pr total precipitation for the time step [L]
-//' @param Sm total snow melt for the time step [L]
+//' @param P  precipitation for the time step [L]
+//' @param Sa snow accumulation for the time step [L]
+//' @param Sm snow melt for the time step [L]
 //' @param E0 potential evapotranspiration for the time step [L]
 //' @param Ws soil moisture at start of time step [L]
 //' @param Wc soil moisture holding capacity [L]
@@ -85,8 +94,8 @@ static HydroVals daily_hydro_impl(double Pr, double Sm, double E0, double Ws, do
 //'
 //' @export
 // [[Rcpp::export]]
-List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
-  HydroVals vals = daily_hydro_impl(Pr, Sm, E0, Ws, Wc, nDays, pWetDays);
+List daily_hydro(double P, double Sa, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
+  HydroVals vals = daily_hydro_impl(P, Sa, Sm, E0, Ws, Wc, nDays, pWetDays);
 
   List ret;
   ret["dWdt"] = vals.dWdt;
@@ -98,8 +107,9 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
 
 //' Compute hydrological parameters for all pixels
 //'
-//' @param Pr total precipitation for the time step [L]
-//' @param Sm total snow melt for the time step [L]
+//' @param P  precipitation for the time step [L]
+//' @param Sa snow accumulation for the time step [L]
+//' @param Sm snow melt for the time step [L]
 //' @param E0 potential evapotranspiration for the time step [L]
 //' @param Ws soil moisture at start of time step [L]
 //' @param Wc soil moisture holding capacity [L]
@@ -113,20 +123,20 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
 //'
 //' @export
 // [[Rcpp::export]]
-List daily_hydro_loop(NumericVector Pr, NumericVector Sm, NumericVector E0, NumericVector Ws, NumericVector Wc, int nDays, NumericVector pWetDays) {
+List daily_hydro_loop(NumericVector Pr, NumericVector Sa, NumericVector Sm, NumericVector E0, NumericVector Ws, NumericVector Wc, int nDays, NumericVector pWetDays) {
   NumericVector dWdt(Pr.size());
   NumericVector Ws_ave(Pr.size());
   NumericVector E(Pr.size());
   NumericVector R(Pr.size());
 
   for (int i = 0; i < Pr.size(); i++) {
-    if (std::isnan(Pr[i]) || std::isnan(Sm[i]) || std::isnan(E0[i]) || std::isnan(Ws[i]) || std::isnan(Wc[i]) || std::isnan(pWetDays[i])) {
+    if (std::isnan(Pr[i]) || std::isnan(E0[i]) || std::isnan(Ws[i]) || std::isnan(Wc[i]) || std::isnan(pWetDays[i])) {
       dWdt[i] = NA_REAL;
       Ws_ave[i] = NA_REAL;
       E[i] = NA_REAL;
       R[i] = NA_REAL;
     } else {
-      HydroVals hydro = daily_hydro_impl(Pr[i], Sm[i], E0[i], Ws[i], Wc[i], nDays, pWetDays[i]);
+      HydroVals hydro = daily_hydro_impl(Pr[i], Sa[i], Sm[i], E0[i], Ws[i], Wc[i], nDays, pWetDays[i]);
       dWdt[i] = hydro.dWdt;
       Ws_ave[i] = hydro.Ws_ave;
       E[i] = hydro.E;
@@ -141,4 +151,3 @@ List daily_hydro_loop(NumericVector Pr, NumericVector Sm, NumericVector E0, Nume
   ret["R"] = R;
   return ret;
 }
-
