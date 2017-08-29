@@ -22,13 +22,17 @@ compare <- function(date, param) {
 
  max_diff <- raster::cellStats(abs(actual-test), 'max')
 
+ tm <- as.matrix(test)
+ am <- as.matrix(actual)
+ errors <- raster::setValues(test, ifelse( abs(tm - am) < 1e-6 , NA, (tm - am) / am))
+
  graphics::par(mfrow=c(2,2), oma=c(0,0,2,0))
  raster::plot(test)
- graphics::title('Test result')
+ graphics::title('test result')
  raster::plot(actual)
  graphics::title('Past result')
- raster::plot(abs(test-actual))
- graphics::title('abs(test-result)')
+ raster::plot(abs(errors))
+ graphics::title('abs(test-result)/result')
  raster::plot(nadiff(actual, test) )
  graphics::title('NA differences')
  graphics::title(paste0(c(
@@ -206,7 +210,6 @@ doIt <- function(times) {
   cat('Preparing to run', length(forcing), 'timesteps.\n')
 
   wsim.lsm::run_with_rasters(static, state, forcing, iter_fun=saveIter)
-  TRUE
 }
 
 #doIt(1980:1981)
