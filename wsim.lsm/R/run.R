@@ -24,13 +24,13 @@ run <- function(static, state, forcing) {
   # estimate snow accumulation and snowmelt
   # use snow accumluation as a mask for snowmelt
   Sa <- snow_accum(forcing$Pr, forcing$T)
-  Sm <- ifelse(is.na(Sa), NA, snow_melt(state$Snowpack, melt_month, forcing$T, static$elevation))
+  Sm <- snow_melt(state$Snowpack, melt_month, forcing$T, static$elevation)
 
   P <- P_effective(forcing$Pr, Sa, Sm)
 
   E0 <- e_potential(forcing$daylength, forcing$T, forcing$nDays)
 
-  hydro <- daily_hydro_loop(P, Sm, E0, state$Ws, static$Wc, forcing$nDays, forcing$pWetDays)
+  hydro <- daily_hydro_loop(forcing$P, Sa, Sm, E0, state$Ws, static$Wc, forcing$nDays, forcing$pWetDays)
   dWdt <- matrix(hydro$dWdt, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
   E <- matrix(hydro$E, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
   R <- matrix(hydro$R, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
@@ -69,7 +69,7 @@ run <- function(static, state, forcing) {
     Runoff_mm= R,
     Runoff_m3= R*static$area_m2/1000,
     Sa= Sa,
-    Sm= Sm,
+    Sm= ifelse(is.na(Sa), NA, Sm),
     T= forcing$T,
     Ws= Ws_ave
   )
