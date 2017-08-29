@@ -1,4 +1,4 @@
-#' Run the model using matrices
+#' Run a single iteration of the the model using matrices
 #'
 #' @param static a list containing static inputs to the model
 #' @param state a list containing an input state for the model
@@ -22,6 +22,7 @@ run <- function(static, state, forcing) {
   state$Ws[is.na(state$Ws)] <- 0.0
 
   # estimate snow accumulation and snowmelt
+  # use snow accumluation as a mask for snowmelt
   Sa <- snow_accum(forcing$Pr, forcing$T)
   Sm <- ifelse(is.na(Sa), NA, snow_melt(state$Snowpack, melt_month, forcing$T, static$elevation))
 

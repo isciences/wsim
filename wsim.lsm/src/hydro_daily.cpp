@@ -24,6 +24,8 @@ static inline double runoff(double P, double E, double dWdt) {
 	  return P - E - dWdt;
 }
 
+// Define a simple struct to return multiple parameters for each cell
+// This is much faster than using Rcpp::List.
 struct HydroVals {
   double dWdt;
   double Ws_ave;
@@ -63,6 +65,24 @@ static HydroVals daily_hydro_impl(double Pr, double Sm, double E0, double Ws, do
   return ret;
 }
 
+//' Compute hydrological parameters over a multi-day timestep with precipitation on some days
+//'
+//' Precipitation is evenly divided over a set of evenly-spaced "wet days."
+//' Snowmelt is evenly divided over the multi-day timestep.
+//'
+//' @param Pr total precipitation for the time step [L]
+//' @param Sm total snow melt for the time step [L]
+//' @param E0 potential evapotranspiration for the time step [L]
+//' @param Ws soil moisture at start of time step [L]
+//' @param Wc soil moisture holding capacity [L]
+//' @param nDays number of days in time step [-]
+//' @param pWetDays percentage of days with precipitation [-]
+//' @return a List of hydrological parameters:
+//'           dWdt:   change in soil moisture [L]
+//'           Ws_ave: average soil moisture over timestep [L],
+//'           E:      evapotranspiration [L]
+//'           R:      runoff [L]
+//'
 //' @export
 // [[Rcpp::export]]
 List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
@@ -74,9 +94,23 @@ List daily_hydro(double Pr, double Sm, double E0, double Ws, double Wc, int nDay
   ret["E"] = vals.E;
   ret["R"] = vals.R;
   return ret;
-
 }
 
+//' Compute hydrological parameters for all pixels
+//'
+//' @param Pr total precipitation for the time step [L]
+//' @param Sm total snow melt for the time step [L]
+//' @param E0 potential evapotranspiration for the time step [L]
+//' @param Ws soil moisture at start of time step [L]
+//' @param Wc soil moisture holding capacity [L]
+//' @param nDays number of days in time step [-]
+//' @param pWetDays percentage of days with precipitation [-]
+//' @return a List of vectors of hydrological parameters:
+//'           dWdt:   change in soil moisture [L]
+//'           Ws_ave: average soil moisture over timestep [L],
+//'           E:      evapotranspiration [L]
+//'           R:      runoff [L]
+//'
 //' @export
 // [[Rcpp::export]]
 List daily_hydro_loop(NumericVector Pr, NumericVector Sm, NumericVector E0, NumericVector Ws, NumericVector Wc, int nDays, NumericVector pWetDays) {

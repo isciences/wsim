@@ -1,5 +1,7 @@
 #' Run the model using RasterLayers
 #'
+#' Supplied references may be RasterLayers, or filenames
+#'
 #' @param static a list containing static inputs to the model
 #' @param state a list containing an input state for the model
 #' @param forcing a list containing forcing data for the model
@@ -25,6 +27,8 @@ run_with_rasters <- function(static, state, forcings, iter_fun=NULL) {
 
     if (typeof(thing) == "character" && file.exists(thing)) {
       if (endsWith(thing, 'nc')) {
+        # Use raster package for now, since it seems to be doing
+        # some special handling for NetCDFs?
         return(raster::as.matrix(raster::raster(thing)))
       } else {
         rast <- rgdal::GDAL.open(thing, read.only=TRUE)
