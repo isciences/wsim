@@ -4,6 +4,10 @@ require(wsim.io)
 context("File writability")
 
 test_that("Writability of a file is correctly identified", {
+  if (Sys.info()[["user"]] == "root") {
+    skip("Can't check writiability when running as root")
+  }
+
   expect_true(can_write(tempfile()))
   expect_false(can_write('/root/shouldnt_write_here'))
 })
