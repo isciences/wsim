@@ -2,4 +2,4 @@ image: isciences/wsim-gitlabci
 
 check:
         script:
-                - make check
+                - make install check
