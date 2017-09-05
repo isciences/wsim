@@ -48,6 +48,9 @@ run_with_rasters <- function(static, state, forcings, iter_fun=NULL) {
     forcings <- list(forcings)
   }
 
+  # Compute cell areas for use within the model
+  static$area_m2 <- cell_areas_m2(raster::raster(static$elevation))
+
   static.matrix <- to_matrix(static)
   state.matrix <- to_matrix(state)
 
@@ -73,6 +76,7 @@ run_with_rasters <- function(static, state, forcings, iter_fun=NULL) {
   }
 
   return(list(
+    forcing=forcing,
     obs=lapply(iter$obs, make_raster),
     next_state=lapply(iter$next_state, make_raster)
   ))

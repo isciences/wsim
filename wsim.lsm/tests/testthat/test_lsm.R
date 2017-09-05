@@ -170,3 +170,10 @@ test_that('dWdt calculation tolerates NODATA inputs', {
 
   expect_false(is.na(hydro$dWdt))
 })
+
+test_that('cell areas are computed correctly', {
+  empty_hlf_deg <- raster::raster(nrows=360, ncols=720, xmn=-180, xmx=180, ymn=-90, ymx=90)
+  area_hlf_deg <- cell_areas_m2(empty_hlf_deg)
+
+  expect_equal(unname(area_hlf_deg[108, 17]), 2498.256e6)
+})
