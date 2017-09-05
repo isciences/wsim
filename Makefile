@@ -1,4 +1,7 @@
-
+install:
+	for s in wsim.io wsim.distributions wsim.lsm; do \
+		$(MAKE) -C $${s} $@ || exit 1; \
+	done;
 check:
 	for s in wsim.io wsim.distributions wsim.lsm; do \
 		$(MAKE) -C $${s} $@ || exit 1; \
