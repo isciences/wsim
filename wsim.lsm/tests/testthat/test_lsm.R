@@ -137,8 +137,7 @@ test_that('computed state variables are always defined', {
     daylength=matrix(seq(0, 1, 1/3), nrow=2),
     pWetDays=matrix(rep.int(1, 4), nrow=2),
     T=matrix(rep.int(NA, 4), nrow=2),
-    Pr=matrix(runif(4), nrow=2),
-    nDays=30
+    Pr=matrix(runif(4), nrow=2)
   )
 
   state <- list(
@@ -146,7 +145,8 @@ test_that('computed state variables are always defined', {
     Dr= matrix(runif(4), nrow=2),
     Ds= matrix(runif(4), nrow=2),
     melt_month= matrix(rep.int(0, 4), nrow=2),
-    Ws= static$Wc * runif(1)
+    Ws= static$Wc * runif(1),
+    yearmon='201609'
   )
 
   iter <- run(static, state, forcing)

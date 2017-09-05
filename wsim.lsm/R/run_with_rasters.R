@@ -13,32 +13,10 @@
 #' @export
 run_with_rasters <- function(static, state, forcings, iter_fun=NULL) {
   make_raster <- function(vals) {
-    raster::raster(vals, template=static[[1]])
-  }
-
-  to_matrix <- function(thing) {
-    if (is.list(thing)) {
-      return(lapply(thing, to_matrix))
+    if (is.matrix(vals)) {
+      return(raster::raster(vals, template=static[[1]]))
     }
-
-    if (class(thing) == "RasterLayer") {
-      return(raster::as.matrix(thing))
-    }
-
-    if (typeof(thing) == "character" && file.exists(thing)) {
-      if (endsWith(thing, 'nc')) {
-        # Use raster package for now, since it seems to be doing
-        # some special handling for NetCDFs?
-        return(raster::as.matrix(raster::raster(thing)))
-      } else {
-        rast <- rgdal::GDAL.open(thing, read.only=TRUE)
-        vals <- t(rgdal::getRasterData(rast))
-        rgdal::GDAL.close(rast)
-        return(vals)
-      }
-    }
-
-    return(thing)
+    return(vals)
   }
 
   # Does our "forcings" variable represent a series of forcings
@@ -51,8 +29,8 @@ run_with_rasters <- function(static, state, forcings, iter_fun=NULL) {
   # Compute cell areas for use within the model
   static$area_m2 <- cell_areas_m2(raster::raster(static$elevation))
 
-  static.matrix <- to_matrix(static)
-  state.matrix <- to_matrix(state)
+  static.matrix <- wsim.io::load_matrix(static)
+  state.matrix <- wsim.io::load_matrix(state)
 
   iter <- NULL
 
@@ -60,7 +38,8 @@ run_with_rasters <- function(static, state, forcings, iter_fun=NULL) {
   for (forcing in forcings) {
     cat("Processing timestep", i, "of", length(forcings), "\n")
 
-    forcing.matrix <- to_matrix(forcing)
+    forcing.matrix <- wsim.io::load_matrix(forcing)
+
     iter <- run(static.matrix, state.matrix, forcing.matrix)
     state.matrix <- iter$next_state
 

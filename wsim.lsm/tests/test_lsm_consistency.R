@@ -22,8 +22,8 @@ compare <- function(date, param) {
 
  max_diff <- raster::cellStats(abs(actual-test), 'max')
 
- tm <- as.matrix(test)
- am <- as.matrix(actual)
+ tm <- raster::as.matrix(test)
+ am <- raster::as.matrix(actual)
  errors <- raster::setValues(test, ifelse( abs(tm - am) < 1e-3 , NA, (tm - am) / am))
 
  graphics::par(mfrow=c(2,2), oma=c(0,0,2,0))
@@ -95,9 +95,7 @@ forcingForDate <- function(date) {
       T=loadSource('NCEP', 'T', paste0('CPC_Leaky_T_', date, '.FLT')),
       daylength=loadSource('Daylength', 'FLT', paste0('daylength-halfdeg-', date, '.flt')),
       Pr=loadSource('NCEP', 'P', paste0('CPC_Leaky_P_', date, '.FLT')),
-      pWetDays=loadSource('NCEP', 'Daily_precip', 'Adjusted', year, paste0('pWetDays_', date, '.img')),
-      date=date,
-      nDays=daysInMonth(date)
+      pWetDays=loadSource('NCEP', 'Daily_precip', 'Adjusted', year, paste0('pWetDays_', date, '.img'))
   )
 }
 
@@ -107,6 +105,7 @@ stateForDate <- function(date) {
   state$Ws <- loadIniData('Ws_in', paste0('Ws_in_trgt', date, '.img'))
   state$Dr <- loadIniData('Dr_in', paste0('Dr_in_trgt', date, '.img'))
   state$Ds <- loadIniData('Ds_in', paste0('Ds_in_trgt', date, '.img'))
+  state$yearmon <- date
 
   prev1 <- previousMonth(date)
   prev2 <- previousMonth(prev1)
@@ -127,7 +126,7 @@ saveIter <- function(iter_number, iter) {
 }
 
 plotIter <- function(iter_number, iter) {
-  date <- iter$forcing$date
+  date <- previousMonth(iter$next_state$yearmon)
 
   if (!endsWith(date, "01")) {
     #return();
@@ -139,7 +138,7 @@ plotIter <- function(iter_number, iter) {
 
   for (vartype in c("obs", "next_state")) {
     for (key in names(iter[[vartype]])) {
-      if (key %in% c('dayLength')) {
+      if (key %in% c('dayLength', 'yearmon')) {
         next
       }
 
@@ -176,7 +175,6 @@ loadStatic <- function() {
   static <- list()
   static$flow_directions <- loadSource('UNH_Data', 'g_network.asc')
   static$elevation <- loadSource('SRTM30', 'elevation_half_degree.img')
-  static$area_m2 <- raster::raster(loadSource('area_hlf_deg.img')) * 1e6
   static$Wc <- loadSource('HWSD', 'hwsd_tawc_05deg_noZeroNoVoids.img')
 
   return(static)
@@ -220,3 +218,4 @@ lookup <- function(rast, x, y) {
     rast <- raster::raster(rast)
   raster::values(rast)[raster::cellFromXY(rast, matrix(c(x, y), nrow=1))]
 }
+
