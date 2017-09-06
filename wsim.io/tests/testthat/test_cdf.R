@@ -55,3 +55,30 @@ test_that("vars can be written from rasters instead of raw matrices", {
 
   file.remove(fname)
 })
+
+test_that("we can read attributes and variables from a netCDF file into matrics", {
+  fname = tempfile()
+  data <- matrix(runif(4), nrow=2)
+
+  write_vars_to_cdf(list(my_data=data),
+                    -40,
+                    0,
+                    20,
+                    70,
+                    fname,
+                    attrs=list(list(var="my_data", key="station", val="A"),
+                               list(key="yearmon", val="201702")))
+
+  v <- read_vars_from_cdf(fname)
+
+  # Grid extent is returned as xmin, xmax, ymin, ymax
+  expect_equal(v$extent, c(-40, 0, 20, 70))
+
+  # Global attributes are accessible in $attrs
+  expect_equal(v$attrs$yearmon, "201702")
+
+  # Variable attributes are accessible as attrs of the matrix
+  expect_equal(attr(v$data$my_data, 'station'), 'A')
+
+  file.remove(fname)
+})
