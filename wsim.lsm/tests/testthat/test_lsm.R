@@ -133,7 +133,7 @@ test_that('computed state variables are always defined', {
     Wc=matrix(rep.int(150, 4), nrow=2)
   )
 
-  forcing <- list(
+  forcing <- make_forcing(
     daylength=matrix(seq(0, 1, 1/3), nrow=2),
     pWetDays=matrix(rep.int(1, 4), nrow=2),
     T=matrix(rep.int(NA, 4), nrow=2),
