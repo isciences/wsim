@@ -140,11 +140,11 @@ test_that('computed state variables are always defined', {
     Pr=matrix(runif(4), nrow=2)
   )
 
-  state <- list(
+  state <- make_state(
     Snowpack= matrix(runif(4), nrow=2),
     Dr= matrix(runif(4), nrow=2),
     Ds= matrix(runif(4), nrow=2),
-    melt_month= matrix(rep.int(0, 4), nrow=2),
+    snowmelt_month= matrix(rep.int(0, 4), nrow=2),
     Ws= static$Wc * runif(1),
     yearmon='201609'
   )
@@ -185,4 +185,25 @@ test_that('date calculations are correct', {
   expect_equal(days_in_yyyymm('201701'), 31)
   expect_equal(days_in_yyyymm('201702'), 28)
   expect_equal(days_in_yyyymm('201602'), 29)
+})
+
+test_that('we can read and write states from/to netCDF', {
+  fname <- tempfile()
+
+  state <- make_state(
+    Snowpack= matrix(runif(4), nrow=2),
+    Dr= matrix(runif(4), nrow=2),
+    Ds= matrix(runif(4), nrow=2),
+    snowmelt_month= matrix(rep.int(0, 4), nrow=2),
+    Ws= matrix(runif(4), nrow=2),
+    yearmon='201609'
+  )
+
+  write_state_to_cdf(state, -180, 180, -90, 90, fname, cdf_attrs)
+  expect_true(file.exists(fname))
+
+  state2 <- read_state_from_cdf(fname)
+  expect_equal(state, state2, check.attributes=FALSE)
+
+  file.remove(fname)
 })

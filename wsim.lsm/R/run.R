@@ -76,7 +76,7 @@ run <- function(static, state, forcing) {
   # Calculate changes in detention state variables
   dDsdt = Xs - Rs
 
-  next_state <- list(
+  next_state <- make_state(
     Snowpack= state$Snowpack + ifelse(is.na(Sa - Sm), 0.0, Sa - Sm),
     snowmelt_month= melt_month,
     Ws= state$Ws + ifelse(is.na(dWdt), 0.0, dWdt),

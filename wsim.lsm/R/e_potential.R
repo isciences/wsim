@@ -4,6 +4,7 @@
 #' @param T Average temp (C)
 #' @param nDays number of days to estimate
 #' @return Potential evapotranspiration (mm)
+#' @export
 e_potential <- function(lambda, T, nDays) {
   # TODO FIXME
   # The "237.2" number is a typo, copied from the Kepler workspace

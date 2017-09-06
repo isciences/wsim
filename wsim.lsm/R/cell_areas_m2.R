@@ -7,6 +7,7 @@
 #' @return A RasterLayer with the same extent and resolution
 #'         as the input
 #'
+#' @export
 cell_areas_m2 <- function(rast) {
   areas <- raster::raster(rast)
   dlon <- raster::res(rast)[1]
