@@ -91,16 +91,20 @@ nextMonth <- function(date) {
 forcingForDate <- function(date) {
   year <- substr(date, 1, 4)
 
-  list(
+  files <- list(
+      extent=c(-180, 180, -90, 90),
       T=loadSource('NCEP', 'T', paste0('CPC_Leaky_T_', date, '.FLT')),
       daylength=loadSource('Daylength', 'FLT', paste0('daylength-halfdeg-', date, '.flt')),
       Pr=loadSource('NCEP', 'P', paste0('CPC_Leaky_P_', date, '.FLT')),
       pWetDays=loadSource('NCEP', 'Daily_precip', 'Adjusted', year, paste0('pWetDays_', date, '.img'))
   )
+
+  do.call(wsim.lsm::make_forcing, lapply(files, wsim.io::load_matrix))
 }
 
 stateForDate <- function(date) {
   state <- list()
+  state$extent <- c(-180, 180, -90, 90)
   state$Snowpack <- loadIniData('Snowpack_in', paste0('Snowpack_in_trgt', date, '.img'))
   state$Ws <- loadIniData('Ws_in', paste0('Ws_in_trgt', date, '.img'))
   state$Dr <- loadIniData('Dr_in', paste0('Dr_in_trgt', date, '.img'))
@@ -114,7 +118,7 @@ stateForDate <- function(date) {
   t_minus_2 <- raster::raster(loadSci('T', paste0('T_trgt', prev2, '.img')))
   state$snowmelt_month <- (t_minus_1 > -1) + (t_minus_1 > -1 & t_minus_2 > -1)
 
-  return(state)
+  return(do.call(make_state, lapply(state, wsim.io::load_matrix)))
 }
 
 saveIter <- function(iter_number, iter) {
@@ -180,20 +184,26 @@ loadStatic <- function() {
   return(static)
 }
 
+monthly_timesteps <- function(years) {
+  months <- sprintf("%02d", 1:12)
+
+  steps <- c()
+  for (year in years) {
+    for (month in months) {
+      steps <- c(steps, paste0(year, month))
+    }
+  }
+
+  return(steps)
+}
+
 doIt <- function(times) {
   static <- loadStatic()
 
   if (nchar(times[1]) == 4) {
     # Run entire years
-    years <- as.character(times)
-    months <- sprintf("%02d", 1:12)
-
-    timesteps <- c()
-    for (year in years) {
-      for (month in months) {
-        timesteps <- c(timesteps, paste0(year, month))
-      }
-    }
+    #years <- as.character(times)
+    timesteps <- monthly_timesteps(times)
   } else {
     timesteps <- times
     timesteps <- c(previousMonth(timesteps[1]), timesteps)
@@ -217,5 +227,31 @@ lookup <- function(rast, x, y) {
   if (class(rast) != "RasterLayer")
     rast <- raster::raster(rast)
   raster::values(rast)[raster::cellFromXY(rast, matrix(c(x, y), nrow=1))]
+}
+
+make_state_cdf <- function(yearmon) {
+  s <- stateForDate(yearmon)
+  wsim.lsm::write_state_to_cdf(s,
+                               paste0('/tmp/wsim_init_', yearmon, '.nc'),
+                               wsim.lsm::cdf_attrs)
+}
+
+make_forcing_cdfs <- function(years) {
+  dates <- monthly_timesteps(years)
+
+  for (date in dates) {
+    forcing <- forcingForDate(date)
+    cat(date, '\n')
+
+    fname <- paste0('/home/dbaston/wsim_forcing/forcing_', date, '.nc')
+
+    wsim.io::write_vars_to_cdf(forcing[c("daylength", "pWetDays", "T", "Pr")],
+                               forcing$extent[1],
+                               forcing$extent[2],
+                               forcing$extent[3],
+                               forcing$extent[4],
+                               fname,
+                               list())
+  }
 }
 

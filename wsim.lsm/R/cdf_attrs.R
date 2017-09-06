@@ -1,3 +1,4 @@
+#' @export
 cdf_attrs <- list(
   list(
     var="lat",
@@ -54,10 +55,16 @@ cdf_attrs <- list(
     units="m^3"
   ),
   list(
-    var="Daylength",
+    var="daylength",
     description="Length of Day (fraction of 24h period)",
     long_name="Daylength",
     units="1" # Recommended by CF conventions 1.7, sec 3.1
+  ),
+  list(
+    var="pWetDays",
+    description="Fraction of Days with Precipitation",
+    long_name="Fraction of Days with Precipitation",
+    units="1"
   ),
   list(
     var="E",
@@ -67,7 +74,25 @@ cdf_attrs <- list(
     units="mm"
   ),
   list(
-    var="P",
+    var="EmPET",
+    description="Evapotranspiration minus Potential Evapotranspiration (mm)",
+    long_name="Evapotranspiration minus Potential Evapotranspiration",
+    units="mm"
+  ),
+  list(
+    var="PETmE",
+    description="Potential minus Actual Evapotranspiration (mm)",
+    long_name="Potential minus Actual Evapotranspiration",
+    units="mm"
+  ),
+  list(
+    var="P_net",
+    description="Net Precipitation (mm)",
+    long_name="Net Precipitation",
+    units="mm"
+  ),
+  list(
+    var="Pr",
     description="Total Precipitation (mm)",
     long_name="Precipitation",
     standard_name="precipitation_amount",
@@ -118,6 +143,19 @@ cdf_attrs <- list(
     description="Soil Moisture (mm)",
     long_name="Soil Moisture (mm)",
     standard_name="soil_moisture_content",
+    units="mm"
+  ),
+  list(
+    var="Ws_ave",
+    description="Average Soil Moisture (mm)",
+    long_name="Average Soil Moisture",
+    standard_name="soil_moisture_content",
+    units="mm"
+  ),
+  list(
+    var="dWdt",
+    description="Change in Soil Moisture (mm)",
+    long_name="Change in Soil Moisture",
     units="mm"
   ),
   list(

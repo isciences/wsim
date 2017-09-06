@@ -1,6 +1,6 @@
 #' Make a WSIM LSM forcing
 #' @export
-make_forcing <- function(daylength, pWetDays, T, Pr) {
+make_forcing <- function(extent, daylength, pWetDays, T, Pr) {
   forcing <- list(
     daylength= daylength,
     pWetDays= pWetDays,
@@ -13,6 +13,8 @@ make_forcing <- function(daylength, pWetDays, T, Pr) {
 
   if (length(unique(lapply(forcing, dim))) > 1)
     stop('Unequal matrix dimensions in make_forcing')
+
+  forcing$extent <- extent
 
   class(forcing) <- 'wsim.lsm.forcing'
 

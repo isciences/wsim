@@ -34,6 +34,9 @@
 #' @useDynLib wsim.lsm, .registration=TRUE
 #' @export
 run <- function(static, state, forcing) {
+  stopifnot(is.wsim.lsm.state(state))
+  stopifnot(is.wsim.lsm.forcing(forcing))
+
   melt_month <- ifelse(
     forcing$T > -1,
     state$snowmelt_month + 1,
@@ -77,6 +80,7 @@ run <- function(static, state, forcing) {
   dDsdt = Xs - Rs
 
   next_state <- make_state(
+    extent= state$extent,
     Snowpack= state$Snowpack + ifelse(is.na(Sa - Sm), 0.0, Sa - Sm),
     snowmelt_month= melt_month,
     Ws= state$Ws + ifelse(is.na(dWdt), 0.0, dWdt),
@@ -86,25 +90,28 @@ run <- function(static, state, forcing) {
   )
 
   obs <- list(
-    dayLength= forcing$daylength,
+    extent= state$extent,
+    #dayLength= forcing$daylength,
     dWdt= dWdt,
     E= E,
     EmPET= E - E0,
     P_net= P,
     PET= E0,
     PETmE= E0 - E,
-    Pr= forcing$Pr,
+    #Pr= forcing$Pr,
     RO_mm= revised_runoff,
     RO_m3= revised_runoff*static$area_m2/1000,
     Runoff_mm= R,
     Runoff_m3= R*static$area_m2/1000,
     Sa= Sa,
     Sm= ifelse(is.na(Sa), NA, Sm),
-    T= forcing$T,
-    Ws= Ws_ave
+    #T= forcing$T,
+    Ws_ave= Ws_ave
   )
+
   obs$Bt_RO <- calculateFlow(static$flow_directions, obs$RO_m3)
   obs$Bt_Runoff <- calculateFlow(static$flow_directions, obs$Runoff_m3)
+  obs <- do.call(make_results, obs)
 
   return(list(
     obs=obs,

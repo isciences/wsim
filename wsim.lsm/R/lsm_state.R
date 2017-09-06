@@ -1,6 +1,6 @@
 #' Create a WSIM LSM state
 #' @export
-make_state <- function(Snowpack, Dr, Ds, Ws, snowmelt_month, yearmon) {
+make_state <- function(extent, Snowpack, Dr, Ds, Ws, snowmelt_month, yearmon) {
 
   matrices <- list(
     Snowpack= Snowpack,
@@ -11,6 +11,7 @@ make_state <- function(Snowpack, Dr, Ds, Ws, snowmelt_month, yearmon) {
   )
 
   attrs <- list(
+    extent= extent,
     yearmon= yearmon
   )
 
