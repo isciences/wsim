@@ -54,13 +54,17 @@ write_vars_to_cdf <- function(vars, xmin, xmax, ymin, ymax, filename, attrs=list
   # overwrite this with the actual units, if they have been passed in
   # as attributes.
   ncvars <- lapply(names(vars), function(param) {
-    ncdf4::ncvar_def(name=param, units="", dim=list(londim, latdim), missval=na.value, prec=prec)
+    ncdf4::ncvar_def(name=param,
+                     units="",
+                     dim=list(londim, latdim),
+                     missval=na.value,
+                     prec=prec,
+                     compression=1)
   })
 
   names(ncvars) <- names(vars)
 
-  # TODO which NetCDF version to use?
-  ncout <- ncdf4::nc_create(filename, ncvars, force_v4 = FALSE)
+  ncout <- ncdf4::nc_create(filename, ncvars)
 
   # Write data to vars
   for (param in names(vars)) {
