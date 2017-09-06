@@ -25,6 +25,9 @@ test_that("it can write variables and attributes to a netCDF file", {
   expect_equal(ncdf4::ncatt_get(cdf, 0, "yearmon")$value, "201702")
   expect_equal(ncdf4::ncatt_get(cdf, "my_data", "station")$value, "A")
 
+  # Note that our lat-lon input matrix was written to a lon-lat matrix in the netCDF
+  expect_equal(ncdf4::ncvar_get(cdf, "my_data"), t(data))
+
   ncdf4::nc_close(cdf)
 
   file.remove(fname)
@@ -50,6 +53,9 @@ test_that("vars can be written from rasters instead of raw matrices", {
 
   expect_equal(ncdf4::ncatt_get(cdf, 0, "file_type")$value, "results")
   expect_equal(ncdf4::ncatt_get(cdf, "my_data", "type")$value, "random")
+
+  # Note that our lat-lon input matrix was written to a lon-lat matrix in the netCDF
+  expect_equal(ncdf4::ncvar_get(cdf, "my_data"), t(data))
 
   ncdf4::nc_close(cdf)
 
@@ -79,6 +85,9 @@ test_that("we can read attributes and variables from a netCDF file into matrics"
 
   # Variable attributes are accessible as attrs of the matrix
   expect_equal(attr(v$data$my_data, 'station'), 'A')
+
+  # Make sure our data didn't get messed up (transposed, etc.)
+  expect_equal(v$data$my_data, data, check.attributes=FALSE)
 
   file.remove(fname)
 })
