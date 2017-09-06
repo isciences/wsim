@@ -1,3 +1,6 @@
+install:
+	Rscript -e "devtools::install()"
+
 check:
 	Rscript -e "results <- devtools::check(); stopifnot(length(results[['errors']]) == 0)"
 
