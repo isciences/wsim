@@ -177,3 +177,12 @@ test_that('cell areas are computed correctly', {
 
   expect_equal(unname(area_hlf_deg[108, 17]), 2498.256e6)
 })
+
+test_that('date calculations are correct', {
+  expect_equal(next_yyyymm('201612'), '201701')
+  expect_equal(next_yyyymm('201701'), '201702')
+
+  expect_equal(days_in_yyyymm('201701'), 31)
+  expect_equal(days_in_yyyymm('201702'), 28)
+  expect_equal(days_in_yyyymm('201602'), 29)
+})
