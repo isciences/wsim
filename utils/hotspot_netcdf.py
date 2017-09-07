@@ -1,5 +1,6 @@
 import rasterio
 import rasterio.mask
+import rasterio.warp
 import fiona
 import numpy
 import netCDF4
@@ -103,6 +104,28 @@ def read_masked(fname, expected_shape = None, expected_bounds = None):
             raise "Bounds of " + fname + " do not match expected value"
 
         return rast.read(1, masked=True)
+
+#def resample(arr, crs, transform, scale):
+#    dest = numpy.ma.empty(shape=(round(arr.shape[0] * scale), round(arr.shape[1] * scale)), dtype=arr.dtype)
+#
+#    aff = rasterio.Affine(*transform)
+#    newaff = rasterio.Affine(aff.a / scale,
+#                             aff.b,
+#                             aff.c,
+#                             aff.d,
+#                             aff.e / scale,
+#                             aff.f)
+#
+#    rasterio.warp.reproject(arr,
+#                            dest,
+#                            src_transform=aff,
+#                            dst_transform=newaff,
+#                            src_crs=crs,
+#                            dst_crs=crs,
+#                            resample=rasterio.warp.Resampling.bilinear)
+#
+#    return dest
+#q = resample(rast.read(1, masked=True), rast.crs, rast.transform, 2.0)
 
 def read_shape_mask(raster_shape, raster_affine, fname):
     """
