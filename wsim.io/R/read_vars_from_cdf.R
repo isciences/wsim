@@ -1,6 +1,8 @@
 #' Read all variables from a netCDF file
 #'
 #' @param fname Filename to open
+#' @param vars A list of variables to read.  If NULL (default),
+#'             all variables will be read.
 #' @return A list having the following structure:
 #' \describe{
 #' \item{attrs}{a list of global attributes in the file}
@@ -15,7 +17,7 @@
 #'               in the order xmin, xmax, ymin, ymax}
 #' }
 #' @export
-read_vars_from_cdf <- function(fname) {
+read_vars_from_cdf <- function(fname, vars=NULL) {
   cdf <- ncdf4::nc_open(fname)
 
   lats <- ncdf4::ncvar_get(cdf, "lat")
@@ -35,13 +37,15 @@ read_vars_from_cdf <- function(fname) {
   for (var in cdf$var) {
     if (var$ndims > 0) {
       # Read this as a regular variable
-      d <- t(ncdf4::ncvar_get(cdf, var$name))
-      attrs <- ncdf4::ncatt_get(cdf, var$name)
-      for (k in names(attrs)) {
-        attr(d, k) <- attrs[[k]]
-      }
+      if (is.null(vars) || var$name %in% vars) {
+        d <- t(ncdf4::ncvar_get(cdf, var$name))
+        attrs <- ncdf4::ncatt_get(cdf, var$name)
+        for (k in names(attrs)) {
+          attr(d, k) <- attrs[[k]]
+        }
 
-      data[[var$name]] <- d
+        data[[var$name]] <- d
+      }
     } else {
       # This variable has no dimensions, and is
       # only used to store attributes.  Read the

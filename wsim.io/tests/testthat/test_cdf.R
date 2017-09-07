@@ -135,6 +135,24 @@ test_that("crs is implicitly written as a dimensionless variable with no data", 
   file.remove(fname)
 })
 
+test_that("we can read only a subset of variables from a netCDF", {
+  fname <- tempfile()
+
+  data <- list(
+    location= matrix(runif(9), nrow=3),
+    scale= matrix(runif(9), nrow=3),
+    shape= matrix(runif(9), nrow=3)
+  )
+
+  write_vars_to_cdf(data, -70, -30, 20, 60, fname, attrs=list())
+
+  v <- read_vars_from_cdf(fname, vars=c('scale', 'shape'))
+
+  expect_equal(names(v$data), c('scale', 'shape'))
+
+  file.remove(fname)
+})
+
 test_that("we can read multiple variables from a netCDF into a RasterBrick", {
   fname <- tempfile()
 
