@@ -1,6 +1,8 @@
 #' Read all variables from a netCDF file
 #'
-#' @param fname Filename to open
+#' @param fname Filename to open.  Optionally, the filename string
+#'              may be suffixed by "::", followed by a comma-separated
+#'              list of variables to read.
 #' @param vars A list of variables to read.  If NULL (default),
 #'             all variables will be read.
 #' @return A list having the following structure:
@@ -18,6 +20,14 @@
 #' }
 #' @export
 read_vars_from_cdf <- function(fname, vars=NULL) {
+  # Parse a filename in the form of "mydata.cdf::var1,var2"
+  # Add any vars found by this method to the list of vars
+  split_fname <- strsplit(fname, '::', fixed=TRUE)[[1]]
+  fname <- split_fname[1]
+  if (length(split_fname) == 2) {
+    vars <- c(vars, strsplit(split_fname[2], ',', fixed=TRUE)[[1]])
+  }
+
   cdf <- ncdf4::nc_open(fname)
 
   lats <- ncdf4::ncvar_get(cdf, "lat")

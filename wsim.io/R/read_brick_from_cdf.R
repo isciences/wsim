@@ -17,6 +17,7 @@ read_brick_from_cdf <- function(fname) {
                    ymx=cdf$extent[4])
   }))
 
+  names(fits) <- names(cdf$data)
   raster::metadata(fits) <- cdf$attrs
 
   return(fits)

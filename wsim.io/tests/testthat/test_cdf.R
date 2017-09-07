@@ -164,10 +164,11 @@ test_that("we can read multiple variables from a netCDF into a RasterBrick", {
 
   write_vars_to_cdf(data, -70, -30, 20, 60, fname, attrs=list(list(key="distribution", val="fake")))
 
-  brick <- read_brick_from_cdf(fname)
+  brick <- read_brick_from_cdf(paste0(fname, '::location,scale'))
 
   expect_s4_class(brick, "RasterBrick")
   expect_equal(raster::metadata(brick)$distribution, "fake")
+  expect_equal(names(brick), c("location", "scale"))
 
   file.remove(fname)
 })
