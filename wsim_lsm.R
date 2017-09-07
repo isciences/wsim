@@ -30,9 +30,10 @@ main <- function() {
   #args$flowdir <- '~/wsim_erdc/inputs/UNH_Data/g_network.asc'
   #args$wc <- '~/wsim_erdc/inputs/HWSD/hwsd_tawc_05deg_noZeroNoVoids.img'
   #args$elevation <- '~/wsim_erdc/inputs/SRTM30/elevation_half_degree.img'
-  #args$state <- '/tmp/state.nc'
-  #args$forcing <- '/tmp/forcing.nc'
-  #args$output <- '/tmp/next_state.nc'
+  #args$state <- '/tmp/wsim_init_198101.nc'
+  #args$forcing <- '~/wsim_forcing/forcing_198[1-3]*'
+  #args$output <- '/tmp/output.nc'
+  #args$next_state <- '/tmp/next_state.nc'
 
   missed_args <- FALSE
   for (arg in names(args)) {
