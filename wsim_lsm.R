@@ -56,10 +56,16 @@ main <- function() {
     Wc= args$wc,
     elevation= args$elevation
   ), wsim.io::load_matrix)
-  static$area_m2 <- raster::as.matrix(wsim.lsm::cell_areas_m2(raster::raster(static$elevation)))
 
   state <- wsim.lsm::read_state_from_cdf(args$state)
   forcings <- sort(wsim.io::expand_inputs(args$forcing))
+
+  static$area_m2 <- raster::as.matrix(wsim.lsm::cell_areas_m2(raster::raster(static$elevation,
+                                                                             xmn=state$extent[1],
+                                                                             xmx=state$extent[2],
+                                                                             ymn=state$extent[3],
+                                                                             ymx=state$extent[4]
+                                                                             )))
 
   write_all_states <- grepl("%T", args$next_state, fixed=TRUE)
   write_all_results <- grepl("%T", args$results, fixed=TRUE)
