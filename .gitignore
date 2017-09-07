@@ -6,3 +6,5 @@ RcppExports.cpp
 RcppExports.R
 .Rproj.user
 .idea/
+..Rcheck
+.Rhistory
