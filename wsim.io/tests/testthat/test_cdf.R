@@ -118,6 +118,23 @@ test_that("variables that have no dimensions are read in as attributes", {
   file.remove(fname)
 })
 
+test_that("crs is implicitly written as a dimensionless variable with no data", {
+  fname <- tempfile()
+
+  data <- list(my_data= matrix(runif(9), nrow=3))
+  write_vars_to_cdf(data, -180, 180, -90, 90, fname)
+
+  v <- read_vars_from_cdf(fname)
+
+  # Only one variable has dimensions
+  expect_equal(names(v$data), c("my_data"))
+
+  # CRS is an attribute
+  expect_true('crs' %in% names(v$attrs))
+
+  file.remove(fname)
+})
+
 test_that("we can read multiple variables from a netCDF into a RasterBrick", {
   fname <- tempfile()
 
