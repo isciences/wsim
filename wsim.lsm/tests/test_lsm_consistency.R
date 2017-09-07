@@ -11,9 +11,23 @@ nadiff <- function(r1, r2) {
   ndr
 }
 
-compare <- function(date, param) {
- test <- raster::raster(paste0('/tmp/', param, '_', date, '.img'))
+compare <- function(date, param, iniData=FALSE) {
+ if (iniData) {
+   v <- wsim.io::read_vars_from_cdf(paste0('/home/dbaston/wsim_state/wsim_state_', date, '.nc'))
+ } else {
+   v <- wsim.io::read_vars_from_cdf(paste0('/home/dbaston/wsim_results/wsim_results_', date, '.nc'))
+ }
+ test <- raster::raster(v$data[[param]], xmn=v$extent[1], xmx=v$extent[2], ymn=v$extent[3], ymx=v$extent[4])
+ #test <- raster::raster(paste0('/tmp/', param, '_', date, '.img'))
  #actual <- raster::raster(paste0('/home/dbaston/SCI/', param, '_trgt', date, '.img'))
+
+ if (param == "Ws_ave") {
+   param <- "Ws"
+ }
+
+ if (iniData) {
+   param <- paste0(param, '_in')
+ }
 
  loader <- ifelse(endsWith(param, '_in'), loadIniData, loadSci)
 
@@ -118,7 +132,7 @@ stateForDate <- function(date) {
   t_minus_2 <- raster::raster(loadSci('T', paste0('T_trgt', prev2, '.img')))
   state$snowmelt_month <- (t_minus_1 > -1) + (t_minus_1 > -1 & t_minus_2 > -1)
 
-  return(do.call(make_state, lapply(state, wsim.io::load_matrix)))
+  return(do.call(wsim.lsm::make_state, lapply(state, wsim.io::load_matrix)))
 }
 
 saveIter <- function(iter_number, iter) {
@@ -231,7 +245,7 @@ lookup <- function(rast, x, y) {
 
 make_state_cdf <- function(yearmon) {
   s <- stateForDate(yearmon)
-  wsim.lsm::write_state_to_cdf(s,
+  wsim.lsm::write_lsm_values_to_cdf(s,
                                paste0('/tmp/wsim_init_', yearmon, '.nc'),
                                wsim.lsm::cdf_attrs)
 }
@@ -253,5 +267,26 @@ make_forcing_cdfs <- function(years) {
                                fname,
                                list())
   }
+}
+
+compare_all_outputs <- function(date) {
+  v <- wsim.io::read_vars_from_cdf(paste0('/home/dbaston/wsim_results/wsim_results_', date, '.nc'))
+  pdf('/home/dbaston/c.pdf')
+  for (k in names(v$data)) {
+    cat(k, '\n')
+    compare(date, k)
+  }
+
+  date <- wsim.lsm::next_yyyymm(date)
+  v <- wsim.io::read_vars_from_cdf(paste0('/home/dbaston/wsim_state/wsim_state_', date, '.nc'))
+  for (k in names(v$data)) {
+    if (k == "snowmelt_month") {
+      next
+    }
+    cat(k, '\n')
+    compare(date, k, iniData=TRUE)
+  }
+
+  dev.off()
 }
 
