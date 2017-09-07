@@ -24,6 +24,7 @@
 #'@export
 write_vars_to_cdf <- function(vars, xmin, xmax, ymin, ymax, filename, attrs=list(), na.value=-3.4e+38, prec="double") {
   standard_attrs <- list(
+    list(key="Conventions", val="CF-1.6"),
     list(key="date_created", val=strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')),
     list(var="lon", key="axis", val="X"),
     list(var="lon", key="standard_name", val="longitude"),
@@ -64,6 +65,9 @@ write_vars_to_cdf <- function(vars, xmin, xmax, ymin, ymax, filename, attrs=list
 
   names(ncvars) <- names(vars)
 
+  # Add a CRS var
+  ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
+
   ncout <- ncdf4::nc_create(filename, ncvars)
 
   # Write data to vars
@@ -77,6 +81,16 @@ write_vars_to_cdf <- function(vars, xmin, xmax, ymin, ymax, filename, attrs=list
                      ifelse(is.null(attr$var), 0, attr$var),
                      attr$key,
                      attr$val)
+  }
+
+  ncdf4::ncatt_put(ncout, "crs", "grid_mapping_name", "latitude_longitude")
+  ncdf4::ncatt_put(ncout, "crs", "longitude_of_prime_meridian", 0.0)
+  ncdf4::ncatt_put(ncout, "crs", "semi_major_axis", 6378137.0)
+  ncdf4::ncatt_put(ncout, "crs", "inverse_flattening", 298.257223563)
+  ncdf4::ncatt_put(ncout, "crs", "spatial_ref", "GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]")
+
+  for (var in names(vars)) {
+    ncdf4::ncatt_put(ncout, var, "grid_mapping", "crs")
   }
 
   ncdf4::nc_close(ncout)

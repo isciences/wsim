@@ -38,7 +38,7 @@ if (args$cores > 1) {
   doParallel::registerDoParallel(cores=args$cores)
 }
 
-fits <- read_fit_from_cdf(args$fits)
+fits <- read_brick_from_cdf(args$fits)
 obs <- raster(args$obs)
 
 distribution <- metadata(fits)$distribution

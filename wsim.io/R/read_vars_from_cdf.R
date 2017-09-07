@@ -31,15 +31,27 @@ read_vars_from_cdf <- function(fname) {
 
   global_attrs <- ncdf4::ncatt_get(cdf, 0)
 
-  data <- lapply(cdf$var, function(var) {
-    d <- t(ncdf4::ncvar_get(cdf, var$name))
-    attrs <- ncdf4::ncatt_get(cdf, var$name)
-    for (k in names(attrs)) {
-      attr(d, k) <- attrs[[k]]
-    }
+  data <- list()
+  for (var in cdf$var) {
+    if (var$ndims > 0) {
+      # Read this as a regular variable
+      d <- t(ncdf4::ncvar_get(cdf, var$name))
+      attrs <- ncdf4::ncatt_get(cdf, var$name)
+      for (k in names(attrs)) {
+        attr(d, k) <- attrs[[k]]
+      }
 
-    return(d)
-  })
+      data[[var$name]] <- d
+    } else {
+      # This variable has no dimensions, and is
+      # only used to store attributes.  Read the
+      # attributes and put them in with the global
+      # attributes.
+
+      var_attrs <- ncdf4::ncatt_get(cdf, var$name)
+      global_attrs[[var$name]] <- var_attrs
+    }
+  }
 
   ncdf4::nc_close(cdf)
 
