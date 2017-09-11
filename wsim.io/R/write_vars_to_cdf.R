@@ -5,7 +5,8 @@
 #' raster package, it is assumed that matrices are stored as
 #' (lat, lon), with lon increasing and lat decreasing.
 #'
-#' @param List of matrices containing values to write
+#' @param vars List of matrices containing values to write
+#' @param extent vector of (xmin, xmax, ymin, ymax)
 #' @param xmin lowest longitude value (left side of cell)
 #' @param xmax highest longitude value (right side of cell)
 #' @param ymin lowest latitude value (bottom of cell)
@@ -22,7 +23,7 @@
 #'              }
 #'
 #'@export
-write_vars_to_cdf <- function(vars, xmin, xmax, ymin, ymax, filename, attrs=list(), na.value=-3.4e+38, prec="double") {
+write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), na.value=-3.4e+38, prec="double") {
   standard_attrs <- list(
     list(key="Conventions", val="CF-1.6"),
     list(key="date_created", val=strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')),
@@ -32,14 +33,22 @@ write_vars_to_cdf <- function(vars, xmin, xmax, ymin, ymax, filename, attrs=list
     list(var="lat", key="standard_name", val="latitude")
   )
 
+  if (is.null(extent)) {
+    minlat <- ymin
+    maxlat <- ymax
+
+    minlon <- xmin
+    maxlon <- xmax
+  } else {
+    minlat <- extent[3]
+    maxlat <- extent[4]
+
+    minlon <- extent[1]
+    maxlon <- extent[2]
+  }
+
   nlat <- dim(vars[[1]])[1]
   nlon <- dim(vars[[1]])[2]
-
-  minlat <- ymin
-  maxlat <- ymax
-
-  minlon <- xmin
-  maxlon <- xmax
 
   dlat <- (maxlat - minlat) / nlat
   dlon <- (maxlon - minlon) / nlon

@@ -7,11 +7,11 @@ test_that("it can write variables and attributes to a netCDF file", {
   data <- matrix(runif(4), nrow=2)
 
   write_vars_to_cdf(list(my_data=data),
-                    -40,
-                    0,
-                    20,
-                    70,
                     fname,
+                    xmin=-40,
+                    xmax=0,
+                    ymin=20,
+                    ymax=70,
                     attrs=list(list(var="my_data", key="station", val="A"),
                                list(key="yearmon", val="201702")))
 
@@ -67,11 +67,11 @@ test_that("we can read attributes and variables from a netCDF file into matrics"
   data <- matrix(runif(4), nrow=2)
 
   write_vars_to_cdf(list(my_data=data),
-                    -40,
-                    0,
-                    20,
-                    70,
                     fname,
+                    xmin=-40,
+                    xmax=0,
+                    ymin=20,
+                    ymax=70,
                     attrs=list(list(var="my_data", key="station", val="A"),
                                list(key="yearmon", val="201702")))
 
@@ -122,7 +122,7 @@ test_that("crs is implicitly written as a dimensionless variable with no data", 
   fname <- tempfile()
 
   data <- list(my_data= matrix(runif(9), nrow=3))
-  write_vars_to_cdf(data, -180, 180, -90, 90, fname)
+  write_vars_to_cdf(data, fname, extent=c(-180, 180, -90, 90))
 
   v <- read_vars_from_cdf(fname)
 
@@ -144,7 +144,7 @@ test_that("we can read only a subset of variables from a netCDF", {
     shape= matrix(runif(9), nrow=3)
   )
 
-  write_vars_to_cdf(data, -70, -30, 20, 60, fname, attrs=list())
+  write_vars_to_cdf(data, fname, extent=c(-70, -30, 20, 60), attrs=list())
 
   v <- read_vars_from_cdf(fname, vars=c('scale', 'shape'))
 
@@ -162,7 +162,7 @@ test_that("we can read multiple variables from a netCDF into a RasterBrick", {
     shape= matrix(runif(9), nrow=3)
   )
 
-  write_vars_to_cdf(data, -70, -30, 20, 60, fname, attrs=list(list(key="distribution", val="fake")))
+  write_vars_to_cdf(data, fname, extent=c(-70, -30, 20, 60), attrs=list(list(key="distribution", val="fake")))
 
   brick <- read_brick_from_cdf(paste0(fname, '::location,scale'))
 

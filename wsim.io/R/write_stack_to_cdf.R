@@ -28,5 +28,5 @@ write_stack_to_cdf <- function(stk, filename, attrs=list(), na.value=-3.4e+38, p
   })
   names(data) <- names(stk)
 
-  write_vars_to_cdf(data, minlon, maxlon, minlat, maxlat, filename, attrs, na.value, prec)
+  write_vars_to_cdf(vars=data, filename=filename, xmin=minlon, xmax=maxlon, ymin=minlat, ymax=maxlat, attrs=attrs, na.value=na.value, prec=prec)
 }
