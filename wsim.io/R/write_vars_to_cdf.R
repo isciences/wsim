@@ -105,10 +105,21 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
 
   # Write attributes
   for (attr in c(standard_attrs, attrs)) {
-    ncdf4::ncatt_put(ncout,
-                     ifelse(is.null(attr$var), 0, attr$var),
-                     attr$key,
-                     attr$val)
+    varid <- ifelse(is.null(attr$var), 0, attr$var)
+
+    existing <- ncdf4::ncatt_get(ncout, varid, attname=attr$key)
+
+    # Don't try writing an attribute if our value is equivalent to
+    # what's already there.
+    # This is to avoid the ncdf4 library thinking we're trying to
+    # redefine _FillValue, even if we're (re)-setting it to its
+    # current value.
+    if (!existing$hasatt || existing$value != attr$val) {
+      ncdf4::ncatt_put(ncout,
+                       varid,
+                       attr$key,
+                       attr$val)
+    }
   }
 
   ncdf4::ncatt_put(ncout, "crs", "grid_mapping_name", "latitude_longitude")
