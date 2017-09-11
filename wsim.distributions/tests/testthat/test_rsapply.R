@@ -9,7 +9,8 @@ test_that('it can be called with a single raster (1:1)', {
   output <- rsapply(input, function(v) v+1)
 
   expect_same_extent_crs(input, output)
-  expect_equal(raster::values(output), c(2, 4, 3, 5))
+  expect_equal(raster::as.matrix(output),
+               matrix(c(2, 3, 4, 5), nrow=2))
 })
 
 test_that('it can be called with a single raster (1:M)', {

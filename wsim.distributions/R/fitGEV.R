@@ -24,7 +24,7 @@
 #'         parameters of the GEV for each pixel
 #'
 #' @export
-fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) {
+fitGEV <- function(arr, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) {
   gev.params  <- c("location", "scale", "shape")
 
   gev_work <- function(pvals) {
@@ -59,5 +59,9 @@ fitGEV <- function(stk, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
       return(ret)
   }
 
-  return (rsapply(stk, gev_work, gev.params))
+  result_data <- array_apply(arr, gev_work)
+  results <- lapply(1:dim(result_data)[3], function(z)  result_data[,,z])
+  names(results) <- gev.params
+
+  return (results)
 }

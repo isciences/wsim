@@ -11,7 +11,11 @@ test_that('We can fit a GEV on a RasterStack representing time-series observatio
                                                     ymn=42,  ymx=47)))
   raster::projection(obs) <- '+proj=longlat +ellps=clrk66 +datum=NAD27 +no_defs'
 
-  fits <- fitGEV(obs)
+  fit_matrices <- fitGEV(raster::as.array(obs))
+  fits <- raster::stack(lapply(fit_matrices, raster::raster))
+  names(fits) <- names(fit_matrices)
+  raster::extent(fits) <- raster::extent(obs)
+  raster::projection(fits) <- raster::projection(obs)
 
   # Dimensions of output match input, and we have correct number of parameters
   expect_equal(dim(fits), c(nrow(obs), ncol(obs), length(gevParams)))

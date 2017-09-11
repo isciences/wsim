@@ -35,14 +35,15 @@ rsapply <- function(rast, fun, names=NULL) {
   # Copy our inputs to an in-memory matrix, for speed
   data <- raster::as.array(rast)
 
-  result_data <- apply(data, c(1,2), fun)
+  result_data <- array_apply(data, fun)
 
   if (length(dim(result_data)) == 2) {
     # fun returned a single value, so we return a raster
     return(raster::raster(result_data, template=rast))
   }
 
-  result_stack <- raster::stack(apply(result_data, 1, function(v) raster::raster(v, template=rast)))
+  result_stack <- raster::stack(
+    lapply(1:dim(result_data)[3], function(z) raster::raster(result_data[,,z], template=rast)))
 
   if (!is.null(names)) {
     names(result_stack) <- names
