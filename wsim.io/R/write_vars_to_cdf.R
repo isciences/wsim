@@ -77,7 +77,26 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
   # Add a CRS var
   ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
 
-  ncout <- ncdf4::nc_create(filename, ncvars)
+  # Does the file already exist?
+  if (file.exists(filename)) {
+    ncout <- ncdf4::nc_open(filename, write=TRUE)
+
+    # Verify that our dimensions match up before writing
+    existing_lats <- ncdf4::ncvar_get(ncout, "lat")
+    existing_lons <- ncdf4::ncvar_get(ncout, "lon")
+
+    stopifnot(all(lats == existing_lats))
+    stopifnot(all(lons == existing_lons))
+
+    # Add any missing variable definitions
+    for (var in ncvars) {
+      if (!(var$name %in% names(ncout$var))) {
+        ncout <- ncdf4::ncvar_add(ncout, var)
+      }
+    }
+  } else {
+    ncout <- ncdf4::nc_create(filename, ncvars)
+  }
 
   # Write data to vars
   for (param in names(vars)) {

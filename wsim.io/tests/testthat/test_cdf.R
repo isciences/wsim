@@ -172,3 +172,24 @@ test_that("we can read multiple variables from a netCDF into a RasterBrick", {
 
   file.remove(fname)
 })
+
+test_that("existing files are appended to, not overwritten", {
+  fname <- tempfile()
+
+  data1 <- list(
+    temperature= matrix(runif(9), nrow=3)
+  )
+
+  data2 <- list(
+    pressure= matrix(runif(9), nrow=3)
+  )
+
+  extent <- c(-80, -30, 20, 60)
+  write_vars_to_cdf(data1, fname, extent=extent)
+  write_vars_to_cdf(data2, fname, extent=extent)
+
+  v <- read_vars_from_cdf(fname)
+  expect_equal(names(v$data), c('temperature', 'pressure'))
+
+  file.remove(fname)
+})
