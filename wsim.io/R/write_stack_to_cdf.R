@@ -16,7 +16,7 @@
 #'       * char
 #'       * byte
 #' @export
-write_stack_to_cdf <- function(stk, filename, attrs=list(), na.value=-3.4e+38, prec="double") {
+write_stack_to_cdf <- function(stk, filename, attrs=list(), prec="double") {
   minlat <- raster::extent(stk)[3]
   maxlat <- raster::extent(stk)[4]
 
@@ -28,5 +28,5 @@ write_stack_to_cdf <- function(stk, filename, attrs=list(), na.value=-3.4e+38, p
   })
   names(data) <- names(stk)
 
-  write_vars_to_cdf(vars=data, filename=filename, xmin=minlon, xmax=maxlon, ymin=minlat, ymax=maxlat, attrs=attrs, na.value=na.value, prec=prec)
+  write_vars_to_cdf(vars=data, filename=filename, xmin=minlon, xmax=maxlon, ymin=minlat, ymax=maxlat, attrs=attrs, prec=prec)
 }

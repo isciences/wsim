@@ -17,8 +17,8 @@
 #'       * char
 #'       * byte
 #' @export
-write_layer_to_cdf <- function(lyr, filename, varname, attrs=list(), na.value=-3.4e+38, prec="double") {
+write_layer_to_cdf <- function(lyr, filename, varname, attrs=list(), prec="double") {
   stk <- raster::stack(lyr)
   names(stk) <- c(varname)
-  write_stack_to_cdf(stk, filename, attrs, na.value, prec)
+  write_stack_to_cdf(stk, filename, attrs, prec)
 }

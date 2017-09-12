@@ -23,7 +23,7 @@
 #'              }
 #'
 #'@export
-write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), na.value=-3.4e+38, prec="double") {
+write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec="double") {
   standard_attrs <- list(
     list(key="Conventions", val="CF-1.6"),
     list(key="date_created", val=strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')),
@@ -32,6 +32,29 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     list(var="lat", key="axis", val="Y"),
     list(var="lat", key="standard_name", val="latitude")
   )
+
+  default_nodata <- list(
+    integer= -9999,
+    single=-3.4028234663852886e+38,
+    float= -3.4028234663852886e+38,
+    double= -3.4028234663852886e+38
+  )
+
+  var_prec <- function(var) {
+    if (is.character(prec)) {
+      return(prec)
+    }
+
+    if (is.list(prec)) {
+      return(prec[[var]])
+    }
+  }
+
+  var_fill <- function(var) {
+    fill <- default_nodata[[var_prec(var)]]
+    stopifnot(!is.null(fill))
+    return(fill)
+  }
 
   if (is.null(extent)) {
     minlat <- ymin
@@ -67,8 +90,8 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     ncdf4::ncvar_def(name=param,
                      units="",
                      dim=list(londim, latdim),
-                     missval=na.value,
-                     prec=prec,
+                     missval=var_fill(param),
+                     prec=var_prec(param),
                      compression=1)
   })
 

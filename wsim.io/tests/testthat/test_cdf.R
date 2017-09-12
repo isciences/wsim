@@ -169,7 +169,6 @@ test_that("we can read multiple variables from a netCDF into a RasterBrick", {
   expect_s4_class(brick, "RasterBrick")
   expect_equal(raster::metadata(brick)$distribution, "fake")
   expect_equal(names(brick), c("location", "scale"))
-
   file.remove(fname)
 })
 
@@ -190,6 +189,33 @@ test_that("existing files are appended to, not overwritten", {
 
   v <- read_vars_from_cdf(fname)
   expect_equal(names(v$data), c('temperature', 'pressure'))
+
+  file.remove(fname)
+})
+
+test_that("numeric precision can be specified on a per-variable basis", {
+  fname <- tempfile()
+  fname <- '/tmp/kansas.nc'
+
+  data <- list(
+    my_data= 10*matrix(runif(9), nrow=3),
+    my_int_data= 10*matrix(runif(9), nrow=3)
+  )
+
+  write_vars_to_cdf(data,
+                    fname,
+                    extent=c(0, 1, 0, 1),
+                    prec=list(my_data="single",
+                              my_int_data="integer"))
+
+  v <- ncdf4::nc_open(fname)
+  expect_equal(v$var$my_int_data$prec, "int")
+  expect_equal(v$var$my_data$prec, "float")
+
+  expect_equal(v$var$my_int_data$missval, -9999)
+  expect_equal(v$var$my_data$missval, -3.4028234663852886e+38)
+
+  ncdf4::nc_close(v)
 
   file.remove(fname)
 })
