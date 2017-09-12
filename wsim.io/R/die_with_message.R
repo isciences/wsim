@@ -8,5 +8,9 @@
 #' @export
 die_with_message <- function(...) {
   write(paste0(list(...), collapse=""), stderr())
-  quit(save='no', status=1, runLast=FALSE)
+  if(interactive()) {
+    stop()
+  } else {
+    quit(save='no', status=1, runLast=FALSE)
+  }
 }
