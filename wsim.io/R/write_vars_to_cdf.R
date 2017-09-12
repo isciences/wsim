@@ -144,7 +144,8 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
       ncdf4::ncatt_put(ncout,
                        varid,
                        attr$key,
-                       attr$val)
+                       attr$val,
+                       prec=ifelse(is.null(attr$prec), NA, attr$prec))
     }
   }
 
