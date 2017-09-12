@@ -21,9 +21,11 @@
 #'              \item{key}{Name of the attribute}
 #'              \item{val}{Value of the attribute}
 #'              }
+#' @param append Determines if we should add variables to an existing
+#'               file, if present.
 #'
 #'@export
-write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec="double") {
+write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec="double", append=FALSE) {
   standard_attrs <- list(
     list(key="Conventions", val="CF-1.6"),
     list(key="date_created", val=strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')),
@@ -102,7 +104,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
   ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
 
   # Does the file already exist?
-  if (file.exists(filename)) {
+  if (append && file.exists(filename)) {
     ncout <- ncdf4::nc_open(filename, write=TRUE)
 
     # Verify that our dimensions match up before writing

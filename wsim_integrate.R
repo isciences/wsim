@@ -101,7 +101,7 @@ main <- function() {
       cat('done.\n')
     }
 
-    wsim.io::write_vars_to_cdf(integrated, outfile, extent=extent, attrs=attrs)
+    wsim.io::write_vars_to_cdf(integrated, outfile, extent=extent, attrs=attrs, append=TRUE)
   }
 }
 
