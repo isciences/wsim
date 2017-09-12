@@ -13,6 +13,10 @@ parse_args <- function(usage, args=commandArgs(TRUE)) {
   tryCatch(docopt::docopt(usage, args), error=function(e) {
     write('Error parsing args.', stderr())
     write(usage, stdout())
-    quit(status=1)
+    if (interactive()) {
+      stop()
+    } else {
+      quit(status=1)
+    }
   })
 }
