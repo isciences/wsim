@@ -123,22 +123,18 @@ main <- function(raw_args) {
     list(var="deficit", key="long_name", val="Composite Deficit Index"),
 
     list(var="deficit_cause", key="long_name", val="Cause of Deficit"),
-    list(var="deficit_cause", key="flag_values", val=paste(1:dim(deficits)[3], collapse=", ")),
-    list(var="deficit_cause", key="flag_meanings", val=paste(dimnames(deficits)[[3]], collapse=", ")),
+    list(var="deficit_cause", key="flag_values", val=1:dim(deficits)[3], prec="byte"),
+    list(var="deficit_cause", key="flag_meanings", val=paste(dimnames(deficits)[[3]], collapse=" "), prec="text"),
 
     list(var="surplus", key="long_name", val="Composite Surplus Index"),
 
     list(var="surplus_cause", key="long_name", val="Cause of Surplus"),
-    list(var="surplus_cause", key="flag_values", val=paste(1:dim(surpluses)[3], collapse=", ")),
-    list(var="surplus_cause", key="flag_meanings", val=paste(dimnames(surpluses)[[3]], collapse=", ")),
+    list(var="surplus_cause", key="flag_values", val=1:dim(surpluses)[3], prec="byte"),
+    list(var="surplus_cause", key="flag_meanings", val=paste(dimnames(surpluses)[[3]], collapse=" "), prec="text"),
 
     list(var="both", key="long_name", val="Composite Combined Surplus & Deficit Index"),
     list(var="both", key="threshold", val=args$both_threshold)
   )
-
-  if (file.exists(outfile)) {
-    file.remove(outfile)
-  }
 
   wsim.io::write_vars_to_cdf(cdf_data,
                              outfile,
