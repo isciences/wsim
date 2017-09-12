@@ -34,6 +34,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
   )
 
   default_nodata <- list(
+    byte= -127,
     integer= -9999,
     single=-3.4028234663852886e+38,
     float= -3.4028234663852886e+38,
