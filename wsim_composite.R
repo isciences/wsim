@@ -6,13 +6,14 @@ suppressMessages({
 '
 Compute composite indicators
 
-Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> --output=<file>
+Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> [--mask=<file>] --output=<file>
 
 Options:
 --surplus <file>...      One or more netCDF files containing return periods that represent surpluses
 --deficit <file>...      One or more netCDF files containing return periods that represent deficits
 --both_threshold <value> Threshold value for assigning a pixel to both surplus and deficit
 --ouput <file>           Output file containing composite indicators
+--mask <file>            Optional mask to use for computed indicators
 '->usage
 
 clamp <- function(vals, minval, maxval) {
@@ -95,6 +96,13 @@ main <- function(raw_args) {
   deficits <- read_vars_to_cube(args$deficit)
   cat('Read deficit values: ', paste(dimnames(deficits)[[3]], collapse=", "), '\n')
 
+  if (is.null(args$mask)) {
+    mask <- 1
+  } else {
+    mask_data <- wsim.io::read_vars(args$mask)$data[[1]]
+    mask <- ifelse(!is.na(mask_data), 1, NA)
+  }
+
   max_surplus_indices <- wsim.distributions::array_apply(surpluses, which.max.na)
   max_surplus_values <- clamp(vals_for_depth_index(surpluses, max_surplus_indices), -60, 60)
 
@@ -106,17 +114,20 @@ main <- function(raw_args) {
   cat('Computed composite deficit.\n')
 
   both_values <- ifelse(max_surplus_values > args$both_threshold & min_deficit_values < -(args$both_threshold),
-                        max(max_surplus_values, -min_deficit_values),
-                        as.numeric(NA))
+                        # When above the threshold, take the largest absolute indicator
+                        pmax(max_surplus_values, -min_deficit_values),
+                        # When below the threshold, default to zero or NA, depending on the underlying
+                        # indicators.
+                        0 * max_surplus_values * min_deficit_values)
 
   cdf_data <- list(
-    deficit= min_deficit_values,
-    deficit_cause= min_deficit_indices,
+    deficit= min_deficit_values*mask,
+    deficit_cause= min_deficit_indices*mask,
 
-    surplus= max_surplus_values,
-    surplus_cause= max_surplus_indices,
+    surplus= max_surplus_values*mask,
+    surplus_cause= max_surplus_indices*mask,
 
-    both= both_values
+    both= both_values*mask
   )
 
   cdf_attrs <- list(
@@ -148,7 +159,7 @@ main <- function(raw_args) {
                                both= "float"
                              ))
 
-  cat("Write composite indicators to ", outfile, ".\n", sep="")
+  cat("Wrote composite indicators to ", outfile, ".\n", sep="")
 }
 
 main(commandArgs(trailingOnly=TRUE))
