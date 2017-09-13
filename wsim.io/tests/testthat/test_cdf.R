@@ -169,6 +169,29 @@ test_that("we can transform and rename variables", {
   file.remove(fname)
 })
 
+test_that("we can read multiple variables into a cube", {
+  fname <- paste0(tempfile(), '.nc')
+
+  data <- list(
+    location= matrix(runif(9), nrow=3),
+    scale= matrix(runif(9), nrow=3),
+    shape= matrix(runif(9), nrow=3)
+  )
+
+  extent <- c(20, 80, 30, 70)
+
+  write_vars_to_cdf(data, fname, extent=extent)
+
+  cube <- wsim.io::read_vars_to_cube(fname)
+
+  expect_equal(attr(cube, "extent"), extent)
+  expect_equal(cube[,,"location"], data$location)
+  expect_equal(cube[,,"scale"], data$scale)
+  expect_equal(cube[,,"shape"], data$shape)
+
+  file.remove(fname)
+})
+
 test_that("we can read multiple variables from a netCDF into a RasterBrick", {
   fname <- tempfile()
 
