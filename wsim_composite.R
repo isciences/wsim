@@ -28,42 +28,6 @@ vals_for_depth_index <- function(arr, depth) {
         dim=dim(depth))
 }
 
-layer <- 1
-read_vars <- function(vardef) {
-  if(grepl('.nc', vardef, fixed=TRUE)) {
-    return(wsim.io::read_vars_from_cdf(vardef))
-  } else {
-    var <- wsim.io::load_matrix(vardef)
-    data <- list()
-    data[[paste0("layer_", layer)]] <- var
-    layer <<- layer+1
-
-    #data[[vardef]] <- var
-
-    return(list(
-      extent= attr(var, 'extent'),
-      data= data
-    ))
-  }
-}
-
-read_vars_to_cube <- function(vardefs) {
-  vars <- lapply(vardefs, read_vars)
-  extent <- vars[[1]]$extent
-
-  for (var in vars) {
-    if (!all(var$extent == extent)) {
-      stop("Cannot create cube from layers with unequal extents.")
-    }
-  }
-
-  data <- do.call(c, lapply(vars, `[[`, 'data'))
-
-  cube <- abind(data, along=3)
-  attr(cube, 'extent') <- extent
-  return(cube)
-}
-
 which.min.na <- function(...) {
   ifelse(all(is.na(...)), NA, which.min(...))
 }
@@ -90,10 +54,10 @@ main <- function(raw_args) {
     wsim.io::die_with_message("Cannot open ", outfile, " for writing.")
   }
 
-  surpluses <- read_vars_to_cube(args$surplus)
+  surpluses <- wsim.io::read_vars_to_cube(args$surplus)
   cat('Read surplus values: ', paste(dimnames(surpluses)[[3]], collapse=", "), '\n')
 
-  deficits <- read_vars_to_cube(args$deficit)
+  deficits <- wsim.io::read_vars_to_cube(args$deficit)
   cat('Read deficit values: ', paste(dimnames(deficits)[[3]], collapse=", "), '\n')
 
   if (is.null(args$mask)) {
