@@ -9,8 +9,8 @@ Compute composite indicators
 Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> [--mask=<file>] --output=<file>
 
 Options:
---surplus <file>...      One or more netCDF files containing return periods that represent surpluses
---deficit <file>...      One or more netCDF files containing return periods that represent deficits
+--surplus <file>...      One or more variables containing return periods that represent surpluses
+--deficit <file>...      One or more variables containing return periods that represent deficits
 --both_threshold <value> Threshold value for assigning a pixel to both surplus and deficit
 --ouput <file>           Output file containing composite indicators
 --mask <file>            Optional mask to use for computed indicators
