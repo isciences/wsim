@@ -62,7 +62,7 @@ test_that("vars can be written from rasters instead of raw matrices", {
   file.remove(fname)
 })
 
-test_that("we can read attributes and variables from a netCDF file into matrics", {
+test_that("we can read attributes and variables from a netCDF file into matrices", {
   fname <- tempfile()
   data <- matrix(runif(4), nrow=2)
 
@@ -149,6 +149,22 @@ test_that("we can read only a subset of variables from a netCDF", {
   v <- read_vars_from_cdf(fname, vars=c('scale', 'shape'))
 
   expect_equal(names(v$data), c('scale', 'shape'))
+
+  file.remove(fname)
+})
+
+test_that("we can transform and rename variables", {
+  fname <- tempfile()
+
+  data <- list(
+    reflectance= matrix(1:9, nrow=3)
+  )
+
+  write_vars_to_cdf(data, fname, extent=c(0, 1, 0, 1))
+
+  v <- read_vars_from_cdf(paste0(fname, '::reflectance@negate->ref'))
+
+  expect_equal(v$data$ref, -data$reflectance, check.attributes=FALSE)
 
   file.remove(fname)
 })

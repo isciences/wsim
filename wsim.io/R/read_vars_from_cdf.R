@@ -20,6 +20,10 @@
 read_vars_from_cdf <- function(vardef, vars=NULL) {
   def <- parse_vardef(vardef)
   fname <- def$filename
+  if (is.character(vars)) {
+    vars <- lapply(vars, parse_var)
+  }
+
   vars <- c(vars, def$vars)
 
   cdf <- ncdf4::nc_open(fname)
@@ -38,17 +42,30 @@ read_vars_from_cdf <- function(vardef, vars=NULL) {
   global_attrs <- ncdf4::ncatt_get(cdf, 0)
 
   data <- list()
+
+  if (is.null(vars)) {
+    vars <- lapply(
+      Filter(function(var) {
+        var$ndims > 0
+      },
+      cdf$var), function(var) {
+        make_var(var$name)
+    })
+  }
+
   for (var in cdf$var) {
     if (var$ndims > 0) {
       # Read this as a regular variable
-      if (is.null(vars) || var$name %in% vars) {
-        d <- t(ncdf4::ncvar_get(cdf, var$name))
-        attrs <- ncdf4::ncatt_get(cdf, var$name)
-        for (k in names(attrs)) {
-          attr(d, k) <- attrs[[k]]
-        }
+      for (var_to_load in vars) {
+        if (var_to_load$var_in == var$name) {
+          d <- t(ncdf4::ncvar_get(cdf, var$name))
+          attrs <- ncdf4::ncatt_get(cdf, var$name)
+          for (k in names(attrs)) {
+            attr(d, k) <- attrs[[k]]
+          }
 
-        data[[var$name]] <- d
+          data[[var_to_load$var_out]] <- perform_transforms(d, var_to_load$transforms)
+        }
       }
     } else {
       # This variable has no dimensions, and is
