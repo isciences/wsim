@@ -11,10 +11,10 @@ Compute summary statistics from multiple observations
 Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>) [--attr=<attr>...]
 
 Options:
---stat <stat> a summary statistic (min, max, ave, sum)
---input <file> one or more input files or glob pattern
+--stat <stat>  a summary statistic (min, max, ave, sum)
+--input <file> one or more input files or glob patterns
 --ouput <file> output file to write integrated results
---attr <attr> optional attribute(s) to be attached to output NetCDF
+--attr <attr>  optional attribute(s) to be attached to output netCDF
 '->usage
 
 find_stat <- function(name) {
