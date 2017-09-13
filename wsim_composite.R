@@ -153,9 +153,9 @@ main <- function(raw_args) {
                              attrs= cdf_attrs,
                              prec=list(
                                deficit= "float",
-                               deficit_cause= "integer",
+                               deficit_cause= "byte",
                                surplus= "float",
-                               surplus_cause= "integer",
+                               surplus_cause= "byte",
                                both= "float"
                              ))
 
