@@ -37,3 +37,4 @@ RUN Rscript -e 'install.packages(c("devtools","testthat","roxygen2","raster","Rc
 RUN Rscript -e 'devtools::install_github("hadley/pkgdown")'
 RUN Rscript -e 'install.packages("foreach", dependencies = TRUE, repos="http://cran.us.r-project.org")'
 RUN Rscript -e 'install.packages("lubridate", dependencies = TRUE, repos="http://cran.us.r-project.org")'
+RUN Rscript -e 'install.packages("abind", dependencies = TRUE, repos="http://cran.us.r-project.org")'
