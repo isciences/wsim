@@ -1,7 +1,26 @@
 #' Parse a reference to a variable within a file
 #'
-#' @param vardef A variable definition, which may be of the following
-#'               forms:
+#' @param vardef A variable definition, constructed
+#'               using the following syntax:
+#'               <filename>::<variables_or_bands>
+#'               where \code{<variables_or_bands> } is a comma-separated list
+#'               of band numbers or variable names.
+#'
+#'               A limited amount of transformation can be specified by adding
+#'               extra characters to the band number or variable name:
+#'               \itemize{
+#'               \item{Variables can be renamed by appending \code{->new_var_name}}
+#'               \item{Data can be transformed by appending transformations such as
+#'                     \code{@negate@fill0 }}
+#'               }
+#'
+#'               A complete example is:
+#'               \code{PETmE_freq_trgt201701.img::1@fill0@negate->Neg_PETmE}
+#'
+#'               In this example, band 1 is read from the file. NODATA values
+#'               are replaced with zero, and all values are negated. The values
+#'               are read into a variable called \code{Neg_PETmE}.
+#'
 #' @return a list containing:
 #' \describe{
 #' \item{filename}{The filename containing the data}

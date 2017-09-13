@@ -1,21 +1,9 @@
 #' Read all variables from a netCDF file
 #'
-#' @param vardef Variable definition for variables to open.
+#' @inheritParams parse_vardef
 #' @param vars A list of variables to read.  If NULL (default),
 #'             all variables will be read.
-#' @return A list having the following structure:
-#' \describe{
-#' \item{attrs}{a list of global attributes in the file}
-#' \item{data}{a list of matrices containing data for each
-#'             variable in the file.  Matrices are consistent
-#'             with the "raster" package, with rows representing
-#'             decreasing latitude and columns representing
-#'             increasing longitude.  Any netCDF attributes defined
-#'             for the variables will be attached as attributes of the
-#'             matrix.}
-#' \item{extent}{the extent of the lat/lon coordinates for the data,
-#'               in the order xmin, xmax, ymin, ymax}
-#' }
+#' @return structure described in \code{\link{read_vars}}
 #' @export
 read_vars_from_cdf <- function(vardef, vars=NULL) {
   def <- parse_vardef(vardef)
