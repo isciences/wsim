@@ -34,7 +34,7 @@ parse_vardef <- function(vardef) {
   split_fname <- strsplit(vardef, '::', fixed=TRUE)[[1]]
   fname <- split_fname[1]
 
-  vars <- NULL
+  vars <- list()
   if (length(split_fname) == 2) {
     vars <- lapply(strsplit(split_fname[2], ',', fixed=TRUE)[[1]], parse_var)
   }
@@ -83,6 +83,11 @@ make_var <- function(var_in, var_out=NULL, transforms=as.character(c())) {
 
 #' @export
 print.wsim.io.var <- function(v) {
+  cat(toString(v), '\n')
+}
+
+#' @export
+toString.wsim.io.var <- function(v) {
   s <- v$var_in
   for (transform in v$transforms) {
     s <- paste0(s, '@', transform)
@@ -90,5 +95,6 @@ print.wsim.io.var <- function(v) {
   if (v$var_out != v$var_in) {
     s <- paste0(s, '->', v$var_out)
   }
-  cat(s, '\n')
+
+  s
 }
