@@ -4,11 +4,11 @@
 #' produce a corrected forecast by identifying the observed value whose
 #' quantile corresponds to the quantile of the forecast.
 #'
-#' @param quant RasterLayer with quantiles of the forecast to correct
-#' @param obsGEV RasterStack with parameters for the observed value distribution
-#' @return RasterLayer with a corrected forecast
-quantile2correct <- function(quant, obsGEV) {
-  applyDistToStack(obsGEV, quant, function(value, dist_params) {
+#' @param quant matrix with quantiles of the forecast to correct
+#' @param obs_fit 3D array with parameters for the observed value distribution
+#' @return matrix with a corrected forecast
+quantile2correct <- function(quant, obs_fit) {
+  apply_dist_to_matrix(obs_fit, quant, function(value, dist_params) {
     if (is.na(value)) {
       return(NA)
     }
