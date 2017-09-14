@@ -1,4 +1,4 @@
-#' Use L-moments to fit a GEV against observations in a RasterStack.
+#' Use L-moments to fit a GEV against observations in an array.
 #'
 #' If the observed data at a a pixel contains an insufficient number of
 #' defined values, then all distribution parameters at that pixel will
@@ -12,15 +12,16 @@
 #' If a GEV distribution cannot be fit, then the returned parameters will
 #' be NA.  (TODO: why would this happen?  See "try" call in code).
 #'
-#' @param stk A RasterStack where each layer in the stack represents
-#'        an observation of a single variable
+#' @param arr A 3D array representing multiple observations of a variable
+#'            at eahc pixel
 #' @param nmin.unique Minimum number of unique values required to perform
 #'        the fit
 #' @param nmin.defined Minimum number of defined values required to perform
 #'        the fit
 #' @param zero.scale.to.na If TRUE, NA will be used instead of zero for a
 #'        computed scale parameter.
-#' @return A RasterStack representing the fitted (location, scale, shape)
+#'
+#' @return A 3D array containing the fitted (location, scale, shape)
 #'         parameters of the GEV for each pixel
 #'
 #' @export
