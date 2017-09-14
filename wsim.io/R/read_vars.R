@@ -24,7 +24,7 @@ read_vars <- function(vardef) {
 
   def <- parse_vardef(vardef)
 
-  if (is.null(def$vars)) {
+  if (length(def$vars) == 0) {
     def$vars <- list(make_var("1"))
   }
 
