@@ -5,7 +5,9 @@
 #' raster package, it is assumed that matrices are stored as
 #' (lat, lon), with lon increasing and lat decreasing.
 #'
-#' @param vars List of matrices containing values to write
+#' @param vars List of matrices containing values to write,
+#'             or a 3D with dimension names on the third
+#'             dimension.
 #' @param extent vector of (xmin, xmax, ymin, ymax)
 #' @param xmin lowest longitude value (left side of cell)
 #' @param xmax highest longitude value (right side of cell)
@@ -34,6 +36,12 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     list(var="lat", key="axis", val="Y"),
     list(var="lat", key="standard_name", val="latitude")
   )
+
+  if (is.array(vars)) {
+    znames <- dimnames(vars)[[3]]
+    vars <- lapply(1:dim(vars)[3], function(z) vars[,,z])
+    names(vars) <- znames
+  }
 
   default_nodata <- list(
     byte= -127,
