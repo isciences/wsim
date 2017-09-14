@@ -9,6 +9,7 @@ calcSaValue <- function(val, gev.params, min.sa=-100, max.sa=100) {
   }
 }
 
+#' @export
 gevStandardize <- function(dist_params, obs) {
-  applyDistToStack(dist_params, obs, calcSaValue)
+  apply_dist_to_array(dist_params, obs, calcSaValue)
 }
