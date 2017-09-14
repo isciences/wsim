@@ -5,7 +5,7 @@
 #'             all variables will be read.
 #' @return structure described in \code{\link{read_vars}}
 #' @export
-read_vars_from_cdf <- function(vardef, vars=NULL) {
+read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
   def <- parse_vardef(vardef)
   fname <- def$filename
   if (is.character(vars)) {
@@ -31,7 +31,7 @@ read_vars_from_cdf <- function(vardef, vars=NULL) {
 
   data <- list()
 
-  if (is.null(vars)) {
+  if (is.null(vars) || length(vars) == 0) {
     vars <- lapply(
       Filter(function(var) {
         var$ndims > 0

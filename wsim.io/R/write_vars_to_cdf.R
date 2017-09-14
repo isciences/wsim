@@ -108,11 +108,15 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     ncout <- ncdf4::nc_open(filename, write=TRUE)
 
     # Verify that our dimensions match up before writing
-    existing_lats <- ncdf4::ncvar_get(ncout, "lat")
-    existing_lons <- ncdf4::ncvar_get(ncout, "lon")
+    if (!is.null(ncout$dim$lat)) {
+      existing_lats <- ncdf4::ncvar_get(ncout, "lat")
+      stopifnot(all(lats == existing_lats))
+    }
 
-    stopifnot(all(lats == existing_lats))
-    stopifnot(all(lons == existing_lons))
+    if (!is.null(ncout$dim$lon)) {
+      existing_lons <- ncdf4::ncvar_get(ncout, "lon")
+      stopifnot(all(lons == existing_lons))
+    }
 
     # Add any missing variable definitions
     for (var in ncvars) {

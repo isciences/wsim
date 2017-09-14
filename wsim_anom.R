@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+
 suppressMessages({
   require(wsim.distributions)
   require(wsim.io)
@@ -11,56 +12,65 @@ Compute standard anomalies and/or return periods
 Usage: wsim_anom --fits=<fits> --obs=<file> [--sa=<file>] [--rp=<file>] [--cores=<num_cores>]
 
 Options:
---fits NetCDF file containing distribution fit parameters
---obs Raster file containing observed values
---sa output location for NetCDF file of standard anomalies
---rp output location for NetCDF file of return periods
---cores Number of CPU cores to use [default: 1]
+--fits <file>  netCDF file containing distribution fit parameters
+--obs <file>   Raster file containing observed values
+--sa <file>    output location for NetCDF file of standard anomalies
+--rp <file>    output location for NetCDF file of return periods
+--cores <file> Number of CPU cores to use [default: 1]
 '->usage
 
-args <- parse_args(usage)
+main <- function(raw_args) {
+  args <- parse_args(usage, raw_args)
 
-if (is.null(args$sa) && is.null(args$rp)) {
-  die_with_message("Must write return periods or standard anomalies (--rp and/or --sa)")
-}
+  if (is.null(args$sa) && is.null(args$rp)) {
+    die_with_message("Must write return periods or standard anomalies (--rp and/or --sa)")
+  }
 
-for (outfile in c(args$sa, args$rp)) {
-  if (!is.null(outfile) && !can_write(outfile)) {
-    die_with_message("Cannot open ", outfile, " for writing.")
+  for (outfile in c(args$sa, args$rp)) {
+    if (!is.null(outfile) && !can_write(outfile)) {
+      die_with_message("Cannot open ", outfile, " for writing.")
+    }
+  }
+
+  if (args$cores > 1) {
+    if (!is.element('doParallel', installed.packages()[,1])) {
+      die_with_message('doParallel package must be installed to use multiple cores.')
+    }
+
+    doParallel::registerDoParallel(cores=args$cores)
+  }
+
+  # TODO stop using rasters here; read straight to matrices with wsim.io::read_vars & friends
+  fits <- read_brick_from_cdf(args$fits)
+  obs <- raster(args$obs)
+
+  cat("Read distribution parameters.\n")
+
+  distribution <- metadata(fits)$distribution
+
+  if (distribution != 'gev') {
+    die_with_message(distribution, " is not a supported statistical distribution.")
+  }
+
+  cdf <- find_cdf(distribution)
+
+  sa <- applyDistToStack(
+    fits,
+    obs,
+    function(obs, dist_params) {
+      standard_anomaly(cdf, dist_params, obs)
+    })
+
+  if (!is.null(args$sa)) {
+    write_layer_to_cdf(sa, args$sa, "standard_anomaly")
+    cat("Wrote standard anomalies to ", args$sa, ".\n", sep="")
+  }
+
+  if (!is.null(args$rp)) {
+    rp <- sa2rp(sa)
+    write_layer_to_cdf(rp, args$rp, "return_period")
+    cat("Wrote return periods to ", args$rp, ".\n", sep="")
   }
 }
 
-if (args$cores > 1) {
-  if (!is.element('doParallel', installed.packages()[,1])) {
-    die_with_message('doParallel package must be installed to use multiple cores.')
-  }
-
-  doParallel::registerDoParallel(cores=args$cores)
-}
-
-fits <- read_brick_from_cdf(args$fits)
-obs <- raster(args$obs)
-
-distribution <- metadata(fits)$distribution
-
-if (distribution != 'gev') {
-  die_with_message(distribution, " is not a supported statistical distribution.")
-}
-
-cdf <- find_cdf(distribution)
-
-sa <- applyDistToStack(
-  fits,
-  obs,
-  function(obs, dist_params) {
-    standard_anomaly(cdf, dist_params, obs)
-  })
-
-if (!is.null(args$sa)) {
-  write_layer_to_cdf(sa, args$sa, "standard_anomaly")
-}
-
-if (!is.null(args$rp)) {
-  rp <- sa2rp(sa)
-  write_layer_to_cdf(rp, args$rp, "return_period")
-}
+#main(commandArgs(trailingOnly=TRUE))

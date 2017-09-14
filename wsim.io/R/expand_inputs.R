@@ -13,11 +13,21 @@ expand_inputs <- function(raw_inputs) {
   inputs <- NULL;
 
   for (arg in raw_inputs) {
-    globbed <- Sys.glob(arg)
+    splitarg <- strsplit(arg, '::', fixed=TRUE)[[1]]
+    pattern <- splitarg[1]
+
+    globbed <- Sys.glob(pattern)
 
     if (length(globbed) == 0) {
       die_with_message("No input files found matching pattern: ", arg)
     }
+
+    if (length(splitarg > 1)) {
+      globbed <- sapply(globbed, function(fname) {
+        paste0(fname, '::', splitarg[2])
+      })
+    }
+
     inputs <- c(inputs, globbed)
   }
 

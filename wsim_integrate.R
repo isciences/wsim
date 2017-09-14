@@ -11,10 +11,10 @@ Compute summary statistics from multiple observations
 Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>) [--attr=<attr>...]
 
 Options:
---stat <stat> a summary statistic (min, max, ave, sum)
---input <file> one or more input files or glob pattern
+--stat <stat>  a summary statistic (min, max, ave, sum)
+--input <file> one or more input files or glob patterns
 --ouput <file> output file to write integrated results
---attr <attr> optional attribute(s) to be attached to output NetCDF
+--attr <attr>  optional attribute(s) to be attached to output netCDF
 '->usage
 
 find_stat <- function(name) {
@@ -51,8 +51,8 @@ attrs_for_stat <- function(var_attrs, var, stat) {
   }))
 }
 
-main <- function() {
-  args <- parse_args(usage)
+main <- function(raw_args) {
+  args <- parse_args(usage, raw_args)
 
   outfile <- args$output
   if (!can_write(outfile)) {
@@ -66,28 +66,37 @@ main <- function() {
   }
 
   inputs <- expand_inputs(args$input)
-
-  # Get a list of vars. For now, all vars will be processed.
-  first_input <- wsim.io::read_vars_from_cdf(inputs[[1]])
-  vars <- names(first_input$data)
+  first_input <- wsim.io::read_vars(inputs[[1]])
   var_attrs <- lapply(first_input$data, attributes)
+
+  vars <- wsim.io::parse_vardef(inputs[[1]])$vars
+  if (length(vars) == 0) {
+    # No vars specified, so we'll take them all.
+    vars <- lapply(names(first_input$data), wsim.io::make_var)
+  }
+
   extent <- first_input$extent
+
+  parsed_inputs <- lapply(inputs, function(input) {
+    wsim.io::parse_vardef(input)
+  })
 
   # For each var, read all files, and do processing
   # Do this to avoid loading all vars from all files into memory at once
   for (var in vars) {
-    cat('Loading', var, '\n')
-    data <- abind(lapply(inputs, function(fname) {
-      wsim.io::read_vars_from_cdf(fname, vars=list(var))$data[[var]]
+    cat('Loading', toString(var), '\n')
+
+    data <- abind(lapply(parsed_inputs, function(input) {
+      wsim.io::read_vars_from_cdf(input$filename, vars=list(var))$data[[var$var_out]]
     }), along=3)
 
     integrated <- list()
     attrs <- do.call(c, lapply(args$stat, function(stat) {
-      attrs_for_stat(var_attrs, var, stat)
+      attrs_for_stat(var_attrs, var$var_out, stat)
     }))
 
     for (stat in args$stat) {
-      stat_var <- paste0(var, '_', tolower(stat))
+      stat_var <- paste0(var$var_out, '_', tolower(stat))
       stat_fn <- find_stat(stat)
       cat('Computing', stat_var, '...')
 
@@ -105,4 +114,5 @@ main <- function() {
   }
 }
 
-main()
+main(commandArgs(trailingOnly=TRUE))
+#main(list('--stat=min', ' --stat=max', '--input=/tmp/T_[1-6]*.nc::data',  '--output=/tmp/T_stats_6.nc', '--attr=year=2016', '--attr=min:units=deg'))
