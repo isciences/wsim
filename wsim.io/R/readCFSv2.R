@@ -4,9 +4,10 @@
 #' kg m-2 s-1 (precip)
 #'
 #' @param filename filename to read
-#' @return RasterLayer of forecast data
+#' @return matrix of forecast data
 #' @export
 readCFSv2 <- function(filename) {
+  # TODO remove use of raster package
   forecast <- raster::raster(filename)
   zvar <- forecast@data@zvar
 
@@ -24,5 +25,5 @@ readCFSv2 <- function(filename) {
     forecast <- forecast * 2628000
   }
 
-  return(forecast)
+  return(raster::as.matrix(forecast))
 }
