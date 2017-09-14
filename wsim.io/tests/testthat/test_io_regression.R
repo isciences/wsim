@@ -23,14 +23,17 @@ test_that("We can read a CFSv2 forecast", {
   isciences_internal()
 
   filename <- '/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc'
-  forecast_temp <- readCFSv2(filename)
+  forecast <- read_cfs_from_cdf(filename)
 
-  btv_fahrenheit <- unname(raster::extract(forecast_temp, cbind(-73.2, 44.5))*9/5+32)
+  forecast_rast <- raster::raster(forecast$data$tmp2m,
+                                  xmn=forecast$extent[1],
+                                  xmx=forecast$extent[2],
+                                  ymn=forecast$extent[3],
+                                  ymx=forecast$extent[4])
 
-  expect_equal(btv_fahrenheit, 58.96, tolerance=1e-2)
+  btv_fahrenheit <- raster::extract(forecast_rast, cbind(-73.2, 44.5))*9/5+32
 
-  expect_equal(raster::extent(forecast_temp), raster::extent(-180, 180, -90, 90))
-  expect_equal(raster::projection(forecast_temp), raster::projection(raster::raster())) # wgs84
+  expect_equal(btv_fahrenheit, 58.96121, tolerance=1e-2, check.attributes=FALSE)
 })
 
 test_that("We can read a gridded binary .mon file", {

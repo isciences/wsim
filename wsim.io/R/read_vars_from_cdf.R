@@ -22,6 +22,18 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
   dlat <- abs(lats[2] - lats[1])
   dlon <- abs(lons[2] - lons[1])
 
+  # Figure out whether we need to adjust a 0-360 dataset to -180-180
+  wrap_rows <- NULL
+  if (any(lons > 181)) {
+    # Hack to handle CFS files using grid corners instead of centers
+    if (lons[1] == 0 && lons[length(lons)] == 359.5) {
+      lons <- lons + 0.5*dlon
+    }
+
+    wrap_rows <- which(lons > 180)
+    lons <- c(lons[lons > 180] - 360, lons[lons < 180])
+  }
+
   extent <- c(min(lons) - dlon/2,
               max(lons) + dlon/2,
               min(lats) - dlat/2,
@@ -46,13 +58,18 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
       # Read this as a regular variable
       for (var_to_load in vars) {
         if (var_to_load$var_in == var$name) {
-          d <- t(ncdf4::ncvar_get(cdf, var$name))
+          d <- ncdf4::ncvar_get(cdf, var$name)
+
+          if (!is.null(wrap_rows)) {
+            d <- rbind(d[wrap_rows, ], d[-wrap_rows, ])
+          }
+
           attrs <- ncdf4::ncatt_get(cdf, var$name)
           for (k in names(attrs)) {
             attr(d, k) <- attrs[[k]]
           }
 
-          data[[var_to_load$var_out]] <- perform_transforms(d, var_to_load$transforms)
+          data[[var_to_load$var_out]] <- perform_transforms(t(d), var_to_load$transforms)
         }
       }
     } else {
