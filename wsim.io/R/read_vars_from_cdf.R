@@ -34,6 +34,9 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
     lons <- c(lons[lons > 180] - 360, lons[lons < 180])
   }
 
+  # Do we need to flip latitudes?
+  flip_latitudes <- (lats[1] < lats[2])
+
   extent <- c(min(lons) - dlon/2,
               max(lons) + dlon/2,
               min(lats) - dlat/2,
@@ -64,12 +67,17 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
             d <- rbind(d[wrap_rows, ], d[-wrap_rows, ])
           }
 
+          d <- t(d)
+          if (flip_latitudes) {
+            d <- apply(d, 2, rev)
+          }
+
           attrs <- ncdf4::ncatt_get(cdf, var$name)
           for (k in names(attrs)) {
             attr(d, k) <- attrs[[k]]
           }
 
-          data[[var_to_load$var_out]] <- perform_transforms(t(d), var_to_load$transforms)
+          data[[var_to_load$var_out]] <- perform_transforms(d, var_to_load$transforms)
         }
       }
     } else {
