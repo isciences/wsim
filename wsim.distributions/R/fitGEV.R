@@ -60,8 +60,7 @@ fitGEV <- function(arr, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
   }
 
   result_data <- array_apply(arr, gev_work)
-  results <- lapply(1:dim(result_data)[3], function(z)  result_data[,,z])
-  names(results) <- gev.params
+  dimnames(result_data)[[3]] <- gev.params
 
-  return (results)
+  return (result_data)
 }
