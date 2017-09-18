@@ -38,3 +38,20 @@ RUN Rscript -e 'devtools::install_github("hadley/pkgdown")'
 RUN Rscript -e 'install.packages("foreach", dependencies = TRUE, repos="http://cran.us.r-project.org")'
 RUN Rscript -e 'install.packages("lubridate", dependencies = TRUE, repos="http://cran.us.r-project.org")'
 RUN Rscript -e 'install.packages("abind", dependencies = TRUE, repos="http://cran.us.r-project.org")'
+
+# Add netCDF operators
+RUN yum install -y nco
+
+# Add wgrib2 for converting CFS forecast data
+# We need to compile it outselves becuse the packaged version
+# doesn't have support for regridding.
+RUN curl -o /tmp/wgrib2.tgz http://www.ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz && \
+  cd /tmp && \
+  tar xzvf wgrib2.tgz && \
+  cd grib2 && \
+  CC=gcc FC=gfortran make && \
+  cp wgrib2/wgrib2 /usr/bin/wgrib2 && \
+  cd /tmp && \
+  rm -rf wgrib2.tgz && \
+  rm -rf grib2  
+
