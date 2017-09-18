@@ -50,10 +50,15 @@ test_that('This module bias-corrects a forecast equivalently to previous WSIM co
 
   # load observed and retro GEV fit parameters for June
   obsGEV <- raster::as.array(raster::brick('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/observed/gevParams/T/gev.stack_T_month06.grd'))
+  dimnames(obsGEV) <- list(NULL, NULL, list('location', 'scale', 'shape'))
+
   retroGEV <- raster::as.array(raster::brick('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/retro/gevParams/tmp2m/gev.stack_tmp2m_month06_lead6.grd'))
+  dimnames(retroGEV) <- list(NULL, NULL, list('location', 'scale', 'shape'))
 
   # pull a raw forecast from end of December with a 6-month lead (June)
   forecast <- wsim.io::read_cfs_from_cdf('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc')$data[[1]]
+  # the file used as an example is incorrectly flipped about the y-axis.
+  forecast <- as.matrix(raster::flip(raster::raster(forecast), 'y'))
 
   corrected <- forecast_correct(forecast, retroGEV, obsGEV)
   expected_corrected <- wsim.io::read_vars('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/corrected_img/T/target_201706/tmp2m.trgt201706.lead6.ic2016122506.img')$data[[1]]
