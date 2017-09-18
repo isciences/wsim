@@ -13,7 +13,6 @@ then
 fi
 
 TEMP_GRB2=/tmp/regrid_halfdeg.grb2
-SPATIAL_REF=
 
 wgrib2 $1 -match "PRATE:surface|TMP:2 m" -new_grid latlon -179.75:720:0.5 -89.75:360:0.5 $TEMP_GRB2
 wgrib2 $TEMP_GRB2 -nc_grads -netcdf $2
