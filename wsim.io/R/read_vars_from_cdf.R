@@ -16,8 +16,11 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
 
   cdf <- ncdf4::nc_open(fname)
 
-  lats <- ncdf4::ncvar_get(cdf, "lat")
-  lons <- ncdf4::ncvar_get(cdf, "lon")
+  latname <- ifelse("lat" %in% names(cdf$dim), "lat", "latitude")
+  lonname <- ifelse("lon" %in% names(cdf$dim), "lon", "longitude")
+
+  lats <- ncdf4::ncvar_get(cdf, latname)
+  lons <- ncdf4::ncvar_get(cdf, lonname)
 
   dlat <- abs(lats[2] - lats[1])
   dlon <- abs(lons[2] - lons[1])
