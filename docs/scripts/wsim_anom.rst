@@ -1,7 +1,7 @@
 wsim_anom
 *********
 
-The ``wsim_anom`` utliity computes standard anomalies and return periods from observed data with a known statistical distribution.
+The ``wsim_anom`` utility computes standard anomalies and return periods from observed data with a known statistical distribution.
 
 Usage is as follows:
 
