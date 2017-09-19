@@ -20,7 +20,7 @@ main <- function(raw_args) {
   }
 
   if (args$cores > 1) {
-    c1 <- parallel::makeCluster(4)
+    c1 <- parallel::makeCluster(args$cores)
     parallel::setDefaultCluster(c1)
   }
 
