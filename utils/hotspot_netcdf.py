@@ -91,7 +91,7 @@ args.both = '/home/dbaston/composite_examples/both_t3_trgt201701.img'
 args.output = '/tmp/hotspots.nc'
 args.water = ['/home/dbaston/Downloads/ne_110m_lakes.shp', '/home/dbaston/Downloads/ne_110m_ocean.shp']
 
-def read_masked(fname, expected_shape = None, expected_bounds = None):
+def read_masked(fname, expected_shape = None, expected_bounds = None, scale = 1.0):
     """
     Read the first band of a file into a masked array.  Optionally
     check the shape and bounds of the file against expected values, and
@@ -103,29 +103,39 @@ def read_masked(fname, expected_shape = None, expected_bounds = None):
         if expected_bounds and rast.bounds != expected_bounds:
             raise "Bounds of " + fname + " do not match expected value"
 
-        return rast.read(1, masked=True)
+        vals = rast.read(1, masked=True)
+        if scale == 1.0:
+            return vals
+        else:
+            return resample(vals, rast.crs, rast.transform, scale, rast.nodata)
 
-#def resample(arr, crs, transform, scale):
-#    dest = numpy.ma.empty(shape=(round(arr.shape[0] * scale), round(arr.shape[1] * scale)), dtype=arr.dtype)
-#
-#    aff = rasterio.Affine(*transform)
-#    newaff = rasterio.Affine(aff.a / scale,
-#                             aff.b,
-#                             aff.c,
-#                             aff.d,
-#                             aff.e / scale,
-#                             aff.f)
-#
-#    rasterio.warp.reproject(arr,
-#                            dest,
-#                            src_transform=aff,
-#                            dst_transform=newaff,
-#                            src_crs=crs,
-#                            dst_crs=crs,
-#                            resample=rasterio.warp.Resampling.bilinear)
-#
-#    return dest
-#q = resample(rast.read(1, masked=True), rast.crs, rast.transform, 2.0)
+def scaled_shape(shape, scale):
+    return tuple(round(dim*scale) for dim in shape)
+
+def scaled_transform(aff, scale):
+    return rasterio.Affine(aff.a / scale,
+                           aff.b,
+                           aff.c,
+                           aff.d,
+                           aff.e / scale,
+                           aff.f)
+
+def resample(arr, crs, aff, scale, nodata=-9999):
+    dest = numpy.full(shape=scaled_shape(arr.shape, scale),
+                      fill_value=-9999,
+                      dtype=arr.dtype)
+
+    rasterio.warp.reproject(numpy.ma.filled(arr, nodata),
+                            dest,
+                            src_transform=aff,
+                            dst_transform=scaled_transform(aff, scale),
+                            src_nodata=nodata,
+                            dst_nodata=nodata,
+                            src_crs=crs,
+                            dst_crs=crs,
+                            resample=rasterio.warp.Resampling.bilinear)
+
+    return numpy.ma.masked_equal(dest, nodata)
 
 def read_shape_mask(raster_shape, raster_affine, fname):
     """
@@ -178,12 +188,14 @@ def cdf_output(fname, shape, bounds):
     output.close()
 
 def main():
+    scale = 4.0
+
     with rasterio.open(args.surplus) as rast:
         shape = rast.shape
         bounds = rast.bounds
-        affine = rast.affine
+        affine = rast.transform
 
-    surplus, deficit, both = [read_masked(f, expected_shape=shape, expected_bounds=bounds)
+    surplus, deficit, both = [read_masked(f, expected_shape=shape, expected_bounds=bounds, scale=scale)
                               for f in (args.surplus, args.deficit, args.both)]
 
     # Derive classified layers from our raw inputs
@@ -192,13 +204,16 @@ def main():
     both_class = classify(both, "both", categories)
 
     water_code = [cat["value"] for cat in categories if cat["type"] == "Water"][0]
-    water_class = read_shapefiles_as_value(args.water, water_code, shape, affine)
+    water_class = read_shapefiles_as_value(args.water,
+                                           water_code,
+                                           scaled_shape(shape, scale),
+                                           scaled_transform(affine, scale))
 
     # Merge multiple classification layers into a single "hotspot" layer, with layers on
     # the right superseding layers on the left
     hotspots = reduce(merge, [surplus_class, deficit_class, both_class, water_class])
 
-    with cdf_output(args.output, shape, bounds) as output:
+    with cdf_output(args.output, scaled_shape(shape, scale), bounds) as output:
         surplus_var = output.createVariable("surplus",  numpy.float32, dimensions=("lat", "lon"), fill_value=FLOAT_NODATA)
         surplus_var[:] = surplus.filled(FLOAT_NODATA)
         surplus_var.long_name = "Surplus Index"
