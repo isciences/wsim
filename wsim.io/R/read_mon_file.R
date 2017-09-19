@@ -7,9 +7,9 @@
 #'
 #' @param filename filename to read
 #' @param na.value NODATA value, to be replaced with NA
-#' @return RasterLayer representing the contents of the .mon file
+#' @return 360x720 matrix representing the contents of the .mon file
 #' @export
-readMonFile <- function(filename, na.value=-999) {
+read_mon_file <- function(filename, na.value=-999) {
     fh <- file(filename, 'rb')
 
     # Maximum number of values should be 259200, but some files have more.
@@ -23,19 +23,10 @@ readMonFile <- function(filename, na.value=-999) {
     } else if (length(data) > 259202) {
         stop(basename(filename), ' had ', length(data), ' values.  I don\'t know what to do with it.\n')
     }
-
-    # Swap out NODATA value
     data[data == na.value] <- NA
 
-    nx <- 360 / 0.5  # Specify n longitude grid cells
-    ny <- 180 / 0.5  # Specify n latitude grid cells
+    data <- matrix(data, nrow=720)
+    data <- apply(rbind(data[361:720, ], data[1:360, ]), 1, rev)
 
-    # Flip and rotate the data
-    rast <- raster::raster(nrows = ny, ncols = nx, xmn = 0, xmx = 360)
-    rast <- raster::setValues(rast, data)
-
-    rast <- raster::flip(rast, direction = 'y')
-    rast <- raster::rotate(rast)
-
-    return(rast)
+    return(data)
 }

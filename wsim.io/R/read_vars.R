@@ -34,6 +34,11 @@ read_vars <- function(vardef) {
     extent= NULL
   )
 
+  if (endsWith(def$filename, '.mon')) {
+    # .mon files are global
+    loaded$extent <- c(-180, 180, -90, 90)
+  }
+
   for (var in def$vars) {
     if (is.null(loaded$extent)) {
       info <- rgdal::GDALinfo(def$filename, returnStats=FALSE, silent=TRUE)
@@ -49,11 +54,15 @@ read_vars <- function(vardef) {
 
     }
 
-    rast <- rgdal::GDAL.open(def$filename, read.only=TRUE)
+    if (endsWith(def$filename, '.mon')) {
+      vals <- read_mon_file(def$filename)
+    } else {
+      rast <- rgdal::GDAL.open(def$filename, read.only=TRUE)
 
-    vals <- t(rgdal::getRasterData(rast,
-                                   band=as.integer(var$var_in)))
-    rgdal::GDAL.close(rast)
+      vals <- t(rgdal::getRasterData(rast,
+                                     band=as.integer(var$var_in)))
+      rgdal::GDAL.close(rast)
+    }
 
     loaded$data[[var$var_out]] <- perform_transforms(vals, var$transforms)
   }

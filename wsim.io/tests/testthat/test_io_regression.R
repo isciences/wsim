@@ -39,14 +39,13 @@ test_that("We can read a CFSv2 forecast", {
 test_that("We can read a gridded binary .mon file", {
   isciences_internal()
 
-  filename <- '/mnt/fig/WSIM/WSIM_source_V1.2/NCEP/originals/t.201701.mon'
+  filename <- '/mnt/fig/WSIM/WSIM_source_V1.2/NCEP/originals/t.201701.mon::1->temp'
 
-  temp <- readMonFile(filename)
+  v <- read_vars(filename)
 
-  row_btv <- (90-44.5)*360/180 # 0.5-degree cells, starting at north pole
-  col_btv <- (180-73.2)*720/360 # 0.5-degree cells, starting at antimeridian and working east
+  row_btv <- round((90-44.5)*360/180)  # 0.5-degree cells, starting at north pole
+  col_btv <- round((180-73.2)*720/360) # 0.5-degree cells, starting at antimeridian and working east
 
-  expect_equal(unname(temp[row_btv, col_btv]), -3.21, tolerance=1e-3) # 26.2 F in Burlington, VT
-  expect_equal(raster::extent(temp), raster::extent(-180, 180, -90, 90))
-  expect_equal(raster::projection(temp), raster::projection(raster::raster())) # wgs84
+  expect_equal(v$data$temp[row_btv, col_btv], -3.21, tolerance=1e-3) # 26.2 F in Burlington, VT
+  expect_equal(v$extent, c(-180, 180, -90, 90))
 })
