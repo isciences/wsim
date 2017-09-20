@@ -39,10 +39,24 @@ parse_vardef <- function(vardef) {
     vars <- lapply(strsplit(split_fname[2], ',', fixed=TRUE)[[1]], parse_var)
   }
 
-  return(list(
-    filename=fname,
-    vars=vars
-  ))
+  make_vardef(filename=fname, vars=vars)
+}
+
+#' @export
+make_vardef <- function(filename, vars) {
+  def <- list(
+    filename= filename,
+    vars= vars
+  )
+
+  class(def) <- 'wsim.io.vardef'
+
+  return(def)
+}
+
+#' @export
+is.wsim.io.vardef <- function(v) {
+  class(v) == 'wsim.io.vardef'
 }
 
 parse_var <- function(var) {
@@ -79,6 +93,11 @@ make_var <- function(var_in, var_out=NULL, transforms=as.character(c())) {
 
   class(var) <- 'wsim.io.var'
   return(var)
+}
+
+#' @export
+is.wsim.io.var <- function(v) {
+  class(v) == 'wsim.io.var'
 }
 
 #' @export

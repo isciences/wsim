@@ -18,11 +18,15 @@
 #'
 #' @export
 read_vars <- function(vardef) {
-  if(grepl('.nc', vardef, fixed=TRUE)) {
-    return(read_vars_from_cdf(vardef))
+  if (is.wsim.io.vardef(vardef)) {
+    def <- vardef
+  } else {
+    def <- parse_vardef(vardef)
   }
 
-  def <- parse_vardef(vardef)
+  if(endsWith(def$filename, '.nc')) {
+    return(read_vars_from_cdf(vardef))
+  }
 
   if (length(def$vars) == 0) {
     def$vars <- list(make_var("1"))

@@ -6,7 +6,12 @@
 #' @return structure described in \code{\link{read_vars}}
 #' @export
 read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
-  def <- parse_vardef(vardef)
+  if (is.wsim.io.vardef(vardef)) {
+    def <- vardef
+  } else {
+    def <- parse_vardef(vardef)
+  }
+
   fname <- def$filename
   if (is.character(vars)) {
     vars <- lapply(vars, parse_var)
