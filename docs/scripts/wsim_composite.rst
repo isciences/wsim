@@ -43,7 +43,7 @@ As a more complete example, the following command was is used to produce the WSI
       --deficit "~/freq/Bt_RO_freq_trgt201701.img::1->Bt_RO" \
       --surplus "~/freq/Bt_RO_freq_trgt201701.img::1->Bt_RO" \
       --surplus "~/freq/RO_mm_freq_trgt201701.img::1->RO_mm" \
-      --mask "~/freq/Ws_freq_trgt201701.img"
+      --mask "~/freq/Ws_freq_trgt201701.img" \
       --both_threshold 3 \
       --output "/tmp/composite_201701.nc"
 ..
