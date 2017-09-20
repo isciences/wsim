@@ -29,10 +29,13 @@ test_that('This module computes equivalent anomalies to previous WSIM code', {
   observed <- wsim.io::read_vars('/mnt/fig/WSIM/WSIM_derived_V1.2/Observed/SCI/Bt_RO_Sum_24mo/Bt_RO_Sum_24mo_trgt201612.img')$data[[1]]
 
   anomalies <- gevStandardize(gev_params, observed)
+  return_periods <- sa2rp(anomalies)
 
   expected_anomalies <- wsim.io::read_vars('/mnt/fig/WSIM/WSIM_derived_V1.2/Observed/Anom/Bt_RO_Sum_24mo_anom/Bt_RO_Sum_24mo_anom_trgt201612.img')$data[[1]]
+  expected_return_periods <- wsim.io::read_vars('/mnt/fig/WSIM/WSIM_derived_V1.2/Observed/Freq/Bt_RO_Sum_24mo_freq/Bt_RO_Sum_24mo_freq_trgt201612.img')$data[[1]]
 
   expect_equal(anomalies, expected_anomalies, tolerance=1e-6, check.attributes=FALSE)
+  expect_equal(return_periods, expected_return_periods, tolerance=1e-6, check.attributes=FALSE)
 })
 
 test_that('This module fits a GEV distribution equivalently to previous WSIM code', {
@@ -58,7 +61,7 @@ test_that('This module bias-corrects a forecast equivalently to previous WSIM co
   # pull a raw forecast from end of December with a 6-month lead (June)
   forecast <- wsim.io::read_cfs_from_cdf('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc')$data[[1]]
   # the file used as an example is incorrectly flipped about the y-axis.
-  forecast <- as.matrix(raster::flip(raster::raster(forecast), 'y'))
+  forecast <- raster::as.matrix(raster::flip(raster::raster(forecast), 'y'))
 
   corrected <- forecast_correct(forecast, retroGEV, obsGEV)
   expected_corrected <- wsim.io::read_vars('/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/corrected_img/T/target_201706/tmp2m.trgt201706.lead6.ic2016122506.img')$data[[1]]
