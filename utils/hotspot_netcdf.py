@@ -75,9 +75,6 @@ def merge(a, b):
     a = a.copy()
     a[~b.mask] = b[~b.mask]
     return a
-    #b = b.copy()
-    #b[~a.mask] = a[~a.mask]
-    #return b
 
 def centers(begin, end, n):
     """
@@ -230,6 +227,14 @@ def main():
         category_var.flag_meanings = ' '.join([label(cat) for cat in categories])
         category_var.flag_colors = ' '.join([rgb_to_hex(*cat["color"]) for cat in categories])
         category_var.valid_range = [min(cat_vals), max(cat_vals)]
+        category_var.grid_mapping = "crs"
+
+        crs_var = output.createVariable("crs", numpy.int8, dimensions=tuple())
+        crs_var.grid_mapping_name="latitude_longitude"
+        crs_var.longitude_of_prime_meridian=0.0
+        crs_var.semi_major_axis=6378137.0
+        crs_var.inverse_flattening=298.257223563
+        crs_var.spatial_ref="GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]"
 
 if True or __name__ == "__main__":
     main()
