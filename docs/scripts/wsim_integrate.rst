@@ -16,6 +16,17 @@ Arguments are defined as follows:
 * ``output`` : Output netCDF file to write integrated results to
 * ``attr`` : Optional attribute(s) to be attached to output netCDF
     
+As an example, the following command is used to compute statistics of return periods for a single variable, estimated from 28 forecast ensemble members:
 
+.. code-block:: console
 
+ ./wsim_integrate.R \
+    --input "ensemble/*trgt201703*.img::1->Bt_RO_Sum" \
+    --stat min \
+    --stat max \
+    --stat ave \
+    --stat q25 \
+    --stat q50 \
+    --stat q75 \
+    --output /tmp/Bt_RO_Sum_24mo_fcst201612_trgt201703.nc
 
