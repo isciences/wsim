@@ -103,7 +103,7 @@ main <- function(raw_args) {
     cat('Loading', toString(var), '\n')
 
     data <- abind(lapply(parsed_inputs, function(input) {
-      wsim.io::read_vars_from_cdf(input$filename, vars=list(var))$data[[var$var_out]]
+      wsim.io::read_vars(make_vardef(filename=input$filename, vars=list(var)))$data[[var$var_out]]
     }), along=3)
 
     integrated <- list()
