@@ -12,3 +12,4 @@ WSIM identifies locations on Earth’s terrestrial surface that are experiencing
 
    scripts/index
    lsm/index
+   r_packages/index
