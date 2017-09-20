@@ -2,7 +2,6 @@
 suppressMessages({
   require(wsim.distributions)
   require(wsim.io)
-  require(abind)
 })
 
 '
@@ -102,9 +101,9 @@ main <- function(raw_args) {
   for (var in vars) {
     cat('Loading', toString(var), '\n')
 
-    data <- abind(lapply(parsed_inputs, function(input) {
-      wsim.io::read_vars(make_vardef(filename=input$filename, vars=list(var)))$data[[var$var_out]]
-    }), along=3)
+    data <- wsim.io::read_vars_to_cube(lapply(parsed_inputs, function(input) {
+      make_vardef(filename=input$filename, vars=list(var))
+    }))
 
     integrated <- list()
     attrs <- do.call(c, lapply(args$stat, function(stat) {
