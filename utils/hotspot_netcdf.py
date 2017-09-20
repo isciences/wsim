@@ -58,7 +58,7 @@ def classify(arr, calamity, cats):
     :param cats: Category definition list
     :return: Byte array as defined above
     """
-    classified = numpy.ma.masked_all(arr.shape, numpy.int8)
+    classified = numpy.ma.masked_all(arr.shape, numpy.uint8)
 
     for cat in cats:
         if cat['type'].lower() == calamity.lower():
@@ -135,7 +135,7 @@ def resample(arr, crs, aff, scale, nodata=-9999):
                             dst_nodata=nodata,
                             src_crs=crs,
                             dst_crs=crs,
-                            resampling=rasterio.warp.Resampling.bilinear)
+                            resampling=rasterio.warp.Resampling.nearest)
 
     return numpy.ma.masked_equal(dest, nodata)
 
@@ -194,11 +194,12 @@ def main():
     both_threshold = 3.0
 
     with rasterio.open(args.surplus) as rast:
+        crs = rast.crs
         shape = rast.shape
         bounds = rast.bounds
         affine = rast.transform
 
-    surplus, deficit, both = [read_masked(f, expected_shape=shape, expected_bounds=bounds, scale=scale)
+    surplus, deficit, both = [read_masked(f, expected_shape=shape, expected_bounds=bounds, scale=1.0)
                               for f in (args.surplus, args.deficit, args.both)]
 
     # Resampling may introduce values less than our original threshold value
@@ -217,21 +218,10 @@ def main():
 
     # Merge multiple classification layers into a single "hotspot" layer, with layers on
     # the right superseding layers on the left
-    hotspots = reduce(merge, [surplus_class, deficit_class, both_class, water_class])
+    hotspots = reduce(merge, [surplus_class, deficit_class, both_class])
+    hotspots = reduce(merge, [resample(hotspots, crs, affine, scale, nodata=255), water_class])
 
     with cdf_output(args.output, scaled_shape(shape, scale), bounds) as output:
-        surplus_var = output.createVariable("surplus",  numpy.float32, dimensions=("lat", "lon"), fill_value=FLOAT_NODATA)
-        surplus_var[:] = surplus.filled(FLOAT_NODATA)
-        surplus_var.long_name = "Surplus Index"
-
-        deficit_var = output.createVariable("deficit",  numpy.float32, dimensions=("lat", "lon"), fill_value=FLOAT_NODATA)
-        deficit_var[:] = deficit.filled(FLOAT_NODATA)
-        deficit_var.long_name = "Deficit Index"
-
-        both_var = output.createVariable("both", numpy.float32, dimensions=("lat", "lon"), fill_value=FLOAT_NODATA)
-        both_var[:] = both.filled(FLOAT_NODATA)
-        both_var.long_name = "Combined Deficit & Surplus Index"
-
         category_var = output.createVariable("category", numpy.byte,  dimensions=("lat", "lon"), fill_value=BYTE_NODATA)
         category_var[:] = hotspots.filled(BYTE_NODATA)
         category_var.long_name = "Hotspot Classification"
