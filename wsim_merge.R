@@ -3,7 +3,7 @@
 '
 Merge raster datasets into a single netCDF
 
-Usage: wsim_fit (--input=<file>)... (--output=<file>) [--attr=<attr>]
+Usage: wsim_merge (--input=<file>)... (--output=<file>) [--attr=<attr>]
 '->usage
 
 main <- function(raw_args) {
