@@ -31,6 +31,9 @@ test_that("We can read a CFSv2 forecast", {
                                   ymn=forecast$extent[3],
                                   ymx=forecast$extent[4])
 
+  # the file used as an example is incorrectly flipped about the y-axis.
+  forecast_rast <- raster::flip(forecast_rast, 'y')
+
   btv_fahrenheit <- raster::extract(forecast_rast, cbind(-73.2, 44.5))*9/5+32
 
   expect_equal(btv_fahrenheit, 58.96121, tolerance=1e-2, check.attributes=FALSE)
