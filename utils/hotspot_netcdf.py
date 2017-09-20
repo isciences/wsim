@@ -35,9 +35,11 @@ def label(cat):
     """
     Generate a label for a given category definition
     """
+    if cat["type"] == "Water":
+        return "Water"
 
     if cat["max"] == float('inf'):
-        range_text = ">" + str(cat["max"])
+        range_text = "gt_" + str(cat["min"])
     else:
         range_text = str(cat["min"]) + "-" + str(cat["max"])
 
@@ -234,9 +236,9 @@ def main():
         category_var[:] = hotspots.filled(BYTE_NODATA)
         category_var.long_name = "Hotspot Classification"
 
-        category_var.flag_values = ", ".join([str(cat["value"]) for cat in categories])
-        category_var.flag_meanings = ", ".join([label(cat) for cat in categories])
-        category_var.flag_colors = ", ".join([rgb_to_hex(*cat["color"]) for cat in categories])
+        category_var.flag_values = [numpy.int8(cat["value"]) for cat in categories]
+        category_var.flag_meanings = ' '.join([label(cat) for cat in categories])
+        category_var.flag_colors = ' '.join([rgb_to_hex(*cat["color"]) for cat in categories])
         category_var.valid_range = [min(cat_vals), max(cat_vals)]
 
 if True or __name__ == "__main__":
