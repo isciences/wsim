@@ -22,7 +22,7 @@ expand_inputs <- function(raw_inputs) {
       die_with_message("No input files found matching pattern: ", arg)
     }
 
-    if (length(splitarg > 1)) {
+    if (length(splitarg) > 1) {
       globbed <- sapply(globbed, function(fname) {
         paste0(fname, '::', splitarg[2])
       })

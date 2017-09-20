@@ -12,7 +12,7 @@ Usage: wsim_fit (--distribution=<dist>) (--input=<file>)... (--output=<file>) [-
 '->usage
 
 main <- function(raw_args) {
-  args <- wsim.io::parse_args(usage, raw_args)
+  args <- wsim.io::parse_args(usage, raw_args, types=list(cores="integer"))
 
   outfile <- args$output
   if (!wsim.io::can_write(outfile)) {
@@ -20,7 +20,7 @@ main <- function(raw_args) {
   }
 
   if (args$cores > 1) {
-    c1 <- parallel::makeCluster(4)
+    c1 <- parallel::makeCluster(args$cores)
     parallel::setDefaultCluster(c1)
   }
 
