@@ -189,6 +189,7 @@ def cdf_output(fname, shape, bounds):
 
 def main():
     scale = 4.0
+    both_threshold = 3.0
 
     with rasterio.open(args.surplus) as rast:
         shape = rast.shape
@@ -197,6 +198,9 @@ def main():
 
     surplus, deficit, both = [read_masked(f, expected_shape=shape, expected_bounds=bounds, scale=scale)
                               for f in (args.surplus, args.deficit, args.both)]
+
+    # Resampling may introduce values less than our original threshold value
+    both = numpy.ma.masked_less(both, both_threshold)
 
     # Derive classified layers from our raw inputs
     surplus_class = classify(surplus, "surplus", categories)
