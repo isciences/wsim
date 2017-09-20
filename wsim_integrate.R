@@ -18,13 +18,29 @@ Options:
 '->usage
 
 find_stat <- function(name) {
-  switch(tolower(name),
-         min= function(x) { min(x,  na.rm=TRUE) },
-         max= function(x) { max(x,  na.rm=TRUE) },
-         sum= function(x) { sum(x,  na.rm=TRUE) },
-         ave= function(x) { mean(x, na.rm=TRUE) },
-         NULL
-  )
+  name <- tolower(name)
+
+  if (name == 'min')
+    return(function(x) { min(x, na.rm=TRUE) })
+
+  if (name == 'median')
+    return(function(x) { median(x, na.rm=TRUE )})
+
+  if (name == 'max')
+    return(function(x) { max(x, na.rm=TRUE) })
+
+  if (name == 'sum')
+    return(function(x) { sum(x, na.rm=TRUE) })
+
+  if (name == 'ave')
+    return(function(x) { mean(x, na.rm=TRUE) })
+
+  if (grepl('q\\d{1,2}(.\\d+)?$', name)) {
+    q <- 0.01 * as.numeric(substring(name, 2))
+    return(function(x) { unname(quantile(x, q, na.rm=TRUE)) })
+  }
+
+  wsim.io::die_with_message("Unknown stat ", name)
 }
 
 attrs_for_stat <- function(var_attrs, var, stat) {
