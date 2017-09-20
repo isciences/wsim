@@ -133,7 +133,7 @@ def resample(arr, crs, aff, scale, nodata=-9999):
                             dst_nodata=nodata,
                             src_crs=crs,
                             dst_crs=crs,
-                            resample=rasterio.warp.Resampling.bilinear)
+                            resampling=rasterio.warp.Resampling.bilinear)
 
     return numpy.ma.masked_equal(dest, nodata)
 
