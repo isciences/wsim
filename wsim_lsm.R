@@ -7,7 +7,7 @@ suppressMessages({
 '
 WSIM Land Surface Model
 
-Usage: wsim_lsm --state <file> [--forcing <file>]... --flowdir <file> --wc <file> --elevation <file> --results <file> --next_state <file>
+Usage: wsim_lsm --state <file> (--forcing <file>)... --flowdir <file> --wc <file> --elevation <file> [--loop <n>] --results <file> --next_state <file>
 
 Options:
 
@@ -18,39 +18,17 @@ Options:
 --wc <file>          file containing soil water holding capacity
 --elevation <file>   file containing elevations
 
+--loop <n>         perform n model iterations using the same forcing data
+
 Output:
 --results <file>     filename for model results
 --next_state <file>  filename for next state
 '->usage
 
-main <- function() {
-  args <- parse_args(usage)
+main <- function(raw_args) {
+  args <- parse_args(usage, raw_args, types=list(loop="integer"))
 
-  #args <- list()
-  #args$flowdir <- '~/wsim_erdc/inputs/UNH_Data/g_network.asc'
-  #args$wc <- '~/wsim_erdc/inputs/HWSD/hwsd_tawc_05deg_noZeroNoVoids.img'
-  #args$elevation <- '~/wsim_erdc/inputs/SRTM30/elevation_half_degree.img'
-  #args$state <- '/tmp/wsim_init_198101.nc'
-  #args$forcing <- '~/wsim_forcing/forcing_198[1-3]*'
-  #args$output <- '/tmp/output.nc'
-  #args$next_state <- '/tmp/next_state.nc'
-
-  missed_args <- FALSE
-  for (arg in names(args)) {
-    if (startsWith(arg, '--')) {
-      next
-    } else {
-      if (is.null(args[[arg]])) {
-        write(paste0('Missing argument: ', arg), stderr())
-        missed_args <- TRUE
-      }
-    }
-  }
-
-  if (missed_args) {
-    die_with_message()
-  }
-
+  # TODO remove use of load_matrix
   static <- lapply(list(
     flow_directions= args$flowdir,
     Wc= args$wc,
@@ -60,6 +38,10 @@ main <- function() {
   state <- wsim.lsm::read_state_from_cdf(args$state)
   forcings <- sort(wsim.io::expand_inputs(args$forcing))
 
+  if (!is.null(args$loop)) {
+    forcings <- rep.int(forcings, args$loop)
+  }
+
   static$area_m2 <- raster::as.matrix(wsim.lsm::cell_areas_m2(raster::raster(static$elevation,
                                                                              xmn=state$extent[1],
                                                                              xmx=state$extent[2],
@@ -67,11 +49,14 @@ main <- function() {
                                                                              ymx=state$extent[4]
                                                                              )))
 
-  write_all_states <- grepl("%T", args$next_state, fixed=TRUE)
-  write_all_results <- grepl("%T", args$results, fixed=TRUE)
+  write_all_states <- grepl("%(T|N)", args$next_state)
+  write_all_results <- grepl("%(T|N)", args$results)
 
   results <- NULL
+  iter_num <- 0
   for (f in forcings) {
+    iter_num <- iter_num + 1
+
     forcing <- wsim.lsm::read_forcing_from_cdf(f)
     cat("Running LSM for ", state$yearmon, ", using ", f, " ...", sep="")
     iter <- wsim.lsm::run(static, state, forcing)
@@ -79,6 +64,7 @@ main <- function() {
 
     if (write_all_results) {
       fname <- gsub("%T", state$yearmon, args$results)
+      fname <- gsub("%N", iter_num, fname)
       cat("  Writing model results to", fname, "\n")
       wsim.lsm::write_lsm_values_to_cdf(iter$obs,
                                         fname,
@@ -87,6 +73,7 @@ main <- function() {
 
     if (write_all_states) {
       fname <- gsub("%T", iter$next_state$yearmon, args$next_state)
+      fname <- gsub("%N", iter_num, fname)
       cat("  Writing next state to", fname, "\n")
       wsim.lsm::write_lsm_values_to_cdf(iter$next_state,
                                         fname,
@@ -95,6 +82,8 @@ main <- function() {
 
     state <- iter$next_state
     results <- iter$obs
+
+    gc()
   }
 
   if (!write_all_states) {
@@ -109,4 +98,4 @@ main <- function() {
   }
 }
 
-main()
+main(commandArgs(trailingOnly=TRUE))
