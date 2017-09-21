@@ -12,7 +12,12 @@ perform_transforms <- function(data, transforms) {
       data[is.na(data)] <- 0
     } else if (startsWith(transform, '[') && endsWith(transform, ']')) {
       body <- substr(transform, 2, nchar(transform) - 1)
-      data <- (function(x) eval(parse(text=body)))(data)
+
+      # Explicitly create a new matrix whose dimensions match the original
+      # This allows us to supply constant-valued functions such as [0] or [1]
+      data <- matrix((function(x) eval(parse(text=body)))(data),
+                     nrow=nrow(data),
+                     ncol=ncol(data))
     } else {
       stop("Unknown transformation ", transforms)
     }
