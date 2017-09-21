@@ -28,9 +28,12 @@
 #'
 #'@export
 write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec="double", append=FALSE) {
+  datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
+
   standard_attrs <- list(
     list(key="Conventions", val="CF-1.6"),
-    list(key="date_created", val=strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')),
+    list(key="date_created", val=datestring),
+    list(key="history", val=paste0(datestring, ': ', get_command())),
     list(var="lon", key="axis", val="X"),
     list(var="lon", key="standard_name", val="longitude"),
     list(var="lat", key="axis", val="Y"),
