@@ -10,6 +10,9 @@ perform_transforms <- function(data, transforms) {
       data <- -data
     } else if (transform == "fill0") {
       data[is.na(data)] <- 0
+    } else if (startsWith(transform, '[') && endsWith(transform, ']')) {
+      body <- substr(transform, 2, nchar(transform) - 1)
+      data <- (function(x) eval(parse(text=body)))(data)
     } else {
       stop("Unknown transformation ", transforms)
     }

@@ -69,6 +69,8 @@ The following transformations are supported:
 
 * ``negate`` : negates all values
 * ``fill0`` : replaces all NODATA values with zero
+* ``[x*x + cos(x)]`` : evaluate any R expression, where `x` is a cell value.
+
 
 
 
