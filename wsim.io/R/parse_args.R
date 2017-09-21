@@ -23,14 +23,16 @@ parse_args <- function(usage, args=commandArgs(TRUE), types=list()) {
   })
 
   for (arg in names(parsed)) {
-    typ <- types[[arg]]
-    if (!is.null(typ)) {
-      if (typ == 'integer') {
-        parsed[[arg]] <- as.integer(parsed[[arg]])
-      } else if (typ == 'double') {
-        parsed[[arg]] <- as.double(parsed[[arg]])
-      } else {
-        stop('Unknown data type')
+    if (!is.null(parsed[[arg]])) {
+      typ <- types[[arg]]
+      if (!is.null(typ)) {
+        if (typ == 'integer') {
+          parsed[[arg]] <- as.integer(parsed[[arg]])
+        } else if (typ == 'double') {
+          parsed[[arg]] <- as.double(parsed[[arg]])
+        } else {
+          stop('Unknown data type')
+        }
       }
     }
   }
