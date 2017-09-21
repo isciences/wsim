@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+wsim.io::logging_init('wsim_fit')
 
 '
 Fit statistical distributions.
@@ -27,7 +28,7 @@ main <- function(raw_args) {
   inputs_stacked <- wsim.io::read_vars_to_cube(wsim.io::expand_inputs(args$input))
   extent <- attr(inputs_stacked, 'extent')
 
-  cat('Read', dim(inputs_stacked)[[3]], 'inputs.\n')
+  wsim.io::info('Read', dim(inputs_stacked)[[3]], 'inputs.')
 
   distribution <- tolower(args$distribution)
 
@@ -44,7 +45,7 @@ main <- function(raw_args) {
                                list(var=NULL,key="distribution",val=distribution)
                              ))
 
-  cat('Wrote fits to ', outfile, '.\n', sep="")
+  wsim.io::info('Wrote fits to ', outfile)
 }
 
 main(commandArgs(TRUE))

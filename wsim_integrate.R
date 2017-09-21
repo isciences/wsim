@@ -1,4 +1,6 @@
 #!/usr/bin/env Rscript
+wsim.io::logging_init('wsim_integrate')
+
 suppressMessages({
   require(wsim.distributions)
   require(wsim.io)
@@ -99,7 +101,7 @@ main <- function(raw_args) {
   # For each var, read all files, and do processing
   # Do this to avoid loading all vars from all files into memory at once
   for (var in vars) {
-    cat('Loading', toString(var), '\n')
+    wsim.io::info('Loading', toString(var))
 
     data <- wsim.io::read_vars_to_cube(lapply(parsed_inputs, function(input) {
       make_vardef(filename=input$filename, vars=list(var))
@@ -113,7 +115,7 @@ main <- function(raw_args) {
     for (stat in args$stat) {
       stat_var <- paste0(var$var_out, '_', tolower(stat))
       stat_fn <- find_stat(stat)
-      cat('Computing', stat_var, '...')
+      wsim.io::info('Computing', stat_var, '...')
 
       integrated[[stat_var]] <- wsim.distributions::array_apply(data, function(vals) {
         if (all(is.na(vals))) {
@@ -122,7 +124,7 @@ main <- function(raw_args) {
 
         return(stat_fn(vals))
       })
-      cat('done.\n')
+      wsim.io::info('done')
     }
 
     wsim.io::write_vars_to_cdf(integrated, outfile, extent=extent, attrs=attrs, append=TRUE)

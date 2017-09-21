@@ -13,6 +13,7 @@ Imports:
   methods,
   docopt,
   abind,
+  futile.logger,
   ncdf4
 Suggests: testthat
 Encoding: UTF-8

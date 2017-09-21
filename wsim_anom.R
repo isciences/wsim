@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+wsim.io::logging_init('wsim_anom')
 
 suppressMessages({
   require(wsim.distributions)
@@ -44,7 +45,7 @@ main <- function(raw_args) {
   fits <- read_brick_from_cdf(args$fits)
   obs <- raster(args$obs)
 
-  cat("Read distribution parameters.\n")
+  wsim.io::info("Read distribution parameters.")
 
   distribution <- metadata(fits)$distribution
 
@@ -63,13 +64,13 @@ main <- function(raw_args) {
 
   if (!is.null(args$sa)) {
     write_layer_to_cdf(sa, args$sa, "standard_anomaly")
-    cat("Wrote standard anomalies to ", args$sa, ".\n", sep="")
+    wsim.io::info("Wrote standard anomalies to", args$sa)
   }
 
   if (!is.null(args$rp)) {
     rp <- sa2rp(sa)
     write_layer_to_cdf(rp, args$rp, "return_period")
-    cat("Wrote return periods to ", args$rp, ".\n", sep="")
+    wsim.io::info("Wrote return periods to", args$rp)
   }
 }
 

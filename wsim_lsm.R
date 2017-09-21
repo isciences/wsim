@@ -1,4 +1,6 @@
 #!/usr/bin/env Rscript
+wsim.io::logging_init('wsim_lsm')
+
 suppressMessages({
   require(wsim.io)
   require(raster)
@@ -58,14 +60,14 @@ main <- function(raw_args) {
 
       forcing <- wsim.lsm::read_forcing_from_cdf(forcings[i])
 
-      cat("Running LSM for ", state$yearmon, ", using ", forcings[i], " ...", sep="")
+      wsim.io::info("Running LSM for", state$yearmon, "using", forcings[i], "...")
       iter <- wsim.lsm::run(static, state, forcing)
-      cat("done.\n")
+      wsim.io::info("done.")
 
       if (write_all_results) {
         fname <- gsub("%T", state$yearmon, args$results)
         fname <- gsub("%N", iter_num, fname)
-        cat("  Writing model results to", fname, "\n")
+        wsim.io::info("Writing model results to", fname)
         wsim.lsm::write_lsm_values_to_cdf(iter$obs,
                                           fname,
                                           wsim.lsm::cdf_attrs)
@@ -74,7 +76,7 @@ main <- function(raw_args) {
       if (write_all_states) {
         fname <- gsub("%T", iter$next_state$yearmon, args$next_state)
         fname <- gsub("%N", iter_num, fname)
-        cat("  Writing next state to", fname, "\n")
+        wsim.io::info("  Writing next state to", fname)
         wsim.lsm::write_lsm_values_to_cdf(iter$next_state,
                                           fname,
                                           wsim.lsm::cdf_attrs)
@@ -89,12 +91,12 @@ main <- function(raw_args) {
 
   if (!write_all_states) {
     fname <- args$next_state
-    cat("  Writing final state to", fname, "\n")
+    wsim.io::info("Writing final state to", fname)
     wsim.lsm::write_lsm_values_to_cdf(state, fname, wsim.lsm::cdf_attrs)
   }
   if (!write_all_results) {
     fname <- args$results
-    cat("  Writing results to", fname, "\n")
+    wsim.io::info("Writing results to", fname)
     wsim.lsm::write_lsm_values_to_cdf(results, fname, wsim.lsm::cdf_attrs)
   }
 }

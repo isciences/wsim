@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+wsim.io::logging_init('wsim_merge')
 
 '
 Merge raster datasets into a single netCDF
@@ -20,7 +21,7 @@ main <- function(raw_args) {
   )
 
   for (input in inputs) {
-    cat('Processing', input, '\n')
+    wsim.io::info('Processing', input)
 
     v <- wsim.io::read_vars(input)
 
@@ -39,7 +40,7 @@ main <- function(raw_args) {
     }
   }
 
-  cat('Writing to', args$output, '\n')
+  wsim.io::info('Writing to', args$output)
   wsim.io::write_vars_to_cdf(combined$data,
                              args$output,
                              extent=combined$extent,

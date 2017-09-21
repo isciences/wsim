@@ -1,4 +1,6 @@
 #!/usr/bin/env Rscript
+wsim.io::logging_init('wsim_composite')
+
 suppressMessages({
   require(abind)
 })
@@ -55,10 +57,10 @@ main <- function(raw_args) {
   }
 
   surpluses <- wsim.io::read_vars_to_cube(args$surplus)
-  cat('Read surplus values: ', paste(dimnames(surpluses)[[3]], collapse=", "), '\n')
+  wsim.io::info('Read surplus values: ', paste(dimnames(surpluses)[[3]], collapse=", "))
 
   deficits <- wsim.io::read_vars_to_cube(args$deficit)
-  cat('Read deficit values: ', paste(dimnames(deficits)[[3]], collapse=", "), '\n')
+  wsim.io::info('Read deficit values: ', paste(dimnames(deficits)[[3]], collapse=", "))
 
   if (is.null(args$mask)) {
     mask <- 1
@@ -70,12 +72,12 @@ main <- function(raw_args) {
   max_surplus_indices <- wsim.distributions::array_apply(surpluses, which.max.na)
   max_surplus_values <- clamp(vals_for_depth_index(surpluses, max_surplus_indices), -60, 60)
 
-  cat('Computed composite surplus.\n')
+  wsim.io::info('Computed composite surplus.')
 
   min_deficit_indices <- wsim.distributions::array_apply(deficits, which.min.na)
   min_deficit_values <- clamp(vals_for_depth_index(deficits, min_deficit_indices), -60, 60)
 
-  cat('Computed composite deficit.\n')
+  wsim.io::info('Computed composite deficit.')
 
   both_values <- ifelse(max_surplus_values > args$both_threshold & min_deficit_values < -(args$both_threshold),
                         # When above the threshold, take the largest absolute indicator
@@ -123,7 +125,7 @@ main <- function(raw_args) {
                                both= "float"
                              ))
 
-  cat("Wrote composite indicators to ", outfile, ".\n", sep="")
+  wsim.io::info("Wrote composite indicators to", outfile)
 }
 
 main(commandArgs(trailingOnly=TRUE))

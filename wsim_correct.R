@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+wsim.io::logging_init('wsim_correct')
 
 '
 Bias-correct a forecast file
@@ -17,11 +18,11 @@ main <- function(raw_args) {
 
   retro_fits <- wsim.io::read_vars_to_cube(args$retro, attrs=c('distribution'))
 
-  cat('Read retrospective forecast fit parameters (', attr(retro_fits, 'distribution'), ') from ', args$retro, '.\n', sep="")
+  wsim.io::info('Read retrospective forecast fit parameters (', attr(retro_fits, 'distribution'), ') from ', args$retro)
 
   obs_fits <- wsim.io::read_vars_to_cube(args$obs, attrs=c('distribution'))
 
-  cat('Read observed value fit parameters (', attr(obs_fits, 'distribution'), ') from ', args$obs, '.\n', sep="")
+  wsim.io::info('Read observed value fit parameters (', attr(obs_fits, 'distribution'), ') from ', args$obs)
 
   extent <- attr(retro_fits, 'extent')
 
@@ -42,7 +43,7 @@ main <- function(raw_args) {
   # flipped longitudes. Fix that here.
   # forecast$data[[1]] <- apply(forecast$data[[1]], 2, rev)
 
-  cat('Read forecast from ', args$forecast, '.\n', sep="")
+  wsim.io::info('Read forecast from', args$forecast)
 
   if (length(names(forecast$data)) != 1) {
     wsim.io::die_with_message("Expected to read exactly one variable from", args$forecast)
@@ -66,7 +67,7 @@ main <- function(raw_args) {
                                                                            " and ",
                                                                            args$obs))
                              ))
-  cat('Wrote corrected forecast to ', args$output, '.\n', sep="")
+  wsim.io::info('Wrote corrected forecast to', args$output)
 }
 
 main(commandArgs(trailingOnly=TRUE))

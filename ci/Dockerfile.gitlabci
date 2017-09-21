@@ -55,3 +55,5 @@ RUN curl -o /tmp/wgrib2.tgz http://www.ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib
   rm -rf wgrib2.tgz && \
   rm -rf grib2  
 
+RUN Rscript -e 'install.packages("futile.logger", dependencies = TRUE, repos="http://cran.us.r-project.org")'
+
