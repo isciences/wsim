@@ -126,6 +126,7 @@ main <- function(raw_args) {
     }
 
     wsim.io::write_vars_to_cdf(integrated, outfile, extent=extent, attrs=attrs, append=TRUE)
+    gc()
   }
 }
 
