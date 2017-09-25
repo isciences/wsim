@@ -49,10 +49,10 @@ static HydroVals daily_hydro_impl(double P, double Sa, double Sm, double E0, dou
     Sm = 0.0;
   }
 
-  NumericVector Pr_daily = make_daily_precip(P - Sa, nDays, pWetDays);
-  NumericVector Sm_daily = make_daily_precip(Sm, nDays, 1.0);
+  NumericVector rain_daily = make_daily_precip(P - Sa, nDays, pWetDays);
+  NumericVector snowmelt_daily = make_daily_precip(Sm, nDays, 1.0);
 
-  for (double P_daily : Pr_daily + Sm_daily) {
+  for (double P_daily : rain_daily + snowmelt_daily) {
     double dWdt_daily = soil_moisture_change(P_daily, PET_daily, Ws, Wc);
 
     Ws += dWdt_daily;
@@ -123,20 +123,20 @@ List daily_hydro(double P, double Sa, double Sm, double E0, double Ws, double Wc
 //'
 //' @export
 // [[Rcpp::export]]
-List daily_hydro_loop(NumericVector Pr, NumericVector Sa, NumericVector Sm, NumericVector E0, NumericVector Ws, NumericVector Wc, int nDays, NumericVector pWetDays) {
-  NumericVector dWdt(Pr.size());
-  NumericVector Ws_ave(Pr.size());
-  NumericVector E(Pr.size());
-  NumericVector R(Pr.size());
+List daily_hydro_loop(NumericVector P, NumericVector Sa, NumericVector Sm, NumericVector E0, NumericVector Ws, NumericVector Wc, int nDays, NumericVector pWetDays) {
+  NumericVector dWdt(P.size());
+  NumericVector Ws_ave(P.size());
+  NumericVector E(P.size());
+  NumericVector R(P.size());
 
-  for (int i = 0; i < Pr.size(); i++) {
-    if (std::isnan(Pr[i]) || std::isnan(E0[i]) || std::isnan(Ws[i]) || std::isnan(Wc[i]) || std::isnan(pWetDays[i])) {
+  for (int i = 0; i < P.size(); i++) {
+    if (std::isnan(P[i]) || std::isnan(E0[i]) || std::isnan(Ws[i]) || std::isnan(Wc[i]) || std::isnan(pWetDays[i])) {
       dWdt[i] = NA_REAL;
       Ws_ave[i] = NA_REAL;
       E[i] = NA_REAL;
       R[i] = NA_REAL;
     } else {
-      HydroVals hydro = daily_hydro_impl(Pr[i], Sa[i], Sm[i], E0[i], Ws[i], Wc[i], nDays, pWetDays[i]);
+      HydroVals hydro = daily_hydro_impl(P[i], Sa[i], Sm[i], E0[i], Ws[i], Wc[i], nDays, pWetDays[i]);
       dWdt[i] = hydro.dWdt;
       Ws_ave[i] = hydro.Ws_ave;
       E[i] = hydro.E;

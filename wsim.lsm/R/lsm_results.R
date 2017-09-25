@@ -1,4 +1,24 @@
 #' Create a set of WSIM LSM results
+#'
+#' @param Bt_RO accumulated total blue water runoff (taking account of detention) [mm]
+#' @param Bt_Runoff accumulated total blue water runoff (not taking account of detention) [mm]
+#' @param E evapotranspiration [mm]
+#' @param EmPET actual minus potential evapotranspiration [mm]
+#' @param PET potential evapotranspiration [mm]
+#' @param PETmE potential minus actual evapotranspiration [mm]
+#' @param P_net net precipitation [mm]
+#' @param RO_m3 runoff (taking account of detention) [m^3]
+#' @param RO_mm runoff (taking account of detention) [mm]
+#' @param Runoff_m3 runoff (not taking account of detention) [m^3]
+#' @param Runoff_mm runoff (not taking account of detention) [mm]
+#' @param Sa snow accumulation [mm]
+#' @param Sm snowmelt [mm]
+#' @param Ws_ave average soil moisture [mm]
+#' @param dWdt change in soil moisture [mm]
+#' @param extent spatial extent of input matrices \code{(xmin, xmax, ymin, ymax)}
+#'
+#' @return \code{wsim.lsm.results} object containing supplied variables
+#'
 #' @export
 make_results <- function(
   Bt_RO,
@@ -51,6 +71,8 @@ make_results <- function(
 }
 
 #' Determine if an object represents LSM model results
+#'
+#' @param thing object to test
 #' @export
 is.wsim.lsm.results <- function(thing) {
   inherits(thing, 'wsim.lsm.results')

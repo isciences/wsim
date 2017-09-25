@@ -1,6 +1,6 @@
 #' Get the next month
 #'
-#' @param yyyymmm Year/month in YYYYMM format
+#' @param yyyymm Year/month in YYYYMM format
 #' @return Following month in YYYYMM format
 #' @export
 next_yyyymm <- function(yyyymm) {

@@ -1,6 +1,6 @@
 #' Return the number of days in a given month
 #'
-#' @param yyyymmm Year/month in YYYYMM format
+#' @param yyyymm Year/month in YYYYMM format
 #' @return number of days in month
 #' @export
 days_in_yyyymm <- function(yyyymm) {

@@ -1,35 +1,22 @@
-#' Run a single iteration of the the model using matrices
+#' Run a single iteration of the the model
 #'
 #' @param static a list containing static inputs to the model.
 #'               The following variables are required:
-#'               \decribe{
+#'               \describe{
 #'               \item{elevation}{mean grid cell elevation in meters}
 #'               \item{area_m2}{grid cell area in square meters}
 #'               \item{flow_directions}{flow direction grid described in \link{calculateFlow}}
 #'               \item{Wc}{soil moisture capacity in millimeters}
 #'               }
-#' @param state a list containing an input state for the model.
-#'              The following variables are required:
-#'              \describe{
-#'              \item{Snowpack}{Snowpack water equivalent in millimeters}
-#'              \item{Dr}{Runoff detention in millimeters}
-#'              \item{Ds}{Snowmelt detention in millimters}
-#'              \item{melt_month}{Number of consecutive months of melting conditions}
-#'              \item{Ws}{soil moisture in millimeters}
-#'              }
-#' @param forcing a list containing forcing data for the model
-#'              The following variables are required:
-#'              \describe{
-#'              \item{T}{Temperature}
-#'              \item{Pr}{Precipitation}
-#'              \item{daylength}{Length of day as a fraction of 24 hours}
-#'              \item{yearmonth}{Month of timestep in YYYYMM format}
-#'              \item{pWetDays}{Percentage of days in which precipitation falls}
-#'              }
+#' @param state a \code{wsim.lsm.state} object containing an input state for the model.
+#'              Described in \code{\link{make_state}}.
+#' @param forcing a \code{wsim.lsm.forcing} object containing forcing for the model.
+#'                Described in \code{\link{make_forcing}}.
 #' @return a list containing model outputs and a state for the next time step:
 #'              \describe{
-#'              \item{obs}
-#'              \item{next_state}
+#'              \item{obs}{a \code{wsim.lsm.results} object, as described in \code{\link{make_results}}}
+#'              \item{next_state}{a \code{wsim.lsm.state} object containing the model state at the end of
+#'                               the timestep. Described in \code{\link{make_state}}.}
 #'              }
 #' @useDynLib wsim.lsm, .registration=TRUE
 #' @export

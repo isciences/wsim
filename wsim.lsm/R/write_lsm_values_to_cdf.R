@@ -1,7 +1,12 @@
 #' Write model values (state, observations, forcing) to netCDF file
 #'
-#' @param values
-#' @param fname
+#' @param values One of the following objects:
+#'               \itemize{
+#'               \item{\code{wsim.lsm.forcing}}
+#'               \item{\code{wsim.lsm.results}}
+#'               \item{\code{wsim.lsm.state}}
+#'               }
+#' @param fname Output filename
 #' @param cdf_attrs A list of variable attributes, where each item is defined by a list
 #'                  containing the item "var", and one or more other items representing
 #'                  attributes to be applied to "var".

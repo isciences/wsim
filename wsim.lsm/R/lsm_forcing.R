@@ -1,4 +1,12 @@
 #' Make a WSIM LSM forcing
+#'
+#' @param extent spatial extent of input matrices \code{(xmin, xmax, ymin, ymax)}
+#' @param T Temperature [degrees C]
+#' @param Pr Precipitation [mm]
+#' @param daylength Length of day as a fraction of 24 hours [-]
+#' @param pWetDays Percentage of days in which precipitation falls [-]
+#'
+#' @return \code{wsim.lsm.forcing} object containing supplied variables
 #' @export
 make_forcing <- function(extent, daylength, pWetDays, T, Pr) {
   forcing <- list(
@@ -22,6 +30,8 @@ make_forcing <- function(extent, daylength, pWetDays, T, Pr) {
 }
 
 #' Determine if an object represents an LSM forcing
+#'
+#' @param thing object to test
 #' @export
 is.wsim.lsm.forcing <- function(thing) {
   inherits(thing, 'wsim.lsm.forcing')

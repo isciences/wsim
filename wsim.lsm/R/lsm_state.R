@@ -1,4 +1,14 @@
 #' Create a WSIM LSM state
+#'
+#' @param extent spatial extent of input matrices \code{(xmin, xmax, ymin, ymax)}
+#' @param Snowpack snowpack water equivalent [mm]
+#' @param Dr detained runoff [mm]
+#' @param Ds detained snowmelt [mm]
+#' @param Ws soil moisture [mm]
+#' @param snowmelt_month number of months of consecutive melting conditions
+#' @param yearmon year and month of state (state should represent MM/01/YYYY)
+#'
+#' @return \code{wsim.lsm.state} object containing supplied variables
 #' @export
 make_state <- function(extent, Snowpack, Dr, Ds, Ws, snowmelt_month, yearmon) {
 
@@ -31,6 +41,8 @@ make_state <- function(extent, Snowpack, Dr, Ds, Ws, snowmelt_month, yearmon) {
 }
 
 #' Determine if an object represents an LSM state
+#'
+#' @param thing object to test
 #' @export
 is.wsim.lsm.state <- function(thing) {
   inherits(thing, 'wsim.lsm.state')
