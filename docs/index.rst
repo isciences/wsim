@@ -26,7 +26,7 @@ WSIM identifies locations on Earth’s terrestrial surface that are experiencing
   		imageExtent: [-180, -90, 180, 90],
   		wrapx: true
   		}),
-  		opacity:0.5
+  		opacity:0.7
   	}),
   	new ol.layer.Tile({
   		source: new ol.source.XYZ({
