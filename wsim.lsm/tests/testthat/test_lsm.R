@@ -90,6 +90,7 @@ test_that('daily precipitation adds up to monthly precipitation', {
   expect_equal(0.77, sum(make_daily_precip(0.77, 13, 1.0)));
   expect_equal(0.77, sum(make_daily_precip(0.77, 13, 0.7)));
   expect_equal(0.77, sum(make_daily_precip(0.77, 30, 0.0)));
+  expect_equal(0.77, sum(make_daily_precip(0.77, 28, 1e-3)));
 })
 
 test_that('excess precipitation fills soil to capacity', {

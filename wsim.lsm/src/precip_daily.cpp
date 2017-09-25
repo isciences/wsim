@@ -45,9 +45,7 @@ NumericVector make_daily_precip(double P_total, int nDays, double pWetDays) {
 
     // Set a floor for pWetDays that makes sure we get at least
     // one wet day.
-    // TODO this is a bug.  The hardcoded 0.032 should be 1.0 / nDays.
-    // Hardcoded value fails for Feb.
-    pWetDays = std::max(pWetDays, 0.032);
+    pWetDays = std::max(pWetDays, 1.0 / nDays);
     IntegerVector wetDays = makeWetDayList(nDays, pWetDays);
     double wetDayPrecip = P_total / wetDays.size();
 
