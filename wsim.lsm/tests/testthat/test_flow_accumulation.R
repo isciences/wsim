@@ -28,7 +28,7 @@ test_that('Flow accumulator functions correctly', {
 
   expected_accumulated <- rbind(
     c( 0,  37, 32 ),
-    c( 118, 39, 0  ) # SW value should be 55 once this issue is resolved https://gitlab.com/isciences/wsim/wsim2/issues/20
+    c( 55, 39, 0  )
   )
 
   accumulated <- calculateFlow(directions, weights) - weights

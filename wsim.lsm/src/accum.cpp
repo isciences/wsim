@@ -166,7 +166,7 @@ static std::vector<PixelNumber> processTopElements(
     int origCol = col;
     int direction = outwardFlowBlock[pixNum];   // Where am I flowing to?
 
-    if (direction != 0) {  // why not NODATA value here?
+    if (direction != OUT_NODATA) {
       FlowQuantity useWeight = std::isnan(weightBlock[pixNum]) ? 0 : weightBlock[pixNum];
       FlowQuantity useFlow = useWeight + outputFlowBlock[pixNum];
 
@@ -198,13 +198,6 @@ static std::vector<PixelNumber> processTopElements(
         case OUT_NORTHEAST:
           col++;
           row--;
-          break;
-        case OUT_NODATA:
-          // See https://gitlab.com/isciences/wsim/wsim2/issues/20
-          // System.out.println("Lost flow into cell with undefined exit: " + useFlow);
-          //if (useFlow > 0) {
-          //  Rcout << "Losing " << useFlow << " at " << origRow << ", " << origCol << std::endl;
-          //}
           break;
         default:
           Rcout << "Unexpected direction at " << origRow << ", " << origCol << ": " << direction << std::endl;
