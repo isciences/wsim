@@ -9,7 +9,7 @@ using namespace Rcpp;
 //' @return A list of days in which precipitation falls, starting at 1
 //' @export
 // [[Rcpp::export]]
-IntegerVector makeWetDayList(int nDays, double pWetDays) {
+IntegerVector make_wet_day_list(int nDays, double pWetDays) {
   int wetDays = (int) std::round(nDays * pWetDays);
   std::vector<int> wetDayList;
 
@@ -46,7 +46,7 @@ NumericVector make_daily_precip(double P_total, int nDays, double pWetDays) {
     // Set a floor for pWetDays that makes sure we get at least
     // one wet day.
     pWetDays = std::max(pWetDays, 1.0 / nDays);
-    IntegerVector wetDays = makeWetDayList(nDays, pWetDays);
+    IntegerVector wetDays = make_wet_day_list(nDays, pWetDays);
     double wetDayPrecip = P_total / wetDays.size();
 
     NumericVector dailyPrecip(nDays);
