@@ -30,12 +30,13 @@ Output:
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args, types=list(loop="integer"))
 
-  # TODO remove use of load_matrix
   static <- lapply(list(
     flow_directions= args$flowdir,
     Wc= args$wc,
     elevation= args$elevation
-  ), wsim.io::load_matrix)
+  ), function(vardef) {
+    wsim.io::read_vars(vardef)$data[[1]]
+  })
 
   state <- wsim.lsm::read_state_from_cdf(args$state)
   forcings <- sort(wsim.io::expand_inputs(args$forcing))
