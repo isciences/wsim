@@ -2,8 +2,8 @@
 wsim.io::logging_init('wsim_lsm')
 
 suppressMessages({
+  require(Rcpp)
   require(wsim.io)
-  require(raster)
 })
 
 '
@@ -14,7 +14,7 @@ Usage: wsim_lsm --state <file> (--forcing <file>)... --flowdir <file> --wc <file
 Options:
 
 --state <file>       netCDF containing initial model state
---forcing <file>... netCDF file(s) containing model forcing(s)
+--forcing <file>...  netCDF file(s) containing model forcing(s)
 
 --flowdir <file>     file containing flow direction grid
 --wc <file>          file containing soil water holding capacity
@@ -42,13 +42,7 @@ main <- function(raw_args) {
 
   loops <- args$loop
 
-  static$area_m2 <- raster::as.matrix(wsim.lsm::cell_areas_m2(raster::raster(static$elevation,
-                                                                             xmn=state$extent[1],
-                                                                             xmx=state$extent[2],
-                                                                             ymn=state$extent[3],
-                                                                             ymx=state$extent[4]
-                                                                             )))
-
+  static$area_m2 <- wsim.lsm::cell_areas_m2(state$extent, dim(state$Ws))
   write_all_states <- grepl("%(T|N)", args$next_state)
   write_all_results <- grepl("%(T|N)", args$results)
 

@@ -1,27 +1,27 @@
-#' Compute the area occupied by each cell of a RasterLayer
+#' Compute the area occupied by each cell of a matrix
 #'
-#' @param An object that is coercible to a RasterLayer,
-#'        with a defined extent assumed to be in lon-lat
-#'        coordinates
+#' Calculation is performed using spherical geometry
 #'
-#' @return A RasterLayer with the same extent and resolution
-#'         as the input
+#' @param extent a vector representing the spatial extent of the matrix
+#'               (\code{xmin, xmax, ymin, ymax})
+#' @param dim the dimensions of the matrix (\code{nlat, nlon})
+#' @return a matrix having dimension \code{dim} and values representing
+#'         the area occupied by each cell
 #'
 #' @export
-cell_areas_m2 <- function(rast) {
-  areas <- raster::raster(rast)
-  dlon <- raster::res(rast)[1]
-  dlat <- raster::res(rast)[2]
+cell_areas_m2 <- function(extent, dim) {
   radius_m <- 6378000
+  dlon <- (extent[2] - extent[1]) / dim[2]
+  dlat <- (extent[4] - extent[3]) / dim[1]
 
-  cmp <- sapply(raster::yFromRow(rast, 1:nrow(rast)), function(lat) {
+  lats <- seq(from=extent[4]-0.5*dlat, to=extent[3]+0.5*dlat, by=-dlat)
+
+  areas <- sapply(lats, function(lat) {
     lat1 <- lat - dlat/2
     lat2 <- lat + dlat/2
 
     return(pi / 180 * radius_m^2 * abs(sin(lat1 * pi / 180) - sin(lat2 * pi / 180)) * dlon)
   })
 
-  raster::values(areas) <- rep(cmp, each=ncol(areas))
-
-  return(areas)
+  return(array(areas, dim=dim))
 }
