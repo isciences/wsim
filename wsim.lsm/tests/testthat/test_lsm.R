@@ -180,7 +180,7 @@ test_that('cell areas are computed correctly', {
 
   area_hlf_deg <- cell_areas_m2(extent, dims)
 
-  expect_equal(unname(area_hlf_deg[108, 17]), 2498.256e6)
+  expect_equal(unname(area_hlf_deg[108, 17]), 2492775206)
 })
 
 test_that('date calculations are correct', {
