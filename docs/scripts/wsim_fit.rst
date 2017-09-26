@@ -1,5 +1,5 @@
-wsim_fit
-********
+Fitting statistical distributions (wsim_fit)
+********************************************
 
 The ``wsim_fit`` utility computes pixel-wise fits of statistical distributions.
 

@@ -1,5 +1,5 @@
-wsim_lsm
-********
+Running the Land Surface Model (wsim_lsm)
+*****************************************
 
 The ``wsim.lsm`` utility runs one ore more iterations of the WSIM Land Surface Model.
 

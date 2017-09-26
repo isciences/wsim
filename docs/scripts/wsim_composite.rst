@@ -1,5 +1,5 @@
-wsim_composite
-**************
+Computing composite indicators (wsim_composite)
+***********************************************
 
 The ``wsim_composite`` utility computes composite indicators (TODO add link explaining what these are) from multiple surplus and deficit input variables.
 

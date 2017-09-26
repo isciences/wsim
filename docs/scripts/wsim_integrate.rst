@@ -1,5 +1,5 @@
-wsim_integrate
-**************
+Summarizing data (wsim_integrate)
+*********************************
 
 The ``wsim_integrate`` utility integrates, or accumulates multiple observations of the same variable and performs pixel-wise summary statistics on the values.
 
