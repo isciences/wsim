@@ -10,7 +10,7 @@
 #'
 #' @export
 cell_areas_m2 <- function(extent, dim) {
-  radius_m <- 6378000
+  radius_m <- 6371000 # mean radius
   dlon <- (extent[2] - extent[1]) / dim[2]
   dlat <- (extent[4] - extent[3]) / dim[1]
 
