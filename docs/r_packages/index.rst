@@ -1,11 +1,11 @@
 R Packages
 ==========
 
-The core functionality if WSIM is impemented in a series of R packages:
+The core functionality of WSIM is impemented in a series of R packages:
 
-* `wsim.distributions <./wsim.distributions/index.html>`_
-* `wsim.io <./wsim.io/index.html>`_
-* `wsim.lsm <./wsim.lsm/index.html>`_
+* `wsim.distributions <./wsim.distributions/reference/index.html>`_
+* `wsim.io <./wsim.io/reference/index.html>`_
+* `wsim.lsm <./wsim.lsm/reference/index.html>`_
 
 .. toctree::
     
