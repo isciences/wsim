@@ -8,8 +8,6 @@ License: file LICENSE
 Imports: 
   lubridate,
   Rcpp (>= 0.12.12),
-  raster,
-  rgdal,
   wsim.io
 LinkingTo: Rcpp
 Suggests: 
