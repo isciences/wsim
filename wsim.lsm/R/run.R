@@ -96,8 +96,11 @@ run <- function(static, state, forcing) {
     Ws_ave= Ws_ave
   )
 
-  obs$Bt_RO <- calculateFlow(static$flow_directions, obs$RO_m3)
-  obs$Bt_Runoff <- calculateFlow(static$flow_directions, obs$Runoff_m3)
+  should_wrap_x <- all(state$extent[c(1, 2)] == c(-180, 180))
+  should_wrap_y <- all(state$extent[c(3, 4)] == c(-90,  90))
+
+  obs$Bt_RO <- calculateFlow(static$flow_directions, obs$RO_m3, should_wrap_x, should_wrap_y)
+  obs$Bt_Runoff <- calculateFlow(static$flow_directions, obs$Runoff_m3, should_wrap_x, should_wrap_y)
   obs <- do.call(make_results, obs)
 
   return(list(

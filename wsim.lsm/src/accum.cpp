@@ -14,7 +14,7 @@ static const FlowDirection OUT_WEST = 16;
 static const FlowDirection OUT_NORTHWEST = 32;
 static const FlowDirection OUT_NORTH = 64;
 static const FlowDirection OUT_NORTHEAST = 128;
-static const FlowDirection OUT_NODATA = std::numeric_limits<FlowDirection>::min();
+static const FlowDirection OUT_NONE = NA_INTEGER;
 
 static const FlowDirection IN_EAST = 16;
 static const FlowDirection IN_SOUTHEAST = 32;
@@ -25,281 +25,120 @@ static const FlowDirection IN_NORTHWEST = 2;
 static const FlowDirection IN_NORTH = 4;
 static const FlowDirection IN_NORTHEAST = 8;
 
-NumericVector calculateFlowVector(int numRows, int numCols, const IntegerVector & directionBlockR, const NumericVector & weightBlockR);
+struct Downstream {
+  int row;
+  int col;
+  bool flows = true;
 
-static std::vector<int> makeDirectionArray(int numRawCols) {
-  std::vector<int> direction(8);
-  direction[0] = -1;              // West
-  direction[1] = -numRawCols - 1; // NW
-  direction[2] = -numRawCols;     // North
-  direction[3] = -numRawCols + 1; // NE
-  direction[4] = 1;               // East
-  direction[5] = numRawCols + 1;  // SE
-  direction[6] = numRawCols;      // South
-  direction[7] = numRawCols - 1;  // SW
-
-  return direction;
-}
-
-/**
- * Pad the flow direction block with extra rows and columns at each end.  This allows the processing to
- * ignore testing for the edges of the world.
- *
- * @param outFlowDir Block of output flow directions
- * @param numRows FlowQuantity of rows in domain
- * @param numCols FlowQuantity of columns in domain
- * @return Padded copy of output flow direction block
- */
-static std::vector<FlowDirection> padOutwardDirBlock(const std::vector<FlowDirection> & outFlowDir,
-                                                            int numRows,
-                                                            int numCols) {
-  const int numRawCols = numCols + 2;
-  const int numRawRows = numRows + 2;
-
-  std::vector<FlowDirection> rawOutDir(numRawRows * numRawCols, 0);
-
-  int rawIndex = numRawCols + 1;
-  int outIndex = 0;
-
-  for (int row = 0; row < numRows; row++) {
-    for (int col = 0; col < numCols; col++) {
-      if (outFlowDir[outIndex] != OUT_NODATA) {
-        rawOutDir[rawIndex] = outFlowDir[outIndex];
-      } else {
-        rawOutDir[rawIndex] = 0;
-      }
-      outIndex++;
-      rawIndex++;
-    }
-    rawIndex = rawIndex + 2;
-  }
-  return rawOutDir;
-}
-
-/**
- * For each pixel, compute which cells drain _into_ that pixel.
- *
- * @param outDirBlock Padded block of output directions, produced by padOutwardDirBlock
- * @param numRows FlowQuantity of rows in domain
- * @param numCols FlowQuantity of columns in domain
- * @return Inward flow direction block
- */
-static std::vector<FlowDirection> createInwardDirBlock(const std::vector<FlowDirection> & outDirBlock, int numRows, int numCols) {
-  int numRawCols = numCols + 2;
-
-  std::vector<FlowDirection> inwardFlowBlock(numCols * numRows, 0);
-  std::vector<int> direction = makeDirectionArray(numRawCols);
-
-  int pixelNum = 0;
-  int outDirIndex = numRawCols + 1;
-  for (int row = 0; row < numRows; row++) {
-    for (int col = 0; col < numCols; col++) {
-      int flag = 1;
-
-      for (int compassDir = 0; compassDir < 8; compassDir++) {
-        if ((outDirBlock[outDirIndex + direction[compassDir]] & flag) != 0) {
-          inwardFlowBlock[pixelNum] += flag;
-        }
-        flag *= 2;
-      }
-
-      pixelNum = pixelNum + 1;
-      outDirIndex = outDirIndex + 1;
-    }
-
-    outDirIndex = outDirIndex + 2;
-  }
-
-  return inwardFlowBlock;
-}
-
-/**
- * Find the top, or "headwater" pixels: those pixels into which no other pixels flow
- *
- * @param inwardFlowBlock A block or inward flow directions
- * @return A list of headwater pixel numbers
- */
-static std::vector<PixelNumber> findTopElements(const std::vector<FlowDirection> inwardFlowBlock) {
-  std::vector<PixelNumber> topElements;
-
-  for (PixelNumber i = 0; i < inwardFlowBlock.size(); i++) {
-    if (inwardFlowBlock[i] == 0) {
-      topElements.push_back(i);
+  void moveEast(int nCols, bool wrapX) {
+    if (col == nCols - 1) {
+      col = 0;
+      flows = flows && wrapX;
+    } else {
+      col++;
     }
   }
 
-  return topElements;
+  void moveWest(int nCols, bool wrapX) {
+    if (col == 0) {
+      col = nCols - 1;
+      flows = flows && wrapX;
+    } else {
+      col--;
+    }
+  }
+
+  void moveNorth(int nRows, int nCols, bool wrapY) {
+    if (row == 0) {
+      col = nCols - col - 1;
+      flows = flows && wrapY;
+    } else {
+      row--;
+    }
+  }
+
+  void moveSouth(int nRows, int nCols, bool wrapY) {
+    if (row == nRows - 1) {
+      col = nCols - col - 1;
+      flows = flows && wrapY;
+    } else {
+      row++;
+    }
+  }
+
+  Downstream(int row, int col) : row(row), col(col) {}
+};
+
+static Downstream flow(const IntegerMatrix & outDir, int i, int j, bool wrapX, bool wrapY) {
+  Downstream ds{i, j};
+
+  switch(outDir(i, j)) {
+    case OUT_NORTH:
+      ds.moveNorth(outDir.nrow(), outDir.ncol(), wrapY);
+      break;
+    case OUT_NORTHEAST:
+      ds.moveNorth(outDir.nrow(), outDir.ncol(), wrapY);
+      ds.moveEast(outDir.ncol(), wrapX);
+      break;
+    case OUT_EAST:
+      ds.moveEast(outDir.ncol(), wrapX);
+      break;
+    case OUT_SOUTHEAST:
+      ds.moveSouth(outDir.nrow(), outDir.ncol(), wrapY);
+      ds.moveEast(outDir.ncol(), wrapX);
+      break;
+    case OUT_SOUTH:
+      ds.moveSouth(outDir.nrow(), outDir.ncol(), wrapY);
+      break;
+    case OUT_SOUTHWEST:
+      ds.moveSouth(outDir.nrow(), outDir.ncol(), wrapY);
+      ds.moveWest(outDir.ncol(), wrapX);
+      break;
+    case OUT_WEST:
+      ds.moveWest(outDir.ncol(), wrapX);
+      break;
+    case OUT_NORTHWEST:
+      ds.moveNorth(outDir.nrow(), outDir.ncol(), wrapY);
+      ds.moveWest(outDir.ncol(), wrapX);
+      break;
+    default:
+      ds.flows = false;
+      // Consider both OUT_NONE and 0 to be sink cells.
+      // The flow direction matrix used for monthly WSIM runs
+      // uses both.
+      if (outDir(i, j) != OUT_NONE && outDir(i,j) != 0) {
+        Rcout << "Invalid flow direction: " << outDir(i,j) << std::endl;
+      }
+  }
+
+  return ds;
 }
 
-/**
- * Perform a model iteration by processing the top elements.
- *
- * For each processed element, flow is added to a downstream pixel.  The upstream pixel is then
- * removed from the inwardFlowBlock for the downstream pixel.
- *
- * @param topElements A list of pixel numbers for top, or "headwater" pixels
- * @param outputFlowBlock A block of output flow directions for each pixel
- * @param inwardFlowBlock A block of input flow directions for each pixel
- * @param weightBlock A block of weights (e.g., runoff amounts) for each pixel
- * @param nodata NODATA value used for the weighting block
- * @param outwardFlowBlock A block of accumulated weights (e.g., runoff amounts) for each pixel
- * @param numRows FlowQuantity of rows in the domain
- * @param numCols FlowQuantity of columns in the domain
- *
- * @return An updated list of top, or "headwater" pixels
- */
-static std::vector<PixelNumber> processTopElements(
-    const std::vector<PixelNumber> & topElements,
-    std::vector<FlowQuantity> & outputFlowBlock,
-    std::vector<FlowDirection> & inwardFlowBlock,
-    const std::vector<FlowQuantity> weightBlock,
-    const std::vector<FlowDirection> & outwardFlowBlock,
-    int numRows,
-    int numCols) {
+//' For each pixel, compute which cells drain _into_ that pixel.
+//'
+//' @inheritParams calculateFlow
+//' @return Matrix containing the summed direction values of all
+//'         adjacent pixels that flow into this pixel. Value is
+//'         zero if no adjacent pixels flow into this pixel (i.e,
+//'         the pixel is a sink.)
+//' @export
+// [[Rcpp::export]]
+IntegerMatrix createInwardDirMatrix(const IntegerMatrix & directions, bool wrapX, bool wrapY) {
+  IntegerMatrix inwardDirs(directions.nrow(), directions.ncol());
 
-  std::vector<PixelNumber> newTopElements;
-
-  for (PixelNumber pixNum : topElements) {
-    int row = pixNum / numCols;
-    int col = pixNum % numCols;
-    int origRow = row;
-    int origCol = col;
-    int direction = outwardFlowBlock[pixNum];   // Where am I flowing to?
-
-    if (direction != OUT_NODATA) {
-      FlowQuantity useWeight = std::isnan(weightBlock[pixNum]) ? 0 : weightBlock[pixNum];
-      FlowQuantity useFlow = useWeight + outputFlowBlock[pixNum];
-
-      switch (direction) {
-        case OUT_EAST:
-          col++;
-          break;
-        case OUT_SOUTHEAST:
-          col++;
-          row++;
-          break;
-        case OUT_SOUTH:
-          row++;
-          break;
-        case OUT_SOUTHWEST:
-          col--;
-          row++;
-          break;
-        case OUT_WEST:
-          col--;
-          break;
-        case OUT_NORTHWEST:
-          col--;
-          row--;
-          break;
-        case OUT_NORTH:
-          row--;
-          break;
-        case OUT_NORTHEAST:
-          col++;
-          row--;
-          break;
-        default:
-          Rcout << "Unexpected direction at " << origRow << ", " << origCol << ": " << direction << std::endl;
-          throw "Unexpected direction";
-      }
-
-      // Handle flow that goes out of the extents of our grid
-      // This behavior is not currently hit in production
-      // Consider removing this, because it's not clear that the
-      // behavior is desirable in all cases.
-      // See https://gitlab.com/isciences/wsim/wsim2/issues/21
-      if (row < 0) {
-        // Flow went above the top of the map
-        // Send it to the north pole?
-        row = 0;
-        col += numCols / 2;
-      } else if (row >= numRows) {
-        // Flow went below the bottom of the map
-        // Send it to the south pole?
-        row = numRows - 1;
-        col += numCols / 2;
-      }
-      if (col < 0)
-        // Wrap around the left
-        col += numCols;
-      else if (col >= numCols)
-        // Wrap around the right
-        col -= numCols;
-
-      int receivingCell = col + (row * numCols);
-      if (col >= 0 && col < numCols && row >= 0 && row < numRows) {
-        outputFlowBlock[receivingCell] += useFlow;
-
-        //if (row < 15 && useFlow > 0) {
-        //  Rcout << "Flowing " << useFlow << " from " << origRow << ", " << origCol << " into " << row << ", " << col << std::endl;
-        //  Rcout << "  It now has " << outputFlowBlock[receivingCell] << std::endl;
-        //}
-      }
-      inwardFlowBlock[receivingCell] -= direction;  //Mark that we've flowed into this pixel
-
-      // And if we're the last one to flow into this, it's a source for next iteration
-      if (inwardFlowBlock[receivingCell] == 0) {
-        newTopElements.push_back(receivingCell);
+  for (int i = 0; i < directions.nrow(); i++) {
+    for (int j = 0; j < directions.ncol(); j++) {
+      Downstream ds = flow(directions, i, j, wrapX, wrapY);
+      if (ds.flows) {
+        inwardDirs(ds.row, ds.col) += directions(i, j);
       }
     }
   }
 
-  return newTopElements;
-}
-
-template<typename T>
-static void printVector(std::string name, std::vector<T> v) {
-  Rcout << name << std::endl;
-  for (size_t i = 0; i < v.size(); i++) {
-    Rcout << v[i] << " ";
-  }
-  Rcout << std::endl;
-}
-
-static std::vector<FlowQuantity> calculateFlow(
-    int numRows,
-    int numCols,
-    std::vector<FlowDirection> & directionBlock,
-    const std::vector<FlowQuantity> & weightBlock) {
-
-  std::vector<FlowDirection> outwardFlowBlock = padOutwardDirBlock(directionBlock, numRows, numCols);
-  std::vector<FlowDirection> inwardFlowBlock = createInwardDirBlock(outwardFlowBlock, numRows, numCols);
-
-  std::vector<FlowQuantity> outputFlowBlock(directionBlock.size(), 0);
-
-  int iteration = 0;
-  std::vector<PixelNumber> topElements = findTopElements(inwardFlowBlock);
-
-  while (!topElements.empty() && iteration < 50000) {
-    topElements = processTopElements(topElements, outputFlowBlock, inwardFlowBlock, weightBlock, directionBlock, numRows, numCols);
-    iteration++;
-  }
-
-  return outputFlowBlock;
-}
-
-static std::vector<FlowDirection> readDirections(const IntegerVector & directionBlock) {
-  std::vector<FlowDirection> directions(directionBlock.size());
-
-  for (int i = 0; i < directionBlock.size(); i++) {
-    int val = directionBlock[i];
-
-    if (val == NA_INTEGER) {
-      val = OUT_NODATA;
-    } else if (val < 0 || val > (int) std::numeric_limits<FlowDirection>::max()) {
-      throw "Bad direction";
-    }
-
-    directions[i] = val;
-  }
-
-  return directions;
+  return inwardDirs;
 }
 
 //' Accumulate flow, given flow directions and weights.
-//'
-//' @describeIn calculateFlow accumulate flow using matrix inputs/onputs
 //'
 //' @param directions a matrix of flow directions, where directions are represented
 //' by the following values:
@@ -312,66 +151,72 @@ static std::vector<FlowDirection> readDirections(const IntegerVector & direction
 //' * northwest: 32
 //' * north: 64
 //' * northeast: 128
+//' * none (sink cell): NA
 //'
 //' @param weights a matrix of weights, representing the amount of flow originating at
 //' each cell
+//'
+//' @param wrapX should flow exiting the X-limits of the model be routed to the other side?
+//' @param wrapY should flow exiting the Y-limits of the model be routed to the other side?
 //'
 //' @return a matrix of accumulated flow values
 //' @md
 //' @export
 // [[Rcpp::export]]
-NumericMatrix calculateFlow(const IntegerMatrix & directions, const NumericMatrix & weights) {
-  IntegerVector directionVector(directions.size());
-  NumericVector weightVector(weights.size());
-  int numRows = directions.nrow();
-  int numCols = directions.ncol();
+NumericMatrix calculateFlow(const IntegerMatrix & directions, const NumericMatrix & weights, bool wrapX, bool wrapY) {
+  IntegerMatrix inDirs = createInwardDirMatrix(directions, wrapX, wrapY);
+  NumericMatrix flows = clone(weights);
 
-  // The flow accumulator is expecting a one-dimensional vector representing
-  // concatenated rows of the input matrices.  Since the as.vector function in R
-  // produces a vector of the concatenated columns, we construct the vectors
-  // manually here.
-  int index = 0;
-  for (int i = 0; i < numRows; i++) {
-    for (int j = 0; j < numCols; j++) {
-      directionVector[index] = directions(i, j);
-      weightVector[index] = weights(i, j);
+  std::vector<std::pair<int, int>> upstream;
 
-      index++;
+  // Find all upstream pixels
+  for (int i = 0; i < inDirs.nrow(); i++) {
+    for (int j = 0; j < inDirs.ncol(); j++) {
+      if (inDirs(i, j) == 0) {
+        upstream.emplace_back(i, j);
+      }
     }
   }
 
-  NumericVector results = calculateFlowVector(numRows, numCols, directionVector, weightVector);
+  int iteration = 0;
+  while (!upstream.empty() && ++iteration < 50000) {
+    std::vector<std::pair<int, int>> next_upstream;
+    // Flow pixels
+    for (auto pixel : upstream) {
+      int i, j;
+      std::tie(i, j) = pixel;
 
-  NumericMatrix ret(numRows, numCols);
-  for(index = 0; index < results.size(); index++) {
-    int i = index / numCols;
-    int j = index % numCols;
-    ret(i, j) = results[index];
+      auto ds = flow(directions, i, j, wrapX, wrapY);
+      auto weight = flows(i, j);
+
+      if (ds.flows) {
+        if (std::isnan(weight)) {
+          weight = 0;
+        }
+
+        if (std::isnan(flows(ds.row, ds.col))) {
+          flows(ds.row, ds.col) = weight;
+        } else {
+          flows(ds.row, ds.col) += weight;
+        }
+
+        inDirs(ds.row, ds.col) -= directions(i, j);
+        if (inDirs(ds.row, ds.col) == 0) {
+          next_upstream.emplace_back(ds.row, ds.col);
+        }
+      }
+    }
+    upstream = std::move(next_upstream);
   }
 
-  return ret;
-}
-
-//' @describeIn calculateFlow accumulate flow using vector inputs/outputs
-//' @param numRows number of rows in original matrix
-//' @param numCols number of columns in original matrix
-//' @export
-// [[Rcpp::export]]
-NumericVector calculateFlowVector(
-  int numRows,
-  int numCols,
-  const IntegerVector & directions,
-  const NumericVector & weights) {
-
-  std::vector<FlowDirection> directionBlock = readDirections(directions);
-  std::vector<FlowQuantity> weightBlock = as<std::vector<FlowQuantity>>(weights);
-  std::vector<FlowQuantity> flows = calculateFlow(numRows, numCols, directionBlock, weightBlock);
-
-  // Add original weights to accumulated flow
-  for (size_t i = 0; i < flows.size(); i++) {
-    flows[i] += weights[i];
+  // Set the mask of the computed flows to be equal to the input flow directions
+  for (int i = 0; i < flows.nrow(); i++) {
+    for (int j = 0; j < flows.ncol(); j++) {
+      if (std::isnan(directions(i, j))) {
+        flows(i, j) = NA_REAL;
+      }
+    }
   }
 
-  return wrap(flows);
+  return flows;
 }
-
