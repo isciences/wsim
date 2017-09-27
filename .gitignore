@@ -8,3 +8,4 @@ RcppExports.R
 .idea/
 ..Rcheck
 .Rhistory
+*.nc
