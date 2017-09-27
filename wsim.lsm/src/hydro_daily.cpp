@@ -37,7 +37,7 @@ static HydroVals daily_hydro_impl(double P, double Sa, double Sm, double E0, dou
   double PET_daily = E0 / nDays;
 
   double dWdt = 0;
-  double Ws_sum = Ws; // TODO this should be initialized to zero.  Initializing to Ws to replicate bug in Kepler version.
+  double Ws_sum = 0;
   double E = 0;
   double R = 0;
 
