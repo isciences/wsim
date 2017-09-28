@@ -27,6 +27,12 @@ find_stat <- function(name) {
   if (name == 'ave')
     return(function(x) { unless_all_na(mean)(x, na.rm=TRUE) })
 
+  if (name == 'fraction_defined')
+    return(function(x) { sum(!is.na(x)) / length(x) })
+
+  if (name == 'fraction_defined_above_zero')
+    return(function(x) { sum(x>0, na.rm=TRUE) / sum(!is.na(x)) })
+
   if (grepl('q\\d{1,2}(.\\d+)?$', name)) {
     q <- 0.01 * as.numeric(substring(name, 2))
     return(function(x) { unname(quantile(x, q, na.rm=TRUE)) })
