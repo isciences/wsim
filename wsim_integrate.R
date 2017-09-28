@@ -75,7 +75,7 @@ main <- function(raw_args) {
   # For each var, read all files, and do processing
   # Do this to avoid loading all vars from all files into memory at once
   for (var in vars) {
-    wsim.io::info('Loading', toString(var))
+    wsim.io::info('Loading variable', toString(var), 'from', length(parsed_inputs), 'input files.')
 
     data <- wsim.io::read_vars_to_cube(lapply(parsed_inputs, function(input) {
       make_vardef(filename=input$filename, vars=list(var))
