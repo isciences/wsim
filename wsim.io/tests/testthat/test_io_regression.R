@@ -8,14 +8,12 @@ test_that("We can read a file of NCEP daily precipitation", {
 
   filename <- '/mnt/fig/WSIM/WSIM_source_V1.2/NCEP/Daily_precip/Originals/2017/PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.20170521.RT'
 
-  precip <- readNCEP_Daily_P(filename)
+  precip <- read_vars(filename)$data[[1]]
 
-  row_btv <- (180+73.2)*720/360 # 0.5-degree cells, starting at antimeridian and working west
-  col_btv <- (90-44.5)*360/180  # 0.5-degree cells, starting at north pole
+  precip_rast <- raster::raster(precip, xmn=-180, xmx=180, ymn=-90, ymx=90)
 
-  expect_equal(dim(precip), c(720, 360))       # 0.5-degree lon/lat
-  expect_equal(precip[row_btv, col_btv]/10, 0) # no rain in Burlington, VT
-
+  expect_equal(dim(precip), c(360, 720))       # 0.5-degree lon/lat
+  expect_equal(raster::extract(precip_rast, cbind(-73.2, 44.5)), 0) # no rain in Burlington, VT
   expect_equal(max(precip, na.rm = TRUE), 1076.367, tolerance=1e-3)
 })
 

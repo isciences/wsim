@@ -1,7 +1,7 @@
-#' readNCEP_Daily_P
+#' Read GrADS file containing NCEP global precipitation
 #'
 #' Reads an 0.5-degree daily precipitation file produced by the CPC
-#' Gauge-Based  #' Analysis of Global Daily Precipitation project, as described at
+#' Gauge-Based Analysis of Global Daily Precipitation project, as described at
 #' ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/DOCU/PRCP_CU_GAUGE_V1.0GLB_0.50deg_README.txt
 #'
 #' The files are in a GrADS format.  URL to download an example file:
@@ -11,7 +11,7 @@
 #' @param mv NODATA value
 #' @return a matrix of daily precipitation values in 0.1 mm/day
 #' @export
-readNCEP_Daily_P <- function(fname, mv=-999.0) {
+read_ncep_daily_precip <- function(fname, mv=-999.0) {
 
 	# we're expecting 1/2 degree global geographic data
 	nr     <- 360 # number of map columns
@@ -43,5 +43,5 @@ readNCEP_Daily_P <- function(fname, mv=-999.0) {
 	rindices <- ncol(pmap):1
 	pmap <- pmap[,rindices]
 
-	return(pmap)
+	return(t(pmap))
 }

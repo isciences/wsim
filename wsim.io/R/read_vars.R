@@ -38,8 +38,8 @@ read_vars <- function(vardef) {
     extent= NULL
   )
 
-  if (endsWith(def$filename, '.mon')) {
-    # .mon files are global
+  if (is_mon(def$filename) || is_ncep_daily_precip(def$filename)) {
+    # .mon and precip files are global
     loaded$extent <- c(-180, 180, -90, 90)
   }
 
@@ -58,8 +58,16 @@ read_vars <- function(vardef) {
 
     }
 
-    if (endsWith(def$filename, '.mon')) {
+    if (is_mon(def$filename)) {
       vals <- read_mon_file(def$filename)
+    } else if (is_ncep_daily_precip(def$filename)) {
+      # Ugly special case: a file of global half-degree precipitation from NCEP
+      #
+      # Because these files are shipped with malformed *.ctl files (that assume the .RT files are in
+      # a path on a NOAA server somewhere) we can't convert them to a standard format like netCDF
+      # without fudging our own .ctl file.
+      #
+      vals <- read_ncep_daily_precip(def$filename)
     } else {
       rast <- rgdal::GDAL.open(def$filename, read.only=TRUE)
 
@@ -72,4 +80,12 @@ read_vars <- function(vardef) {
   }
 
   return(loaded)
+}
+
+is_mon <- function(fname) {
+  endsWith(fname, '.mon')
+}
+
+is_ncep_daily_precip <- function(fname) {
+  endsWith(fname, '.RT') && startsWith(basename(fname), 'PRCP_CU_GAUGE_V1.0GLB_0.50deg')
 }
