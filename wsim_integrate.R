@@ -18,32 +18,6 @@ Options:
 --attr <attr>  optional attribute(s) to be attached to output netCDF
 '->usage
 
-find_stat <- function(name) {
-  name <- tolower(name)
-
-  if (name == 'min')
-    return(function(x) { min(x, na.rm=TRUE) })
-
-  if (name == 'median')
-    return(function(x) { median(x, na.rm=TRUE )})
-
-  if (name == 'max')
-    return(function(x) { max(x, na.rm=TRUE) })
-
-  if (name == 'sum')
-    return(function(x) { sum(x, na.rm=TRUE) })
-
-  if (name == 'ave')
-    return(function(x) { mean(x, na.rm=TRUE) })
-
-  if (grepl('q\\d{1,2}(.\\d+)?$', name)) {
-    q <- 0.01 * as.numeric(substring(name, 2))
-    return(function(x) { unname(quantile(x, q, na.rm=TRUE)) })
-  }
-
-  wsim.io::die_with_message("Unknown stat ", name)
-}
-
 attrs_for_stat <- function(var_attrs, var, stat) {
   # Autogenerate metadata
   stat_var <- paste0(var, '_', tolower(stat))
@@ -77,7 +51,7 @@ main <- function(raw_args) {
   }
 
   for (stat in args$stat) {
-    if (is.null(find_stat(stat))) {
+    if (is.null(wsim.distributions::find_stat(stat))) {
       die_with_message("Unknown statistic", stat)
     }
   }
@@ -114,7 +88,7 @@ main <- function(raw_args) {
 
     for (stat in args$stat) {
       stat_var <- paste0(var$var_out, '_', tolower(stat))
-      stat_fn <- find_stat(stat)
+      stat_fn <- wsim.distributions::find_stat(stat)
       wsim.io::info('Computing', stat_var, '...')
 
       integrated[[stat_var]] <- wsim.distributions::array_apply(data, function(vals) {
