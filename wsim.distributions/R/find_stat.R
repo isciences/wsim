@@ -13,19 +13,19 @@ find_stat <- function(name) {
   name <- tolower(name)
 
   if (name == 'min')
-    return(function(x) { min(x, na.rm=TRUE) })
+    return(function(x) { unless_all_na(min)(x, na.rm=TRUE) })
 
   if (name == 'median')
-    return(function(x) { median(x, na.rm=TRUE )})
+    return(function(x) { unless_all_na(median)(x, na.rm=TRUE )})
 
   if (name == 'max')
-    return(function(x) { max(x, na.rm=TRUE) })
+    return(function(x) { unless_all_na(max)(x, na.rm=TRUE) })
 
   if (name == 'sum')
     return(function(x) { sum(x, na.rm=TRUE) })
 
   if (name == 'ave')
-    return(function(x) { mean(x, na.rm=TRUE) })
+    return(function(x) { unless_all_na(mean)(x, na.rm=TRUE) })
 
   if (grepl('q\\d{1,2}(.\\d+)?$', name)) {
     q <- 0.01 * as.numeric(substring(name, 2))
@@ -33,4 +33,8 @@ find_stat <- function(name) {
   }
 
   stop("Unknown stat ", name)
+}
+
+unless_all_na <- function(fn) {
+  function(x, ...) ifelse(all(is.na(x)), as.numeric(NA), fn(x, ...) )
 }

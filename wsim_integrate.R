@@ -91,13 +91,8 @@ main <- function(raw_args) {
       stat_fn <- wsim.distributions::find_stat(stat)
       wsim.io::info('Computing', stat_var, '...')
 
-      integrated[[stat_var]] <- wsim.distributions::array_apply(data, function(vals) {
-        if (all(is.na(vals))) {
-          return(as.numeric(NA))
-        }
+      integrated[[stat_var]] <- wsim.distributions::array_apply(data, stat_fn)
 
-        return(stat_fn(vals))
-      })
       wsim.io::info('done')
     }
 

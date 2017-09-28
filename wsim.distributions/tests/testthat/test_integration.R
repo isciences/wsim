@@ -21,3 +21,15 @@ test_that('we can calculate basic stats', {
    expect_equal(integrate('q100', obs), 22)
 })
 
+test_that('behavior is as expected when inputs are all undefined', {
+  obs <- rep.int(NA, 10)
+
+  expect_na(integrate('ave', obs))
+  expect_equal(integrate('sum', obs), 0)
+  expect_na(integrate('min', obs))
+  expect_na(integrate('max', obs))
+
+  expect_na(integrate('median', obs))
+  expect_na(integrate('q50', obs))
+})
+
