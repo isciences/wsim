@@ -29,11 +29,10 @@
 #'@export
 write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec="double", append=FALSE) {
   datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
+  history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
   standard_attrs <- list(
     list(key="Conventions", val="CF-1.6"),
-    list(key="date_created", val=datestring),
-    list(key="history", val=paste0(datestring, ': ', get_command())),
     list(var="lon", key="axis", val="X"),
     list(var="lon", key="standard_name", val="longitude"),
     list(var="lat", key="axis", val="Y"),
@@ -135,8 +134,22 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
         ncout <- ncdf4::ncvar_add(ncout, var)
       }
     }
+
+    existing_history <- ncdf4::ncatt_get(ncout, 0, "history")
+    if (existing_history$hasatt) {
+      history_entry <- paste0(existing_history$value, history_entry)
+    }
+
+    standard_attrs <- c(standard_attrs, list(
+      list(key="history", val=history_entry)
+    ))
   } else {
     ncout <- ncdf4::nc_create(filename, ncvars)
+
+    standard_attrs <- c(standard_attrs, list(
+      list(key="date_created", val=datestring),
+      list(key="history", val=history_entry)
+    ))
   }
 
   # Write data to vars
