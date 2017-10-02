@@ -23,7 +23,7 @@ apply_dist_to_array <- function(dist, obs, fn, when.dist.undefined=NA) {
   array_apply(combined, function(vals) {
     dist_ij <- vals[1:n_dist]
 
-    if (all(is.na(dist_ij))) {
+    if (any(is.na(dist_ij))) {
       return(when.dist.undefined)
     }
 
