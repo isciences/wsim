@@ -4,23 +4,24 @@ wsim.io::logging_init('wsim_correct')
 '
 Bias-correct a forecast file
 
-Usage: wsim_correct --retro=<file> --obs=<file> --forecast=<file> --output=<file>
+Usage: wsim_correct --retro=<file> --obs=<file> --forecast=<file> --output=<file> [--append]
 
 Options:
 --retro <file>    A netCDF containing distribution fit parameters from retrospective forecast data (T in C, Pr in mm/month)
 --obs <file>      A netCDF containing distribution fit parameters from observed data (T in C, Pr in mm/month)
 --forecast <file> A raster file containing forecast data to be corrected (T in K, Pr in mm/s)
 --output <file>   A netCDF file of bias-corrected data (T in C, Pr in mm/month)
+--append          Append output to existing file
 '->usage
 
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
 
-  retro_fits <- wsim.io::read_vars_to_cube(args$retro, attrs=c('distribution'))
+  retro_fits <- wsim.io::read_vars_to_cube(args$retro, attrs_to_read=c('distribution'))
 
   wsim.io::info('Read retrospective forecast fit parameters (', attr(retro_fits, 'distribution'), ') from ', args$retro)
 
-  obs_fits <- wsim.io::read_vars_to_cube(args$obs, attrs=c('distribution'))
+  obs_fits <- wsim.io::read_vars_to_cube(args$obs, attrs_to_read=c('distribution'))
 
   wsim.io::info('Read observed value fit parameters (', attr(obs_fits, 'distribution'), ') from ', args$obs)
 
@@ -46,7 +47,7 @@ main <- function(raw_args) {
   wsim.io::info('Read forecast from', args$forecast)
 
   if (length(names(forecast$data)) != 1) {
-    wsim.io::die_with_message("Expected to read exactly one variable from", args$forecast)
+    wsim.io::die_with_message("Expected to read exactly one variable from ", args$forecast, " (found ", length(names(forecast$data)), ")")
   }
 
   # TODO check extents?
@@ -66,7 +67,8 @@ main <- function(raw_args) {
                                                                            args$retro,
                                                                            " and ",
                                                                            args$obs))
-                             ))
+                             ),
+                             append=args$append)
   wsim.io::info('Wrote corrected forecast to', args$output)
 }
 
