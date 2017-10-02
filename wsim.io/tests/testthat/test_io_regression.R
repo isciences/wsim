@@ -13,7 +13,7 @@ test_that("We can read a file of NCEP daily precipitation", {
   precip_rast <- raster::raster(precip, xmn=-180, xmx=180, ymn=-90, ymx=90)
 
   expect_equal(dim(precip), c(360, 720))       # 0.5-degree lon/lat
-  expect_equal(raster::extract(precip_rast, cbind(-73.2, 44.5)), 0) # no rain in Burlington, VT
+  expect_equal(raster::extract(precip_rast, cbind(-73.2, 44.5)), 0, check.attributes=FALSE) # no rain in Burlington, VT
   expect_equal(max(precip, na.rm = TRUE), 1076.367, tolerance=1e-3)
 })
 
