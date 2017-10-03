@@ -47,7 +47,12 @@ run <- function(static, state, forcing) {
 
   P <- P_effective(forcing$Pr, Sa, Sm)
 
-  E0 <- e_potential(forcing$daylength, forcing$T, nDays)
+  daylength <- daylength_matrix(as.integer(substr(state$yearmon, 1, 4)),
+                                as.integer(substr(state$yearmon, 5, 6)),
+                                state$extent,
+                                nrow(forcing$T),
+                                ncol(forcing$T))
+  E0 <- e_potential(daylength, forcing$T, nDays)
 
   hydro <- daily_hydro_loop(forcing$P, Sa, Sm, E0, state$Ws, static$Wc, nDays, forcing$pWetDays)
   dWdt <- matrix(hydro$dWdt, nrow=nrow(forcing$T), ncol=ncol(forcing$T))

@@ -3,14 +3,12 @@
 #' @param extent spatial extent of input matrices \code{(xmin, xmax, ymin, ymax)}
 #' @param T Temperature [degrees C]
 #' @param Pr Precipitation [mm]
-#' @param daylength Length of day as a fraction of 24 hours [-]
 #' @param pWetDays Percentage of days in which precipitation falls [-]
 #'
 #' @return \code{wsim.lsm.forcing} object containing supplied variables
 #' @export
-make_forcing <- function(extent, daylength, pWetDays, T, Pr) {
+make_forcing <- function(extent, pWetDays, T, Pr) {
   forcing <- list(
-    daylength= daylength,
     pWetDays= pWetDays,
     T= T,
     Pr= Pr

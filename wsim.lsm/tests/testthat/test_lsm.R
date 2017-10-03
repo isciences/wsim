@@ -136,7 +136,6 @@ test_that('computed state variables are always defined', {
 
   forcing <- make_forcing(
     extent=c(-180, 180, -90, 90),
-    daylength=matrix(seq(0, 1, 1/3), nrow=2),
     pWetDays=matrix(rep.int(1, 4), nrow=2),
     T=matrix(rep.int(NA, 4), nrow=2),
     Pr=matrix(runif(4), nrow=2)
@@ -192,6 +191,17 @@ test_that('date calculations are correct', {
   expect_equal(days_in_yyyymm('201602'), 29)
 })
 
+test_that('we can compute daylength', {
+  daylength <- daylength_matrix(2017, 02, c(-180, 180, -90, 90), 181, 1)
+
+  expect_true(!any(is.na(daylength)))
+  expect_true(!any(daylength < 0 | daylength > 1))
+
+  expect_equal(daylength[1], 0)    # dark at the north pole
+  expect_equal(daylength[181], 1)  # light at the south pole
+  expect_equal(daylength[91], 0.5) # 12 hours of light at the equator
+})
+
 test_that('we can read and write states from/to netCDF', {
   fname <- tempfile()
 
@@ -219,7 +229,6 @@ test_that('we can read forcing from netCDF', {
 
   forcing <- make_forcing(
     extent=c(-180, 180, -90, 90),
-    daylength=matrix(seq(0, 1, 1/3), nrow=2),
     pWetDays=matrix(rep.int(1, 4), nrow=2),
     T=matrix(rep.int(NA, 4), nrow=2),
     Pr=matrix(runif(4), nrow=2)
@@ -243,7 +252,6 @@ test_that('we can write model results to netCDF', {
 
   forcing <- make_forcing(
     extent=c(-180, 180, -90, 90),
-    daylength=matrix(seq(0, 1, 1/8), nrow=3),
     pWetDays=matrix(rep.int(1, 9), nrow=3),
     T=matrix(runif(9), nrow=3),
     Pr=matrix(runif(9), nrow=3)
