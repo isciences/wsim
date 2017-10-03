@@ -47,7 +47,7 @@ run <- function(static, state, forcing) {
 
   P <- P_effective(forcing$Pr, Sa, Sm)
 
-  daylength <- daylength_matrix(as.integer(substr(state$yearmon, 1, 4)),
+  daylength <- day_length_matrix(as.integer(substr(state$yearmon, 1, 4)),
                                 as.integer(substr(state$yearmon, 5, 6)),
                                 state$extent,
                                 nrow(forcing$T),

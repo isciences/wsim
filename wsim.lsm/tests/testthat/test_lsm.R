@@ -192,7 +192,7 @@ test_that('date calculations are correct', {
 })
 
 test_that('we can compute daylength', {
-  daylength <- daylength_matrix(2017, 02, c(-180, 180, -90, 90), 181, 1)
+  daylength <- day_length_matrix(2017, 02, c(-180, 180, -90, 90), 181, 1)
 
   expect_true(!any(is.na(daylength)))
   expect_true(!any(daylength < 0 | daylength > 1))

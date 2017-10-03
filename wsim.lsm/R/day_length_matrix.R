@@ -10,7 +10,7 @@
 #'         the day length as a fraction of 24 hours
 #' @useDynLib wsim.lsm, .registration=TRUE
 #' @export
-daylength_matrix <- function(year, month, extent, nrows, ncols) {
+day_length_matrix <- function(year, month, extent, nrows, ncols) {
   if (year < 1900) {
     wsim.io::warn("Attempted to calculate pre-1900 day lengths ( year =", year, "). Using year = 1900 instead.")
     year <- 1900

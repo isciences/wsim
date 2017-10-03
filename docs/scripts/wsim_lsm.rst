@@ -31,7 +31,6 @@ Usage is as follows:
   * ``T`` the average monthly temperature in degrees Celsius
   * ``Pr`` the total monthly precipitation (rainfall and snowfall) in millimeters
   * ``pWetDays`` the fraction of days during which precipitation falls
-  * ``daylength`` the average day length, as a fraction of a 24-hour period
 
 * ``--wc`` a file providing the soil moisture holding capacity in millimeters
 * ``--elevation`` a file providing land surface elevation in meters
