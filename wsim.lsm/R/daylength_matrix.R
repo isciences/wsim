@@ -11,6 +11,11 @@
 #' @useDynLib wsim.lsm, .registration=TRUE
 #' @export
 daylength_matrix <- function(year, month, extent, nrows, ncols) {
+  if (year < 1900) {
+    wsim.io::warn("Attempted to calculate pre-1900 day lengths ( year =", year, "). Using year = 1900 instead.")
+    year <- 1900
+  }
+
   dlat <- (extent[4] - extent[3]) / nrows
   lats <- seq(from=extent[4] - dlat/2, to=extent[3] + dlat/2, by=-dlat)
   matrix(average_day_length(lats, year, month)/24, nrow=nrows, ncol=ncols)
