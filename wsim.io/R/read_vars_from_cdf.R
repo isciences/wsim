@@ -54,14 +54,24 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
 
   data <- list()
 
+  # Get a list of all dimensional vars in the file
+  cdf_vars <- lapply(Filter(function(var) {
+    var$ndims > 0
+  }, cdf$var), function(var) var$name)
+
+  # If no vars are specified, use all of the vars
   if (is.null(vars) || length(vars) == 0) {
-    vars <- lapply(
-      Filter(function(var) {
-        var$ndims > 0
-      },
-      cdf$var), function(var) {
-        make_var(var$name)
-    })
+    vars <- lapply(cdf_vars, make_var)
+  }
+
+  # Check that all requested vars can be found in the file
+  for (var in vars) {
+    if (!(var$var_in %in% cdf_vars))
+      stop("Could not find var ", var$var_in, " in ", fname)
+  }
+
+  if (length(vars) == 0) {
+    stop("No vars found to load in ", fname)
   }
 
   for (var in cdf$var) {
