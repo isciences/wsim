@@ -2,7 +2,6 @@ require('testthat')
 
 context("GEV calculations")
 
-#gevParams <- c("xi", "alpha", "kappa") # location, scale, shape
 gevParams <- c("location", "scale", "shape")
 
 test_that('We can fit a GEV on a 3D array representing time-series observations', {

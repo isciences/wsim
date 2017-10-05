@@ -1,5 +1,7 @@
+testdata <- '/home/dbaston/dev/wsim2/testdata'
+
 isciences_internal <- function() {
-  if (!file.exists('/mnt/fig/WSIM')) {
+  if (!file.exists(testdata)) {
     skip("Skipping test that requires ISciences internal resource.")
   }
 }
