@@ -55,10 +55,10 @@ run <- function(static, state, forcing) {
   E0 <- e_potential(daylength, forcing$T, nDays)
 
   hydro <- daily_hydro_loop(forcing$P, Sa, Sm, E0, state$Ws, static$Wc, nDays, forcing$pWetDays)
-  dWdt <- matrix(hydro$dWdt, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
-  E <- matrix(hydro$E, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
-  R <- matrix(hydro$R, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
-  Ws_ave <- matrix(hydro$Ws_ave, nrow=nrow(forcing$T), ncol=ncol(forcing$T))
+  dWdt <- hydro$dWdt
+  E <- hydro$E
+  R <- hydro$R
+  Ws_ave <- hydro$Ws_ave
 
   Xr <- calc_Xr(R, forcing$Pr, P)
   Xs <- calc_Xs(Sm, R, P)

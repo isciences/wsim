@@ -123,24 +123,37 @@ List daily_hydro(double P, double Sa, double Sm, double E0, double Ws, double Wc
 //'
 //' @export
 // [[Rcpp::export]]
-List daily_hydro_loop(NumericVector P, NumericVector Sa, NumericVector Sm, NumericVector E0, NumericVector Ws, NumericVector Wc, int nDays, NumericVector pWetDays) {
-  NumericVector dWdt(P.size());
-  NumericVector Ws_ave(P.size());
-  NumericVector E(P.size());
-  NumericVector R(P.size());
+List daily_hydro_loop(const NumericMatrix & P,
+                      const NumericMatrix & Sa,
+                      const NumericMatrix & Sm,
+                      const NumericMatrix & E0,
+                      const NumericMatrix & Ws,
+                      const NumericMatrix & Wc,
+                      int nDays,
+                      const NumericMatrix & pWetDays) {
 
-  for (int i = 0; i < P.size(); i++) {
-    if (std::isnan(P[i]) || std::isnan(E0[i]) || std::isnan(Ws[i]) || std::isnan(Wc[i]) || std::isnan(pWetDays[i])) {
-      dWdt[i] = NA_REAL;
-      Ws_ave[i] = NA_REAL;
-      E[i] = NA_REAL;
-      R[i] = NA_REAL;
-    } else {
-      HydroVals hydro = daily_hydro_impl(P[i], Sa[i], Sm[i], E0[i], Ws[i], Wc[i], nDays, pWetDays[i]);
-      dWdt[i] = hydro.dWdt;
-      Ws_ave[i] = hydro.Ws_ave;
-      E[i] = hydro.E;
-      R[i] = hydro.R;
+  int rows = P.nrow();
+  int cols = P.ncol();
+
+  NumericMatrix dWdt = no_init(rows, cols);
+  NumericMatrix Ws_ave = no_init(rows, cols);
+  NumericMatrix E = no_init(rows, cols);
+  NumericMatrix R = no_init(rows, cols);
+
+  for (int j = 0; j < cols; j++) {
+    for (int i = 0; i < rows; i++) {
+      if (std::isnan(P(i, j)) || std::isnan(E0(i, j)) || std::isnan(Ws(i, j)) || std::isnan(Wc(i, j)) || std::isnan(pWetDays(i, j))) {
+        dWdt(i, j) = NA_REAL;
+        Ws_ave(i, j) = NA_REAL;
+        E(i, j) = NA_REAL;
+        R(i, j) = NA_REAL;
+      } else {
+        HydroVals hydro = daily_hydro_impl(P(i, j), Sa(i, j), Sm(i, j), E0(i, j), Ws(i, j), Wc(i, j), nDays, pWetDays(i, j));
+        dWdt(i, j) = hydro.dWdt;
+        Ws_ave(i, j) = hydro.Ws_ave;
+        E(i, j) = hydro.E;
+        R(i, j) = hydro.R;
+      }
     }
   }
 
