@@ -126,8 +126,8 @@ static Downstream flow(const IntegerMatrix & outDir, int i, int j, bool wrapX, b
 IntegerMatrix createInwardDirMatrix(const IntegerMatrix & directions, bool wrapX, bool wrapY) {
   IntegerMatrix inwardDirs(directions.nrow(), directions.ncol());
 
-  for (int i = 0; i < directions.nrow(); i++) {
-    for (int j = 0; j < directions.ncol(); j++) {
+  for (int j = 0; j < directions.ncol(); j++) {
+    for (int i = 0; i < directions.nrow(); i++) {
       Downstream ds = flow(directions, i, j, wrapX, wrapY);
       if (ds.flows) {
         inwardDirs(ds.row, ds.col) += directions(i, j);
@@ -170,8 +170,8 @@ NumericMatrix calculateFlow(const IntegerMatrix & directions, const NumericMatri
   std::vector<std::pair<int, int>> upstream;
 
   // Find all upstream pixels
-  for (int i = 0; i < inDirs.nrow(); i++) {
-    for (int j = 0; j < inDirs.ncol(); j++) {
+  for (int j = 0; j < inDirs.ncol(); j++) {
+    for (int i = 0; i < inDirs.nrow(); i++) {
       if (inDirs(i, j) == 0) {
         upstream.emplace_back(i, j);
       }
@@ -210,8 +210,8 @@ NumericMatrix calculateFlow(const IntegerMatrix & directions, const NumericMatri
   }
 
   // Set the mask of the computed flows to be equal to the input flow directions
-  for (int i = 0; i < flows.nrow(); i++) {
-    for (int j = 0; j < flows.ncol(); j++) {
+  for (int j = 0; j < flows.ncol(); j++) {
+    for (int i = 0; i < flows.nrow(); i++) {
       if (std::isnan(directions(i, j))) {
         flows(i, j) = NA_REAL;
       }
