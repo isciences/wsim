@@ -1,4 +1,4 @@
-require('testthat')
+require(testthat)
 
 context('Time-integration regression tests')
 
