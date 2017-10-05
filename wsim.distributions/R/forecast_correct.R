@@ -11,20 +11,14 @@
 #'
 #' @return a matrix with a corrected forecast
 #'
+#' @useDynLib wsim.distributions, .registration=TRUE
 #' @export
 forecast_correct <- function(forecast, retro_fit, obs_fit) {
-  quantiles <- raw2quantile(forecast, retro_fit)
-
-	# Adjust for values that are not possible to avoid out of range issues.
-	# Values can approach limits both because of the value of the forecast
-	# and also because of the resampling.
-
-	# Set a value to adjust for extreme values of quantiles
-	# Values are rounded to the nearest 4 decimal places to avoid problems
-	# with rounding error.
-	extreme.cutoff <- 100
-	quantiles[quantiles >= (1 - 1/extreme.cutoff) & !is.na(quantiles)] <- round((1 - 1/extreme.cutoff), digits = 4)
-	quantiles[quantiles <= (0 + 1/extreme.cutoff) & !is.na(quantiles)] <- round((0 + 1/extreme.cutoff), digits = 4)
-
-  return(quantile2correct(quantiles, obs_fit))
+  gev_correct(forecast,
+              obs_fit[,,1],
+              obs_fit[,,2],
+              obs_fit[,,3],
+              retro_fit[,,1],
+              retro_fit[,,2],
+              retro_fit[,,3])
 }

@@ -2,22 +2,21 @@
 wsim.io::logging_init('wsim_anom')
 
 suppressMessages({
+  require(Rcpp)
   require(wsim.distributions)
   require(wsim.io)
-  require(raster)
 })
 
 '
 Compute standard anomalies and/or return periods
 
-Usage: wsim_anom --fits=<fits> --obs=<file> [--sa=<file>] [--rp=<file>] [--cores=<num_cores>]
+Usage: wsim_anom --fits=<fits> --obs=<file> [--sa=<file>] [--rp=<file>]
 
 Options:
 --fits <file>  netCDF file containing distribution fit parameters
 --obs <file>   Raster file containing observed values
 --sa <file>    output location for NetCDF file of standard anomalies
 --rp <file>    output location for NetCDF file of return periods
---cores <file> Number of CPU cores to use [default: 1]
 '->usage
 
 main <- function(raw_args) {
@@ -33,45 +32,42 @@ main <- function(raw_args) {
     }
   }
 
-  if (args$cores > 1) {
-    if (!is.element('doParallel', installed.packages()[,1])) {
-      die_with_message('doParallel package must be installed to use multiple cores.')
-    }
-
-    doParallel::registerDoParallel(cores=args$cores)
-  }
-
-  # TODO stop using rasters here; read straight to matrices with wsim.io::read_vars & friends
-  fits <- read_brick_from_cdf(args$fits)
-  obs <- raster(args$obs)
-
+  fits <- wsim.io::read_vars_to_cube(args$fits, attrs_to_read=c('distribution'))
+  distribution <- attr(fits, 'distribution')
   wsim.io::info("Read distribution parameters.")
-
-  distribution <- metadata(fits)$distribution
 
   if (distribution != 'gev') {
     die_with_message(distribution, " is not a supported statistical distribution.")
   }
 
-  cdf <- find_cdf(distribution)
+  v <- wsim.io::read_vars_from_cdf(args$obs)
+  obs <- v$data[[1]]
+  varname <- names(v$data)[1]
 
-  sa <- applyDistToStack(
-    fits,
-    obs,
-    function(obs, dist_params) {
-      standard_anomaly(cdf, dist_params, obs)
-    })
+  sa <- gevStandardize(fits, obs)
 
   if (!is.null(args$sa)) {
-    write_layer_to_cdf(sa, args$sa, "standard_anomaly")
+    to_write <- list()
+    to_write[[paste0(varname, '_sa')]] <- sa
+    write_vars_to_cdf(to_write,
+                      filename=args$sa,
+                      extent=attr(fits, 'extent'),
+                      append=TRUE)
     wsim.io::info("Wrote standard anomalies to", args$sa)
   }
 
   if (!is.null(args$rp)) {
     rp <- sa2rp(sa)
-    write_layer_to_cdf(rp, args$rp, "return_period")
+
+    to_write <- list()
+    to_write[[paste0(varname, '_rp')]] <- rp
+
+    write_vars_to_cdf(to_write,
+                      filename=args$rp,
+                      extent=attr(fits, 'extent'),
+                      append=TRUE)
     wsim.io::info("Wrote return periods to", args$rp)
   }
 }
 
-#main(commandArgs(trailingOnly=TRUE))
+main(commandArgs(trailingOnly=TRUE))

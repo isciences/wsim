@@ -1,15 +1,8 @@
-calcSaValue <- function(val, gev.params, min.sa=-100, max.sa=100) {
-  if (!any(is.nan(gev.params))) {
-    sa <- stats::qnorm(lmom::cdfgev(val, gev.params))
-    sa <- max(sa, min.sa)
-    sa <- min(sa, max.sa)
-    return(sa)
-  } else {
-    return(NA)
-  }
-}
-
+#' @useDynLib wsim.distributions, .registration=TRUE
 #' @export
 gevStandardize <- function(dist_params, obs) {
-  apply_dist_to_array(dist_params, obs, calcSaValue)
+   pmin(pmax(stats::qnorm(gev_quantiles(obs,
+                                        as.matrix(dist_params[,,1]),
+                                        as.matrix(dist_params[,,2]),
+                                        as.matrix(dist_params[,,3]))), -100), 100)
 }

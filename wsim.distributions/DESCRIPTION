@@ -6,11 +6,13 @@ Description: The wsim.distributions package provides functionality to fit and ap
 Depends: R (>= 3.4.0)
 License: file LICENSE
 Imports: raster, 
+         Rcpp (>= 0.12.12),
          abind,
          lmom,
          stats,
          methods,
          foreach
+LinkingTo: Rcpp
 Suggests: testthat, wsim.io
 Encoding: UTF-8
 LazyData: true

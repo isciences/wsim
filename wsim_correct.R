@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
 wsim.io::logging_init('wsim_correct')
 
+suppressMessages(library(Rcpp))
+
 '
 Bias-correct a forecast file
 
