@@ -36,15 +36,11 @@ main <- function(raw_args) {
   distribution <- attr(fits, 'distribution')
   wsim.io::info("Read distribution parameters.")
 
-  if (distribution != 'gev') {
-    die_with_message(distribution, " is not a supported statistical distribution.")
-  }
-
   v <- wsim.io::read_vars_from_cdf(args$obs)
   obs <- v$data[[1]]
   varname <- names(v$data)[1]
 
-  sa <- gevStandardize(fits, obs)
+  sa <- standard_anomaly(distribution, fits, obs)
 
   if (!is.null(args$sa)) {
     to_write <- list()

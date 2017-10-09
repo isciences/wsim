@@ -6,7 +6,7 @@
 #' @return return period
 #' @export
 sa2rp <- function(sa, min.rp=-1000, max.rp=1000) {
-    rp <- sign(sa) / (1 - pnorm(abs(sa)))
+    rp <- sign(sa) / (1 - stats::pnorm(abs(sa)))
 
     rp <- pmax(rp, min.rp)
     rp <- pmin(rp, max.rp)

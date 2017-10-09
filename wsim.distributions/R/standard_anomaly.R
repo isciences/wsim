@@ -1,24 +1,21 @@
 #' Compute the standard anomaly associated with an observation
 #'
-#' @param cdf_fun cumulative distribution function accepting an observed
-#'                value and a vector of distribution parameters as arguments
-#' @param dist_params vector of distribution parameters
+#' @param distribution name of distribution used for \code{dist_params}
+#' @param dist_params 3D arary of distribution parameters
 #' @param obs observed value for which a standard anomaly should be computed
 #' @param min.sa minimum value for clamping computed standard anomaly
 #' @param max.sa maximum value for clamping computed standard anomaly
 #'
 #' @return computed standard anomaly
 #' @export
-standard_anomaly <- function(cdf_fun, dist_params, obs, min.sa=-100, max.sa=100) {
-  # TODO change to check is.na also?
-  if (!any(is.nan(dist_params))) {
-    sa <- stats::qnorm(cdf_fun(obs, para=dist_params))
-    # TODO check for NA, NULL, etc on min and max
-    sa <- max(sa, min.sa)
-    sa <- min(sa, max.sa)
-    return(sa)
-  } else {
-    # return as.numeric(NA) ?
-    return(NA)
-  }
+standard_anomaly <- function(distribution, dist_params, obs, min.sa=-100, max.sa=100) {
+
+  quantile_fn <- switch(distribution,
+                        gev= gev_quantiles,
+                        pe3= pe3_quantiles)
+
+  pmin(pmax(stats::qnorm(quantile_fn(obs,
+                                     as.matrix(dist_params[,,1]),
+                                     as.matrix(dist_params[,,2]),
+                                     as.matrix(dist_params[,,3]))), min.sa), max.sa)
 }

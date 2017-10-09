@@ -27,7 +27,7 @@ test_that('This module computes equivalent anomalies to previous WSIM code', {
 
   observed <- wsim.io::read_vars(paste0(testdata, '/Bt_RO_Sum_24mo_trgt201612.img'))$data[[1]]
 
-  anomalies <- gevStandardize(gev_params, observed)
+  anomalies <- standard_anomaly('gev', gev_params, observed)
   return_periods <- sa2rp(anomalies)
 
   expected_anomalies <- wsim.io::read_vars(paste0(testdata, '/Bt_RO_Sum_24mo_anom_trgt201612.img'))$data[[1]]
@@ -62,7 +62,7 @@ test_that('This module bias-corrects a forecast equivalently to previous WSIM co
   # the file used as an example is incorrectly flipped about the y-axis.
   forecast <- raster::as.matrix(raster::flip(raster::raster(forecast), 'y'))
 
-  corrected <- forecast_correct(forecast, retroGEV, obsGEV)
+  corrected <- forecast_correct('gev', forecast, retroGEV, obsGEV)
   expected_corrected <- wsim.io::read_vars(paste0(testdata, '/tmp2m.trgt201706.lead6.ic2016122506.img'))$data[[1]]
 
   expect_equal(corrected, expected_corrected, check.attributes=FALSE)
