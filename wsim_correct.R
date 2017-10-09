@@ -57,7 +57,7 @@ main <- function(raw_args) {
   varname <- names(forecast$data)[[1]]
 
   corrected <- list()
-  corrected[[varname]] <- wsim.distributions::forecast_correct(forecast$data[[1]], retro_fits, obs_fits)
+  corrected[[varname]] <- wsim.distributions::forecast_correct(distribution, forecast$data[[1]], retro_fits, obs_fits)
 
   wsim.io::write_vars_to_cdf(corrected,
                              args$output,
