@@ -54,6 +54,7 @@ WSIM identifies locations on Earth’s terrestrial surface that are experiencing
    :glob:
    :caption: Contents:
 
+   obtaining
    scripts/index
    lsm/index
    r_packages/index
