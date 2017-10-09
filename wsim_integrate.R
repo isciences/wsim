@@ -2,6 +2,7 @@
 wsim.io::logging_init('wsim_integrate')
 
 suppressMessages({
+  require(Rcpp)
   require(wsim.distributions)
   require(wsim.io)
 })

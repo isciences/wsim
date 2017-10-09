@@ -16,7 +16,7 @@ find_stat <- function(name) {
     return(function(x) { unless_all_na(min)(x, na.rm=TRUE) })
 
   if (name == 'median')
-    return(function(x) { unless_all_na(median)(x, na.rm=TRUE )})
+    return(function(x) { wsim_quantile(x, 0.5) })
 
   if (name == 'max')
     return(function(x) { unless_all_na(max)(x, na.rm=TRUE) })
@@ -35,7 +35,7 @@ find_stat <- function(name) {
 
   if (grepl('q\\d{1,2}(.\\d+)?$', name)) {
     q <- 0.01 * as.numeric(substring(name, 2))
-    return(function(x) { unname(quantile(x, q, na.rm=TRUE)) })
+    return(function(x) { wsim_quantile(x, q) })
   }
 
   stop("Unknown stat ", name)

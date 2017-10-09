@@ -1,3 +1,4 @@
+// [[Rcpp::plugins(cpp11)]]
 #include <Rcpp.h>
 using namespace Rcpp;
 
@@ -218,4 +219,38 @@ NumericMatrix pe3_forecast_correct(const NumericMatrix & data,
                                    double extreme_cutoff,
                                    double when_dist_undefined) {
   return forecast_correct<pe3_tag>(data, obs_location, obs_scale, obs_shape, retro_location, retro_scale, retro_shape, extreme_cutoff, when_dist_undefined);
+}
+
+//' Compute a sample quantile of a given vector. NA values are ignored.
+//'
+//' This function is provided for improved performance over the built-in
+//' \code{quantile} function. Interpolation is performed using the default
+//' method 7 specified in documentation for \code{quantile}.
+//'
+//' @param v a vector of numeric values, possibly contining NAs
+//' @param q quantile to compute
+//'
+//' @return sample quantile \code{q} of \code{v}
+//'
+//' @export
+// [[Rcpp::export]]
+double wsim_quantile(const NumericVector & v, double q) {
+  if (q < 0 || q > 1)
+    return NA_REAL;
+
+  NumericVector y = clone(v);
+  auto end = std::remove_if(y.begin(), y.end(), [](double d) { return std::isnan(d); });
+  std::sort(y.begin(), end);
+  int n = std::distance(y.begin(), end);
+
+  if (n == 0)
+    return NA_REAL;
+
+  if (q == 1)
+    return *(end-1);
+
+  int j = q*(n-1);
+  double f = q*(n-1) - floor(q*(n-1));
+
+  return (1-f)*y[j] + f*(y[j+1]);
 }
