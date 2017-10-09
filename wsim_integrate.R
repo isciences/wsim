@@ -100,6 +100,8 @@ main <- function(raw_args) {
     wsim.io::write_vars_to_cdf(integrated, outfile, extent=extent, attrs=attrs, append=TRUE)
     gc()
   }
+
+  wsim.io::info("Finished writing integrated variables to", outfile)
 }
 
 main(commandArgs(trailingOnly=TRUE))

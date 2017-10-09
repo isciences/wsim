@@ -57,10 +57,10 @@ main <- function(raw_args) {
   }
 
   surpluses <- wsim.io::read_vars_to_cube(args$surplus)
-  wsim.io::info('Read surplus values: ', paste(dimnames(surpluses)[[3]], collapse=", "))
+  wsim.io::info('Read surplus values:', paste(dimnames(surpluses)[[3]], collapse=", "))
 
   deficits <- wsim.io::read_vars_to_cube(args$deficit)
-  wsim.io::info('Read deficit values: ', paste(dimnames(deficits)[[3]], collapse=", "))
+  wsim.io::info('Read deficit values:', paste(dimnames(deficits)[[3]], collapse=", "))
 
   if (is.null(args$mask)) {
     mask <- 1
