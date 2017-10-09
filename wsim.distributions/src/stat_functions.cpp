@@ -247,7 +247,7 @@ double wsim_quantile(const NumericVector & v, double q) {
     return NA_REAL;
 
   if (q == 1)
-    return *(end-1);
+    return *(std::prev(end));
 
   int j = q*(n-1);
   double f = q*(n-1) - floor(q*(n-1));
