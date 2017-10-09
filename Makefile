@@ -12,4 +12,7 @@ html:
 		$(MAKE) -C $${s} $@ || exit 1; \
 	done;
 
+build:
+	docker build -t isciences/wsim:latest .
+
 .PHONY: check html
