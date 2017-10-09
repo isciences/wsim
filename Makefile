@@ -13,6 +13,9 @@ html:
 	done;
 
 build:
-	docker build -t isciences/wsim:latest .
+	docker build -t isciences/wsim:2_latest .
+
+push:
+	docker push isciences/wsim:2_latest
 
 .PHONY: check html
