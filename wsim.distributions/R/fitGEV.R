@@ -43,7 +43,7 @@ fitGEV <- function(arr, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
           # TODO document why nmom=5
 
           lmr <- lmom::samlmu(pvals, nmom = 5)
-          ret <- try(lmom::pelgev(lmr), silent=FALSE)
+          try(ret <- lmom::pelgev(lmr), silent=FALSE)
         } else {
           # If there are not enough unique values, but there are enough
           # defined values, estimate the location with the median value
