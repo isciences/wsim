@@ -13,7 +13,7 @@
 #' @param Runoff_mm runoff (not taking account of detention) [mm]
 #' @param Sa snow accumulation [mm]
 #' @param Sm snowmelt [mm]
-#' @param Ws_ave average soil moisture [mm]
+#' @param Ws average soil moisture [mm]
 #' @param dWdt change in soil moisture [mm]
 #' @param extent spatial extent of input matrices \code{(xmin, xmax, ymin, ymax)}
 #'
@@ -34,7 +34,7 @@ make_results <- function(
   Runoff_mm,
   Sa,
   Sm,
-  Ws_ave,
+  Ws,
   dWdt,
   extent
 ) {
@@ -53,7 +53,7 @@ make_results <- function(
     Runoff_mm= Runoff_mm,
     Sa= Sa,
     Sm= Sm,
-    Ws_ave= Ws_ave,
+    Ws= Ws,
     dWdt= dWdt
   )
 

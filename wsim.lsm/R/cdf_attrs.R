@@ -146,13 +146,6 @@ cdf_attrs <- list(
     units="mm"
   ),
   list(
-    var="Ws_ave",
-    description="Average Soil Moisture (mm)",
-    long_name="Average Soil Moisture",
-    standard_name="soil_moisture_content",
-    units="mm"
-  ),
-  list(
     var="dWdt",
     description="Change in Soil Moisture (mm)",
     long_name="Change in Soil Moisture",

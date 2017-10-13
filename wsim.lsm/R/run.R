@@ -98,7 +98,7 @@ run <- function(static, state, forcing) {
     Sa= Sa,
     Sm= ifelse(is.na(Sa), NA, Sm),
     #T= forcing$T,
-    Ws_ave= Ws_ave
+    Ws= Ws_ave
   )
 
   should_wrap_x <- all(state$extent[c(1, 2)] == c(-180, 180))
