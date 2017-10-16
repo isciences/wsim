@@ -28,13 +28,17 @@ attrs_for_stat <- function(var_attrs, var, stat) {
     if (field %in% c('dim')) {
       return(NULL)
     }
+
     if (field %in% c('description', 'long_name')) {
+      # Update "description" and "long_name" fields with description
+      # of the stat.
       return(list(
         var=stat_var,
         key=field,
         val=paste0(stat, ' of ', var_attrs[[var]][[field]])
       ))
     } else  {
+      # Just pass through any other attributes.
       return(list(
         var=stat_var,
         key=field,
@@ -42,6 +46,21 @@ attrs_for_stat <- function(var_attrs, var, stat) {
       ))
      }
   }))
+}
+
+make_stat <- function(stat=NULL, vars=NULL) {
+  list(stat=stat, vars=vars)
+}
+
+parse_stat <- function(stat) {
+  split_stat <- strsplit(stat, '::', fixed=TRUE)[[1]]
+
+  if (length(split_stat) == 1) {
+    return(make_stat(split_stat[1], as.character(c())))
+  }
+
+  vars_for_stat <- strsplit(split_stat[2], ',', fixed=TRUE)[[1]]
+  return(make_stat(split_stat[1], vars_for_stat))
 }
 
 main <- function(raw_args) {
@@ -55,8 +74,9 @@ main <- function(raw_args) {
   }
 
   for (stat in args$stat) {
-    if (is.null(wsim.distributions::find_stat(stat))) {
-      die_with_message("Unknown statistic", stat)
+    parsed <- parse_stat(stat)
+    if (is.null(wsim.distributions::find_stat(parsed$stat))) {
+      die_with_message("Unknown statistic", parsed$stat)
     }
   }
 
@@ -117,18 +137,21 @@ main <- function(raw_args) {
 
       if (i >= window) {
         integrated <- list()
-        attrs <- do.call(c, lapply(args$stat, function(stat) {
-          attrs_for_stat(var_attrs, var$var_out, stat)
-        }))
+        attrs <- list()
 
         for (stat in args$stat) {
-          stat_var <- paste0(var$var_out, '_', tolower(stat))
-          stat_fn <- wsim.distributions::find_stat(stat)
-          wsim.io::info('Computing', stat_var, '...')
+          parsed_stat <- parse_stat(stat)
+          if (length(parsed_stat$vars) == 0 || var$var_out %in% parsed_stat$vars) {
+            stat_var <- paste0(var$var_out, '_', tolower(parsed_stat$stat))
+            stat_fn <- wsim.distributions::find_stat(parsed_stat$stat)
+            wsim.io::info('Computing', parsed_stat$stat, '...')
 
-          integrated[[stat_var]] <- wsim.distributions::array_apply(data, stat_fn)
+            integrated[[stat_var]] <- wsim.distributions::array_apply(data, stat_fn)
 
-          wsim.io::info('done')
+            attrs <- c(attrs, attrs_for_stat(var_attrs, var$var_out, parsed_stat$stat))
+
+            wsim.io::info('done')
+          }
         }
 
         wsim.io::info("Writing to", outfiles[j])

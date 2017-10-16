@@ -12,6 +12,14 @@ for (i in 1:10) {
   write_vars_to_cdf(list(data=vals), fname, extent=extent)
 }
 
+write_vars_to_cdf(list(
+  data_a= array(1, dim=dims),
+  data_b= array(2, dim=dims),
+  data_c= array(3, dim=dims)),
+  '/tmp/constant_13.nc',
+  extent=extent
+)
+
 test_that("wsim_integrate can process a fixed set of files", {
   output <- paste0(tempfile(), '.nc')
 
@@ -101,4 +109,28 @@ test_that("wsim_integrate errors out if multiple outputs are provided without sp
   ))
 
   expect_equal(return_code, 1)
+})
+
+test_that("wsim_integrate can apply stats to specific variables", {
+  output <- paste0(tempfile(), '.nc')
+
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--stat',   'min::data_a,data_c',
+    '--stat',   'max',
+    '--input',  '/tmp/constant_13.nc',
+    '--output', output
+  ))
+
+  expect_equal(return_code, 0)
+
+  results <- read_vars_from_cdf(output)
+
+  expect_equal(results$extent, extent)
+  expect_equal(names(results$data), c('data_a_min',
+                                      'data_a_max',
+                                      'data_b_max',
+                                      'data_c_min',
+                                      'data_c_max'))
+
+  file.remove(output)
 })
