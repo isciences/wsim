@@ -10,13 +10,14 @@ suppressMessages({
 '
 Compute summary statistics from multiple observations
 
-Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>) [--attr=<attr>...]
+Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>)... [--window=<window>] [--attr=<attr>...]
 
 Options:
---stat <stat>  a summary statistic (min, max, ave, sum)
---input <file> one or more input files or glob patterns
---ouput <file> output file to write integrated results
---attr <attr>  optional attribute(s) to be attached to output netCDF
+--stat <stat>     a summary statistic (min, max, ave, sum)
+--input <file>    one or more input files or glob patterns
+--ouput <file>    output file(s) to write integrated results
+--window <window> size of rolling window to use for integration (e.g. 6 files)
+--attr <attr>     optional attribute(s) to be attached to output netCDF
 '->usage
 
 attrs_for_stat <- function(var_attrs, var, stat) {
@@ -44,11 +45,13 @@ attrs_for_stat <- function(var_attrs, var, stat) {
 }
 
 main <- function(raw_args) {
-  args <- parse_args(usage, raw_args)
+  args <- parse_args(usage, raw_args, list(window="integer"))
 
-  outfile <- args$output
-  if (!can_write(outfile)) {
-    die_with_message("Cannot open ", outfile, " for writing.")
+  outfiles <- args$output
+  for (outfile in outfiles) {
+    if (!can_write(outfile)) {
+      die_with_message("Cannot open ", outfile, " for writing.")
+    }
   }
 
   for (stat in args$stat) {
@@ -58,6 +61,26 @@ main <- function(raw_args) {
   }
 
   inputs <- expand_inputs(args$input)
+
+  if (is.null(args$window)) {
+    window <- length(inputs)
+    frames <- 1
+  } else {
+    window <- args$window
+    frames <- length(inputs) - window + 1
+  }
+
+  if (window > length(inputs)) {
+    die_with_message("Cannot compute using window size of ", window,
+                     " with only ", length(inputs), " input files.")
+  }
+
+  if (length(outfiles) != frames) {
+    die_with_message("Given ", length(inputs), " inputs and window size ",
+                     window, ", expected ", frames, " output files ",
+                     "but got ", length(outfiles), ".")
+  }
+
   first_input <- wsim.io::read_vars(inputs[[1]])
   var_attrs <- lapply(first_input$data, attributes)
 
@@ -68,6 +91,7 @@ main <- function(raw_args) {
   }
 
   extent <- first_input$extent
+  dims <- dim(first_input$data[[1]])
 
   parsed_inputs <- lapply(inputs, function(input) {
     wsim.io::parse_vardef(input)
@@ -76,29 +100,44 @@ main <- function(raw_args) {
   # For each var, read all files, and do processing
   # Do this to avoid loading all vars from all files into memory at once
   for (var in vars) {
-    wsim.io::info('Loading variable', toString(var), 'from', length(parsed_inputs), 'input files.')
 
-    data <- wsim.io::read_vars_to_cube(lapply(parsed_inputs, function(input) {
-      make_vardef(filename=input$filename, vars=list(var))
-    }))
+    j <- 1
+    data <- provideDimnames(array(dim = c(dims, window)))
 
-    integrated <- list()
-    attrs <- do.call(c, lapply(args$stat, function(stat) {
-      attrs_for_stat(var_attrs, var$var_out, stat)
-    }))
+    for (i in 1:length(inputs)) {
+      slice <- i %% window + 1
 
-    for (stat in args$stat) {
-      stat_var <- paste0(var$var_out, '_', tolower(stat))
-      stat_fn <- wsim.distributions::find_stat(stat)
-      wsim.io::info('Computing', stat_var, '...')
+      if (i > window) {
+        wsim.io::info('Dropping data from', dimnames(data)[[3]][slice])
+      }
+      wsim.io::info('Loading variable', toString(var), 'from', parsed_inputs[[i]]$filename)
 
-      integrated[[stat_var]] <- wsim.distributions::array_apply(data, stat_fn)
+      data[,,slice] <- wsim.io::read_vars(make_vardef(filename=parsed_inputs[[i]]$filename, vars=list(var)))$data[[1]]
+      dimnames(data)[[3]][slice] <- parsed_inputs[[i]]$filename
 
-      wsim.io::info('done')
+      if (i >= window) {
+        integrated <- list()
+        attrs <- do.call(c, lapply(args$stat, function(stat) {
+          attrs_for_stat(var_attrs, var$var_out, stat)
+        }))
+
+        for (stat in args$stat) {
+          stat_var <- paste0(var$var_out, '_', tolower(stat))
+          stat_fn <- wsim.distributions::find_stat(stat)
+          wsim.io::info('Computing', stat_var, '...')
+
+          integrated[[stat_var]] <- wsim.distributions::array_apply(data, stat_fn)
+
+          wsim.io::info('done')
+        }
+
+        wsim.io::info("Writing to", outfiles[j])
+        wsim.io::write_vars_to_cdf(integrated, outfiles[j], extent=extent, attrs=attrs, append=TRUE)
+        j <- j+1
+      }
+
+      gc()
     }
-
-    wsim.io::write_vars_to_cdf(integrated, outfile, extent=extent, attrs=attrs, append=TRUE)
-    gc()
   }
 
   wsim.io::info("Finished writing integrated variables to", outfile)
