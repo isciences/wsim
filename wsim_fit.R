@@ -17,7 +17,7 @@ main <- function(raw_args) {
 
   outfile <- args$output
   if (!wsim.io::can_write(outfile)) {
-    die_with_message("Cannot open ", outfile, " for writing.")
+    wsim.io::die_with_message("Cannot open ", outfile, " for writing.")
   }
 
   if (args$cores > 1) {
