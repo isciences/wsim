@@ -1,5 +1,7 @@
 import calendar
 
+all_months = range(1, 13)
+
 def parse_yearmon(yearmon):
     return ( int(yearmon[:4]), int(yearmon[4:] ))
 

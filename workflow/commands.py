@@ -1,7 +1,12 @@
-from paths import wc, flowdir, elevation
-
 def q(txt):
-    return '"' + txt + '"'
+    return '"{}"'.format(txt)
+
+def forecast_convert(infile, outfile):
+    return [
+        '{BINDIR}/utils/forecast_convert.sh',
+        q(infile),
+        q(outfile)
+    ]
 
 def wsim_anom(**kwargs):
     cmd = [
@@ -33,9 +38,9 @@ def wsim_fit(**kwargs):
 def wsim_lsm(**kwargs):
     cmd = [
         '{BINDIR}/wsim_lsm.R',
-        '--wc',         wc(),
-        '--flowdir',    flowdir(),
-        '--elevation',  elevation(),
+        '--wc',         q(kwargs['wc']),
+        '--flowdir',    q(kwargs['flowdir']),
+        '--elevation',  q(kwargs['elevation']),
         '--state',      q(kwargs['state'])]
 
     if type(kwargs['forcing']) is str:
@@ -94,7 +99,15 @@ def wsim_integrate(**kwargs):
     for attr in kwargs.get('attrs', []):
         cmd += ['--attr', attr]
 
-    cmd += ['--output', q(kwargs['output'])]
+    if 'window' in kwargs:
+        cmd += ['--window', str(kwargs['window'])]
+
+    output = kwargs['output']
+    if type(output) is str:
+        output = [output]
+
+    for f in output:
+        cmd += ['--output', q(f)]
 
     return cmd
 
