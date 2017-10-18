@@ -37,14 +37,14 @@ class Step:
     def targetString(self, vars):
         return ' '.join(format_vars(target, vars) for target in self.target)
 
-    def get_text(self, vars = None):
-        if vars is None:
-            vars = {}
+    def get_text(self, keys=None):
+        if keys is None:
+            keys = {}
         txt = ""
         if self.comment:
             txt += "#" + self.comment + '\n'
 
-        txt += self.targetString(vars) + ' : ' + ' '.join(format_vars(dep, vars) for dep in self.dependencies) + '\n'
+        txt += self.targetString(keys) + ' : ' + ' '.join(format_vars(dep, keys) for dep in self.dependencies) + '\n'
 
         for command in self.commands:
             for i in range(len(command)):
@@ -54,9 +54,11 @@ class Step:
             txt += '\t'
             for token in command:
                 try:
-                    txt += token.format_map(vars)
-                except:
-                    print("Error subbing", txt)
+                    txt += token.format_map(keys)
+                except Exception as e:
+                    print("Error subbing", token)
+                    print(keys)
+                    print(e)
                     raise
                 if token.endswith('\\'):
                     txt += '\n\t   '

@@ -7,11 +7,15 @@ def compute_pwetdays(data, yearmon):
     if not hasattr(data, 'precip_daily'):
         return []
 
-    daily_precip_files = [data.precip_daily(date).file for date in days_in_month(yearmon)]
+    try:
+        daily_precip_files = [data.precip_daily(date).file for date in days_in_month(yearmon)]
+    except FileNotFoundError:
+        print("Can't compute daily precip for", yearmon, "omitting step.")
+        return []
 
     return [
         Step(
-            targets=data.wetdays(target=yearmon).file,
+            targets=data.p_wetdays(yearmon=yearmon).file,
             dependencies=daily_precip_files,
             commands=[
                 wsim_integrate(
@@ -19,7 +23,8 @@ def compute_pwetdays(data, yearmon):
                     inputs=[file + '::1@[x-1]->Pr' for file in daily_precip_files],
                     stats=['fraction_defined_above_zero'],
                     output='$@'
-                )
+                ),
+                ['ncrename', '-O', '-vPr_fraction_defined_above_zero,pWetDays', '$@']
             ]
         )
     ]
@@ -76,9 +81,9 @@ def run_lsm(workspace, static, target, icm=None):
             dependencies=[
                 current_state,
                 forcing,
-                static.wc().file,
-                static.flowdir().file,
-                static.elevation().file
+                #static.wc().file,
+                #static.flowdir().file,
+                #static.elevation().file
             ],
             commands=[
                 wsim_lsm(
@@ -138,11 +143,13 @@ def compute_return_periods(workspace, window, lsm_vars, integrated_vars, target,
         Step(
             comment="Observed return periods" + ("(" + str(window) + "mo)" if window is not None else ""),
             targets=workspace.return_period(target=target, window=window, icm=icm),
-            dependencies=[workspace.results(target=target, window=window, icm=icm)],
+            dependencies=
+                [workspace.fit_obs(var=var, window=window, month=month) for var in rp_vars] +
+                [workspace.results(target=target, window=window, icm=icm)],
             commands=[
                 wsim_anom(
                     fits=workspace.fit_obs(var=var, window=window, month=month),
-                    obs=workspace.results(target=target, var=var, window=window),
+                    obs=read_vars(workspace.results(target=target, window=window), var),
                     rp='$@')
                 for var in rp_vars
             ]
@@ -151,12 +158,12 @@ def compute_return_periods(workspace, window, lsm_vars, integrated_vars, target,
 
 def composite_indicators(workspace, window, yearmon):
     if window is None:
-        surplus=[
+        deficit=[
             '$<::PETmE_rp@fill0@negate->Neg_PETmE',
             '$<::Ws_rp->Ws',
             '$<::Bt_RO_rp->Bt_RO'
         ]
-        deficit=[
+        surplus=[
             '$<::RO_mm_rp->RO_mm',
             '$<::Bt_RO_rp->Bt_RO'
         ]

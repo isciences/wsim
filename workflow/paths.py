@@ -6,25 +6,6 @@ def read_vars(*args):
 
     return file + '::' + ','.join(vars)
 
-lsm_vars = [
-    'Bt_RO',
-    'Bt_Runoff',
-    'EmPET',
-    'PETmE',
-    'PET',
-    'P_net',
-    #    'Pr',
-    'RO_m3',
-    'RO_mm',
-    'Runoff_mm',
-    'Runoff_m3',
-    'Sa',
-    'Sm',
-    #    'Snowpack',
-    #    'T',
-    'Ws'
-]
-
 class Vardef:
 
     def __init__(self, file, var):
@@ -73,29 +54,29 @@ class NCEP:
         self.derived = derived
 
     def precip_daily(self, yyyymmdd):
-        year = yyyymmdd[:4]
+        year = int(yyyymmdd[:4])
 
         # TODO figure out actual cutoff year
         if year > 2016:
-            return Vardef(os.path.join(self.source, 'NCEP', 'Daily_precip', 'Originals', year, 'PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{DATE}.RT'.format(DATE=yyyymmdd)), '1')
+            return Vardef(os.path.join(self.source, 'NCEP', 'Daily_precip', 'Originals', str(year), 'PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{DATE}.RT'.format(DATE=yyyymmdd)), '1')
         else:
-            raise Exception
+            raise FileNotFoundError
 
     def precip_monthly(self, **kwargs):
         year = int(kwargs['yearmon'][:4])
 
         # TODO figure out actual cutoff year
         if year > 2016:
-            return Vardef(os.path.join(self.source, 'NCEP', 'originals', 'p.{yearmon}'.format_map(kwargs), '1'))
+            return Vardef(os.path.join(self.source, 'NCEP', 'originals', 'p.{yearmon}.mon'.format_map(kwargs)), '1')
         else:
-            return Vardef(os.path.join(self.source, 'NCEP', 'P', 'CPC_Leaky_P_{yearmon}.FLT'.format_map(kwargs), '1'))
+            return Vardef(os.path.join(self.source, 'NCEP', 'P', 'CPC_Leaky_P_{yearmon}.FLT'.format_map(kwargs)), '1')
 
     def temp_monthly(self, **kwargs):
         year = int(kwargs['yearmon'][:4])
 
         # TODO figure out actual cutoff year
         if year > 2016:
-            return Vardef(os.path.join(self.source, 'NCEP', 'originals', 't.{yearmon}'.format_map(kwargs)), '1')
+            return Vardef(os.path.join(self.source, 'NCEP', 'originals', 't.{yearmon}.mon'.format_map(kwargs)), '1')
         else:
             return Vardef(os.path.join(self.source, 'NCEP', 'T', 'CPC_Leaky_T_{yearmon}'.format_map(kwargs)), '1')
 
@@ -103,11 +84,10 @@ class NCEP:
         year = int(kwargs['yearmon'][:4])
         month = int(kwargs['yearmon'][4:])
 
-
         if year < 1979:
-            return Vardef(os.path.join(self.source, 'WetDay_CRU', 'cru_pWD_LTMEAN_{month:02d}.img'.format_map(kwargs)), '1')
+            return Vardef(os.path.join(self.source, 'WetDay_CRU', 'cru_pWD_LTMEAN_{month:02d}.img'.format(month=month)), '1')
         else:
-            return Vardef(os.path.join(self.derived, 'prepared_inputs', 'wetdays_{target}.nc'.format_map(kwargs)), 'pWetDays')
+            return Vardef(os.path.join(self.derived, 'prepared_inputs', 'wetdays_{yearmon}.nc'.format_map(kwargs)), 'pWetDays')
 
 class CFSForecast:
 

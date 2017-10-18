@@ -1,14 +1,29 @@
-from step import Step
-from spinup import spinup
+import os
+import sys
+
 import paths
-from paths import *
-from commands import *
-from dates import *
-
 import monthly
+import spinup
+import dates
 
-#steps = []
-
+lsm_vars = [
+    'Bt_RO',
+    'Bt_Runoff',
+    'EmPET',
+    'PETmE',
+    'PET',
+    'P_net',
+    #    'Pr',
+    'RO_m3',
+    'RO_mm',
+    'Runoff_mm',
+    'Runoff_m3',
+    'Sa',
+    'Sm',
+    #    'Snowpack',
+    #    'T',
+    'Ws'
+]
 
 integrated_vars = {
     'Bt_RO'     : [ 'min', 'max', 'sum' ],
@@ -25,31 +40,7 @@ integrated_vars = {
     'Ws'        : [ 'ave' ]
 }
 
-
-
-#vars = {
-#    'BINDIR'  : '/home/dbaston/dev/wsim2',
-#    'YEARMON' : '201709',
-#    'INPUTS'  : '/mnt/fig/WSIM/WSIM_source_V1.2',
-#    'OUTPUTS' : '/mnt/fig_rw/WSIM_DEV/wsim2'
-#}
-
-# Spinup
-
-vars = {
-    #'BINDIR'  : '/home/dbaston/dev/wsim2',
-    'BINDIR'  : '/wsim',
-    'YEARMON' : '201709',
-    'INPUTS'  : '/mnt/fig/WSIM/WSIM_source_V1.2',
-    'OUTPUTS' : '.'
-}
-
-# TODO eliminate these
-vars['YEARMON_PREV'] = get_previous_yearmon(vars['YEARMON'])
-vars['YEARMON_NEXT'] = get_next_yearmon(vars['YEARMON'])
-vars['YEAR'] = vars['YEARMON'][:4]
-vars['MONTH'] = vars['YEARMON'][4:]
-
+bindir = '/wsim'
 data = 'nldas'
 
 if data == 'ncep':
@@ -57,10 +48,9 @@ if data == 'ncep':
     historical_years = range(1948, 2017) # the complete historical record
     result_fit_years = range(1950, 2010) # the lsm results we want to use for GEV fits
 
-    workspace = paths.Workspace('.')
-    static = paths.Static(vars['INPUTS'])
-    inputs = paths.NCEP(vars['INPUTS'],
-                      '.')
+    workspace = paths.Workspace('/mnt/fig_rw/WSIM_DEV/wsim2')
+    static = paths.Static('/mnt/fig/WSIM/WSIM_source_V1.2')
+    inputs = paths.NCEP('/mnt/fig/WSIM/WSIM_source_V1.2', '/mnt/fig_rw/WSIM_DEV/wsim2')
     makefile = '/mnt/fig_rw/WSIM_DEV/wsim2'
 
 elif data == 'nldas':
@@ -73,17 +63,17 @@ elif data == 'nldas':
     inputs = paths.NLDAS('/mnt/fig/Data_Global/NLDAS')
     makefile = workspace.outputs
 
-steps = spinup(workspace,
-               static,
-               inputs,
-               historical_years,
-               result_fit_years,
-               integration_windows,
-               integrated_vars)
+steps = spinup.spinup(workspace,
+                      static,
+                      inputs,
+                      historical_years,
+                      result_fit_years,
+                      integration_windows,
+                      integrated_vars,
+                      lsm_vars)
 
-import dates
 for month in dates.all_months:
-    yearmon = format_yearmon(2012, month)
+    yearmon = dates.format_yearmon(2012, month)
 
     steps += monthly.monthly_observed(workspace,
                                       static,
@@ -97,7 +87,7 @@ import socket
 if socket.gethostname() == 'flaxvm':
     print("Checking steps only")
     for step in steps:
-        step.get_text(vars)
+        step.get_text({'BINDIR' : bindir})
 else:
     with open(os.path.join(makefile, 'Makefile'), 'w') as outfile:
         outfile.write('.DELETE_ON_ERROR:\n')
@@ -106,8 +96,7 @@ else:
         outfile.write('\n')
 
         for step in reversed(steps):
-            outfile.write(step.get_text(vars))
-            step.get_text(vars)
+            outfile.write(step.get_text({'BINDIR' : bindir}))
 
         print("Done")
 

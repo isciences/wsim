@@ -1,9 +1,9 @@
 from step import Step
 from commands import *
 from dates import format_yearmon, get_next_yearmon, all_months
-from paths import read_vars, lsm_vars
+from paths import read_vars
 
-def spinup(workspace, static_data, observed_data, historical_years, result_fit_years, integration_windows, integrated_vars):
+def spinup(workspace, static_data, observed_data, historical_years, result_fit_years, integration_windows, integrated_vars, lsm_vars):
     """
     :param workspace:
     :param static_data :        A data PathFinder for static data
