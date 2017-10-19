@@ -91,22 +91,51 @@ class NCEP:
 
 class CFSForecast:
 
-    def __init__(self, source):
+    def __init__(self, source, derived):
         self.source = source
+        self.derived = derived
 
     def temp_monthly(self, **kwargs):
-        return Vardef(os.path.join(self.source, 'prepared_inputs', 'cfs_fcst{icm}_{target}_corrected.nc'.format_map(kwargs)), 'T')
+        return Vardef(self.forecast_corrected(**kwargs), 'T')
 
     def precip_monthly(self, **kwargs):
-        return Vardef(os.path.join(self.source, 'prepared_inputs', 'cfs_fcst{icm}_{target}_corrected.nc'.format_map(kwargs)), 'Pr')
+        return Vardef(self.forecast_corrected(**kwargs), 'Pr')
 
     def p_wetdays(self, **kwargs):
         month = int(kwargs['target'][-2:])
 
         return Vardef(os.path.join(self.source, 'WetDay_CRU', 'cru_pWD_LTMEAN_{month:02d}.img'.format(month=month)), '1')
 
+    def fit_obs(self, **kwargs):
+        return os.path.join(self.derived,
+                            'cfs',
+                            'fits',
+                            'obs_{var}_month_{month:02d}.nc'.format_map(kwargs))
 
+    def fit_retro(self, **kwargs):
+        return os.path.join(self.derived,
+                            'cfs',
+                            'fits',
+                            'retro_{var}_month_{target_month:02d}_lead_{lead_months:02d}.nc'.format_map(kwargs))
 
+    def forecast_raw(self, **kwargs):
+        return os.path.join(self.derived,
+                            'cfs',
+                            'raw',
+                            'cfs_fcst{icm}_{target}_raw.nc'.format_map(kwargs))
+
+    def forecast_corrected(self, **kwargs):
+        return os.path.join(self.derived,
+                            'cfs',
+                            'corrected',
+                            'cfs_fcst{icm}_{target}_corrected.nc'.format_map(kwargs))
+
+    def forecast_grib(self, **kwargs):
+        return os.path.join(self.source,
+                            'NCEP.CFSv2',
+                            'raw_forecast',
+                            'cfs.{}'.format(kwargs['icm'][:-2]),
+                            'flxf.01.{icm}.{target}.avrg.grib.grb2'.format_map(kwargs))
 
 class NLDAS:
 
@@ -154,6 +183,18 @@ class Workspace:
     def final_state_norms(self):
         return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')
 
+    def results_summary(self, **kwargs):
+        filename = 'results_summary_{yearmon}_'
+
+        if 'window' in kwargs and kwargs['window']:
+            filename += '{window}mo_'
+
+        filename += 'trgt{target}.nc'
+
+        return os.path.join(self.outputs,
+                            'summary',
+                            filename.format_map(kwargs))
+
     def return_period(self, **kwargs):
         filename = "rp_"
 
@@ -166,6 +207,16 @@ class Workspace:
         filename += "{target}.nc"
 
         return os.path.join(self.outputs, 'rp', filename.format_map(kwargs))
+
+    def return_period_summary(self, **kwargs):
+        filename = 'rp_summary_{yearmon}_'
+
+        if "window" in kwargs and kwargs['window']:
+            filename += "{window}mo_"
+
+        filename += "trgt{target}.nc"
+
+        return os.path.join(self.outputs, 'summary', filename.format_map(kwargs))
 
     def spinup_state(self, **kwargs):
         return os.path.join(self.outputs, 'spinup', 'spinup_state_{target}.nc'.format_map(kwargs))
@@ -213,9 +264,6 @@ class Workspace:
         return os.path.join(self.outputs, 'results', filename.format_map(kwargs))
 
     def fit_obs(self, **kwargs):
-        if 'target_month' in kwargs:
-            return os.path.join(self.outputs, 'fits', 'obs_{var}_month{target_month}.nc'.format_map(kwargs))
-
         filename = '{var}'
 
         if 'stat' in kwargs and kwargs['stat'] is not None:
@@ -312,11 +360,4 @@ def composite_summary(**kwargs):
     txt += '.nc'
     return txt.format_map(kwargs)
 
-def fit_retro(**kwargs):
-    params = {
-        'lead' : '{:01d}'.format(kwargs['lead_months'])
-    }
-    params.update(kwargs)
-
-    return '{{OUTPUTS}}/fits/retro_{var}_month{target_month}_lead_{lead}.nc'.format_map(params)
 

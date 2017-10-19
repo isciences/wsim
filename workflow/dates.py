@@ -11,6 +11,9 @@ def format_yearmon(year, month):
 def format_mon(month):
     return '{:02d}'.format(month)
 
+def get_last_day_of_month(yearmon):
+    return calendar.monthrange(*parse_yearmon(yearmon))[1]
+
 def get_previous_yearmon(yearmon):
     year, month = parse_yearmon(yearmon)
 
@@ -41,23 +44,3 @@ def rolling_window(yearmon, n):
 
 def days_in_month(yearmon):
     return [yearmon + '{:02d}'.format(day + 1) for day in range(calendar.monthrange(*parse_yearmon(yearmon))[1])]
-
-def get_icms(yearmon):
-    prev = get_previous_yearmon(yearmon)
-    last_day = calendar.monthrange(*parse_yearmon(prev))[1]
-
-    start_day = last_day - 6
-
-    icms = []
-    for day in range(start_day, last_day + 1):
-        for hour in (0, 6, 12, 18):
-            icms.append(prev + '{:02d}{:02d}'.format(day, hour))
-    return icms
-
-def get_forecast_targets(yearmon):
-    targets = [get_next_yearmon(yearmon)]
-
-    while len(targets) < 9:
-        targets.append(get_next_yearmon(targets[-1]))
-
-    return targets

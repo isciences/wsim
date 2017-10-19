@@ -33,9 +33,14 @@ def create_forcing_file(workspace, data, yearmon, target=None, icm=None):
     if target is None:
         target = yearmon
 
-    precip = data.precip_monthly(yearmon=target, icm=icm)
-    temp = data.temp_monthly(yearmon=target, icm=icm)
-    wetdays = data.p_wetdays(yearmon=target, icm=icm)
+    if icm:
+        precip = data.precip_monthly(target=target, icm=icm)
+        temp = data.temp_monthly(target=target, icm=icm)
+        wetdays = data.p_wetdays(target=target, icm=icm)
+    else:
+        precip = data.precip_monthly(yearmon=target)
+        temp = data.temp_monthly(yearmon=target)
+        wetdays = data.p_wetdays(yearmon=target)
 
     return [
         Step(
@@ -58,7 +63,7 @@ def create_forcing_file(workspace, data, yearmon, target=None, icm=None):
         )
     ]
 
-def run_lsm(workspace, static, target, icm=None):
+def run_lsm(workspace, static, target, icm=None, lead_months=0):
     is_forecast = True if icm else False
 
     if is_forecast:
@@ -66,7 +71,7 @@ def run_lsm(workspace, static, target, icm=None):
     else:
         comment = "Run LSM with observed data"
 
-    current_state = workspace.state(target=target, icm=icm)
+    current_state = workspace.state(target=target, icm=icm if lead_months > 1 else None)
     next_state = workspace.state(target=get_next_yearmon(target), icm=icm)
     results = workspace.results(target=target, icm=icm)
     forcing = workspace.forcing(target=target, icm=icm)
@@ -115,7 +120,7 @@ def time_integrate(workspace, window, integrated_vars, target, icm=None, lead_mo
     return [
         Step(
             comment="Time integration of observed results (" + str(window) + " months)",
-            targets=workspace.results(target=target, window=window),
+            targets=workspace.results(target=target, window=window, icm=icm),
             dependencies=prev_results,
             commands=[
                 wsim_integrate(
@@ -149,47 +154,88 @@ def compute_return_periods(workspace, window, lsm_vars, integrated_vars, target,
             commands=[
                 wsim_anom(
                     fits=workspace.fit_obs(var=var, window=window, month=month),
-                    obs=read_vars(workspace.results(target=target, window=window), var),
+                    obs=read_vars(workspace.results(target=target, window=window, icm=icm), var),
                     rp='$@')
                 for var in rp_vars
             ]
         )
     ]
 
-def composite_indicators(workspace, window, yearmon):
+def composite_indicators(workspace, window, yearmon, target=None, quantile=None):
+    q = '_q{quantile}'.format(quantile=quantile) if quantile else ''
+
     if window is None:
         deficit=[
-            '$<::PETmE_rp@fill0@negate->Neg_PETmE',
-            '$<::Ws_rp->Ws',
-            '$<::Bt_RO_rp->Bt_RO'
+            '$<::PETmE_rp' + q + '@fill0@negate->Neg_PETmE',
+            '$<::Ws_rp' + q +'->Ws',
+            '$<::Bt_RO_rp' + q +'->Bt_RO'
         ]
         surplus=[
-            '$<::RO_mm_rp->RO_mm',
-            '$<::Bt_RO_rp->Bt_RO'
+            '$<::RO_mm_rp' + q + '->RO_mm',
+            '$<::Bt_RO_rp' + q + '->Bt_RO'
         ]
-        mask='$<::Ws_rp'
+        mask='$<::Ws_rp' + q
     else:
         surplus=[
-            '$<::PETmE_sum_rp@fill0@negate->Neg_PETmE',
-            '$<::Ws_ave_rp->Ws',
-            '$<::Bt_RO_sum_rp->Bt_RO'
+            '$<::PETmE_sum_rp' + q + '@fill0@negate->Neg_PETmE',
+            '$<::Ws_ave_rp' + q + '->Ws',
+            '$<::Bt_RO_sum_rp' + q + '->Bt_RO'
         ]
         deficit=[
-            '$<::RO_mm_sum_rp->RO_mm',
-            '$<::Bt_RO_sum_rp->Bt_RO'
+            '$<::RO_mm_sum_rp' + q + '->RO_mm',
+            '$<::Bt_RO_sum_rp' + q + '->Bt_RO'
         ]
-        mask='$<::Ws_ave_rp'
+        mask='$<::Ws_ave_rp' + q
+
+    if target:
+        infile = workspace.return_period_summary(yearmon=yearmon, target=target, window=window)
+    else:
+        infile = workspace.return_period(target=yearmon, window=window)
 
     return [
         Step(
-            targets=workspace.composite_summary(yearmon=yearmon, window=window),
-            dependencies=[workspace.return_period(target=yearmon, window=window)],
+            targets=workspace.composite_summary(yearmon=yearmon, target=target, window=window),
+            dependencies=[infile],
             commands=[
                 wsim_composite(
                     surplus=surplus,
                     deficit=deficit,
                     both_threshold=3,
                     mask=mask,
+                    output='$@'
+                )
+            ]
+        )
+    ]
+
+def result_summary(workspace, ensemble_members, yearmon, target, window):
+    ensemble_results = [workspace.results(target=target, icm=icm) for icm in ensemble_members]
+
+    return [
+        Step(
+            targets=workspace.results_summary(yearmon=yearmon, target=target, window=window),
+            dependencies=ensemble_results,
+            commands=[
+                wsim_integrate(
+                    inputs=ensemble_results,
+                    stats=['q25', 'q50', 'q75'],
+                    output='$@'
+                )
+            ]
+        )
+    ]
+
+def return_period_summary(workspace, ensemble_members, yearmon, target, window):
+    ensemble_rps = [workspace.return_period(target=target, window=window, icm=icm) for icm in ensemble_members]
+
+    return [
+        Step(
+            targets=workspace.return_period_summary(yearmon=yearmon, target=target, window=window),
+            dependencies=ensemble_rps,
+            commands=[
+                wsim_integrate(
+                    inputs=ensemble_rps,
+                    stats=['q25', 'q50', 'q75'],
                     output='$@'
                 )
             ]
@@ -221,170 +267,30 @@ def monthly_observed(workspace, static, data, integration_windows, integrated_va
 
     return steps
 
-def convert_forecast(icm, target):
-    return [
-        Step(
-            targets=cfs_forecast_raw(icm=icm, target=target),
-            dependencies=[cfs_forecast_grib(icm=icm, target=target)],
-            commands=[
-                forecast_convert('$<', '$@')
-            ]
-        )
-    ]
-
-def correct_forecast(icm, target, lead_months):
-    target_month = target[-2:]
-
-    return [
-        Step(
-            targets=cfs_forecast_corrected(icm=icm, target=target),
-            dependencies=[cfs_forecast_raw(icm=icm, target=target)] +
-                         [fit_retro(target_month=target_month,
-                                    lead_months=lead_months,
-                                    var=var)
-                          for var in ('T', 'Pr')] +
-                         [fit_obs(target_month=target_month,
-                                  var=var)
-                          for var in ('T', 'Pr')],
-            commands=[
-                wsim_correct(retro=fit_retro(target_month=target_month, lead_months=lead_months, var='T'),
-                             obs=fit_obs(target_month=target_month, var='T'),
-                             forecast=cfs_forecast_raw(icm=icm, target=target) + '::tmp2m->T',
-                             output=cfs_forecast_corrected(icm=icm, target=target)),
-                wsim_correct(retro=fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
-                             obs=fit_obs(target_month=target_month, var='Pr'),
-                             forecast=cfs_forecast_raw(icm=icm, target=target) + '::prate->Pr',
-                             output=cfs_forecast_corrected(icm=icm, target=target),
-                             append=True)
-            ]
-        )
-    ]
-
-def monthly_forecast(workspace, static, data, integration_windows, integrated_vars, yearmon, forecast_targets, ensemble_members):
+def monthly_forecast(workspace, static, data, integration_windows, integrated_vars, lsm_vars, yearmon, forecast_targets, ensemble_members):
     steps = []
 
     for i, target in enumerate(forecast_targets):
         lead_months = i+1
-
+        print('Generating steps for', yearmon, 'forecast target', lead_months)
         for icm in ensemble_members:
-            # Convert the forecast data from GRIB to netCDF
-            steps += convert_forecast(icm, target)
-
-            # Bias-correct the forecast
-            steps += correct_forecast(icm, target, lead_months)
-
             # Assemble forcing inputs for forecast
             steps += create_forcing_file(workspace, data, yearmon, target, icm)
 
             # Run LSM with forecast data
-            steps += run_lsm(workspace, static, target, icm)
+            steps += run_lsm(workspace, static, target, icm, lead_months)
+
+            for window in integration_windows:
+                # Time integrate the results
+                steps += time_integrate(workspace, window, integrated_vars, target, icm, lead_months)
 
             for window in [None] + integration_windows:
-                # Time integrate the results
-                steps += time_integrate(workspace, window, integrated_vars, target, icm)
-
                 # Compute return periods
                 steps += compute_return_periods(workspace, window, lsm_vars, integrated_vars, target, icm)
 
         for window in [None] + integration_windows:
-            ensemble_results = [workspace.results(target=target, icm=icm) for icm in ensemble_members]
-            ensemble_rp = [workspace.return_period(target=target, icm=icm) for icm in ensemble_members]
+            steps += result_summary(workspace, ensemble_members, yearmon, target, window)
+            steps += return_period_summary(workspace, ensemble_members, yearmon, target, window)
+            steps += composite_indicators(workspace, window, yearmon, target=target, quantile=50)
 
-            steps.append(Step(
-                targets='results_summary_{yearmon}_{window}mo_trgt{target}.nc'.format(yearmon=vars['YEARMON'],
-                                                                           target=target),
-                dependencies=ensemble_results,
-                commands=[
-                    wsim_integrate(
-                        inputs=ensemble_results,
-                        stats=['q25', 'q50', 'q75'],
-                        output='$@'
-                    )
-                ]
-            ))
-
-            # Summarize ensemble return periods
-            steps.append(Step(
-                targets=return_period_summary(yearmon=yearmon,
-                                              target=target),
-                dependencies=ensemble_rp,
-                commands=[
-                    wsim_integrate(
-                        inputs=ensemble_rp,
-                        stats=['q25', 'q50', 'q75'],
-                        output='$@'
-                    )
-                ]
-            ))
-
-            # Generate composite indicators
-            if window is None:
-                surplus=[
-                    '$<::PETmE_rp@fill0@negate->Neg_PETmE',
-                    '$<::Ws_rp->Ws',
-                    '$<::Bt_RO_rp->Bt_RO'
-                ]
-                deficit=[
-                    '$<::RO_mm_rp->RO_mm',
-                    '$<::Bt_RO_rp->Bt_RO'
-                ]
-                mask='$<::Ws_rp'
-            else:
-                surplus=[
-                    '$<::PETmE_sum_rp@fill0@negate->Neg_PETmE',
-                    '$<::Ws_ave_rp->Ws',
-                    '$<::Bt_RO_sum_rp->Bt_RO'
-                ]
-                deficit=[
-                    '$<::RO_mm_sum_rp->RO_mm',
-                    '$<::Bt_RO_sum_rp->Bt_RO'
-                ]
-                mask='$<::Ws_ave_rp'
-
-            if target == yearmon:
-                rp_in = return_period(target=yearmon, window=window)
-            else:
-                rp_in = return_period_summary(yearmon=yearmon, target=target, window=window)
-
-            steps.append(Step(
-                targets=composite_summary(yearmon=yearmon, window=window),
-                dependencies=[rp_in],
-                commands=[
-                    wsim_composite(
-                        surplus=surplus,
-                        deficit=deficit,
-                        both_threshold=3,
-                        mask=mask,
-                        output='$@'
-                    )
-                ]
-            ))
-
-            #if True:
-            #    # Generate composite indicators (observed)
-            #    deficit_vars = [
-            #        'PETmE_rp@fill0@negate->Neg_PETmE',
-            #        'Ws_ave_rp->Ws',
-            #        'Bt_RO_rp->Bt_RO'
-            #    ]
-            #
-            #    surplus_vars = [
-            #        'Bt_RO_rp->Bt_RO',
-            #        'RO_mm_rp->RO_mm'
-            #    ]
-            #
-            #    steps.append(Step(
-            #        targets=composite_summary(yearmon=vars['YEARMON']),
-            #        dependencies=return_period(target=vars['YEARMON']),
-            #        commands=[
-            #            wsim_composite(
-            #                surplus=[return_period(target=vars['YEARMON']) + '::' + ','.join(surplus_vars)],
-            #                deficit=[return_period(target=vars['YEARMON']) + '::' + ','.join(deficit_vars)],
-            #                mask=return_period(target=vars['YEARMON']) + '::Ws_ave_rp',
-            #                both_threshold=3,
-            #                output='$@'
-            #            )
-            #        ]
-            #
-            #    ))
-
+    return steps
