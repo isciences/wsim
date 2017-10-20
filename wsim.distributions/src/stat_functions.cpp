@@ -59,7 +59,7 @@ NumericMatrix forecast_correct(const NumericMatrix & data,
       } else {
         double quantile;
 
-        if (std::isnan(retro_location(i, j)) && std::isnan(retro_scale(i, j)) && std::isnan(retro_shape(i, j))) {
+        if (std::isnan(retro_location(i, j)) || std::isnan(retro_scale(i, j)) || std::isnan(retro_shape(i, j))) {
           quantile = when_dist_undefined;
         } else {
           quantile = cdf<distribution>(data(i,j), retro_location(i, j), retro_scale(i,j), retro_shape(i,j));
