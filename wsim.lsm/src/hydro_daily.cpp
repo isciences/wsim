@@ -59,12 +59,13 @@ static HydroVals daily_hydro_impl(double P, double Sa, double Sm, double E0, dou
     Ws_sum += Ws;
     dWdt += dWdt_daily;
 
-    double E_daily = evapotranspiration(P_daily, PET_daily, dWdt_daily);
+    double E_daily = std::max(0.0, evapotranspiration(P_daily, PET_daily, dWdt_daily));
     E += E_daily;
 
-    double R_daily = runoff(P_daily, E_daily, dWdt_daily);
+    double R_daily = std::max(0.0, runoff(P_daily, E_daily, dWdt_daily));
     R += R_daily;
   }
+
 
   HydroVals ret = {
     dWdt, Ws_sum / nDays, E, R
