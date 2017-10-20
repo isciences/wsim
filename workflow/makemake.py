@@ -13,10 +13,9 @@ if sys.version_info.major < 3:
     sys.exit(1)
 
 def get_icms(yearmon):
-    prev = dates.get_previous_yearmon(yearmon)
-    last_day = dates.get_last_day_of_month(prev)
+    last_day = dates.get_last_day_of_month(yearmon)
 
-    return [prev + '{:02d}{:02d}'.format(day, hour)
+    return [yearmon + '{:02d}{:02d}'.format(day, hour)
             for day in range(last_day - 6, last_day + 1)
             for hour in (0, 6, 12, 18)]
 
@@ -153,4 +152,3 @@ else:
             outfile.write(step.get_text({'BINDIR' : bindir}))
 
         print("Done")
-
