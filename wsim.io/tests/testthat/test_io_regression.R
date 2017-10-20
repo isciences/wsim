@@ -21,7 +21,7 @@ test_that("We can read a CFSv2 forecast", {
   isciences_internal()
 
   filename <- '/mnt/fig/WSIM/WSIM_source_V1.2/NCEP.CFSv2/forecast/wsim.20161231/nc/tmp2m/target_201706/tmp2m.trgt201706.lead6.ic2016122506.nc'
-  forecast <- read_cfs_from_cdf(filename)
+  forecast <- read_vars_from_cdf(paste0(filename, '::tmp2m@[x-273.13]'))
 
   forecast_rast <- raster::raster(forecast$data$tmp2m,
                                   xmn=forecast$extent[1],

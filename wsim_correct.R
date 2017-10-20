@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 wsim.io::logging_init('wsim_correct')
+suppressMessages(require(Rcpp))
 
 '
 Bias-correct a forecast file
@@ -38,7 +39,7 @@ main <- function(raw_args) {
   stopifnot(attr(retro_fits, 'distribution') ==
             attr(obs_fits,   'distribution'))
 
-  forecast <- wsim.io::read_cfs_from_cdf(args$forecast)
+  forecast <- wsim.io::read_vars(args$forecast)
 
   # CFS forecasts converted to netCDF using the NCL script have incorrectly
   # flipped longitudes. Fix that here.
@@ -55,7 +56,7 @@ main <- function(raw_args) {
   varname <- names(forecast$data)[[1]]
 
   corrected <- list()
-  corrected[[varname]] <- wsim.distributions::forecast_correct(forecast$data[[1]], retro_fits, obs_fits)
+  corrected[[varname]] <- wsim.distributions::forecast_correct(distribution, forecast$data[[1]], retro_fits, obs_fits)
 
   wsim.io::write_vars_to_cdf(corrected,
                              args$output,

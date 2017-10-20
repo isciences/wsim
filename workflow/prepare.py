@@ -45,11 +45,11 @@ def correct_forecast(data, icm, target, lead_months):
             commands=[
                 wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='T'),
                              obs=data.fit_obs(month=target_month, var='T'),
-                             forecast=Vardef(data.forecast_raw(icm=icm, target=target), 'tmp2m').read_as('T'),
+                             forecast=Vardef(data.forecast_raw(icm=icm, target=target), 'tmp2m@[x-273.15]').read_as('T'),
                              output=data.forecast_corrected(icm=icm, target=target)),
                 wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
                              obs=data.fit_obs(month=target_month, var='Pr'),
-                             forecast=Vardef(data.forecast_raw(icm=icm, target=target), 'prate').read_as('Pr'),
+                             forecast=Vardef(data.forecast_raw(icm=icm, target=target), 'prate@[x*2628000]').read_as('Pr'),
                              output=data.forecast_corrected(icm=icm, target=target),
                              append=True)
             ]
