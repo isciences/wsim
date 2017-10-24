@@ -58,7 +58,7 @@ test_that('This module bias-corrects a forecast equivalently to previous WSIM co
   dimnames(retroGEV) <- list(NULL, NULL, list('location', 'scale', 'shape'))
 
   # pull a raw forecast from end of December with a 6-month lead (June)
-  forecast <- wsim.io::read_cfs_from_cdf(paste0(testdata, '/tmp2m.trgt201706.lead6.ic2016122506.nc'))$data[[1]]
+  forecast <- wsim.io::read_vars(paste0(testdata, '/tmp2m.trgt201706.lead6.ic2016122506.nc'))$data[[1]] - 273.15
   # the file used as an example is incorrectly flipped about the y-axis.
   forecast <- raster::as.matrix(raster::flip(raster::raster(forecast), 'y'))
 
