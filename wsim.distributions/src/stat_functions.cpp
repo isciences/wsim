@@ -68,7 +68,11 @@ NumericMatrix forecast_correct(const NumericMatrix & data,
         quantile = std::min(quantile, max_quantile);
         quantile = std::max(quantile, min_quantile);
 
-        corrected(i, j) = qua<distribution>(quantile, obs_location(i, j), obs_scale(i, j), obs_shape(i, j));
+        if (std::isnan(obs_scale(i, j)) || std::isnan(obs_shape(i, j))) {
+          corrected(i, j) = obs_location(i, j);
+        } else {
+          corrected(i, j) = qua<distribution>(quantile, obs_location(i, j), obs_scale(i, j), obs_shape(i, j));
+        }
       }
     }
   }
