@@ -12,6 +12,12 @@ html:
 		$(MAKE) -C $${s} $@ || exit 1; \
 	done;
 
+build-ci:
+	docker build -f Dockerfile.gitlabci -t isciences/wsim-gitlabci:latest .
+
+push-ci:
+	docker push isciences/wsim-gitlabci:latest
+
 build:
 	docker build -t isciences/wsim:2_latest .
 

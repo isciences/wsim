@@ -1,4 +1,6 @@
-testdata <- '/home/dbaston/dev/wsim2/testdata'
+require(testthat)
+
+testdata <- Sys.getenv('WSIM_TEST_DATA')
 
 isciences_internal <- function() {
   if (!file.exists(testdata)) {

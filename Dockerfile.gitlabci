@@ -57,3 +57,5 @@ RUN curl -o /tmp/wgrib2.tgz http://www.ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib
 
 RUN Rscript -e 'install.packages("futile.logger", dependencies = TRUE, repos="http://cran.us.r-project.org")'
 
+COPY testdata /wsim_testdata
+ENV WSIM_TEST_DATA /wsim_testdata
