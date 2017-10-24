@@ -76,7 +76,7 @@ test_that('if any component of the retrospective forecast distribution is undefi
   for (val in runif(3)) {
     corrected <- correct('gev', val, retro, obs)
 
-    expect_equal(corrected, quagev(0.5, obs), check.attributes=FALSE)
+    expect_equal(corrected, lmom::quagev(0.5, obs), check.attributes=FALSE)
   }
 
 })
