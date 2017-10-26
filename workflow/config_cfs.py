@@ -51,7 +51,7 @@ class NCEP(paths.Forcing):
         if year > 2016:
             return paths.Vardef(os.path.join(self.source, 'NCEP', 'originals', 't.{yearmon}.mon'.format_map(kwargs)), '1')
         else:
-            return paths.Vardef(os.path.join(self.source, 'NCEP', 'T', 'CPC_Leaky_T_{yearmon}'.format_map(kwargs)), '1')
+            return paths.Vardef(os.path.join(self.source, 'NCEP', 'T', 'CPC_Leaky_T_{yearmon}.FLT'.format_map(kwargs)), '1')
 
     def p_wetdays(self, **kwargs):
         year = int(kwargs['yearmon'][:4])
