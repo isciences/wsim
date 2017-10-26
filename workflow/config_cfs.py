@@ -29,8 +29,7 @@ class NCEP(paths.Forcing):
     def precip_daily(self, yyyymmdd):
         year = int(yyyymmdd[:4])
 
-        # TODO figure out actual cutoff year
-        if year > 2016:
+        if year >= 2014:
             return paths.Vardef(os.path.join(self.source, 'NCEP', 'Daily_precip', 'Originals', str(year), 'PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{DATE}.RT'.format(DATE=yyyymmdd)), '1')
         else:
             raise FileNotFoundError
@@ -38,8 +37,7 @@ class NCEP(paths.Forcing):
     def precip_monthly(self, **kwargs):
         year = int(kwargs['yearmon'][:4])
 
-        # TODO figure out actual cutoff year
-        if year > 2016:
+        if year >= 2014:
             return paths.Vardef(os.path.join(self.source, 'NCEP', 'originals', 'p.{yearmon}.mon'.format_map(kwargs)), '1')
         else:
             return paths.Vardef(os.path.join(self.source, 'NCEP', 'P', 'CPC_Leaky_P_{yearmon}.FLT'.format_map(kwargs)), '1')
@@ -47,8 +45,7 @@ class NCEP(paths.Forcing):
     def temp_monthly(self, **kwargs):
         year = int(kwargs['yearmon'][:4])
 
-        # TODO figure out actual cutoff year
-        if year > 2016:
+        if year >= 2014:
             return paths.Vardef(os.path.join(self.source, 'NCEP', 'originals', 't.{yearmon}.mon'.format_map(kwargs)), '1')
         else:
             return paths.Vardef(os.path.join(self.source, 'NCEP', 'T', 'CPC_Leaky_T_{yearmon}.FLT'.format_map(kwargs)), '1')
@@ -59,6 +56,8 @@ class NCEP(paths.Forcing):
 
         if year < 1979:
             return paths.Vardef(os.path.join(self.source, 'WetDay_CRU', 'cru_pWD_LTMEAN_{month:02d}.img'.format(month=month)), '1')
+        elif year < 2014:
+            return paths.Vardef(os.path.join(self.source, 'NCEP', 'Daily_precip', 'Adjusted', str(year), 'pWetDays_{yearmon}.img'.format_map(kwargs)), '1')
         else:
             return paths.Vardef(os.path.join(self.derived, 'prepared_inputs', 'wetdays_{yearmon}.nc'.format_map(kwargs)), 'pWetDays')
 
