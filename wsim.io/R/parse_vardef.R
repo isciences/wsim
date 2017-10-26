@@ -100,11 +100,13 @@ is.wsim.io.var <- function(v) {
   class(v) == 'wsim.io.var'
 }
 
+#' @method print wsim.io.var
 #' @export
-print.wsim.io.var <- function(v) {
+print.wsim.io.var <- function(v, ...) {
   cat(toString(v), '\n')
 }
 
+#' @method toString wsim.io.var
 #' @export
 toString.wsim.io.var <- function(v) {
   s <- v$var_in

@@ -1,21 +1,21 @@
 #' @export
 error <- function(...) {
-  futile.logger::flog.error(paste0(list(...), collapse=' '))
+  futile.logger::flog.error(paste(lapply(list(...), toString), collapse=' '))
 }
 
 #' @export
 fatal <- function(...) {
-  futile.logger::flog.fatal(paste0(list(...), collapse=' '))
+  futile.logger::flog.fatal(paste(lapply(list(...), toString), collapse=' '))
 }
 
 #' @export
 info <- function(...) {
-  futile.logger::flog.info(paste0(list(...), collapse=' '))
+  futile.logger::flog.info(paste(lapply(list(...), toString), collapse=' '))
 }
 
 #' @export
 warn <- function(...) {
-  futile.logger::flog.warn(paste(list(...), collapse=' '))
+  futile.logger::flog.warn(paste(lapply(list(...), toString), collapse=' '))
 }
 
 #' @export
