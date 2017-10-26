@@ -37,6 +37,10 @@ class Step:
     def targetString(self, vars):
         return ' '.join(format_vars(target, vars) for target in self.target)
 
+    def get_mkdir_commands(self):
+        return [ ['mkdir', '-p', '`dirname {}`'.format(target)]
+                 for target in self.target ]
+
     def get_text(self, keys=None):
         if keys is None:
             keys = {}
@@ -46,7 +50,7 @@ class Step:
 
         txt += self.targetString(keys) + ' : ' + ' '.join(format_vars(dep, keys) for dep in self.dependencies) + '\n'
 
-        for command in self.commands:
+        for command in self.get_mkdir_commands() + self.commands:
             for i in range(len(command)):
                 if command[i].startswith('-'):
                     command[i-1] += ' \\'
