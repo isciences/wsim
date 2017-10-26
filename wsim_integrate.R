@@ -63,6 +63,20 @@ parse_stat <- function(stat) {
   return(make_stat(split_stat[1], vars_for_stat))
 }
 
+#' Read the unique variables (var_out) that are provided by
+#' a list of inputs.
+read_unique_vars <- function(parsed_inputs) {
+  vars <- list()
+  for (input in parsed_inputs) {
+    for (var in input$vars) {
+      vars[[var$var_out]] <- var$var_out
+    }
+  }
+  vars <- unname(vars)
+
+  return(vars)
+}
+
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args, list(window="integer"))
 
@@ -102,26 +116,25 @@ main <- function(raw_args) {
   }
 
   first_input <- wsim.io::read_vars(inputs[[1]])
-  var_attrs <- lapply(first_input$data, attributes)
-
-  vars <- wsim.io::parse_vardef(inputs[[1]])$vars
-  if (length(vars) == 0) {
-    # No vars specified, so we'll take them all.
-    vars <- lapply(names(first_input$data), wsim.io::make_var)
-  }
-
   extent <- first_input$extent
   dims <- dim(first_input$data[[1]])
 
-  parsed_inputs <- lapply(inputs, function(input) {
-    wsim.io::parse_vardef(input)
-  })
+  var_attrs <- lapply(first_input$data, attributes)
+
+  parsed_inputs <- lapply(inputs, wsim.io::parse_vardef)
+
+  var_names <- read_unique_vars(parsed_inputs)
+  if (length(var_names) == 0) {
+    # No vars specified, so we'll take all of the vars from
+    # the first file (without transformation) and assume
+    # they're found in all of the inputs.
+    var_names <- names(first_input$data)
+  }
 
   # For each var, read all files, and do processing
   # Do this to avoid loading all vars from all files into memory at once
-  for (var in vars) {
-
-    j <- 1
+  for (var_name in var_names) {
+    outfile_number <- 1
     data <- provideDimnames(array(dim = c(dims, window)))
 
     for (i in 1:length(inputs)) {
@@ -130,9 +143,21 @@ main <- function(raw_args) {
       if (i > window) {
         wsim.io::info('Dropping data from', dimnames(data)[[3]][slice])
       }
-      wsim.io::info('Loading variable', toString(var), 'from', parsed_inputs[[i]]$filename)
 
-      data[,,slice] <- wsim.io::read_vars(make_vardef(filename=parsed_inputs[[i]]$filename, vars=list(var)))$data[[1]]
+      # Because each input could potentially define var_out as associated with a different
+      # var_in, we need to figure out the var_in associated with the given var_out
+      var_to_read <- Find(function(var) {
+        var$var_out == var_name
+      }, parsed_inputs[[i]]$vars)
+
+      if (is.null(var_to_read)) {
+        var_to_read <- make_var(var_name)
+      }
+
+      wsim.io::info('Loading variable', var_name, 'from', parsed_inputs[[i]]$filename, '(', var_to_read, ')')
+
+      to_read <- make_vardef(filename=parsed_inputs[[i]]$filename, vars=list(var_to_read))
+      data[,,slice] <- wsim.io::read_vars(to_read)$data[[1]]
       dimnames(data)[[3]][slice] <- parsed_inputs[[i]]$filename
 
       if (i >= window) {
@@ -141,22 +166,22 @@ main <- function(raw_args) {
 
         for (stat in args$stat) {
           parsed_stat <- parse_stat(stat)
-          if (length(parsed_stat$vars) == 0 || var$var_out %in% parsed_stat$vars) {
-            stat_var <- paste0(var$var_out, '_', tolower(parsed_stat$stat))
+          if (length(parsed_stat$vars) == 0 || var_name %in% parsed_stat$vars) {
+            stat_var <- paste0(var_name, '_', tolower(parsed_stat$stat))
             stat_fn <- wsim.distributions::find_stat(parsed_stat$stat)
             wsim.io::info('Computing', parsed_stat$stat, '...')
 
             integrated[[stat_var]] <- wsim.distributions::array_apply(data, stat_fn)
 
-            attrs <- c(attrs, attrs_for_stat(var_attrs, var$var_out, parsed_stat$stat))
+            attrs <- c(attrs, attrs_for_stat(var_attrs, var_name, parsed_stat$stat))
 
             wsim.io::info('done')
           }
         }
 
-        wsim.io::info("Writing to", outfiles[j])
-        wsim.io::write_vars_to_cdf(integrated, outfiles[j], extent=extent, attrs=attrs, append=TRUE)
-        j <- j+1
+        wsim.io::info("Writing to", outfiles[outfile_number])
+        wsim.io::write_vars_to_cdf(integrated, outfiles[outfile_number], extent=extent, attrs=attrs, append=TRUE)
+        outfile_number <- outfile_number+1
       }
 
       gc()
@@ -166,5 +191,7 @@ main <- function(raw_args) {
   wsim.io::info("Finished writing integrated variables to", outfile)
 }
 
-main(commandArgs(trailingOnly=TRUE))
+if (!interactive()) {
+  main(commandArgs(trailingOnly=TRUE))
+}
 #main(list('--stat=min', ' --stat=max', '--input=/tmp/T_[1-6]*.nc::data',  '--output=/tmp/T_stats_6.nc', '--attr=year=2016', '--attr=min:units=deg'))

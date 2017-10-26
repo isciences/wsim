@@ -48,6 +48,77 @@ test_that("wsim_integrate can process a fixed set of files", {
   file.remove(output)
 })
 
+test_that("wsim_integrate can process variables that have different names in each input", {
+  output <- paste0(tempfile(), '.nc')
+
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--stat',   'min',
+    '--stat',   'ave',
+    '--stat',   'max',
+    '--input',  '/tmp/constant_1.nc',                     # value=1
+    '--input',  '"/tmp/constant_13.nc::data_c->data"',    # value=3
+    '--input',  '"/tmp/constant_2.nc::data@[x+2]->data"', # value=4
+    '--output', output
+  ))
+
+  expect_equal(return_code, 0)
+
+  results <- read_vars_from_cdf(output)
+  expect_equal(results$data$data_min[1, 1], 1)
+  expect_equal(results$data$data_ave[1, 1], mean(c(1,3,4)))
+  expect_equal(results$data$data_max[1, 1], 4)
+
+  file.remove(output)
+})
+
+test_that("wsim_integrate passes attributes through from its inputs to its outputs", {
+  input1 <- paste0(tempfile(), '.nc')
+  input2 <- paste0(tempfile(), '.nc')
+  output <- paste0(tempfile(), '.nc')
+
+  write_vars_to_cdf(list(data=array(1, dim=dims)), input1, extent=extent, attrs=list(
+    list(key="my_global", val=3),
+    list(var="data", key="long_name", val="Cosmic energy"),
+    list(var="data", key="source",   val="unknown")
+  ))
+
+  write_vars_to_cdf(list(data=array(1, dim=dims)), input2, extent=extent, attrs=list(
+    list(key="my_global2", val=4),
+    list(var="data", key="units", val="caloric quantons")
+  ))
+
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--stat',   'min',
+    '--stat',   'max',
+    '--input',  input1,
+    '--input',  input2,
+    '--output', output
+  ))
+
+  expect_equal(return_code, 0)
+
+  cdf <- ncdf4::nc_open(output)
+
+  # Global attributes are dropped
+  expect_null(ncdf4::ncatt_get(cdf, 0)$my_global)
+  expect_null(ncdf4::ncatt_get(cdf, 0)$my_global2)
+
+  # Variable attributes are passed from the first input but
+  # dropped from subsequent inputs.
+  expect_null(ncdf4::ncatt_get(cdf, "data_min")$units)
+  expect_equal(ncdf4::ncatt_get(cdf, "data_min")$source, "unknown")
+
+  # Special variable variables (e.g., long_name) are manipulated according
+  # to the computed statistic
+  expect_equal(ncdf4::ncatt_get(cdf, "data_max")$long_name, "max of Cosmic energy")
+
+  ncdf4::nc_close(cdf)
+
+  file.remove(input1)
+  file.remove(input2)
+  file.remove(output)
+})
+
 test_that("wsim_integrate can process a rolling window of files", {
   outputs <- replicate(3, paste0(tempfile(), '.nc'))
 
