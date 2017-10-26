@@ -1,4 +1,5 @@
 import abc
+import dates
 
 class ConfigBase(metaclass=abc.ABCMeta):
 
@@ -9,6 +10,11 @@ class ConfigBase(metaclass=abc.ABCMeta):
         during spin-up.
         """
         pass
+
+    def historical_yearmons(self):
+        return [dates.format_yearmon(year, month)
+                for year in self.historical_years()
+                for month in dates.all_months]
 
     @abc.abstractmethod
     def result_fit_years(self):

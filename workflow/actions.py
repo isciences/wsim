@@ -3,32 +3,33 @@ from step import Step
 from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_fit, wsim_lsm
 from dates import days_in_month, get_next_yearmon, rolling_window
 
-
 def compute_pwetdays(data, yearmon):
     if not hasattr(data, 'precip_daily'):
         return []
 
     try:
         daily_precip_files = [data.precip_daily(date).file for date in days_in_month(yearmon)]
+
+        return [
+            Step(
+                targets=data.p_wetdays(yearmon=yearmon).file,
+                dependencies=daily_precip_files,
+                commands=[
+                    wsim_integrate(
+                        # TODO need to remove hardcode of band 1
+                        inputs=[file + '::1@[x-1]->Pr' for file in daily_precip_files],
+                        stats=['fraction_defined_above_zero'],
+                        output='$@'
+                    ),
+                    ['ncrename', '-O', '-vPr_fraction_defined_above_zero,pWetDays', '$@']
+                ]
+            )
+        ]
+
     except FileNotFoundError:
-        print("Can't compute daily precip for", yearmon, "omitting step.")
+        print("Can't compute daily precip for", yearmon, ", omitting step.")
         return []
 
-    return [
-        Step(
-            targets=data.p_wetdays(yearmon=yearmon).file,
-            dependencies=daily_precip_files,
-            commands=[
-                wsim_integrate(
-                    # TODO need to remove hardcode of band 1
-                    inputs=[file + '::1@[x-1]->Pr' for file in daily_precip_files],
-                    stats=['fraction_defined_above_zero'],
-                    output='$@'
-                ),
-                ['ncrename', '-O', '-vPr_fraction_defined_above_zero,pWetDays', '$@']
-            ]
-        )
-    ]
 
 def create_forcing_file(workspace, data, yearmon, target=None, icm=None):
     if target is None:

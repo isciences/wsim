@@ -3,6 +3,8 @@ from commands import *
 from dates import format_yearmon, get_next_yearmon, all_months
 from paths import read_vars
 
+from actions import create_forcing_file, compute_pwetdays
+
 def spinup(config):
     """
     Produces the Steps needed to spin up a model from a series
@@ -41,15 +43,23 @@ def spinup(config):
         ]
     ))
 
+    # Compute pWetDays for historical period
+    for yearmon in config.historical_yearmons():
+        steps += compute_pwetdays(config.observed_data(), yearmon)
+
     # Read the temperature and precipitation data in our historical range and generate
     # a single "monthly norm" temperature and precipitation file for each month.
     for month in all_months:
         historical_yearmons = [format_yearmon(year, month) for year in config.historical_years()]
         climate_norms = config.workspace().climate_norms(month=month)
 
+        input_files = set([config.observed_data().temp_monthly(yearmon=yearmon).file for yearmon in historical_yearmons] +
+                          [config.observed_data().precip_monthly(yearmon=yearmon).file for yearmon in historical_yearmons]+
+                          [config.observed_data().p_wetdays(yearmon=yearmon).file for yearmon in historical_yearmons])
+
         steps.append(Step(
             targets=config.workspace().climate_norms(month=month),
-            dependencies=[],
+            dependencies=list(input_files),
             commands=[
                 wsim_integrate(
                     inputs=[config.observed_data().precip_monthly(yearmon=yearmon).read_as('Pr') for yearmon in historical_yearmons],
@@ -83,6 +93,8 @@ def spinup(config):
             ]
         ))
 
+        del historical_yearmons
+
     # Run the LSM from the garbage initial state using monthly norm forcing
     # for 100 years, discarding the results generated in the process.
     # Store only the final state.
@@ -105,39 +117,24 @@ def spinup(config):
         ]
     ))
 
-    historical_forcing = [format_yearmon(year, month)
-                          for year in config.historical_years()
-                          for month in all_months]
-
-    for yearmon in historical_forcing:
-        steps.append(Step(
-            targets=config.workspace().forcing(target=yearmon),
-            dependencies=[],
-            commands=[
-                wsim_merge(
-                    inputs=[config.observed_data().precip_monthly(yearmon=yearmon).read_as('Pr'),
-                            config.observed_data().temp_monthly(yearmon=yearmon).read_as('T'),
-                            config.observed_data().p_wetdays(yearmon=yearmon).read_as('pWetDays')],
-                    output=config.workspace().forcing(target=yearmon)
-                )
-            ]
-        ))
+    for yearmon in config.historical_yearmons():
+        steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon)
 
     # Run the LSM over the entire historical period, and retain the state files
     # for each iteration. Discard the results.
-
+    #
     # Making each iteration an individual target is in some ways cleaner and would
     # allow restarting in case of failure. But the runtime becomes dominated by the
     # R startup and I/O, and takes about 5 seconds / iteration instead of 1 second /iteration.
     steps.append(Step(
-        targets=[config.workspace().spinup_state(target=get_next_yearmon(yearmon)) for yearmon in historical_forcing],
-        dependencies=[config.workspace().final_state_norms()] + [config.workspace().forcing(target=yearmon) for yearmon in historical_forcing],
+        targets=[config.workspace().spinup_state(target=get_next_yearmon(yearmon)) for yearmon in config.historical_yearmons()],
+        dependencies=[config.workspace().final_state_norms()] + [config.workspace().forcing(target=yearmon) for yearmon in config.historical_yearmons()],
         commands=[
             # Set the yearmon in final state from climate norms run to be the first
             # forcing date in our historical record
-            ['ncatted', '-O', '-a', 'yearmon,global,m,c,"{}"'.format(historical_forcing[0]), config.workspace().final_state_norms()],
+            ['ncatted', '-O', '-a', 'yearmon,global,m,c,"{}"'.format(config.historical_yearmons()[0]), config.workspace().final_state_norms()],
             wsim_lsm(
-                forcing=[config.workspace().forcing(target=yearmon) for yearmon in historical_forcing],
+                forcing=[config.workspace().forcing(target=yearmon) for yearmon in config.historical_yearmons()],
                 state=config.workspace().final_state_norms(),
                 elevation=config.static_data().elevation(),
                 flowdir=config.static_data().flowdir(),
@@ -176,16 +173,17 @@ def spinup(config):
     # Now run the model for the entire historical record, retaining results and states
     # TODO are the states actually needed for anything?
     steps.append(Step(
-        targets=[config.workspace().results(target=yearmon) for yearmon in historical_forcing] +
-                [config.workspace().state(target=get_next_yearmon(yearmon)) for yearmon in historical_forcing],
-        dependencies=[config.workspace().spinup_mean_state(month=1)] + [config.workspace().forcing(target=yearmon) for yearmon in historical_forcing],
+        comment="Running LSM from {} to {}".format(config.historical_yearmons()[0], config.historical_yearmons()[-1]),
+        targets=[config.workspace().results(target=yearmon) for yearmon in config.historical_yearmons()] +
+                [config.workspace().state(target=get_next_yearmon(yearmon)) for yearmon in config.historical_yearmons()],
+        dependencies=[config.workspace().spinup_mean_state(month=1)] + [config.workspace().forcing(target=yearmon) for yearmon in config.historical_yearmons()],
         commands=[
             # Set the yearmon in final state from climate norms run to be the first
             # forcing date in our historical record
             # TODO something cleaner than modifying an existing file
-            ['ncatted', '-O', '-a', 'yearmon,global,c,c,"{}"'.format(historical_forcing[0]), config.workspace().spinup_mean_state(month=1)],
+            ['ncatted', '-O', '-a', 'yearmon,global,c,c,"{}"'.format(config.historical_yearmons()[0]), config.workspace().spinup_mean_state(month=1)],
             wsim_lsm(
-                forcing=[config.workspace().forcing(target=yearmon) for yearmon in historical_forcing],
+                forcing=[config.workspace().forcing(target=yearmon) for yearmon in config.historical_yearmons()],
                 state=config.workspace().spinup_mean_state(month=1),
                 elevation=config.static_data().elevation(),
                 flowdir=config.static_data().flowdir(),
@@ -198,10 +196,10 @@ def spinup(config):
 
     all_integrated = [] # for phony
     for window in config.integration_windows():
-        targets = historical_forcing[window-1:]
+        targets = config.historical_yearmons()[window-1:]
 
         # Time-integrate the variables
-        inputs = [config.workspace().results(target=target) for target in historical_forcing]
+        inputs = [config.workspace().results(target=target) for target in config.historical_yearmons()]
         outputs = [config.workspace().results(target=target, window=window) for target in targets]
 
         all_integrated.append(outputs[-1])
