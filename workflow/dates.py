@@ -11,6 +11,20 @@ def format_yearmon(year, month):
 def format_mon(month):
     return '{:02d}'.format(month)
 
+def get_yearmons(start, stop):
+    start_year, start_month = parse_yearmon(start)
+    stop_year, stop_month = parse_yearmon(stop)
+
+    if (start_year > stop_year):
+        raise ValueError("Stop date is before start date.")
+    if (start_year == stop_year and start_month > stop_month):
+        raise ValueError("Stop date is before start date.")
+
+    yield start
+    while start != stop:
+        start = get_next_yearmon(start)
+        yield start
+
 def get_last_day_of_month(yearmon):
     return calendar.monthrange(*parse_yearmon(yearmon))[1]
 
