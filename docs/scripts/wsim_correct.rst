@@ -17,6 +17,3 @@ The ``--retro`` and ``--obs`` arguments are used to provide netCDF files contain
 
 The ``--forecast`` argument is used to provide a file of forecast data.
 
-.. WARNING::
-  There is currently a mismatch between the expected units of the various inputs. Fit parameters must be provided in units of degrees Celsius (for temperature) or millimeters per month (for precipitation). Forecast data must be provided in units of degrees Kelvin and millimeters per second.
-
