@@ -23,7 +23,7 @@ test_that('GEV fitting works with observed values of zero', {
   fit <- fitGEV(obs)[1,1, ]
 
   expect_length(fit, 3)
-  expect_false(any(is.na(fits)))
+  expect_false(any(is.na(fit)))
 })
 
 test_that('If we do not have minimum number of unique observations, fall back to the median', {
