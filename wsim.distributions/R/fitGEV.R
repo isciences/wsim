@@ -18,8 +18,8 @@
 #'        the fit
 #' @param nmin.defined Minimum number of defined values required to perform
 #'        the fit
-#' @param zero.scale.to.na If TRUE, NA will be used instead of zero for a
-#'        computed scale parameter.
+#' @param zero.scale.to.na If TRUE, fit will be discarded (set to NA) if
+#'        the scale parameter is computed to be zero.
 #'
 #' @return A 3D array containing the fitted (location, scale, shape)
 #'         parameters of the GEV for each pixel
@@ -44,6 +44,11 @@ fitGEV <- function(arr, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
 
           lmr <- lmom::samlmu(pvals, nmom = 5)
           try(ret <- lmom::pelgev(lmr), silent=FALSE)
+
+          # Optionally discard a fit if the scale is computed to be zero
+          if (zero.scale.to.na & !is.na(ret[2]) & ret[2] == 0) {
+            ret <- rep(NA, length(gev.params))
+          }
         } else {
           # If there are not enough unique values, but there are enough
           # defined values, estimate the location with the median value
@@ -51,10 +56,6 @@ fitGEV <- function(arr, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) 
 
           ret <- c(stats::median(pvals, na.rm = TRUE), NA, NA)
         }
-      }
-
-      if (zero.scale.to.na & !is.na(pvals[2]) & pvals[2] == 0) {
-        ret <- rep(NA, length(gev.params))
       }
 
       return(ret)

@@ -16,6 +16,15 @@ test_that('We can fit a GEV on a 3D array representing time-series observations'
   expect_equal(dim(fits), c(nrow(obs), ncol(obs), length(gevParams)))
 })
 
+test_that('GEV fitting works with observed values of zero', {
+  obs <- c(0, 0, 0, 0, 0, 1.8704651594162, 0.157944425940514, 3.850834608078, 0, 0, 0, 0, 2.85696363449097, 0.261146754026413, 2.0380973815918, 0, 0.258344888687134, 0, 0.399902075529099, 3.37983632087708, 0, 0, 2.2133469581604, 0, 1.93104267120361, 0.367044538259506, 0, 0, 0.520134270191193)
+  obs <- array(obs, dim=c(1, 1, length(obs)))
+
+  fits <- fitGEV(obs)
+
+  expect_false(any(is.na(fits)))
+})
+
 test_that('We can compute the standard anomales for a raster of observations given a RasterStack with the GEV fit parameters', {
   # Take some GEV parameters
   # (Source: WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Max_24mo_PE3GEV/Bt_RO_Max_24mo_gev)
