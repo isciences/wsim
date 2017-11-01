@@ -115,9 +115,9 @@ int day_of_year(int year, int month, int day) {
 //' Return the day length at given latitude(s)
 //'
 //' @param latitudes a vector of latitudes
-//' @param year
-//' @param month
-//' @param day
+//' @param year numeric year
+//' @param month numeric month
+//' @param day numeric day of month
 //' @return day length in hours
 //'
 //' @export
@@ -138,8 +138,8 @@ NumericVector day_length(const NumericVector & latitudes, int year, int month, i
 //' Return the monthly average day length at given latitude(s)
 //'
 //' @param latitudes a vector of latitudes
-//' @param year
-//' @param month
+//' @param year numeric year
+//' @param month numeric month
 //' @return day length in hours
 //'
 //' @export
