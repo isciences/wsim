@@ -6,8 +6,9 @@ from config_base import ConfigBase
 
 class StaticNLDAS():
 
-    def __init__(self, file):
-        self.file = file
+    def __init__(self, source):
+        self.source = source
+        self.file = os.path.join(self.source, 'static_nldas_grid.nc')
 
     def wc(self):
         return Vardef(self.file, 'Wc')
@@ -36,14 +37,14 @@ class NLDASConfig(ConfigBase):
 
     def __init__(self, source, derived):
         self._observed = NLDAS(source)
-        self._static = StaticNLDAS(source)
+        self._static = StaticNLDAS('.')
         self._workspace = paths.DefaultWorkspace(derived)
 
     def historical_years(self):
         return range(1989, 2012)
 
     def result_fit_years(self):
-        return range(1990, 2011)
+        return range(1990, 2010)
 
     def observed_data(self):
         return self._observed
