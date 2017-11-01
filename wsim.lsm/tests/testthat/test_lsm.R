@@ -214,7 +214,7 @@ test_that('we can read and write states from/to netCDF', {
     yearmon='201609'
   )
 
-  write_lsm_values_to_cdf(state, fname, cdf_attrs)
+  write_lsm_values_to_cdf(state, fname)
   expect_true(file.exists(fname))
 
   state2 <- read_state_from_cdf(fname)
@@ -233,7 +233,7 @@ test_that('we can read forcing from netCDF', {
     Pr=matrix(runif(4), nrow=2)
   )
 
-  wsim.lsm::write_lsm_values_to_cdf(forcing, fname, wsim.lsm::cdf_attrs)
+  wsim.lsm::write_lsm_values_to_cdf(forcing, fname)
   forcing2 <- read_forcing_from_cdf(fname)
 
   expect_equal(forcing2, forcing, check.attributes=FALSE)
@@ -268,6 +268,6 @@ test_that('we can write model results to netCDF', {
   iter <- wsim.lsm::run(static, state, forcing)
 
   fname <- tempfile()
-  wsim.lsm::write_lsm_values_to_cdf(iter$obs, fname, wsim.lsm::cdf_attrs)
+  wsim.lsm::write_lsm_values_to_cdf(iter$obs, fname)
   file.remove(fname)
 })

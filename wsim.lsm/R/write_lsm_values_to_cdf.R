@@ -7,12 +7,9 @@
 #'               \item{\code{wsim.lsm.state}}
 #'               }
 #' @param fname Output filename
-#' @param cdf_attrs A list of variable attributes, where each item is defined by a list
-#'                  containing the item "var", and one or more other items representing
-#'                  attributes to be applied to "var".
 #'
 #' @export
-write_lsm_values_to_cdf <- function(values, fname, cdf_attrs) {
+write_lsm_values_to_cdf <- function(values, fname) {
   stopifnot(is.wsim.lsm.forcing(values) ||
             is.wsim.lsm.results(values) ||
             is.wsim.lsm.state(values))

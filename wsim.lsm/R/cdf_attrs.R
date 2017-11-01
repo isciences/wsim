@@ -1,4 +1,3 @@
-#' @export
 cdf_attrs <- list(
   list(
     var="lat",
