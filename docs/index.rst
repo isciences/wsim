@@ -57,5 +57,6 @@ WSIM identifies locations on Earth’s terrestrial surface that are experiencing
    obtaining
    scripts/index
    lsm/index
+   workflow/index
    r_packages/index
    development
