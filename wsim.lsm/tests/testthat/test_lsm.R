@@ -129,7 +129,6 @@ test_that('when there is not enough precipitation, the soil dries up to 90%', {
 test_that('computed state variables are always defined', {
   static <- list(
     elevation=matrix(seq(0, 750, 250), nrow=2),
-    area_m2=matrix(rep.int(100, 4), nrow=2),
     flow_directions=matrix(rep.int(as.integer(NA), 4), nrow=2),
     Wc=matrix(rep.int(150, 4), nrow=2)
   )
@@ -245,7 +244,6 @@ test_that('we can read forcing from netCDF', {
 test_that('we can write model results to netCDF', {
   static <- list(
     elevation=matrix(seq(0, 800, 100), nrow=3),
-    area_m2=matrix(rep.int(100, 9), nrow=3),
     flow_directions=matrix(rep.int(as.integer(NA), 9), nrow=3),
     Wc=matrix(rep.int(150, 9), nrow=3)
   )

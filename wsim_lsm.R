@@ -43,7 +43,6 @@ main <- function(raw_args) {
 
   loops <- args$loop
 
-  static$area_m2 <- wsim.lsm::cell_areas_m2(state$extent, dim(state$Ws))
   write_all_states <- grepl("%(T|N)", args$next_state)
   write_all_results <- grepl("%(T|N)", args$results)
 

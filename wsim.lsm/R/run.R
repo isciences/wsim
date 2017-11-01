@@ -4,7 +4,6 @@
 #'               The following variables are required:
 #'               \describe{
 #'               \item{elevation}{mean grid cell elevation in meters}
-#'               \item{area_m2}{grid cell area in square meters}
 #'               \item{flow_directions}{flow direction grid described in \link{calculateFlow}}
 #'               \item{Wc}{soil moisture capacity in millimeters}
 #'               }
@@ -46,6 +45,8 @@ run <- function(static, state, forcing) {
   Sm <- snow_melt(state$Snowpack, melt_month, forcing$T, static$elevation)
 
   P <- P_effective(forcing$Pr, Sa, Sm)
+
+  area_m2 <- cell_areas_m2(state$extent, dim(forcing$T))
 
   daylength <- day_length_matrix(as.integer(substr(state$yearmon, 1, 4)),
                                 as.integer(substr(state$yearmon, 5, 6)),
@@ -92,9 +93,9 @@ run <- function(static, state, forcing) {
     PETmE= E0 - E,
     #Pr= forcing$Pr,
     RO_mm= revised_runoff,
-    RO_m3= revised_runoff*static$area_m2/1000,
+    RO_m3= revised_runoff*area_m2/1000,
     Runoff_mm= R,
-    Runoff_m3= R*static$area_m2/1000,
+    Runoff_m3= R*area_m2/1000,
     Sa= Sa,
     Sm= ifelse(is.na(Sa), NA, Sm),
     #T= forcing$T,
