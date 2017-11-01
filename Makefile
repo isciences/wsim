@@ -4,7 +4,7 @@ install:
 	done;
 check:
 	./test_cli.sh 
-	for s in wsim.io wsim.distributions wsim.lsm; do \
+	for s in wsim.io wsim.distributions wsim.lsm workflow; do \
 		$(MAKE) -C $${s} $@ || exit 1; \
 	done;
 	Rscript test_cli.R

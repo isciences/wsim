@@ -59,62 +59,68 @@ class DefaultWorkspace:
     def climate_norm_forcing(self, **kwargs):
         return os.path.join(self.outputs, 'spinup', 'climate_norm_forcing_{month:02d}.nc'.format_map(kwargs))
 
-    def composite_summary(self, **kwargs):
-        filename = "composite_summary"
-
-        if 'window' in kwargs and kwargs['window'] is not None:
-            filename += '_{window}mo'
-
-        filename += '_{yearmon}'
-
-        if 'target' in kwargs and kwargs['target'] is not None:
-            filename += '_trgt{target}'
-
-        filename += '.nc'
-
-        return os.path.join(self.outputs, 'composite', filename.format_map(kwargs))
-
     def initial_state(self):
         return os.path.join(self.outputs, 'spinup', 'initial_state.nc')
 
     def final_state_norms(self):
         return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')
 
-    def results_summary(self, **kwargs):
-        filename = 'results_summary_{yearmon}_'
+    def make_filename(self, thing=None, window=None, yearmon=None, target=None, member=None):
+        filename = thing
 
-        if 'window' in kwargs and kwargs['window']:
-            filename += '{window}mo_'
+        if window:
+            filename += '_{window}mo'
 
-        filename += 'trgt{target}.nc'
+        filename += '_{yearmon}'
 
+        if target:
+            filename += '_trgt{target}'
+
+        if member:
+            filename += '_fcst{member}'
+
+        filename += '.nc'
+
+        return filename.format(window=window, yearmon=yearmon, target=target, member=member)
+
+    # Summaries of data from multi-member forecast ensembles
+    def composite_summary(self, **kwargs):
         return os.path.join(self.outputs,
-                            'summary',
-                            filename.format_map(kwargs))
-
-    def return_period(self, **kwargs):
-        filename = "rp_"
-
-        if "icm" in kwargs and kwargs['icm']:
-            filename += "{icm}_"
-
-        if "window" in kwargs and kwargs['window']:
-            filename += "{window}mo_"
-
-        filename += "{target}.nc"
-
-        return os.path.join(self.outputs, 'rp', filename.format_map(kwargs))
+                            'composite',
+                            self.make_filename('composite_summary', **kwargs))
 
     def return_period_summary(self, **kwargs):
-        filename = 'rp_summary_{yearmon}_'
+        return os.path.join(self.outputs,
+                            'summary',
+                            self.make_filename('rp_summary', **kwargs))
 
-        if "window" in kwargs and kwargs['window']:
-            filename += "{window}mo_"
+    def results_summary(self, **kwargs):
+        return os.path.join(self.outputs,
+                            'summary',
+                            self.make_filename('results_summary', **kwargs))
 
-        filename += "trgt{target}.nc"
+    # Individual model inputs, outputs, and derivatives
+    def state(self, **kwargs):
+        return os.path.join(self.outputs,
+                            'state',
+                            self.make_filename('state', **kwargs))
 
-        return os.path.join(self.outputs, 'summary', filename.format_map(kwargs))
+    def forcing(self, **kwargs):
+        return os.path.join(self.outputs,
+                            'forcing',
+                            self.make_filename('forcing', **kwargs))
 
+    def results(self, **kwargs):
+        return os.path.join(self.outputs,
+                            'results',
+                            self.make_filename('results', **kwargs))
+
+    def return_period(self, **kwargs):
+        return os.path.join(self.outputs,
+                            'rp',
+                            self.make_filename('rp', **kwargs))
+
+    # Spinup files
     def spinup_state(self, **kwargs):
         return os.path.join(self.outputs, 'spinup', 'spinup_state_{target}.nc'.format_map(kwargs))
 
@@ -123,42 +129,6 @@ class DefaultWorkspace:
 
     def spinup_mean_state(self, **kwargs):
         return os.path.join(self.outputs, 'spinup', 'spinup_mean_state_month_{month:02d}.nc'.format_map(kwargs))
-
-    def state(self, **kwargs):
-        filename = 'state_'
-
-        if 'icm' in kwargs and kwargs['icm'] is not None:
-            filename += 'fcst{icm}_'
-
-        filename += '{target}.nc'
-
-        return os.path.join(self.outputs, 'state', filename.format_map(kwargs))
-
-    def forcing(self, **kwargs):
-        filename = 'forcing_'
-
-        if 'icm' in kwargs and kwargs['icm'] is not None:
-            filename += 'fcst{icm}_'
-
-        filename += '{target}.nc'
-
-        return os.path.join(self.outputs, 'forcing', filename.format_map(kwargs))
-
-    def results(self, **kwargs):
-        filename = 'results'
-
-        if 'icm' in kwargs and kwargs['icm'] is not None:
-            filename += '_fcst{icm}'
-
-        if 'window' in kwargs and kwargs['window'] is not None:
-            filename += '_{window}mo'
-
-        filename += '_{target}.nc'
-
-        if 'var' in kwargs:
-            filename += '::' + kwargs['var']
-
-        return os.path.join(self.outputs, 'results', filename.format_map(kwargs))
 
     def fit_obs(self, **kwargs):
         filename = '{var}'

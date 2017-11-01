@@ -31,14 +31,14 @@ def compute_pwetdays(data, yearmon):
         return []
 
 
-def create_forcing_file(workspace, data, yearmon, target=None, icm=None):
+def create_forcing_file(workspace, data, yearmon, target=None, member=None):
     if target is None:
         target = yearmon
 
-    if icm:
-        precip = data.precip_monthly(target=target, icm=icm)
-        temp = data.temp_monthly(target=target, icm=icm)
-        wetdays = data.p_wetdays(target=target, icm=icm)
+    if member:
+        precip = data.precip_monthly(target=target, member=member)
+        temp = data.temp_monthly(target=target, member=member)
+        wetdays = data.p_wetdays(target=target, member=member)
     else:
         precip = data.precip_monthly(yearmon=target)
         temp = data.temp_monthly(yearmon=target)
@@ -46,7 +46,7 @@ def create_forcing_file(workspace, data, yearmon, target=None, icm=None):
 
     return [
         Step(
-            targets=workspace.forcing(target=target, icm=icm),
+            targets=workspace.forcing(target=target, member=member),
             dependencies=[precip.file, temp.file, wetdays.file],
             commands=[
                 wsim_merge(
@@ -57,7 +57,7 @@ def create_forcing_file(workspace, data, yearmon, target=None, icm=None):
                     ],
                     attrs=filter(None, [
                         'target=' + target,
-                        ('icm=' + icm) if icm else None
+                        ('member=' + member) if member else None
                     ]),
                     output= '$@'
                 )
@@ -65,18 +65,18 @@ def create_forcing_file(workspace, data, yearmon, target=None, icm=None):
         )
     ]
 
-def run_lsm(workspace, static, target, icm=None, lead_months=0):
-    is_forecast = True if icm else False
+def run_lsm(workspace, static, target, member=None, lead_months=0):
+    is_forecast = True if member else False
 
     if is_forecast:
         comment = "Run LSM with forecast data"
     else:
         comment = "Run LSM with observed data"
 
-    current_state = workspace.state(target=target, icm=icm if lead_months > 1 else None)
-    next_state = workspace.state(target=get_next_yearmon(target), icm=icm)
-    results = workspace.results(target=target, icm=icm)
-    forcing = workspace.forcing(target=target, icm=icm)
+    current_state = workspace.state(target=target, member=member if lead_months > 1 else None)
+    next_state = workspace.state(target=get_next_yearmon(target), member=member)
+    results = workspace.results(target=target, member=member)
+    forcing = workspace.forcing(target=target, member=member)
 
     return [
         Step(
@@ -106,7 +106,7 @@ def run_lsm(workspace, static, target, icm=None, lead_months=0):
         )
     ]
 
-def time_integrate(workspace, window, integrated_vars, target, icm=None, lead_months=None):
+def time_integrate(workspace, window, integrated_vars, target, member=None, lead_months=None):
     months = rolling_window(target, window)
 
     if lead_months:
@@ -117,12 +117,12 @@ def time_integrate(workspace, window, integrated_vars, target, icm=None, lead_mo
         window_forecast = []
 
     prev_results = [workspace.results(target=x) for x in window_observed] + \
-                   [workspace.results(icm=icm, target=x) for x in window_forecast]
+                   [workspace.results(member=member, target=x) for x in window_forecast]
 
     return [
         Step(
             comment="Time integration of observed results (" + str(window) + " months)",
-            targets=workspace.results(target=target, window=window, icm=icm),
+            targets=workspace.results(target=target, window=window, member=member),
             dependencies=prev_results,
             commands=[
                 wsim_integrate(
@@ -136,7 +136,7 @@ def time_integrate(workspace, window, integrated_vars, target, icm=None, lead_mo
         )
     ]
 
-def compute_return_periods(workspace, window, lsm_vars, integrated_vars, target, icm=None):
+def compute_return_periods(workspace, window, lsm_vars, integrated_vars, target, member=None):
     if window is None:
         rp_vars = lsm_vars
     else:
@@ -149,14 +149,14 @@ def compute_return_periods(workspace, window, lsm_vars, integrated_vars, target,
     return [
         Step(
             comment="Observed return periods" + ("(" + str(window) + "mo)" if window is not None else ""),
-            targets=workspace.return_period(target=target, window=window, icm=icm),
+            targets=workspace.return_period(target=target, window=window, member=member),
             dependencies=
             [workspace.fit_obs(var=var, window=window, month=month) for var in rp_vars] +
-            [workspace.results(target=target, window=window, icm=icm)],
+            [workspace.results(target=target, window=window, member=member)],
             commands=[
                 wsim_anom(
                     fits=workspace.fit_obs(var=var, window=window, month=month),
-                    obs=read_vars(workspace.results(target=target, window=window, icm=icm), var),
+                    obs=read_vars(workspace.results(target=target, window=window, member=member), var),
                     rp='$@')
                 for var in rp_vars
             ]
@@ -211,7 +211,7 @@ def composite_indicators(workspace, window, yearmon, target=None, quantile=None)
     ]
 
 def result_summary(workspace, ensemble_members, yearmon, target, window):
-    ensemble_results = [workspace.results(target=target, icm=icm) for icm in ensemble_members]
+    ensemble_results = [workspace.results(target=target, member=member) for member in ensemble_members]
 
     return [
         Step(
@@ -228,7 +228,7 @@ def result_summary(workspace, ensemble_members, yearmon, target, window):
     ]
 
 def return_period_summary(workspace, ensemble_members, yearmon, target, window):
-    ensemble_rps = [workspace.return_period(target=target, window=window, icm=icm) for icm in ensemble_members]
+    ensemble_rps = [workspace.return_period(target=target, window=window, member=member) for member in ensemble_members]
 
     return [
         Step(
@@ -244,13 +244,13 @@ def return_period_summary(workspace, ensemble_members, yearmon, target, window):
         )
     ]
 
-def correct_forecast(data, icm, target, lead_months):
+def correct_forecast(data, member, target, lead_months):
     target_month = int(target[-2:])
 
     return [
         Step(
-            targets=data.forecast_corrected(icm=icm, target=target),
-            dependencies=[data.forecast_raw(icm=icm, target=target)] +
+            targets=data.forecast_corrected(member=member, target=target),
+            dependencies=[data.forecast_raw(member=member, target=target)] +
                          [data.fit_retro(target_month=target_month,
                                          lead_months=lead_months,
                                          var=var)
@@ -261,12 +261,12 @@ def correct_forecast(data, icm, target, lead_months):
             commands=[
                 wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='T'),
                              obs=data.fit_obs(month=target_month, var='T'),
-                             forecast=Vardef(data.forecast_raw(icm=icm, target=target), 'tmp2m@[x-273.15]').read_as('T'),
-                             output=data.forecast_corrected(icm=icm, target=target)),
+                             forecast=Vardef(data.forecast_raw(member=member, target=target), 'tmp2m@[x-273.15]').read_as('T'),
+                             output=data.forecast_corrected(member=member, target=target)),
                 wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
                              obs=data.fit_obs(month=target_month, var='Pr'),
-                             forecast=Vardef(data.forecast_raw(icm=icm, target=target), 'prate@[x*2628000]').read_as('Pr'),
-                             output=data.forecast_corrected(icm=icm, target=target),
+                             forecast=Vardef(data.forecast_raw(member=member, target=target), 'prate@[x*2628000]').read_as('Pr'),
+                             output=data.forecast_corrected(member=member, target=target),
                              append=True)
             ]
         )

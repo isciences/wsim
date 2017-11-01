@@ -37,26 +37,26 @@ def monthly_forecast(config, yearmon):
     for i, target in enumerate(config.forecast_targets(yearmon)):
         lead_months = i+1
         print('Generating steps for', yearmon, 'forecast target', lead_months)
-        for icm in config.forecast_ensemble_members(yearmon):
+        for member in config.forecast_ensemble_members(yearmon):
             # Prepare the dataset for use (convert from GRIB to netCDF, etc.)
-            steps += config.forecast_data().prep_steps(yearmon=yearmon, target=target, member=icm)
+            steps += config.forecast_data().prep_steps(yearmon=yearmon, target=target, member=member)
 
             # Bias-correct the forecast
-            steps += correct_forecast(config.forecast_data(), icm, target, lead_months)
+            steps += correct_forecast(config.forecast_data(), member, target, lead_months)
 
             # Assemble forcing inputs for forecast
-            steps += create_forcing_file(config.workspace(), config.forecast_data(), yearmon, target, icm)
+            steps += create_forcing_file(config.workspace(), config.forecast_data(), yearmon, target, member)
 
             # Run LSM with forecast data
-            steps += run_lsm(config.workspace(), config.static_data(), target, icm, lead_months)
+            steps += run_lsm(config.workspace(), config.static_data(), target, member, lead_months)
 
             for window in config.integration_windows():
                 # Time integrate the results
-                steps += time_integrate(config.workspace(), window, config.integrated_vars(), target, icm, lead_months)
+                steps += time_integrate(config.workspace(), window, config.integrated_vars(), target, member, lead_months)
 
             for window in [None] + config.integration_windows():
                 # Compute return periods
-                steps += compute_return_periods(config.workspace(), window, config.lsm_vars(), config.integrated_vars(), target, icm)
+                steps += compute_return_periods(config.workspace(), window, config.lsm_vars(), config.integrated_vars(), target, member)
 
         for window in [None] + config.integration_windows():
             steps += result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon, target, window)

@@ -94,30 +94,30 @@ class CFSForecast(paths.Forcing):
         return os.path.join(self.derived,
                             'cfs',
                             'raw',
-                            'cfs_fcst{icm}_{target}_raw.nc'.format_map(kwargs))
+                            'cfs_fcst{member}_{target}_raw.nc'.format_map(kwargs))
 
     def forecast_corrected(self, **kwargs):
         return os.path.join(self.derived,
                             'cfs',
                             'corrected',
-                            'cfs_fcst{icm}_{target}_corrected.nc'.format_map(kwargs))
+                            'cfs_fcst{member}_{target}_corrected.nc'.format_map(kwargs))
 
     def forecast_grib(self, **kwargs):
         return os.path.join(self.source,
                             'NCEP.CFSv2',
                             'raw_forecast',
-                            'cfs.{}'.format(kwargs['icm'][:-2]),
-                            'flxf.01.{icm}.{target}.avrg.grib.grb2'.format_map(kwargs))
+                            'cfs.{}'.format(kwargs['member'][:-2]),
+                            'flxf.01.{member}.{target}.avrg.grib.grb2'.format_map(kwargs))
 
     def prep_steps(data, **kwargs):
         target = kwargs['target']
-        icm = kwargs['member']
+        member = kwargs['member']
 
         return [
             # Convert the forecast data from GRIB to netCDF
             Step(
-                targets=data.forecast_raw(icm=icm, target=target),
-                dependencies=[data.forecast_grib(icm=icm, target=target)],
+                targets=data.forecast_raw(member=member, target=target),
+                dependencies=[data.forecast_grib(member=member, target=target)],
                 commands=[
                     commands.forecast_convert('$<', '$@')
                 ]
