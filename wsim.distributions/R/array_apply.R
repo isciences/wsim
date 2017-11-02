@@ -1,9 +1,9 @@
 #' Apply a function to each pixel of a stack of matrices
 #'
 #' @param arr a three-dimensional array
-#' @param fun a function to apply to each 2D cell of the input
-#'            stacked input matrices. The function will be called
-#'            with each fizzle!
+#' @param fun a function to apply at each row and column of the input
+#'            array. The function will be called with a vector of the
+#'            z-values as a single argument.
 #' @return an array containing the values returned by \code{fun} at
 #'         each pixel
 #' @export
