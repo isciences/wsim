@@ -54,6 +54,19 @@ test_that('If we do not have a minimum number of defined values, do not perform 
   expect_false(any(is.na(fit)))
 })
 
+test_that('We return NA if our input observations are un-fittable', {
+  obs <- c(2.782796e-12, 8.098471e-11, 1.303885e-11, 1.842496e-12,
+           6.766966e-13, 6.642337e-13, 4.328186e-13, 2.494756e-13,
+           2.253246e-13, 1.103293e-13, 2.682839e-13, 9.323600e-14,
+           7.455876e-14, 2.546827e-13, 8.882821e-13, 1.244434e-13,
+           3.975554e-13, 3.842592e+06)
+  obs <- array(obs, dim=c(1,1,length(obs)))
+
+  fit <- fit_cell_distributions('gev', obs)[1,1, ]
+  expect_length(fit, 3)
+  expect_true(all(is.na(fit)))
+})
+
 test_that('We can compute the standard anomales for a raster of observations given a RasterStack with the GEV fit parameters', {
   # Take some GEV parameters
   # (Source: WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Max_24mo_PE3GEV/Bt_RO_Max_24mo_gev)
