@@ -7,7 +7,7 @@
 #'            error message
 #' @export
 die_with_message <- function(...) {
-  write(paste0(list(...), collapse=""), stderr())
+  fatal(list(...))
   if(interactive()) {
     stop()
   } else {

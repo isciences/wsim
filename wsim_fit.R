@@ -37,7 +37,7 @@ main <- function(raw_args) {
                                                        inputs_stacked,
                                                        log.errors=wsim.io::error)
   }, error=function(e) {
-    wsim.io::die_with_message(e)
+    wsim.io::die_with_message(e$message)
   })
 
   wsim.io::write_vars_to_cdf(fits,
