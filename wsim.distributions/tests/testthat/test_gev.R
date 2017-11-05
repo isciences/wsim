@@ -61,10 +61,15 @@ test_that('We return NA if our input observations are un-fittable', {
            7.455876e-14, 2.546827e-13, 8.882821e-13, 1.244434e-13,
            3.975554e-13, 3.842592e+06)
   obs <- array(obs, dim=c(1,1,length(obs)))
+  error_logger_called <- FALSE
 
-  fit <- fit_cell_distributions('gev', obs)[1,1, ]
+  fit <- fit_cell_distributions('gev', obs, log.errors=function(e) {
+    error_logger_called <<- TRUE
+  })[1,1, ]
+
   expect_length(fit, 3)
   expect_true(all(is.na(fit)))
+  expect_true(error_logger_called)
 })
 
 test_that('We can compute the standard anomales for a raster of observations given a RasterStack with the GEV fit parameters', {

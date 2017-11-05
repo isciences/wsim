@@ -21,12 +21,15 @@
 #'                     the fit
 #' @param zero.scale.to.na If TRUE, fit will be discarded (set to NA) if
 #'                         the scale parameter is computed to be zero.
+#' @param log.errors   Function that will be called with any errors reported
+#'                     by distribution-fitting function. If \code{log.errors}
+#'                     is not specified, errors will be written to stdout.
 #'
 #' @return A 3D array containing the fitted (location, scale, shape)
 #'         parameters of the GEV for each pixel
 #'
 #' @export
-fit_cell_distributions <- function(distribution, arr, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE) {
+fit_cell_distributions <- function(distribution, arr, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE, log.errors=NULL) {
   if (distribution == 'gev') {
     param.names <- c('location', 'scale', 'shape')
     lmom2params <- lmom::pelgev
@@ -52,7 +55,11 @@ fit_cell_distributions <- function(distribution, arr, nmin.unique=10, nmin.defin
           # TODO document why nmom=5
 
           lmr <- lmom::samlmu(pvals, nmom = 5)
-          try(ret <- lmom2params(lmr), silent=FALSE)
+          if (is.null(log.errors)) {
+            try(ret <- lmom2params(lmr), silent=FALSE)
+          } else {
+            tryCatch(ret <- lmom2params(lmr), error=log.errors)
+          }
 
           # Optionally discard a fit if the scale is computed to be zero
           if (zero.scale.to.na & !is.na(ret[2]) & ret[2] == 0) {

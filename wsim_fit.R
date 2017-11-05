@@ -33,7 +33,9 @@ main <- function(raw_args) {
   distribution <- tolower(args$distribution)
 
   tryCatch({
-    fits <- wsim.distributions::fit_cell_distributions(distribution, inputs_stacked)
+    fits <- wsim.distributions::fit_cell_distributions(distribution,
+                                                       inputs_stacked,
+                                                       log.errors=wsim.io::error)
   }, error=function(e) {
     wsim.io::die_with_message(e)
   })
