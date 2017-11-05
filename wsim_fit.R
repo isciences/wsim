@@ -32,11 +32,11 @@ main <- function(raw_args) {
 
   distribution <- tolower(args$distribution)
 
-  if (distribution == 'gev') {
-    fits <- wsim.distributions::fitGEV(inputs_stacked)
-  } else {
-    wsim.io::die_with_message(distribution, " is not a supported statistical distribution.")
-  }
+  tryCatch({
+    fits <- wsim.distributions::fit_cell_distributions(distribution, inputs_stacked)
+  }, error=function(e) {
+    wsim.io::die_with_message(e)
+  })
 
   wsim.io::write_vars_to_cdf(fits,
                              outfile,

@@ -43,7 +43,7 @@ test_that('This module fits a GEV distribution equivalently to previous WSIM cod
   observed <- raster::as.array(raster::brick(paste0(testdata, '/values_T_month01.grd')))
   expected_gev_params <- raster::as.array(raster::brick(paste0(testdata, '/gev.stack_T_month01.grd')))
 
-  gev_params <- fitGEV(observed, nmin.unique=10, nmin.defined=10, zero.scale.to.na=FALSE)
+  gev_params <- fit_cell_distributions('gev', observed, nmin.unique=10, nmin.defined=10, zero.scale.to.na=FALSE)
   expect_equal(gev_params, expected_gev_params, check.attributes=FALSE)
 })
 

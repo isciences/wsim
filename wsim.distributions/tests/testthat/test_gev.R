@@ -7,7 +7,7 @@ gevParams <- c("location", "scale", "shape")
 test_that('We can fit a GEV on a 3D array representing time-series observations', {
   obs <- abind::abind(replicate(30, matrix(rnorm(100, mean=73, sd=5), nrow=5)), along=3)
 
-  fits <- fitGEV(obs)
+  fits <- fit_cell_distributions('gev', obs)
 
   # Dimnames should be populated
   expect_equal(dimnames(fits)[[3]], gevParams)
@@ -20,7 +20,7 @@ test_that('GEV fitting works with observed values of zero', {
   obs <- c(0, 0, 0, 0, 0, 1.8704651594162, 0.157944425940514, 3.850834608078, 0, 0, 0, 0, 2.85696363449097, 0.261146754026413, 2.0380973815918, 0, 0.258344888687134, 0, 0.399902075529099, 3.37983632087708, 0, 0, 2.2133469581604, 0, 1.93104267120361, 0.367044538259506, 0, 0, 0.520134270191193)
   obs <- array(obs, dim=c(1,1,length(obs)))
 
-  fit <- fitGEV(obs)[1,1, ]
+  fit <- fit_cell_distributions('gev', obs)[1,1, ]
 
   expect_length(fit, 3)
   expect_false(any(is.na(fit)))
@@ -30,11 +30,11 @@ test_that('If we do not have minimum number of unique observations, fall back to
   obs <- c(1.8704651594162, 0.157944425940514, 3.850834608078, 2.85696363449097, 0.261146754026413, 2.0380973815918, 0.258344888687134, 0.399902075529099, 3.37983632087708, 2.2133469581604, 1.93104267120361, 0.367044538259506, 0.520134270191193)
   obs <- array(obs, dim=c(1,1,length(obs)))
 
-  fit <- fitGEV(obs)[1,1, ]
+  fit <- fit_cell_distributions('gev', obs)[1,1, ]
   expect_length(fit, 3)
   expect_false(any(is.na(fit)))
 
-  fit <- fitGEV(obs, nmin.unique=15)[1,1, ]
+  fit <- fit_cell_distributions('gev', obs, nmin.unique=15)[1,1, ]
   expect_length(fit, 3)
   expect_equal(fit[1], median(obs), check.attributes=FALSE)
   expect_true(is.na(fit[2]))
@@ -45,11 +45,11 @@ test_that('If we do not have a minimum number of defined values, do not perform 
   obs <- c(NA, NA, NA, NA, 1.87, 0.157, 3.85, 2.86, 0.26, 2.04, 0.26, 0.40, 3.38)
   obs <- array(obs, dim=c(1,1,length(obs)))
 
-  fit <- fitGEV(obs, nmin.unique=5, nmin.defined=10)[1,1, ]
+  fit <- fit_cell_distributions('gev', obs, nmin.unique=5, nmin.defined=10)[1,1, ]
   expect_length(fit, 3)
   expect_true(all(is.na(fit)))
 
-  fit <- fitGEV(obs, nmin.unique=5, nmin.defined=9)[1,1, ]
+  fit <- fit_cell_distributions('gev', obs, nmin.unique=5, nmin.defined=9)[1,1, ]
   expect_length(fit, 3)
   expect_false(any(is.na(fit)))
 })
