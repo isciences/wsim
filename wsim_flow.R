@@ -10,7 +10,7 @@ suppressMessages({
 '
 Perform pixel-based flow accumulation
 
-Usage: wsim_flow --input=<file> --flowdir=<file> --varname=<varname> --output=<file>
+Usage: wsim_flow --input=<file> --flowdir=<file> --varname=<varname> --output=<file> [--wrapx --wrapy]
 
 Options:
 --input <file>      file containing values to accumulate (runoff)
