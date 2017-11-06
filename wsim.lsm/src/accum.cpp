@@ -116,14 +116,14 @@ static Downstream flow(const IntegerMatrix & outDir, int i, int j, bool wrapX, b
 
 //' For each pixel, compute which cells drain _into_ that pixel.
 //'
-//' @inheritParams calculateFlow
+//' @inheritParams accumulate_flow
 //' @return Matrix containing the summed direction values of all
 //'         adjacent pixels that flow into this pixel. Value is
 //'         zero if no adjacent pixels flow into this pixel (i.e,
 //'         the pixel is a sink.)
 //' @export
 // [[Rcpp::export]]
-IntegerMatrix createInwardDirMatrix(const IntegerMatrix & directions, bool wrapX, bool wrapY) {
+IntegerMatrix create_inward_dir_matrix(const IntegerMatrix & directions, bool wrapX, bool wrapY) {
   IntegerMatrix inwardDirs(directions.nrow(), directions.ncol());
 
   for (int j = 0; j < directions.ncol(); j++) {
@@ -163,8 +163,8 @@ IntegerMatrix createInwardDirMatrix(const IntegerMatrix & directions, bool wrapX
 //' @md
 //' @export
 // [[Rcpp::export]]
-NumericMatrix calculateFlow(const IntegerMatrix & directions, const NumericMatrix & weights, bool wrapX, bool wrapY) {
-  IntegerMatrix inDirs = createInwardDirMatrix(directions, wrapX, wrapY);
+NumericMatrix accumulate_flow(const IntegerMatrix & directions, const NumericMatrix & weights, bool wrapX, bool wrapY) {
+  IntegerMatrix inDirs = create_inward_dir_matrix(directions, wrapX, wrapY);
   NumericMatrix flows = clone(weights);
 
   std::vector<std::pair<int, int>> upstream;

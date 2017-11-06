@@ -29,7 +29,7 @@ test_that('Downstream cells are identified', {
     c( OUT_NODATA, OUT_WEST,  OUT_NORTH)
   )
 
-  indir <- createInwardDirMatrix(directions, FALSE, FALSE);
+  indir <- create_inward_dir_matrix(directions, FALSE, FALSE);
 
   expected_indir <- rbind(
     c( IN_NONE, IN_EAST + IN_WEST, IN_SOUTH ),
@@ -45,8 +45,8 @@ test_that('Downstream cells are identified with wrapping', {
     c(OUT_SOUTH,     OUT_EAST,  OUT_NODATA, OUT_SOUTH, OUT_EAST)
   )
 
-  indir <- createInwardDirMatrix(directions, TRUE, TRUE);
-  indir_nowrap <- createInwardDirMatrix(directions, FALSE, FALSE);
+  indir <- create_inward_dir_matrix(directions, TRUE, TRUE);
+  indir_nowrap <- create_inward_dir_matrix(directions, FALSE, FALSE);
 
   expected_indir <- rbind(
     c( IN_NONE,            IN_SOUTH,            IN_NONE, IN_SOUTHEAST, IN_NONE             ),
@@ -80,7 +80,7 @@ test_that('Flow accumulates correctly without wrapping', {
     c( 55, 39, 0  )
   )
 
-  accumulated <- calculateFlow(directions, weights, FALSE, FALSE) - weights
+  accumulated <- accumulate_flow(directions, weights, FALSE, FALSE) - weights
 
   expect_equal(expected_accumulated, accumulated)
 })
@@ -97,8 +97,8 @@ test_that('We can optionally wrap flow around the X dimension', {
     c(OUT_NODATA, OUT_WEST)
   )
 
-  accumulated_nowrap <- calculateFlow(directions, weights, FALSE, FALSE) - weights
-  accumulated_wrapx  <- calculateFlow(directions, weights, TRUE,  FALSE) - weights
+  accumulated_nowrap <- accumulate_flow(directions, weights, FALSE, FALSE) - weights
+  accumulated_wrapx  <- accumulate_flow(directions, weights, TRUE,  FALSE) - weights
 
   expect_equal(accumulated_nowrap, rbind(
     c(0,  0),
@@ -123,8 +123,8 @@ test_that('We can optionally wrap flow around the Y dimension', {
     c(OUT_SOUTH, OUT_EAST,  OUT_NODATA, OUT_SOUTH, OUT_WEST)
   )
 
-  accumulated_nowrap <- calculateFlow(directions, weights, FALSE, FALSE) - weights
-  accumulated_wrapy  <- calculateFlow(directions, weights, FALSE, TRUE)  - weights
+  accumulated_nowrap <- accumulate_flow(directions, weights, FALSE, FALSE) - weights
+  accumulated_wrapy  <- accumulate_flow(directions, weights, FALSE, TRUE)  - weights
 
   expect_equal(accumulated_nowrap, rbind(
     c(0, 0, 0,    0,  0),
@@ -149,7 +149,7 @@ test_that('NA weights are interpreted as zero, rather than propagating NA downst
     c(OUT_NORTH,  OUT_NORTH)
   )
 
-  bt <- calculateFlow(directions, weights, FALSE, FALSE)
+  bt <- accumulate_flow(directions, weights, FALSE, FALSE)
 
   expect_equal(bt, rbind(
     c( 5,  4 ),
@@ -168,7 +168,7 @@ test_that('NA weights that do not convey flow remain at NA', {
     c(OUT_NORTH,  OUT_NODATA)
   )
 
-  bt <- calculateFlow(directions, weights, FALSE, FALSE)
+  bt <- accumulate_flow(directions, weights, FALSE, FALSE)
 
   expect_equal(bt, rbind(
     c( 5,  4 ),
@@ -187,7 +187,7 @@ test_that('Headwater NAs are not conveyed downstream', {
     c(OUT_NORTH,  OUT_NORTH)
   )
 
-  bt <- calculateFlow(directions, weights, FALSE, FALSE)
+  bt <- accumulate_flow(directions, weights, FALSE, FALSE)
 
   expect_equal(bt, rbind(
     c( 5,  4 ),
