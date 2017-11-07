@@ -1,7 +1,5 @@
 FROM isciences/wsim-gitlabci
 
-RUN yum install -y python34
-
 COPY wsim.io /wsim/wsim.io
 WORKDIR /wsim/wsim.io
 RUN make install

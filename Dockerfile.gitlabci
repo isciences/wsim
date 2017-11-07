@@ -9,38 +9,33 @@ RUN yum install -y \
 	R-devel
 
 RUN yum install -y \
-    libcurl-devel \
-    libssh2-devel \
-    openssl-devel \
-    libxml2-devel \
+	python34
+
+RUN yum install -y \
+    gdal \
+    gdal-devel \
+    gdal-libs \
+    geos \
     geos-devel \
-    proj-devel \
-    proj-nad \
-    proj-epsg \
-    proj-static \
     hdf \
     hdf-devel \
     hdf5 \
     hdf5-devel \
-    wgrib \
-    wgrib2 \
+    libcurl-devel \
+    libssh2-devel \
+    libxml2-devel \
+    nco \
     netcdf \
     netcdf-devel \
-    gdal \
-    gdal-libs \
-    gdal-devel \
-    geos \
-    geos-devel
+    openssl-devel \
+    proj-devel \
+    proj-epsg \
+    proj-nad \
+    proj-static \
+    wgrib
 
-RUN Rscript -e 'install.packages(c("devtools","testthat","roxygen2","raster","Rcpp","lmom","docopt"), dependencies = TRUE, repos="http://cran.us.r-project.org")'
-
+RUN Rscript -e 'install.packages(c("foreach", "lubridate", "abind", "futile.logger", "devtools","testthat","roxygen2","raster","Rcpp","lmom","docopt"), dependencies = TRUE, repos="http://cran.us.r-project.org")'
 RUN Rscript -e 'devtools::install_github("hadley/pkgdown")'
-RUN Rscript -e 'install.packages("foreach", dependencies = TRUE, repos="http://cran.us.r-project.org")'
-RUN Rscript -e 'install.packages("lubridate", dependencies = TRUE, repos="http://cran.us.r-project.org")'
-RUN Rscript -e 'install.packages("abind", dependencies = TRUE, repos="http://cran.us.r-project.org")'
-
-# Add netCDF operators
-RUN yum install -y nco
 
 # Add wgrib2 for converting CFS forecast data
 # We need to compile it outselves becuse the packaged version
@@ -55,7 +50,6 @@ RUN curl -o /tmp/wgrib2.tgz http://www.ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib
   rm -rf wgrib2.tgz && \
   rm -rf grib2  
 
-RUN Rscript -e 'install.packages("futile.logger", dependencies = TRUE, repos="http://cran.us.r-project.org")'
 
 COPY testdata /wsim_testdata
 ENV WSIM_TEST_DATA /wsim_testdata
