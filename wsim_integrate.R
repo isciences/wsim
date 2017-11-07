@@ -192,6 +192,6 @@ main <- function(raw_args) {
 }
 
 if (!interactive()) {
-  main(commandArgs(trailingOnly=TRUE))
+  tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
 }
 #main(list('--stat=min', ' --stat=max', '--input=/tmp/T_[1-6]*.nc::data',  '--output=/tmp/T_stats_6.nc', '--attr=year=2016', '--attr=min:units=deg'))

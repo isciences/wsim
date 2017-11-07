@@ -47,4 +47,4 @@ main <- function(raw_args) {
                              attrs=attrs)
 }
 
-main(commandArgs(trailingOnly = TRUE))
+tryCatch(main(commandArgs(trailingOnly = TRUE)), error=wsim.io::die_with_message)

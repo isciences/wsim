@@ -128,4 +128,4 @@ main <- function(raw_args) {
   wsim.io::info("Wrote composite indicators to", outfile)
 }
 
-main(commandArgs(trailingOnly=TRUE))
+tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)

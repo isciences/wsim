@@ -73,4 +73,4 @@ main <- function(raw_args) {
   wsim.io::info('Wrote corrected forecast to', args$output)
 }
 
-main(commandArgs(trailingOnly=TRUE))
+tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)

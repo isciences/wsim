@@ -50,4 +50,4 @@ main <- function(raw_args) {
   wsim.io::info('Wrote fits to ', outfile)
 }
 
-main(commandArgs(TRUE))
+tryCatch(main(commandArgs(TRUE)), error=wsim.io::die_with_message)
