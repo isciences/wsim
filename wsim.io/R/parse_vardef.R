@@ -29,6 +29,10 @@
 #' }
 #' @export
 parse_vardef <- function(vardef) {
+  if (is.wsim.io.vardef(vardef)) {
+    return(vardef)
+  }
+
   # Parse a filename in the form of "mydata.cdf::var1,var2"
   # Add any vars found by this method to the list of vars
   split_fname <- strsplit(vardef, '::', fixed=TRUE)[[1]]
