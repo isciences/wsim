@@ -7,9 +7,15 @@
 #'            error message
 #' @export
 die_with_message <- function(...) {
-  fatal(list(...))
+  args <- list(...)
+  if (length(args) == 1 && inherits(args[[1]], "error")) {
+    fatal(args[[1]]$message)
+  } else {
+    fatal(...)
+  }
+
   if(interactive()) {
-    stop()
+    stop("Fatal error encountered in interactive session.")
   } else {
     quit(save='no', status=1, runLast=FALSE)
   }
