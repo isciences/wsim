@@ -28,19 +28,14 @@ main <- function(raw_args) {
     die_with_message("Cannot open ", args$output, "for writing.")
   }
 
-  inputs <- wsim.io::read_vars(args$input)
+  inputs <- wsim.io::read_vars(args$input, expect.nvars=1)
   wsim.io::info("Read input values.")
 
-  flowdir <- wsim.io::read_vars(args$flowdir)
+  flowdir <- wsim.io::read_vars(args$flowdir,
+                                expect.nvars=1,
+                                expect.dims=dim(inputs$data[[1]]),
+                                expect.extent=inputs$extent)
   wsim.io::info("Read flow directions.")
-
-  if (!all(inputs$extent == flowdir$extent)) {
-    die_with_message("Extents of inputs and flow directions do not match.")
-  }
-
-  if (!all(dim(inputs$data[[1]]) == dim(flowdir$data[[1]]))) {
-    die_with_message("Extents of inputs and flow directions do not match.")
-  }
 
   results <- list()
   results[[args$varname]] <- wsim.lsm::accumulate_flow(flowdir$data[[1]],
@@ -60,4 +55,4 @@ main <- function(raw_args) {
   info('Wrote results to', args$output)
 }
 
-main(commandArgs(trailingOnly=TRUE))
+tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
