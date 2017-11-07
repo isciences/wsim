@@ -2,9 +2,15 @@
 #'
 #' @inheritParams parse_vardef
 #'
-#' @param nvars If specified, \code{read_vars} will throw an error
-#'              unless exactly \code{nvars} variables are read from
-#'              the file.
+#' @param expect.nvars  If specified, \code{read_vars} will throw an
+#'                      error unless exactly \code{expect.nvars}
+#'                      variables are read from the file.
+#' @param expect.dims   If specified, \code{read_vars} will throw an
+#'                      error if dimensions of read data are not
+#'                      equal to \code{expect.dims}.
+#' @param expect.extent If speficied, \code{read_vars} will throw an
+#'                      error if extent of read data is not exactly
+#'                      \code{expect.extent}.
 #'
 #' @return A list having the following structure:
 #' \describe{
@@ -21,12 +27,14 @@
 #' }
 #'
 #' @export
-read_vars <- function(vardef, nvars=NULL) {
+read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL) {
   def <- parse_vardef(vardef)
 
   if(endsWith(def$filename, '.nc')) {
     loaded <- read_vars_from_cdf(vardef)
-    check_nvars(def, loaded, nvars)
+    check_nvars(def, loaded, expect.nvars)
+    check_extent(def, loaded, expect.extent)
+    check_dims(def, loaded, expect.dims)
     return(loaded)
   }
 
@@ -81,7 +89,9 @@ read_vars <- function(vardef, nvars=NULL) {
     loaded$data[[var$var_out]] <- perform_transforms(vals, var$transforms)
   }
 
-  check_nvars(def, loaded, nvars)
+  check_nvars(def, loaded, expect.nvars)
+  check_extent(def, loaded, expect.extent)
+  check_dims(def, loaded, expect.dims)
   return(loaded)
 }
 
@@ -94,6 +104,28 @@ check_nvars <- function(def, data, nvars) {
        nvars, " variable", ifelse(nvars==1, "", "s"),
        " from ", def$filename,
        " (got ", length(data$data), ")")
+}
+
+check_extent <- function(def, data, extent) {
+  extent_cmp_eps <- 1e-14
+
+  if (is.null(extent) || all(abs(data$extent - extent) < extent_cmp_eps)) {
+    return()
+  }
+
+  stop("Unexpected extent of ", def$filename,
+       " (expected [", paste(extent, collapse=", "), "] ",
+       ", got [", paste(data$extent), "]")
+}
+
+check_dims <- function(def, data, dims) {
+  if (is.null(dims) || length(data$data) == 0 || all(dim(data$data[[1]]) == dims)) {
+    return()
+  }
+
+  stop("Unexpected dimensions of ", def$filename,
+       " (expected [", paste(dims, collapse=", "), "] ",
+       ", got [", paste(dim(data$data[[1]]), collapse=", "), "]")
 }
 
 is_mon <- function(fname) {
