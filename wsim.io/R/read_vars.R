@@ -2,6 +2,10 @@
 #'
 #' @inheritParams parse_vardef
 #'
+#' @param nvars If specified, \code{read_vars} will throw an error
+#'              unless exactly \code{nvars} variables are read from
+#'              the file.
+#'
 #' @return A list having the following structure:
 #' \describe{
 #' \item{attrs}{a list of global attributes in the file}
@@ -17,15 +21,13 @@
 #' }
 #'
 #' @export
-read_vars <- function(vardef) {
-  if (is.wsim.io.vardef(vardef)) {
-    def <- vardef
-  } else {
-    def <- parse_vardef(vardef)
-  }
+read_vars <- function(vardef, nvars=NULL) {
+  def <- parse_vardef(vardef)
 
   if(endsWith(def$filename, '.nc')) {
-    return(read_vars_from_cdf(vardef))
+    loaded <- read_vars_from_cdf(vardef)
+    check_nvars(def, loaded, nvars)
+    return(loaded)
   }
 
   if (length(def$vars) == 0) {
@@ -79,7 +81,19 @@ read_vars <- function(vardef) {
     loaded$data[[var$var_out]] <- perform_transforms(vals, var$transforms)
   }
 
+  check_nvars(def, loaded, nvars)
   return(loaded)
+}
+
+check_nvars <- function(def, data, nvars) {
+  if (is.null(nvars) || length(data$data) == nvars) {
+    return()
+  }
+
+  stop("Expected to read exactly ",
+       nvars, " variable", ifelse(nvars==1, "", "s"),
+       " from ", def$filename,
+       " (got ", length(data$data), ")")
 }
 
 is_mon <- function(fname) {

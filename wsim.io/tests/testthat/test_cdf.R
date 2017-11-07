@@ -258,3 +258,20 @@ test_that("numeric precision can be specified on a per-variable basis", {
 
   file.remove(fname)
 })
+
+test_that("we can expect a specific number of variables in a file", {
+  fname <- paste0(tempfile(), '.nc')
+
+  data <- list(
+    location= matrix(runif(9), nrow=3),
+    scale= matrix(runif(9), nrow=3),
+    shape= matrix(runif(9), nrow=3)
+  )
+  write_vars_to_cdf(data, fname, extent=c(0, 1, 0, 1))
+
+  expect_error(read_vars(fname, nvars=1))
+  ok <- read_vars(fname, nvars=3)
+
+  file.remove(fname)
+})
+  fname <- tempfile()
