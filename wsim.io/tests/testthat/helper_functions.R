@@ -1,5 +1,7 @@
+testdata <- Sys.getenv('WSIM_TEST_DATA')
+
 isciences_internal <- function() {
-  if (!file.exists('/mnt/fig/WSIM')) {
+  if (!file.exists(testdata)) {
     skip("Skipping test that requires ISciences internal resource.")
   }
 }
