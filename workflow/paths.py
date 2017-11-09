@@ -65,7 +65,10 @@ class DefaultWorkspace:
     def final_state_norms(self):
         return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')
 
-    def make_filename(self, thing=None, window=None, yearmon=None, target=None, member=None):
+    def make_path(self, thing, **kwargs):
+        return os.path.join(self.outputs, thing, self.make_filename(thing, **kwargs))
+
+    def make_filename(self, thing, *, yearmon, window=None, target=None, member=None):
         filename = thing
 
         if window:
@@ -85,47 +88,33 @@ class DefaultWorkspace:
 
     # Summaries of data from multi-member forecast ensembles
     def composite_summary(self, **kwargs):
-        return os.path.join(self.outputs,
-                            'composite',
-                            self.make_filename('composite_summary', **kwargs))
+        return self.make_path('composite', **kwargs)
 
     def return_period_summary(self, **kwargs):
-        return os.path.join(self.outputs,
-                            'summary',
-                            self.make_filename('rp_summary', **kwargs))
+        return self.make_path('rp_summary', **kwargs)
 
     def results_summary(self, **kwargs):
-        return os.path.join(self.outputs,
-                            'summary',
-                            self.make_filename('results_summary', **kwargs))
+        return self.make_path('results_summary', **kwargs)
 
     # Individual model inputs, outputs, and derivatives
     def state(self, **kwargs):
-        return os.path.join(self.outputs,
-                            'state',
-                            self.make_filename('state', **kwargs))
+        return self.make_path('state', **kwargs)
 
     def forcing(self, **kwargs):
-        return os.path.join(self.outputs,
-                            'forcing',
-                            self.make_filename('forcing', **kwargs))
+        return self.make_path('forcing', **kwargs)
 
     def results(self, **kwargs):
-        return os.path.join(self.outputs,
-                            'results',
-                            self.make_filename('results', **kwargs))
+        return self.make_path('results', **kwargs)
 
     def return_period(self, **kwargs):
-        return os.path.join(self.outputs,
-                            'rp',
-                            self.make_filename('rp', **kwargs))
+        return self.make_path('rp', **kwargs)
 
     # Spinup files
-    def spinup_state(self, **kwargs):
-        return os.path.join(self.outputs, 'spinup', 'spinup_state_{target}.nc'.format_map(kwargs))
+    def spinup_state(self, yearmon=None):
+        return os.path.join(self.outputs, 'spinup', 'spinup_state_{yearmon}.nc'.format(yearmon=yearmon))
 
     def spinup_state_pattern(self):
-        return self.spinup_state(target='%T')
+        return self.spinup_state(yearmon='%T')
 
     def spinup_mean_state(self, **kwargs):
         return os.path.join(self.outputs, 'spinup', 'spinup_mean_state_month_{month:02d}.nc'.format_map(kwargs))

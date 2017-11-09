@@ -94,13 +94,13 @@ class CFSForecast(paths.Forcing):
         return os.path.join(self.derived,
                             'cfs',
                             'raw',
-                            'cfs_fcst{member}_{target}_raw.nc'.format_map(kwargs))
+                            'cfs_trgt{target}_fcst{member}_raw.nc'.format_map(kwargs))
 
     def forecast_corrected(self, **kwargs):
         return os.path.join(self.derived,
                             'cfs',
                             'corrected',
-                            'cfs_fcst{member}_{target}_corrected.nc'.format_map(kwargs))
+                            'cfs_trgt{target}_fcst{member}_corrected.nc'.format_map(kwargs))
 
     def forecast_grib(self, **kwargs):
         return os.path.join(self.source,

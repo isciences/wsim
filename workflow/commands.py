@@ -1,16 +1,18 @@
+import os
+
 def q(txt):
     return '"{}"'.format(txt)
 
 def forecast_convert(infile, outfile):
     return [
-        '{BINDIR}/utils/forecast_convert.sh',
+        os.path.join('{BINDIR}', 'utils', 'forecast_convert.sh'),
         q(infile),
         q(outfile)
     ]
 
 def wsim_anom(**kwargs):
     cmd = [
-        '{BINDIR}/wsim_anom.R',
+        os.path.join('{BINDIR}', 'wsim_anom.R'),
         '--fits', q(kwargs['fits']),
         '--obs',  q(kwargs['obs'])
     ]
@@ -24,7 +26,7 @@ def wsim_anom(**kwargs):
 
 def wsim_fit(**kwargs):
     cmd = [
-        '{BINDIR}/wsim_fit.R',
+        os.path.join('{BINDIR}', 'wsim_fit.R'),
         '--distribution', kwargs['distribution'],
     ]
 
@@ -37,7 +39,7 @@ def wsim_fit(**kwargs):
 
 def wsim_lsm(**kwargs):
     cmd = [
-        '{BINDIR}/wsim_lsm.R',
+        os.path.join('{BINDIR}', 'wsim_lsm.R'),
         '--wc',         q(kwargs['wc']),
         '--flowdir',    q(kwargs['flowdir']),
         '--elevation',  q(kwargs['elevation']),
@@ -60,7 +62,7 @@ def wsim_lsm(**kwargs):
     return cmd
 
 def wsim_merge(**kwargs):
-    cmd = ['{BINDIR}/wsim_merge.R']
+    cmd = [ os.path.join('{BINDIR}', 'wsim_merge.R') ]
 
     for arg in kwargs['inputs']:
         cmd += ['--input', q(arg)]
@@ -75,7 +77,7 @@ def wsim_merge(**kwargs):
 
 def wsim_correct(**kwargs):
     cmd = [
-        '{BINDIR}/wsim_correct.R',
+        os.path.join('{BINDIR}', 'wsim_correct.R'),
         '--retro',    q(kwargs['retro']),
         '--obs',      q(kwargs['obs']),
         '--forecast', q(kwargs['forecast']),
@@ -88,7 +90,7 @@ def wsim_correct(**kwargs):
     return cmd
 
 def wsim_integrate(**kwargs):
-    cmd = ['{BINDIR}/wsim_integrate.R']
+    cmd = [ os.path.join('{BINDIR}', 'wsim_integrate.R') ]
 
     for stat in kwargs['stats']:
         cmd += ['--stat', stat]
@@ -112,7 +114,7 @@ def wsim_integrate(**kwargs):
     return cmd
 
 def wsim_composite(**kwargs):
-    cmd = [ '{BINDIR}/wsim_composite.R' ]
+    cmd = [ os.path.join('{BINDIR}', 'wsim_composite.R') ]
 
     for var in kwargs.get('surplus', []):
         cmd += ['--surplus', q(var)]

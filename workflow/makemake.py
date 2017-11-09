@@ -26,6 +26,9 @@ def parse_args(args):
     parser.add_argument('--config',
                         help='Python file describing run configuration',
                         required=True)
+    parser.add_argument('--nospinup',
+                        help='Skip model spin-up steps',
+                        action='store_true')
     parser.add_argument('--makefile',
                         help='Name of generated makefile',
                         required=False,
@@ -60,7 +63,7 @@ def find_duplicate_targets(steps):
                 duplicates.add(target)
             targets.add(target)
 
-    return duplicates
+    return sorted(list(duplicates))
 
 def write_makefile(filename, steps, bindir):
     with open(filename, 'w') as outfile:
@@ -79,17 +82,23 @@ def main(raw_args):
 
     config = load_config(args.config, args.source, args.workspace)
 
-    steps = spinup.spinup(config)
+    steps = []
 
-    for yearmon in dates.get_yearmons(args.start, args.stop):
+    if config.should_run_spinup() and not args.nospinup:
+        steps += spinup.spinup(config)
+
+    for i, yearmon in enumerate(reversed(list(dates.get_yearmons(args.start, args.stop)))):
         steps += monthly.monthly_observed(config, yearmon)
-        steps += monthly.monthly_forecast(config, yearmon)
+
+        # Only add forecast steps for the final yearmon
+        if i == 0:
+            steps += monthly.monthly_forecast(config, yearmon)
 
     duplicate_targets = find_duplicate_targets(steps)
     if duplicate_targets:
         for target in duplicate_targets[:100]:
             print("Duplicate target encountered:", target, file=sys.stderr)
-        sys.exit(1)
+        #sys.exit(1)
 
     write_makefile(os.path.join(args.workspace, args.makefile), steps, args.bindir)
 

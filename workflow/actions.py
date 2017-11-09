@@ -31,22 +31,16 @@ def compute_pwetdays(data, yearmon):
         return []
 
 
-def create_forcing_file(workspace, data, yearmon, target=None, member=None):
-    if target is None:
-        target = yearmon
+def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
 
-    if member:
-        precip = data.precip_monthly(target=target, member=member)
-        temp = data.temp_monthly(target=target, member=member)
-        wetdays = data.p_wetdays(target=target, member=member)
-    else:
-        precip = data.precip_monthly(yearmon=target)
-        temp = data.temp_monthly(yearmon=target)
-        wetdays = data.p_wetdays(yearmon=target)
+    precip = data.precip_monthly(yearmon=yearmon, target=target, member=member)
+    temp = data.temp_monthly(yearmon=yearmon, target=target, member=member)
+    wetdays = data.p_wetdays(yearmon=yearmon, target=target, member=member)
 
     return [
         Step(
-            targets=workspace.forcing(target=target, member=member),
+            comment="Create forcing file",
+            targets=workspace.forcing(yearmon=yearmon, target=target, member=member),
             dependencies=[precip.file, temp.file, wetdays.file],
             commands=[
                 wsim_merge(
@@ -56,7 +50,7 @@ def create_forcing_file(workspace, data, yearmon, target=None, member=None):
                         wetdays.read_as('pWetDays')
                     ],
                     attrs=filter(None, [
-                        'target=' + target,
+                        ('target=' + target) if target else None,
                         ('member=' + member) if member else None
                     ]),
                     output= '$@'
@@ -65,7 +59,7 @@ def create_forcing_file(workspace, data, yearmon, target=None, member=None):
         )
     ]
 
-def run_lsm(workspace, static, target, member=None, lead_months=0):
+def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months=0):
     is_forecast = True if member else False
 
     if is_forecast:
@@ -73,10 +67,20 @@ def run_lsm(workspace, static, target, member=None, lead_months=0):
     else:
         comment = "Run LSM with observed data"
 
-    current_state = workspace.state(target=target, member=member if lead_months > 1 else None)
-    next_state = workspace.state(target=get_next_yearmon(target), member=member)
-    results = workspace.results(target=target, member=member)
-    forcing = workspace.forcing(target=target, member=member)
+
+    if is_forecast:
+        if lead_months > 1:
+            current_state = workspace.state(yearmon=yearmon, target=target, member=member)
+        else:
+            current_state = workspace.state(yearmon=target)
+
+        next_state = workspace.state(yearmon=yearmon, target=get_next_yearmon(target), member=member)
+    else:
+        current_state = workspace.state(yearmon=yearmon)
+        next_state = workspace.state(yearmon=get_next_yearmon(yearmon))
+
+    results = workspace.results(yearmon=yearmon, target=target, member=member)
+    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
 
     return [
         Step(
@@ -106,8 +110,8 @@ def run_lsm(workspace, static, target, member=None, lead_months=0):
         )
     ]
 
-def time_integrate(workspace, window, integrated_vars, target, member=None, lead_months=None):
-    months = rolling_window(target, window)
+def time_integrate(workspace, integrated_vars, yearmon=None, target=None, window=None, member=None, lead_months=None):
+    months = rolling_window(target if target else yearmon, window)
 
     if lead_months:
         window_observed = months[:-lead_months]
@@ -116,13 +120,13 @@ def time_integrate(workspace, window, integrated_vars, target, member=None, lead
         window_observed = months
         window_forecast = []
 
-    prev_results = [workspace.results(target=x) for x in window_observed] + \
-                   [workspace.results(member=member, target=x) for x in window_forecast]
+    prev_results = [workspace.results(yearmon=x) for x in window_observed] + \
+                   [workspace.results(yearmon=yearmon, member=member, target=x) for x in window_forecast]
 
     return [
         Step(
             comment="Time integration of observed results (" + str(window) + " months)",
-            targets=workspace.results(target=target, window=window, member=member),
+            targets=workspace.results(yearmon=yearmon, target=target, window=window, member=member),
             dependencies=prev_results,
             commands=[
                 wsim_integrate(
@@ -136,7 +140,7 @@ def time_integrate(workspace, window, integrated_vars, target, member=None, lead
         )
     ]
 
-def compute_return_periods(workspace, window, lsm_vars, integrated_vars, target, member=None):
+def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, window=None, target=None, member=None):
     if window is None:
         rp_vars = lsm_vars
     else:
@@ -144,26 +148,29 @@ def compute_return_periods(workspace, window, lsm_vars, integrated_vars, target,
                    for var, stats in integrated_vars.items()
                    for stat in stats]
 
-    month = int(target[-2:])
+    if target:
+        month = int(target[-2:])
+    else:
+        month = int(yearmon[-2:])
 
     return [
         Step(
-            comment="Observed return periods" + ("(" + str(window) + "mo)" if window is not None else ""),
-            targets=workspace.return_period(target=target, window=window, member=member),
+            comment="Return periods" + ("(" + str(window) + "mo)" if window is not None else ""),
+            targets=workspace.return_period(yearmon=yearmon, target=target, window=window, member=member),
             dependencies=
             [workspace.fit_obs(var=var, window=window, month=month) for var in rp_vars] +
-            [workspace.results(target=target, window=window, member=member)],
+            [workspace.results(yearmon=yearmon, target=target, window=window, member=member)],
             commands=[
                 wsim_anom(
                     fits=workspace.fit_obs(var=var, window=window, month=month),
-                    obs=read_vars(workspace.results(target=target, window=window, member=member), var),
+                    obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), var),
                     rp='$@')
                 for var in rp_vars
             ]
         )
     ]
 
-def composite_indicators(workspace, window, yearmon, target=None, quantile=None):
+def composite_indicators(workspace, window=None, yearmon=None, target=None, quantile=None):
     q = '_q{quantile}'.format(quantile=quantile) if quantile else ''
 
     if window is None:
@@ -192,7 +199,7 @@ def composite_indicators(workspace, window, yearmon, target=None, quantile=None)
     if target:
         infile = workspace.return_period_summary(yearmon=yearmon, target=target, window=window)
     else:
-        infile = workspace.return_period(target=yearmon, window=window)
+        infile = workspace.return_period(yearmon=yearmon, window=window)
 
     return [
         Step(
@@ -211,7 +218,7 @@ def composite_indicators(workspace, window, yearmon, target=None, quantile=None)
     ]
 
 def result_summary(workspace, ensemble_members, yearmon, target, window):
-    ensemble_results = [workspace.results(target=target, member=member) for member in ensemble_members]
+    ensemble_results = [workspace.results(yearmon=yearmon, target=target, member=member) for member in ensemble_members]
 
     return [
         Step(
@@ -228,7 +235,7 @@ def result_summary(workspace, ensemble_members, yearmon, target, window):
     ]
 
 def return_period_summary(workspace, ensemble_members, yearmon, target, window):
-    ensemble_rps = [workspace.return_period(target=target, window=window, member=member) for member in ensemble_members]
+    ensemble_rps = [workspace.return_period(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members]
 
     return [
         Step(

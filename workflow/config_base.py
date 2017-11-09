@@ -36,6 +36,15 @@ class ConfigBase(metaclass=abc.ABCMeta):
     def observed_data(self):
         pass
 
+    def should_run_spinup(self):
+        return True
+
+    def should_run_lsm(self, yearmon=None):
+        return True
+
+    def result_postprocess_steps(self, yearmon=None, target=None, member=None):
+        return []
+
     def forecast_targets(self, yearmon):
         """
         Provides a list of forecast targets for a given yearmon, or an empty
