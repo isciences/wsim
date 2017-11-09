@@ -136,7 +136,7 @@ class CFSConfig(ConfigBase):
         return range(1948, 2017)
 
     def result_fit_years(self):
-        return range(1950, 2011)
+        return range(1950, 2010) #1950-2009
 
     def forecast_ensemble_members(self, yearmon):
         last_day = dates.get_last_day_of_month(yearmon)
