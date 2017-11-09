@@ -110,7 +110,7 @@ def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months
         )
     ]
 
-def time_integrate(workspace, integrated_vars, yearmon=None, target=None, window=None, member=None, lead_months=None):
+def time_integrate(workspace, integrated_vars, *, yearmon, target=None, window=None, member=None, lead_months=None):
     months = rolling_window(target if target else yearmon, window)
 
     if lead_months:
@@ -170,7 +170,7 @@ def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, win
         )
     ]
 
-def composite_indicators(workspace, window=None, yearmon=None, target=None, quantile=None):
+def composite_indicators(workspace, *, yearmon, window=None, target=None, quantile=None):
     q = '_q{quantile}'.format(quantile=quantile) if quantile else ''
 
     if window is None:
@@ -217,7 +217,7 @@ def composite_indicators(workspace, window=None, yearmon=None, target=None, quan
         )
     ]
 
-def result_summary(workspace, ensemble_members, yearmon, target, window):
+def result_summary(workspace, ensemble_members, *, yearmon, target=None, window=None):
     ensemble_results = [workspace.results(yearmon=yearmon, target=target, member=member) for member in ensemble_members]
 
     return [
@@ -234,7 +234,7 @@ def result_summary(workspace, ensemble_members, yearmon, target, window):
         )
     ]
 
-def return_period_summary(workspace, ensemble_members, yearmon, target, window):
+def return_period_summary(workspace, ensemble_members, *, yearmon, target=None, window=None):
     ensemble_rps = [workspace.return_period(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members]
 
     return [
@@ -251,7 +251,7 @@ def return_period_summary(workspace, ensemble_members, yearmon, target, window):
         )
     ]
 
-def correct_forecast(data, member, target, lead_months):
+def correct_forecast(data, *, member, target, lead_months):
     target_month = int(target[-2:])
 
     return [

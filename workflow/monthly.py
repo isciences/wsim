@@ -5,7 +5,8 @@ def monthly_observed(config, yearmon):
 
     steps = []
 
-    if config.should_run_lsm(yearmon):
+    # Don't add LSM steps if we would already have run this date as part of spinup
+    if config.should_run_lsm(yearmon) and yearmon not in config.historical_yearmons():
         # Prepare the dataset for use (convert from GRIB to netCDF, etc.)
         steps += config.observed_data().prep_steps(yearmon=yearmon)
 
@@ -30,7 +31,7 @@ def monthly_observed(config, yearmon):
 
     # Compute composite indicators
     for window in [None] + config.integration_windows():
-        steps += composite_indicators(config.workspace(), window, yearmon)
+        steps += composite_indicators(config.workspace(), window=window, yearmon=yearmon)
 
     return steps
 
@@ -46,7 +47,7 @@ def monthly_forecast(config, yearmon):
                 steps += config.forecast_data().prep_steps(yearmon=yearmon, target=target, member=member)
 
                 # Bias-correct the forecast
-                steps += correct_forecast(config.forecast_data(), member, target, lead_months)
+                steps += correct_forecast(config.forecast_data(), member=member, target=target, lead_months=lead_months)
 
                 # Assemble forcing inputs for forecast
                 steps += create_forcing_file(config.workspace(), config.forecast_data(), yearmon=yearmon, target=target, member=member)
@@ -65,8 +66,8 @@ def monthly_forecast(config, yearmon):
                 steps += compute_return_periods(config.workspace(), config.lsm_vars(), config.integrated_vars(), yearmon=yearmon, window=window, target=target, member=member)
 
         for window in [None] + config.integration_windows():
-            steps += result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon, target, window)
-            steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon, target, window)
-            steps += composite_indicators(config.workspace(), window, yearmon, target=target, quantile=50)
+            steps += result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
+            steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
+            steps += composite_indicators(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
 
     return steps
