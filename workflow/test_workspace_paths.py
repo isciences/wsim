@@ -84,23 +84,23 @@ class TestWorkspacePaths(unittest.TestCase):
 
         # Observed data
         self.assertEqual(
-            join(self.root, 'composite', 'composite_summary_201612.nc'),
+            join(self.root, 'composite', 'composite_201612.nc'),
             self.ws.composite_summary(yearmon='201612')
         )
 
         self.assertEqual(
-            join(self.root, 'composite', 'composite_summary_36mo_201612.nc'),
+            join(self.root, 'composite', 'composite_36mo_201612.nc'),
             self.ws.composite_summary(yearmon='201612', window=36)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'composite', 'composite_summary_201612_trgt201708.nc'),
+            join(self.root, 'composite', 'composite_201612_trgt201708.nc'),
             self.ws.composite_summary(yearmon='201612', target='201708')
         )
 
         self.assertEqual(
-            join(self.root, 'composite', 'composite_summary_6mo_201612_trgt201708.nc'),
+            join(self.root, 'composite', 'composite_6mo_201612_trgt201708.nc'),
             self.ws.composite_summary(yearmon='201612', target='201708', window=6)
         )
 
@@ -108,23 +108,23 @@ class TestWorkspacePaths(unittest.TestCase):
 
         # Observed data
         self.assertEqual(
-            join(self.root, 'summary', 'rp_summary_201612.nc'),
+            join(self.root, 'rp_summary', 'rp_summary_201612.nc'),
             self.ws.return_period_summary(yearmon='201612')
         )
 
         self.assertEqual(
-            join(self.root, 'summary', 'rp_summary_36mo_201612.nc'),
+            join(self.root, 'rp_summary', 'rp_summary_36mo_201612.nc'),
             self.ws.return_period_summary(yearmon='201612', window=36)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'summary', 'rp_summary_201612_trgt201708.nc'),
+            join(self.root, 'rp_summary', 'rp_summary_201612_trgt201708.nc'),
             self.ws.return_period_summary(yearmon='201612', target='201708')
         )
 
         self.assertEqual(
-            join(self.root, 'summary', 'rp_summary_6mo_201612_trgt201708.nc'),
+            join(self.root, 'rp_summary', 'rp_summary_6mo_201612_trgt201708.nc'),
             self.ws.return_period_summary(yearmon='201612', target='201708', window=6)
         )
 
@@ -132,22 +132,22 @@ class TestWorkspacePaths(unittest.TestCase):
 
         # Observed data
         self.assertEqual(
-            join(self.root, 'summary', 'results_summary_201612.nc'),
+            join(self.root, 'results_summary', 'results_summary_201612.nc'),
             self.ws.results_summary(yearmon='201612')
         )
 
         self.assertEqual(
-            join(self.root, 'summary', 'results_summary_36mo_201612.nc'),
+            join(self.root, 'results_summary', 'results_summary_36mo_201612.nc'),
             self.ws.results_summary(yearmon='201612', window=36)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'summary', 'results_summary_201612_trgt201708.nc'),
+            join(self.root, 'results_summary', 'results_summary_201612_trgt201708.nc'),
             self.ws.results_summary(yearmon='201612', target='201708')
         )
 
         self.assertEqual(
-            join(self.root, 'summary', 'results_summary_6mo_201612_trgt201708.nc'),
+            join(self.root, 'results_summary', 'results_summary_6mo_201612_trgt201708.nc'),
             self.ws.results_summary(yearmon='201612', target='201708', window=6)
         )
