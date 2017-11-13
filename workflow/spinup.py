@@ -236,7 +236,7 @@ def spinup(config):
                 dependencies=input_files,
                 commands=[
                     wsim_fit(
-                        distribution="gev",
+                        distribution=config.distribution,
                         inputs=[read_vars(f, param) for f in input_files],
                         output=config.workspace().fit_obs(var=param, month=month)
                     )

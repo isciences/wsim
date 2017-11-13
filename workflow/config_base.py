@@ -3,6 +3,8 @@ import dates
 
 class ConfigBase(metaclass=abc.ABCMeta):
 
+    distribution = "gev"
+
     @abc.abstractmethod
     def historical_years(self):
         """
