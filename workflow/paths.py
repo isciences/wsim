@@ -53,6 +53,9 @@ class DefaultWorkspace:
     def __init__(self, outputs):
         self.outputs = outputs
 
+    def root(self):
+        return self.outputs
+
     def climate_norms(self, **kwargs):
         return os.path.join(self.outputs, 'spinup', 'climate_norms_{month:02d}.nc'.format_map(kwargs))
 

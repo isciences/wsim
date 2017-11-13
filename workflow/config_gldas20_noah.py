@@ -5,23 +5,10 @@ from config_base import ConfigBase
 
 import os
 
-class Static:
-    def __init__(self, source):
-        self.source = source
-
-    # Static inputs
-    def wc(self):
-        return paths.Vardef(os.path.join(self.source, 'HWSD', 'hwsd_tawc_05deg_noZeroNoVoids.img'), '1')
-
-    def flowdir(self):
-        return paths.Vardef(os.path.join(self.source, 'UNH_Data', 'g_network.asc'), '1')
-
-    def elevation(self):
-        return paths.Vardef(os.path.join(self.source, 'SRTM30', 'elevation_half_degree.img'), '1')
-
 class GLDAS20_Noah(ConfigBase):
 
     def __init__(self, source, derived):
+        self._source = source
         self._workspace = paths.DefaultWorkspace(derived)
 
     def should_run_spinup(self):
@@ -88,7 +75,7 @@ class GLDAS20_Noah(ConfigBase):
     def result_postprocess_steps(self, yearmon=None):
         year, mon =  dates.parse_yearmon(yearmon)
 
-        input_file = os.path.join('/mnt', 'fig', 'Data_Global', 'GLDAS-2_v20', '0.25-degree', 'monthly', 'nc', 'original',
+        input_file = os.path.join(self._source,
                                   '{:04d}'.format(year),
                                   'GLDAS_NOAH025_M.A{}.020.nc4'.format(yearmon))
 
@@ -107,7 +94,7 @@ class GLDAS20_Noah(ConfigBase):
                     [
                         os.path.join('{BINDIR}', 'wsim_flow.R'),
                         '--input', paths.read_vars(output_file, 'RO_mm'),
-                        '--flowdir', '/tmp/flowdirs.img',
+                        '--flowdir', os.path.join(self.workspace().root(), 'flowdirs.img'),
                         '--output', output_file,
                         '--varname', 'Bt_RO',
                         '--wrapx'
