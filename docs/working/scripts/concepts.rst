@@ -45,9 +45,7 @@ In this file, `lon` and `lat` are not read by WSIM tools because they are coordi
 Reading specific variables using ``::``
 ---------------------------------------
 
-A filename may optionally followed by ``::``, followed by a comma-separated list of variable names or band numbers in the file. If ``::`` is not provided, it will be assumed that all "regular" variables in the file should be loaded. A "regular" variable is a variable that is not a coordinate variable, and that is associated with at least one dimension.
-
-**TODO this is the case for netCDF files, but how about GDAL? Need to investigate.**
+A filename may optionally followed by ``::``, followed by a comma-separated list of variable names or band numbers in the file. If ``::`` is not provided for a netCDF file, it will be assumed that all "regular" variables in the file should be loaded. A "regular" variable is a variable that is not a coordinate variable, and that is associated with at least one dimension. If ``::`` is not provided for another raster type, only the first band will read read.
 
 In the netCDF file example shown above:
 
