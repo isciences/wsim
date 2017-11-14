@@ -34,7 +34,7 @@ Usage is as follows:
 
 * ``--wc`` a file providing the soil moisture holding capacity in millimeters
 * ``--elevation`` a file providing land surface elevation in meters
-* ``--flowdir`` a file providing a surface flow direction matrix (TODO link to specification of format)
+* ``--flowdir`` a file providing a surface flow direction matrix (as described in :ref:`flow-direction-specification`)
 
 The following arguments define model outputs:
 
