@@ -10,8 +10,7 @@ Imports: raster,
          abind,
          lmom,
          stats,
-         methods,
-         foreach
+         methods
 LinkingTo: Rcpp
 Suggests: testthat, wsim.io
 Encoding: UTF-8
