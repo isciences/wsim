@@ -76,7 +76,7 @@ Based on this literature and concurring advice from our science advisors, WSIM c
 
 
 where 
-:math:`\Lambda` is the average daylength specified as a fraction of the 24-hour day between sunrise and sunset, 
+:math:`\Lambda` is the average day length specified as a fraction of the 24-hour day between sunrise and sunset, 
 :math:`T_m` is the mean temperature in Celsius, and 
 :math:`e_{T_m}` is the saturated vapor pressure at :math:`T_m` in kPa.
 
@@ -145,7 +145,7 @@ The runoff as specified above (:math:`R`) is always zero during periods when pre
 This is clearly a falsehood, since most rivers continue to flow in the winter.
 Therefore, we follow Vörösmarty et al. (1998) by including some logic for detention pools (lakes, ponds, shallow groundwater, etc.) that slow down the rate at which runoff as computed above leaves a given grid cell. 
 The revised runoff that accounts for detention pools (:math:`R'`) is computed as the sum of detained runoff due to net precipitation (:math:`R_p'`) and detained runoff due to snow melt (:math:`R_s'`) with a monthly time step as described in 
-Equations 11, 12, and 13 below. Dr and Ds represent the detention pools due to rain and snow, respectively.
+Equations 11, 12, and 13 below. (:math:`D_r`) and (:math:`D_s`) represent the detention pools due to rain and snow, respectively.
 
 .. math::
   :label: runoff_detained
@@ -172,3 +172,18 @@ Equations 11, 12, and 13 below. Dr and Ds represent the detention pools due to r
 
 where :math:`z` is elevation in meters, and 
 :math:`m` is the number of consecutive months of melting conditions (:math:`T > -1 \mathrm{^\circ C}`).
+
+.. spelling::
+
+  et
+  al
+  Hamon
+  Shuttleworth
+  Oudin
+  Zhou
+  Vömel
+  Federer
+  Monteith
+  Haise
+  Turc
+  Thornthwaite

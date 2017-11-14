@@ -1,5 +1,5 @@
-Computing composite indicators (wsim_composite)
-***********************************************
+Computing composite indicators (``wsim_composite``)
+***************************************************
 
 The ``wsim_composite`` utility computes composite indicators (TODO add link explaining what these are) from multiple surplus and deficit input variables.
 
@@ -28,7 +28,8 @@ Usage is as follows:
         [--mask=<file>] \
         --output=<file>
 
-The ``--surplus`` and ``--deficit`` arguments are used to specify variables that should be considered in computing the composite surplus and deficit indicators. each argument may refer to more than one variable, and each argument may be provided multiple times. The WSIM variable definition notation (TODO link) is fully supported.  
+The ``--surplus`` and ``--deficit`` arguments are used to specify variables that should be considered in computing the composite surplus and deficit indicators.
+each argument may refer to more than one variable, and each argument may be provided multiple times. The WSIM variable definition notation (TODO link) is fully supported.  
 The ``--both_threshold`` argument specifies the minimum magnitude of the composite surplus and deficit indicators for a pixel to be considered to simultaneously experience surplus and deficit.
 
 The ``--mask`` allows an optional mask to be defined, so that all composite indicators have the same maximum extent.

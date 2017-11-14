@@ -1,5 +1,5 @@
-Bias-correcting a forecast (wsim_correct)
-*****************************************
+Bias-correcting a forecast (``wsim_correct``)
+*********************************************
 
 The ``wsim_correct`` utility bias-corrects forecast data, given statistical distributions of observed data and retrospective forecasts.
 

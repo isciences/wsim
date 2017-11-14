@@ -1,7 +1,7 @@
 R Packages
 ==========
 
-The core functionality of WSIM is impemented in a series of R packages:
+The core functionality of WSIM is implemented in a series of R packages:
 
 * `wsim.distributions <./wsim.distributions/reference/index.html>`_
 * `wsim.io <./wsim.io/reference/index.html>`_

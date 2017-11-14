@@ -30,3 +30,16 @@ A copy of the WSIM source code can be downloaded from GitLab at `this url <https
 Access to the ``wsim2`` project is required.
 Some WSIM functionality has external dependencies on tools such as ``wgrib2`` and ``nco`` that are not included in the repository.
 These tools are found in the WSIM Docker image, or can be installed manually.
+
+The following R packages are used by WSIM:
+
+- Rcpp
+- abind
+- docopt
+- futile.logger
+- lmom
+- lubridate
+- ncdf4
+- raster
+- rgdal
+- testthat

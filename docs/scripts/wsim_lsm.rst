@@ -1,5 +1,5 @@
-Running the Land Surface Model (wsim_lsm)
-*****************************************
+Running the Land Surface Model (``wsim_lsm``)
+*********************************************
 
 The ``wsim.lsm`` utility runs one ore more iterations of the WSIM Land Surface Model.
 
@@ -38,6 +38,6 @@ Usage is as follows:
 
 The following arguments define model outputs:
 
-* ``--results`` a netCDF file to which model results will be written.  If the filename contains the the pattern ``%T``, results from all model iteration will be written to disk as separate files, with the filename formed by substituting the timestep year-month for ``%T``.  If the ``%T`` pattern is not present in the filename, only the results of the final iteration will be written to disk.
+* ``--results`` a netCDF file to which model results will be written.  If the filename contains the pattern ``%T``, results from all model iteration will be written to disk as separate files, with the filename formed by substituting the timestep year-month for ``%T``.  If the ``%T`` pattern is not present in the filename, only the results of the final iteration will be written to disk.
 
 * ``--next_state`` a netCDF file to which a model state will be written, suitable for use in a subsequent model iteration.  Substitution of ``%T`` is performed in the same manner as for the ``--results`` argument.
