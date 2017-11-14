@@ -6,6 +6,8 @@ File formats
 
 WSIM tools use `netCDF <https://www.unidata.ucar.edu/software/netcdf/>`_ as a standard file format, using the `CF Conventions <http://cfconventions.org/>`_ for metadata. Although the output of all WSIM tools is in netCDF format, tools are also capable of reading data from any format supported by `GDAL <http://www.gdal.org/>`_.
 
+.. _variable-definitions:
+
 Variable definitions
 ====================
 

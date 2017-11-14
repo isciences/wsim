@@ -5,6 +5,8 @@ The Water Security Indicator Model (WSIM) is an open-source project developed by
 
 WSIM identifies locations on Earth’s terrestrial surface that are experiencing stress due to deficits or surpluses of fresh water that may impact normal functioning of society. This is accomplished by monitoring surface water dynamics, estimating the surface volume of water, and determining departure from normal conditions.  These are then evaluated in context of agricultural, industrial and domestic needs; assessing the sensitivity of given places to such stress; and evaluating the capacity of the people in those places to respond.
 
+.. _example-global-hotspot:
+
 .. raw:: html
 
   <div style="width:100%;height:20em;margin-bottom:2em">
@@ -54,9 +56,8 @@ WSIM identifies locations on Earth’s terrestrial surface that are experiencing
    :glob:
    :caption: Contents:
 
+   concepts/index
+   working/index
    obtaining
-   scripts/index
-   lsm/index
-   workflow/index
-   r_packages/index
    development
+   Technical Specification </WSIM_Tech_Report_WE_final.pdf#://>

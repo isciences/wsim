@@ -1,9 +1,9 @@
-Computing composite indicators (``wsim_composite``)
+Computing composite indices (``wsim_composite``)
 ***************************************************
 
-The ``wsim_composite`` utility computes composite indicators (TODO add link explaining what these are) from multiple surplus and deficit input variables.
+The ``wsim_composite`` utility computes :doc:`/concepts/composite_indices` from multiple surplus and deficit input variables.
 
-The composite indicators are output to a netCDF file with the following variables:
+The composite indices are output to a netCDF file with the following variables:
 
 
 ``surplus``
@@ -15,7 +15,7 @@ The composite indicators are output to a netCDF file with the following variable
 ``deficit_cause``
     a coded variable indicating which of the deficit variables was responsible for the composite deficit indicator value
 ``both``
-    the greater magnitude of ``surplus`` and ``deficit``, whenever both of these indicators have a magnitude higher than a specified threshold
+    the greater magnitude of ``surplus`` and ``deficit``, whenever both of these indices have a magnitude higher than a specified threshold
 
 Usage is as follows:
 
@@ -28,13 +28,13 @@ Usage is as follows:
         [--mask=<file>] \
         --output=<file>
 
-The ``--surplus`` and ``--deficit`` arguments are used to specify variables that should be considered in computing the composite surplus and deficit indicators.
-each argument may refer to more than one variable, and each argument may be provided multiple times. The WSIM variable definition notation (TODO link) is fully supported.  
-The ``--both_threshold`` argument specifies the minimum magnitude of the composite surplus and deficit indicators for a pixel to be considered to simultaneously experience surplus and deficit.
+The ``--surplus`` and ``--deficit`` arguments are used to specify variables that should be considered in computing the composite surplus and deficit indices.
+each argument may refer to more than one variable, and each argument may be provided multiple times. The WSIM :ref:`variable definition notation <variable-definitions>` is fully supported.  
+The ``--both_threshold`` argument specifies the minimum magnitude of the composite surplus and deficit indices for a pixel to be considered to simultaneously experience surplus and deficit.
 
-The ``--mask`` allows an optional mask to be defined, so that all composite indicators have the same maximum extent.
+The ``--mask`` allows an optional mask to be defined, so that all composite indices have the same maximum extent even if the input datasets do not.
 
-As a more complete example, the following command was is used to produce the WSIM composite indicators for January 2017 from multiple raster inputs:
+As a more complete example, the following command was is used to produce the WSIM composite indices for January 2017 from multiple raster inputs:
 
 .. code-block:: console
 
@@ -51,8 +51,8 @@ As a more complete example, the following command was is used to produce the WSI
 
  A few points are worth noting in this example:
 
- * The ``Bt_RO`` variable is considered in computation of both the surplus and deficit indicators
+ * The ``Bt_RO`` variable is considered in computation of both the surplus and deficit indices.
  * The ``PETmE`` variable is transformed by filling NODATA values with zero, and then negating all values.
- * The ``Ws`` variable was used as a mask for the composite indicators. If this were not done, the composite
+ * The ``Ws`` variable was used as a mask for the composite indices. If this were not done, the composite
    deficit would be populated in all pixels, because of the transformation done to ``PETmE``.
 
