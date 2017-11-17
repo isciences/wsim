@@ -12,7 +12,7 @@ Because of the long historical record, these datasets are well-suited for defini
 These datasets are available in netCDF format from NOAA at the following links: 
 
 * `GHCN+CAMS <https://www.esrl.noaa.gov/psd/data/gridded/data.ghcncams.html>`_
-* `PRECL <https://www.esrl.noaa.gov/psd/data/gridded/data.precl.html>`_
+* `PREC/L <https://www.esrl.noaa.gov/psd/data/gridded/data.precl.html>`_
 
 Both of these datasets are masked to cover land only.
 In some cases, the mask may remove cells that would be considered as "land" in other datasets.
