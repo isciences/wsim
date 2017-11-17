@@ -12,7 +12,7 @@ read_forcing_from_cdf <- function(fname) {
   
   # TODO use udunits2 package to pick out synonyms, or
   # perform automatic conversions?
-  wsim.io::check_units(contents, 'T',  'degree_C', fname)
+  wsim.io::check_units(contents, 'T',  'degree_Celsius', fname)
   wsim.io::check_units(contents, 'Pr', 'mm', fname)
   
   return(do.call(make_forcing, args))
