@@ -123,7 +123,7 @@ cdf_attrs <- list(
     description="Temperature (C)",
     long_name="Temperature",
     standard_name="surface_temperature",
-    units="mm"
+    units="degree_Celsius"
   ),
   list(
     var="Dr",
