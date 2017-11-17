@@ -13,7 +13,6 @@ Options:
 
 suppressMessages({
   require(wsim.io)
-  require(lubridate)
 })
 
 logging_init('read_binary_grid')
@@ -61,7 +60,21 @@ main <- function(raw_args) {
   
   infile <- file(args$input, 'rb')
   
-  stopifnot(args$var %in% c('T', 'P'))
+  if (args$var == 'T') {
+    attrs <- list(
+      list(var='T', key='long_name', val='Temperature'),
+      list(var='T', key='standard_name', val='surface_temperature'),
+      list(var='T', key='units', val='degree_Celsius')
+    )
+  } else if (args$var == 'P') {
+    attrs <- list(
+      list(var='P', key='long_name', val='Precipitation'),
+      list(var='P', key='standard_name', val='precipitation_amount'),
+      list(var='P', key='units', val='mm')
+    )
+  } else {
+    die_with_message("Unknown variable ", args$var)
+  }
   
   while(1) {
       info('Processing', sprintf('%04d%02d', year, month))
@@ -75,16 +88,13 @@ main <- function(raw_args) {
         break
       } 
       
-      if (args$var == 'P') {
-        dat <- dat * days_in_month(make_date(year, month))
-      }
-      
       to_write <- list()
       to_write[[args$var]] <- dat
       
       write_vars_to_cdf(to_write,
                         fname,
-                        extent=c(-180, 180, -90, 90))
+                        extent=c(-180, 180, -90, 90),
+                        attrs=attrs)
         
       month <- month + 1
       if (month > 12) {
