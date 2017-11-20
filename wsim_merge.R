@@ -40,7 +40,7 @@ main <- function(raw_args) {
       
       # Attempt to assign any attributes that were specified with --attr
       # but did not have an assigned value
-      for (i in 1:length(attrs)) {
+      for (i in seq_along(attrs)) {
         if (attrs[[i]]$var == var && is.null(attrs[[i]]$val)) {
           attrs[[i]]$val <- attr(v$data[[var]], attrs[[i]]$key)
         }

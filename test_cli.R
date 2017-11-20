@@ -213,6 +213,25 @@ test_that("wsim_integrate can apply stats to specific variables", {
   file.remove(output)
 })
 
+test_that("wsim_merge can merge datasets without attaching attributes", {
+  output <- paste0(tempfile(), '.nc')
+  
+  return_code <- system2('./wsim_merge.R', args=c(
+    '--input',  '"/tmp/constant_1.nc::data->data_a"',
+    '--input',  '"/tmp/constant_2.nc::data->data_b"',
+    '--output', output
+  ))
+
+  expect_equal(return_code, 0)
+  
+  results <- read_vars_from_cdf(output)
+  
+  expect_equal(results$extent, extent)
+  expect_equal(names(results$data), c('data_a', 'data_b'))
+  
+  file.remove(output)
+})
+
 test_that("wsim_merge can merge datasets and attach attributes", {
   output <- paste0(tempfile(), '.nc')
 
