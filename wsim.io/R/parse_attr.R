@@ -7,6 +7,11 @@ parse_attr <- function(attr) {
   split_kv <- strsplit(attr, '=', fixed=TRUE)[[1]]
   key <- split_kv[1]
   val <- paste0(split_kv[-1])
+  
+  # If no val specified
+  if (length(val) == 0) {
+    val <- NULL
+  }
 
   split_attr <- strsplit(key, ':', fixed=TRUE)[[1]]
 

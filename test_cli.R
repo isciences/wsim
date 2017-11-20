@@ -9,7 +9,14 @@ extent <- c(-40, -20, 20, 30)
 for (i in 1:10) {
   vals <- array(i, dim=dims)
   fname <- paste0('/tmp/constant_', i, '.nc')
-  write_vars_to_cdf(list(data=vals), fname, extent=extent)
+  write_vars_to_cdf(list(data=vals),
+                    fname,
+                    extent=extent,
+                    attrs=list(
+                      list(key=paste0("global_", i), val=paste0("global_value_", i)),
+                      list(var="data", key="data_attr", val=i)
+                    )
+  )
 }
 
 write_vars_to_cdf(list(
@@ -226,5 +233,26 @@ test_that("wsim_merge can merge datasets and attach attributes", {
   expect_equal(results$attrs$myglobalattr, "14")
   expect_equal(attr(results$data$data_d, 'myvarattr'), "22")
 
+  file.remove(output)
+})
+
+test_that("wsim_merge can copy attributes from an input dataset", {
+  output <- paste0(tempfile(), '.nc')
+  
+  return_code <- system2('./wsim_merge.R', args=c(
+    '--input',  '"/tmp/constant_3.nc::data->data_a"',
+    '--input',  '"/tmp/constant_4.nc::data->data_b"',
+    '--output', output,
+    '--attr',   "data_a:data_attr",
+    '--attr',   "data_b:data_attr"
+  ))
+  
+  expect_equal(return_code, 0)
+  
+  results <- read_vars_from_cdf(output)
+  
+  expect_equal(attr(results$data$data_a, 'data_attr'), 3)
+  expect_equal(attr(results$data$data_b, 'data_attr'), 4)
+  
   file.remove(output)
 })
