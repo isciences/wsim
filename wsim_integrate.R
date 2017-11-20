@@ -137,7 +137,7 @@ main <- function(raw_args) {
     outfile_number <- 1
     data <- provideDimnames(array(dim = c(dims, window)))
 
-    for (i in 1:length(inputs)) {
+    for (i in seq_along(inputs)) {
       slice <- i %% window + 1
 
       if (i > window) {

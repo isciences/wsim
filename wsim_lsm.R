@@ -27,17 +27,30 @@ Output:
 --next_state <file>  filename for next state
 '->usage
 
+read_static_data <- function(args) {
+  static <- list()
+  elevation <- wsim.io::read_vars(args$elevation, expect.nvars=1)
+
+  extent <- elevation$extent
+  dims <- dim(elevation$data[[1]])
+
+  static$elevation <- elevation$data[[1]]
+  static$flow_directions <- wsim.io::read_vars(args$flowdir,
+                                               expect.nvars=1,
+                                               expect.extent=extent,
+                                               expect.dims=dims)
+  static$Wc <- wsim.io::read_vars(args$wc,
+                                  expect.nvars=1,
+                                  expect.extent=extent,
+                                  expect.dims=dims)
+
+  return(static)
+}
+
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args, types=list(loop="integer"))
 
-  static <- lapply(list(
-    flow_directions= args$flowdir,
-    Wc= args$wc,
-    elevation= args$elevation
-  ), function(vardef) {
-    wsim.io::read_vars(vardef)$data[[1]]
-  })
-
+  static <- read_static_data(args)
   state <- wsim.lsm::read_state_from_cdf(args$state)
   forcings <- sort(wsim.io::expand_inputs(args$forcing))
 
@@ -49,7 +62,7 @@ main <- function(raw_args) {
   results <- NULL
   iter_num <- 0
   for (loop_num in 1:loops) {
-    for (i in 1:length(forcings)) {
+    for (i in seq_along(forcings)) {
       iter_num <- iter_num + 1
 
       forcing <- wsim.lsm::read_forcing_from_cdf(forcings[i])
