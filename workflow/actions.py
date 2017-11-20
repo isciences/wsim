@@ -51,7 +51,11 @@ def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
                     ],
                     attrs=filter(None, [
                         ('target=' + target) if target else None,
-                        ('member=' + member) if member else None
+                        ('member=' + member) if member else None,
+                        'T:units',
+                        'T:standard_name',
+                        'Pr:units',
+                        'Pr:standard_name'
                     ]),
                     output= '$@'
                 )
