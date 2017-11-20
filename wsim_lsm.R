@@ -38,11 +38,11 @@ read_static_data <- function(args) {
   static$flow_directions <- wsim.io::read_vars(args$flowdir,
                                                expect.nvars=1,
                                                expect.extent=extent,
-                                               expect.dims=dims)
+                                               expect.dims=dims)$data[[1]]
   static$Wc <- wsim.io::read_vars(args$wc,
                                   expect.nvars=1,
                                   expect.extent=extent,
-                                  expect.dims=dims)
+                                  expect.dims=dims)$data[[1]]
 
   return(static)
 }
