@@ -39,7 +39,13 @@ def spinup(config):
                                       config.static_data().wc().var + "@[0]->Ds",
                                       config.static_data().wc().var + "@[0]->Snowpack",
                                       config.static_data().wc().var + "@[0]->snowmelt_month")],
-                    attrs=["yearmon=000001"],
+                    attrs=[
+                        "yearmon=000001",
+                        "Ws:units=mm",
+                        "Dr:units=mm",
+                        "Ds:units=mm",
+                        "Snowpack:units=mm"
+                    ],
                     output=config.workspace().initial_state()
                 )
             ]
@@ -90,7 +96,13 @@ def spinup(config):
                                           'T_ave->T',
                                           'Pr_ave->Pr',
                                           'pWetDays_ave->pWetDays')],
-                        output=config.workspace().climate_norm_forcing(month=month)
+                        output=config.workspace().climate_norm_forcing(month=month),
+                        attrs=[
+                            'T:units',
+                            'T:standard_name',
+                            'Pr:units',
+                            'Pr:standard_name'
+                        ]
                     )
                 ]
             ))
