@@ -25,7 +25,8 @@ attrs_for_stat <- function(var_attrs, var, stat) {
   stat_var <- paste0(var, '_', tolower(stat))
 
   Filter(Negate(is.null), lapply(names(var_attrs[[var]]), function(field) {
-    if (field %in% c('dim')) {
+    # Don't pass "dim" R attr, or _FillValue/missing_data netCDF attr through
+    if (field %in% c('dim', '_FillValue', 'missing_data')) {
       return(NULL)
     }
 
@@ -37,8 +38,8 @@ attrs_for_stat <- function(var_attrs, var, stat) {
         key=field,
         val=paste0(stat, ' of ', var_attrs[[var]][[field]])
       ))
-    } else  {
-      # Just pass through any other attributes.
+    } else {
+      # Just pass through any other attributes
       return(list(
         var=stat_var,
         key=field,

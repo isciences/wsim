@@ -267,11 +267,47 @@ test_that("wsim_merge can copy attributes from an input dataset", {
   ))
   
   expect_equal(return_code, 0)
-  
+  # 
   results <- read_vars_from_cdf(output)
   
   expect_equal(attr(results$data$data_a, 'data_attr'), 3)
   expect_equal(attr(results$data$data_b, 'data_attr'), 4)
   
+  file.remove(output)
+})
+
+test_that("wsim_integrate doesn't propagage nonstandard _FillValue values", {
+  input <- paste0(tempfile(), '.nc')
+  output <- paste0(tempfile(), '.nc')
+  
+  latdim <- ncdf4::ncdim_def("lat", units="degrees_north", vals=as.double(1:2), longname="Latitude", create_dimvar=TRUE)
+  londim <- ncdf4::ncdim_def("lon", units="degrees_east", vals=as.double(1:2), longname="Longitude", create_dimvar=TRUE)
+
+  data_var <- ncdf4::ncvar_def(name="data",
+                               units="none",
+                               dim=list(londim, latdim),
+                               missval= -8675309, # non-standard
+                               prec="double",
+                               compression=1)
+  
+  cdf <- ncdf4::nc_create(input, list(data_var))
+  ncdf4::ncvar_put(cdf, data_var, matrix(c(1, NA, 3, NA), nrow=2))
+  ncdf4::nc_close(cdf)
+  
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--input',  input,
+    '--input',  input,
+    '--stat',   "sum",
+    '--output', output
+  ))
+  
+  expect_equal(return_code, 0)
+  
+  results <- wsim.io::read_vars_from_cdf(output)
+  
+  expect_equal(attr(results$data[[1]], '_FillValue'),   -3.4028234663852886e+38)
+  #expect_equal(attr(results$data[[1]], 'missing_data'), -3.4028234663852886e+38)
+  
+  file.remove(input)
   file.remove(output)
 })
