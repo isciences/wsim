@@ -25,13 +25,40 @@ test_that('We can use glob expansion', {
   # Unless we tell it not to check existence
   expect_equal(
     expand_inputs(file.path(dirname, 'sauce*'), check_exists=FALSE),
-    as.character(c())
-  )
-
-  # Expansion can also be disabled
-  expect_equal(
-    expand_inputs(file.path(dirname, 'sauce*'), check_exists=FALSE, expand_globs=FALSE),
     file.path(dirname, 'sauce*')
   )
 
+})
+
+test_that("We can use date-range expansion", {
+  expect_equal(
+    expand_inputs('results_[201211:201303].nc', check_exists=FALSE),
+    c('results_201211.nc', 'results_201212.nc', 'results_201301.nc', 'results_201302.nc', 'results_201303.nc')
+  )
+})
+
+test_that("Date-range expansion can specify a timestep in months", {
+  expect_equal(
+    expand_inputs('results_[201203:201303:4].nc', check_exists=FALSE),
+    c('results_201203.nc', 'results_201207.nc', 'results_201211.nc', 'results_201303.nc')
+  )
+})
+
+test_that("Last date in range is not included when it is not a multiple of timestep", {
+  expect_equal(
+    expand_inputs('results_[201201:201204:2].nc', check_exists=FALSE),
+    c('results_201201.nc', 'results_201203.nc')
+  )
+})
+
+test_that("Multiple date ranges can be included, giving a Cartestian product", {
+  expect_equal(
+    expand_inputs('results_[201201:201203]_fcst[201206:201207].nc', check_exists=FALSE),
+    c('results_201201_fcst201206.nc',
+      'results_201201_fcst201207.nc',
+      'results_201202_fcst201206.nc',
+      'results_201202_fcst201207.nc',
+      'results_201203_fcst201206.nc',
+      'results_201203_fcst201207.nc')
+  )
 })
