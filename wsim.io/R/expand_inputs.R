@@ -66,6 +66,7 @@ expand_inputs <- function(raw_inputs, check_exists=TRUE) {
 #'              one or more date ranges between square
 #'              brackets
 #' @return a vector of filenames or globs
+#' @export
 expand_dates <- function(fname) {
   match <- regexpr('\\[[0-9]+:[0-9]+(:[0-9]+)?\\]', fname)
 

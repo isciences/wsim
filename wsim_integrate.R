@@ -13,11 +13,11 @@ Compute summary statistics from multiple observations
 Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>)... [--window=<window>] [--attr=<attr>...]
 
 Options:
---stat <stat>     a summary statistic (min, max, ave, sum)
---input <file>    one or more input files or glob patterns
---ouput <file>    output file(s) to write integrated results
---window <window> size of rolling window to use for integration (e.g. 6 files)
---attr <attr>     optional attribute(s) to be attached to output netCDF
+--stat <stat>       a summary statistic (min, max, ave, sum)
+--input <file>      one or more input files or glob patterns
+--output <file>     output file(s) to write integrated results
+--window <window>   size of rolling window to use for integration (e.g. 6 files)
+--attr <attr>       optional attribute(s) to be attached to output netCDF
 '->usage
 
 attrs_for_stat <- function(var_attrs, var, stat) {
@@ -81,7 +81,7 @@ read_unique_vars <- function(parsed_inputs) {
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args, list(window="integer"))
 
-  outfiles <- args$output
+  outfiles <- do.call(c, lapply(args$output, wsim.io::expand_dates))
   for (outfile in outfiles) {
     if (!can_write(outfile)) {
       die_with_message("Cannot open ", outfile, " for writing.")
