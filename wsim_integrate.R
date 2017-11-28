@@ -172,7 +172,7 @@ main <- function(raw_args) {
             stat_fn <- wsim.distributions::find_stat(parsed_stat$stat)
             wsim.io::info('Computing', parsed_stat$stat, '...')
 
-            integrated[[stat_var]] <- wsim.distributions::array_apply(data, stat_fn)
+            integrated[[stat_var]] <- stat_fn(data)
 
             attrs <- c(attrs, attrs_for_stat(var_attrs, var_name, parsed_stat$stat))
 

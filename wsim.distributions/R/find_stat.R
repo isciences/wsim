@@ -13,29 +13,29 @@ find_stat <- function(name) {
   name <- tolower(name)
 
   if (name == 'min')
-    return(function(x) { unless_all_na(min)(x, na.rm=TRUE) })
+    return(stack_min)
 
   if (name == 'median')
-    return(function(x) { wsim_quantile(x, 0.5) })
+    return(stack_median)
 
   if (name == 'max')
-    return(function(x) { unless_all_na(max)(x, na.rm=TRUE) })
+    return(stack_max)
 
   if (name == 'sum')
-    return(function(x) { sum(x, na.rm=TRUE) })
+    return(stack_sum)
 
   if (name == 'ave')
-    return(function(x) { unless_all_na(mean)(x, na.rm=TRUE) })
+    return(stack_mean)
 
   if (name == 'fraction_defined')
-    return(function(x) { sum(!is.na(x)) / length(x) })
+    return(stack_frac_defined)
 
   if (name == 'fraction_defined_above_zero')
-    return(function(x) { sum(x>0, na.rm=TRUE) / sum(!is.na(x)) })
+    return(stack_frac_defined_above_zero)
 
   if (grepl('q\\d{1,2}(.\\d+)?$', name)) {
     q <- 0.01 * as.numeric(substring(name, 2))
-    return(function(x) { wsim_quantile(x, q) })
+    return(function(x) { stack_quantile(x, q) })
   }
 
   stop("Unknown stat ", name)

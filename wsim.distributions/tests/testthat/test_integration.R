@@ -1,9 +1,10 @@
-require('testthat')
+require(testthat)
+require(Rcpp)
 
 context('Integration functions')
 
 integrate <- function(stat, obs) {
-  (find_stat(stat))(obs)
+  (find_stat(stat))(array(obs, dim=c(1,1,length(obs))))[1]
 }
 
 test_that('we can calculate basic stats', {
