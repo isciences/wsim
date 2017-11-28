@@ -39,7 +39,7 @@ test_that('This module computes pWetDays equivalently to previous WSIM code', {
   inputs <- wsim.io::expand_inputs(paste0(testdata, '/*201705*.RT::1@[x-1]->Pr'))
   data <- wsim.io::read_vars_to_cube(inputs)
 
-  pWetDays <- array_apply(data, find_stat('fraction_defined_above_zero'))
+  pWetDays <- (find_stat('fraction_defined_above_zero'))(data)
 
   expected <- wsim.io::read_vars(paste0(testdata, '/pWetDays_201705.img'))$data[[1]]
 
