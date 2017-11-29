@@ -189,12 +189,12 @@ def composite_indicators(workspace, *, yearmon, window=None, target=None, quanti
         ]
         mask='$<::Ws_rp' + q
     else:
-        surplus=[
+        deficit=[
             '$<::PETmE_sum_rp' + q + '@fill0@negate->Neg_PETmE',
             '$<::Ws_ave_rp' + q + '->Ws',
             '$<::Bt_RO_sum_rp' + q + '->Bt_RO'
         ]
-        deficit=[
+        surplus=[
             '$<::RO_mm_sum_rp' + q + '->RO_mm',
             '$<::Bt_RO_sum_rp' + q + '->Bt_RO'
         ]
