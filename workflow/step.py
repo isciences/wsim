@@ -1,3 +1,5 @@
+import os
+
 def flatten(lis):
     """Given a list, possibly nested to any level, return it flattened."""
     new_lis = []
@@ -38,8 +40,9 @@ class Step:
         return ' '.join(format_vars(target, vars) for target in self.target)
 
     def get_mkdir_commands(self):
-        return [ ['mkdir', '-p', '`dirname {}`'.format(target)]
-                 for target in self.target ]
+        dirs = set([os.path.dirname(target) for target in self.target])
+
+        return [ ['mkdir', '-p', dir ] for dir in dirs ]
 
     def get_text(self, keys=None):
         if keys is None:
