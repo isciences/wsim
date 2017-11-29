@@ -95,7 +95,10 @@ def wsim_integrate(**kwargs):
     for stat in kwargs['stats']:
         cmd += ['--stat', stat]
 
-    for input in kwargs['inputs']:
+    inputs = kwargs['inputs']
+    if type(inputs) is str:
+        inputs = [inputs]
+    for input in inputs:
         cmd += '--input', q(input)
 
     for attr in kwargs.get('attrs', []):
