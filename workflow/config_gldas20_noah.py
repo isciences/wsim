@@ -64,8 +64,8 @@ class GLDAS20_Noah(ConfigBase):
             #'E'         : [ 'sum' ],
             'PETmE'     : [ 'sum' ],
             #'P_net'     : [ 'sum' ],
-            #'Pr'        : [ 'sum' ]n
-            #'RO_mm'     : [ 'sum' ],
+            #'Pr'        : [ 'sum' ],
+            'RO_mm'     : [ 'sum' ],
             #'Runoff_mm' : [ 'sum' ],
             #'Snowpack'  : [ 'sum' ],
             #'T'         : [ 'ave' ],
