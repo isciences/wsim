@@ -7,6 +7,23 @@ def read_vars(*args):
 
     return file + '::' + ','.join(vars)
 
+def date_range(*args):
+    step = 1
+
+    if len(args) == 1 and type(args[0]) is list:
+        begin = args[0][0]
+        end   = args[0][-1]
+
+    elif len(args) >= 2:
+        begin = args[0]
+        end = args[1]
+
+        if len(args) == 3:
+            step = args[2]
+
+
+    return '[{}:{}:{}]'.format(begin, end, step)
+
 class Vardef:
 
     def __init__(self, file, var):

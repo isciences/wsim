@@ -1,7 +1,7 @@
 from step import Step
 from commands import *
 from dates import format_yearmon, get_next_yearmon, all_months
-from paths import read_vars
+from paths import read_vars, date_range
 
 from actions import create_forcing_file, compute_pwetdays
 
@@ -148,7 +148,7 @@ def spinup(config):
                 # forcing date in our historical record
                 ['ncatted', '-O', '-a', 'yearmon,global,m,c,"{}"'.format(config.historical_yearmons()[0]), config.workspace().final_state_norms()],
                 wsim_lsm(
-                    forcing=[config.workspace().forcing(yearmon=yearmon) for yearmon in config.historical_yearmons()],
+                    forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()))],
                     state=config.workspace().final_state_norms(),
                     elevation=config.static_data().elevation(),
                     flowdir=config.static_data().flowdir(),
@@ -197,7 +197,7 @@ def spinup(config):
                 # TODO something cleaner than modifying an existing file
                 ['ncatted', '-O', '-a', 'yearmon,global,c,c,"{}"'.format(config.historical_yearmons()[0]), config.workspace().spinup_mean_state(month=1)],
                 wsim_lsm(
-                    forcing=[config.workspace().forcing(yearmon=yearmon) for yearmon in config.historical_yearmons()],
+                    forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()))],
                     state=config.workspace().spinup_mean_state(month=1),
                     elevation=config.static_data().elevation(),
                     flowdir=config.static_data().flowdir(),
@@ -211,26 +211,24 @@ def spinup(config):
     for yearmon in config.historical_yearmons():
         steps += config.result_postprocess_steps(yearmon=yearmon)
 
-    all_integrated = [] # for phony
+
+    # Time-integrate the variables
     for window in config.integration_windows():
         yearmons = config.historical_yearmons()[window-1:]
 
-        # Time-integrate the variables
-        inputs = [config.workspace().results(yearmon=yearmon) for yearmon in config.historical_yearmons()]
-        outputs = [config.workspace().results(yearmon=yearmon, window=window) for yearmon in yearmons]
-
-        all_integrated.append(outputs[-1])
         steps.append(Step(
             comment="Time-integrated historical results: " + str(window) + "mo",
             targets=[config.workspace().results(yearmon=yearmon, window=window) for yearmon in yearmons],
-            dependencies=inputs,
+            dependencies=[config.workspace().results(yearmon=yearmon) for yearmon in config.historical_yearmons()],
             commands=[
                 wsim_integrate(
-                    inputs=[read_vars(f, *config.integrated_vars().keys()) for f in inputs],
+                    inputs=read_vars(config.workspace().results(yearmon=date_range(config.historical_yearmons()[0],
+                                                                                   config.historical_yearmons()[-1])), *config.integrated_vars().keys()),
                     window=window,
                     stats=[stat + '::' + ','.join(vars) for stat, vars in integrated_stats.items()],
                     attrs=['integration_period={}'.format(window)],
-                    output=outputs
+                    output=config.workspace().results(yearmon=date_range(yearmons[0], yearmons[-1]),
+                                                      window=window)
                 )
             ]
         ))
@@ -249,7 +247,9 @@ def spinup(config):
                 commands=[
                     wsim_fit(
                         distribution=config.distribution,
-                        inputs=[read_vars(f, param) for f in input_files],
+                        inputs=[read_vars(config.workspace().results(yearmon=date_range(format_yearmon(config.result_fit_years()[0], month),
+                                                                                        format_yearmon(config.result_fit_years()[-1], month),
+                                                                                        12)), param)],
                         output=config.workspace().fit_obs(var=param, month=month)
                     )
                 ]
@@ -274,7 +274,8 @@ def spinup(config):
                         commands=[
                             wsim_fit(
                                 distribution="gev",
-                                inputs=[read_vars(f, param + '_' + stat) for f in input_files],
+                                inputs=[read_vars(config.workspace().results(yearmon=date_range(yearmons[0], yearmons[-1], 12),
+                                                                             window=window), param + '_' + stat)],
                                 output='$@'
                             )
                         ]
@@ -287,10 +288,10 @@ def spinup(config):
         dependencies=all_fits,
         commands=[]
     ))
-    steps.append(Step(
-        targets="all_integrated",
-        dependencies=all_integrated,
-        commands=[]
-    ))
+    #steps.append(Step(
+    #    targets="all_integrated",
+    #    dependencies=all_integrated,
+    #    commands=[]
+    #))
 
     return steps
