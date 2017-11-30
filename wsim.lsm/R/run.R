@@ -74,11 +74,11 @@ run <- function(static, state, forcing) {
 
   next_state <- make_state(
     extent= state$extent,
-    Snowpack= state$Snowpack + ifelse(is.na(Sa - Sm), 0.0, Sa - Sm),
+    Snowpack= state$Snowpack + coalesce(Sa-Sm, 0.0),
     snowmelt_month= melt_month,
-    Ws= state$Ws + ifelse(is.na(dWdt), 0.0, dWdt),
+    Ws= state$Ws + coalesce(dWdt, 0.0),
     Dr= Rp, # TODO resolve discrepancy with manual
-    Ds= state$Ds + ifelse(is.na(dDsdt), 0.0, dDsdt),
+    Ds= state$Ds + coalesce(dDsdt, 0.0),
     yearmon= next_yyyymm(state$yearmon)
   )
 
