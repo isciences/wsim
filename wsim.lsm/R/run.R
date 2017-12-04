@@ -61,24 +61,16 @@ run <- function(static, state, forcing) {
   R <- hydro$R
   Ws_ave <- hydro$Ws_ave
 
-  Xr <- calc_Xr(R, forcing$Pr, P)
-  Xs <- calc_Xs(Sm, R, P)
-
-  Rp <- calc_Rp(state$Dr, Xr)
-  Rs <- runoff_detained_snowpack(state$Ds, Xs, melt_month, static$elevation)
-
-  revised_runoff <- Rp + Rs
-
-  # Calculate changes in detention state variables
-  dDsdt = Xs - Rs
+  detained <- calc_detained(R, forcing$Pr, P, Sm, state$Dr, state$Ds, static$elevation, melt_month);
+  revised_runoff <- detained$Rp + detained$Rs
 
   next_state <- make_state(
     extent= state$extent,
     Snowpack= state$Snowpack + coalesce(Sa-Sm, 0.0),
     snowmelt_month= melt_month,
     Ws= state$Ws + coalesce(dWdt, 0.0),
-    Dr= Rp, # TODO resolve discrepancy with manual
-    Ds= state$Ds + coalesce(dDsdt, 0.0),
+    Dr= detained$Rp, # TODO resolve discrepancy with manual
+    Ds= state$Ds + coalesce(detained$dDsdt, 0.0),
     yearmon= next_yyyymm(state$yearmon)
   )
 
