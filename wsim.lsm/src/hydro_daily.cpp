@@ -98,12 +98,12 @@ static HydroVals daily_hydro_impl(double P, double Sa, double Sm, double E0, dou
 List daily_hydro(double P, double Sa, double Sm, double E0, double Ws, double Wc, int nDays, double pWetDays) {
   HydroVals vals = daily_hydro_impl(P, Sa, Sm, E0, Ws, Wc, nDays, pWetDays);
 
-  List ret;
-  ret["dWdt"] = vals.dWdt;
-  ret["Ws_ave"] = vals.Ws_ave;
-  ret["E"] = vals.E;
-  ret["R"] = vals.R;
-  return ret;
+  return List::create(
+    Named("dWdt") = vals.dWdt,
+    Named("Ws_ave") = vals.Ws_ave,
+    Named("E") = vals.E,
+    Named("R") = vals.R
+  );
 }
 
 //' Compute hydrological parameters for all pixels
@@ -158,10 +158,11 @@ List daily_hydro_loop(const NumericMatrix & P,
     }
   }
 
-  List ret;
-  ret["dWdt"] = dWdt;
-  ret["Ws_ave"] = Ws_ave;
-  ret["E"] = E;
-  ret["R"] = R;
-  return ret;
+  return List::create(
+    Named("dWdt") = dWdt,
+    Named("Ws_ave") = Ws_ave,
+    Named("E") = E,
+    Named("R") = R
+  );
+
 }
