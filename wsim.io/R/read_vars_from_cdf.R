@@ -3,9 +3,12 @@
 #' @inheritParams parse_vardef
 #' @param vars A list of variables to read.  If NULL (default),
 #'             all variables will be read.
+#' @param z_offset An optional index indicating which slice of
+#'                 data to read in a 3-dimensional netCDF file
+#'                 (elevation, time, etc.)
 #' @return structure described in \code{\link{read_vars}}
 #' @export
-read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
+read_vars_from_cdf <- function(vardef, vars=as.character(c()), z_offset=NULL) {
   if (is.wsim.io.vardef(vardef)) {
     def <- vardef
   } else {
@@ -79,7 +82,14 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c())) {
       # Read this as a regular variable
       for (var_to_load in vars) {
         if (var_to_load$var_in == var$name) {
-          d <- ncdf4::ncvar_get(cdf, var$name)
+          if (is.null(z_offset)) {
+            d <- ncdf4::ncvar_get(cdf, var$name)
+          } else {
+            d <- ncdf4::ncvar_get(cdf,
+                                  var$name,
+                                  start=c(1,   1, z_offset),
+                                  count=c(-1, -1, 1))
+          }
 
           if (!is.null(wrap_rows)) {
             d <- rbind(d[wrap_rows, ], d[-wrap_rows, ])
