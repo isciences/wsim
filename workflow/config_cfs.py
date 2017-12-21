@@ -71,18 +71,11 @@ class NCEP(paths.Forcing):
 
         return paths.Vardef(os.path.join(self.source, 'NCEP', 'Daily_precip', str(year), filename), '1')
 
-        if year >= 2014:
-            return paths.Vardef(os.path.join(self.source, 'NCEP', 'originals', 'p.{yearmon}.mon'.format_map(kwargs)), '1')
-        else:
-            return paths.Vardef(os.path.join(self.source, 'NCEP', 'P', 'CPC_Leaky_P_{yearmon}.FLT'.format_map(kwargs)), '1')
+    def precip_monthly(self, **kwargs):
+        return paths.Vardef(os.path.join(self.source, 'NCEP', 'P', 'P_{yearmon}.nc'.format_map(kwargs)), 'P')
 
     def temp_monthly(self, **kwargs):
-        year = int(kwargs['yearmon'][:4])
-
-        if year >= 2014:
-            return paths.Vardef(os.path.join(self.source, 'NCEP', 'originals', 't.{yearmon}.mon'.format_map(kwargs)), '1')
-        else:
-            return paths.Vardef(os.path.join(self.source, 'NCEP', 'T', 'CPC_Leaky_T_{yearmon}.FLT'.format_map(kwargs)), '1')
+        return paths.Vardef(os.path.join(self.source, 'NCEP', 'T', 'T_{yearmon}.nc'.format_map(kwargs)), 'T')
 
     def p_wetdays(self, **kwargs):
         year = int(kwargs['yearmon'][:4])
