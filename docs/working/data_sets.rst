@@ -44,3 +44,8 @@ It can be used to compute the number of wet days per month from January 1979-pre
 
 The data is available `by FTP <ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/>`_, with an individual file for each day. Files are stored in a raw binary format which can be read directly with the ``wsim.io`` R package.
 
+Simulated Topological Network Flow Directions
+---------------------------------------------
+
+A global flow direction grid at 0.5-degree resolution is available from the `Simulated Topological Networks (STN-30p) project <http://www.wsag.unh.edu/Stn-30/stn-30.html>`_.
+
