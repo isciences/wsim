@@ -91,7 +91,7 @@ double qua<pe3_tag>(double f, double location, double scale, double shape) {
   }
 
   double alpha = 4 / (shape*shape);
-  double beta = abs(0.5*scale*shape);
+  double beta = std::abs(0.5*scale*shape);
 
   if (shape > 0) {
     return location - alpha*beta + beta*std::max(0.0, R::qgamma(f, alpha, 1, true, false));
@@ -130,7 +130,7 @@ double cdf<pe3_tag>(double x, double location, double scale, double shape) {
     return x;
   }
 
-  if (abs(shape) < 1e-6) {
+  if (std::abs(shape) < 1e-6) {
     return R::pnorm(x, location, scale, true, false);
   }
 
