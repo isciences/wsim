@@ -13,6 +13,7 @@ dataset
 datasets
 disaggregate
 docopt
+downsampled
 evapotranspiration
 filename
 filenames

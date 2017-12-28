@@ -49,3 +49,53 @@ Simulated Topological Network Flow Directions
 
 A global flow direction grid at 0.5-degree resolution is available from the `Simulated Topological Networks (STN-30p) project <http://www.wsag.unh.edu/Stn-30/stn-30.html>`_.
 
+ISRIC WISE-Derived Soil Properties
+----------------------------------
+
+A database of soil properties, including total available water capacity (TAWC), is available at 30 arc-second resolution from `ISRIC <http://data.isric.org/geonetwork/srv/eng/catalog.search;jsessionid=A84EFD2FD6E854EE80FC5268239F134D#/metadata/dc7b283a-8f19-45e1-aaed-e9bd515119bc>`_.
+The dataset covers all longitudes from approximately 60 degrees south to 83 degrees north.
+It is published as a single raster file, with 16-bit integer values corresponding to a soil map unit identifier.
+An accompanying data file provides, for each map unit, the relative proportions of multiple soil types (and the properties of those soil types) found over discrete depth intervals.
+
+WSIM provides a utility (``extract_isric_tawc.R``) to extract TAWC values from this dataset, using a weighted average of the soil types present within each depth interval, up to a specified maximum depth.
+
+Once extracted, the TAWC raster can be downsampled to the desired resolution.
+For example, a global raster of TAWC at 0.5-degree resolution can be produced using GDAL with the following command:
+
+.. code-block:: console
+
+    gdal_translate -of GTiff -r average -tr 0.5 0.5 -projwin -180 90 180 -90 wise_30sec_v1_tawc.tif wise_half_degree_tawc.tif
+
+However, this method causes a propagation of NODATA values, because 0.5-degree cells that are partly covered by NODATA pixels may become NODATA in the downsampled version.
+An alternative is to use the ``aggregate`` function provided by R's ``raster`` package.
+The following code sample demonstrates the use of this approach to extract TAWC values on a half-degree global grid.
+
+.. code-block:: R
+
+   require(raster)
+
+   # Write a half-degree global grid
+   halfdeg <- aggregate(raster('wise_30sec_v1_tawc.tif'), fact=60, fun=mean, na.rm=TRUE)
+   
+   # Although the raster created by the aggregate function is at half-degree 
+   # resolution, its latitude extents do not line up to half-degree parallels. 
+   # So we use the resample function (with the nearest-neighbor method, to prevent
+   # smoothing) to shift the grid.
+   halfdeg_global <- resample(halfdeg, raster(xmn=-180, xmx=180, ymn=-90, ymx=90, nrow=360, ncol=720), method='ngb')
+   writeRaster(halfdeg_global, 'wise_half_degree_tawc.tif', 'GTiff')  
+
+As an additional example, the following code extracts TAWC values on the NLDAS grid:
+
+.. code-block:: R
+
+   require(raster)
+
+   # Write a 0.125-degree NLDAS grid
+   eigth_degree <- aggregate(raster('wise_30sec_v1_tawc.tif'), fact=15, fun=mean, na.rm=TRUE)
+
+   # Since the generated grid already lines up to eigth-degree parallels, we
+   # can use the crop function to limit its extent to the NLDAS domain.
+   nldas <- crop(eigth_degree, c(-125, -67, 25, 53))
+   writeRaster(nldas, 'wise_nldas_tawc.tif', 'GTiff')
+
+
