@@ -92,12 +92,14 @@ create_tiff_like <- function(rast, filename_out, datatype) {
 raster_blockwise_apply <- function(filename,
                                    filename_out,
                                    fun,
+                                   nodata,
                                    band=1,
                                    datatype='Float32') {
   rast <- rgdal::GDAL.open(filename, read.only=TRUE)
   rast_out <- create_tiff_like(rast, filename_out, datatype)
-
   block_apply(rast, rast_out, fun, band=band)
+
+  .Call('RGDAL_SetNoDataValue', rgdal::getRasterBand(rast_out, 1), nodata, PACKAGE='rgdal')
 
   rgdal::GDAL.close(rast)
   rgdal::GDAL.close(rast_out)
