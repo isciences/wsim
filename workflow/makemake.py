@@ -66,9 +66,12 @@ def find_duplicate_targets(steps):
     return sorted(list(duplicates))
 
 def write_makefile(filename, steps, bindir):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+
     with open(filename, 'w') as outfile:
         outfile.write('.DELETE_ON_ERROR:\n')
         outfile.write('.SECONDARY:\n')
+        outfile.write('.SUFFIXES:\n')
 
         outfile.write('\n')
 

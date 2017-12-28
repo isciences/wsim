@@ -4,7 +4,7 @@ using namespace Rcpp;
 
 //' @export
 // [[Rcpp::export]]
-NumericVector coalesce(NumericVector v, double replacement_value) {
+NumericVector coalesce(const NumericVector & v, double replacement_value) {
   NumericVector res = no_init(v.size());
   res.attr("dim") = v.attr("dim");
 

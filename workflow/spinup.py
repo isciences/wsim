@@ -3,7 +3,7 @@ from commands import *
 from dates import format_yearmon, get_next_yearmon, all_months
 from paths import read_vars, date_range
 
-from actions import create_forcing_file, compute_pwetdays
+from actions import create_forcing_file
 
 def spinup(config):
     """
@@ -50,10 +50,6 @@ def spinup(config):
                 )
             ]
         ))
-
-        # Compute pWetDays for historical period
-        for yearmon in config.historical_yearmons():
-            steps += compute_pwetdays(config.observed_data(), yearmon)
 
         # Read the temperature and precipitation data in our historical range and generate
         # a single "monthly norm" temperature and precipitation file for each month.
@@ -132,6 +128,7 @@ def spinup(config):
         ))
 
         for yearmon in config.historical_yearmons():
+            steps += config.observed_data().prep_steps(yearmon=yearmon)
             steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon)
 
         # Run the LSM over the entire historical period, and retain the state files
@@ -210,7 +207,6 @@ def spinup(config):
 
     for yearmon in config.historical_yearmons():
         steps += config.result_postprocess_steps(yearmon=yearmon)
-
 
     # Time-integrate the variables
     for window in config.integration_windows():

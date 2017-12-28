@@ -57,7 +57,7 @@ WSIM identifies locations on Earth’s terrestrial surface that are experiencing
    :caption: Contents:
 
    concepts/index
-   working/index
    obtaining
+   working/index
    development
    Technical Specification </WSIM_Tech_Report_WE_final.pdf#://>

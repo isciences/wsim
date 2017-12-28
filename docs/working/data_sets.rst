@@ -16,7 +16,7 @@ These datasets are available in netCDF format from NOAA at the following links:
 
 Both of these datasets are masked to cover land only.
 In some cases, the mask may remove cells that would be considered as "land" in other datasets.
-An alternate version of these datasets, produced with a smaller ocean mask, is avilable from the CPC `Global Monthly Leaky Bucket Soil Moisture Analysis <http://www.cpc.ncep.noaa.gov/soilmst/leaky_glb.htm>`_.
+An alternate version of these datasets, produced with a smaller ocean mask, is available from the CPC `Global Monthly Leaky Bucket Soil Moisture Analysis <http://www.cpc.ncep.noaa.gov/soilmst/leaky_glb.htm>`_.
 This version of the files is available `by FTP <ftp://ftp.cpc.ncep.noaa.gov/wd51yf/global_monthly/gridded_binary/>`_ in a raw binary format. (The ``p.long`` file contains precipitation data, and ``t.long`` contains temperature data.)
 In addition, incremental files are published containing each month's data.
 Data can be extracted from these files using the ``read_binary_grid.R`` utility script included with WSIM.
@@ -35,3 +35,17 @@ Example commands to download and extract these datasets are shown below.
     mkdir extracted
     utils/read_binary_grid.R --input p.long --var P --output_path extracted
     utils/read_binary_grid.R --input t.long --var T --output_path extracted
+
+NOAA/CPC Unified Gauge-Based Analysis of Global Daily Precipitation
+-------------------------------------------------------------------
+
+The NOAA/CPC Unified Gauge-Based Analysis of Global Daily Precipitation dataset provides reports of daily precipitation from January 1979-present on a global half-degree grid.
+It can be used to compute the number of wet days per month from January 1979-present.
+
+The data is available `by FTP <ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/>`_, with an individual file for each day. Files are stored in a raw binary format which can be read directly with the ``wsim.io`` R package.
+
+Simulated Topological Network Flow Directions
+---------------------------------------------
+
+A global flow direction grid at 0.5-degree resolution is available from the `Simulated Topological Networks (STN-30p) project <http://www.wsag.unh.edu/Stn-30/stn-30.html>`_.
+

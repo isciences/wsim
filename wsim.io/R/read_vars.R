@@ -134,6 +134,6 @@ is_mon <- function(fname) {
 
 is_ncep_daily_precip <- function(fname) {
   grepl(
-    '^PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.\\d{8}([.]gz|RT[.]gz|[.]RT)$',
+    '^PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.\\d{8}([.]?RT)?([.]gz)?$',
     basename(fname))
 }

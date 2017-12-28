@@ -8,11 +8,8 @@ def monthly_observed(config, yearmon):
     # Don't add LSM steps if we would already have run this date as part of spinup
     if yearmon not in config.historical_yearmons():
         if config.should_run_lsm(yearmon):
-            # Prepare the dataset for use (convert from GRIB to netCDF, etc.)
+            # Prepare the dataset for use (convert from GRIB to netCDF, compute pWetDays, etc.)
             steps += config.observed_data().prep_steps(yearmon=yearmon)
-
-            # Read daily precipitation files to compute pWetDays
-            steps += compute_pwetdays(config.observed_data(), yearmon)
 
             # Combine forcing data for LSM run
             steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon)
