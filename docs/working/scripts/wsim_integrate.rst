@@ -30,3 +30,16 @@ As an example, the following command is used to compute statistics of return per
     --stat q75 \
     --output /tmp/Bt_RO_Sum_24mo_fcst201612_trgt201703.nc
 
+The command below shows an example of creating monthly climatology using wet day data from 1980-2009:
+
+.. code-block:: console
+
+ for month in {01..12} ; do 
+   outfile="source/NCEP/wetdays_ltmean/wetdays_ltmean_month_${month}.nc"
+   ./wsim_integrate.R \
+      --stat ave \
+      --input "source/NCEP/wetdays/wetdays_[1980${month}:2009${month}:12].nc" \
+      --output $outfile
+   ncrename -O "-vpWetDays_ave,pWetDays" $outfile
+ done
+      
