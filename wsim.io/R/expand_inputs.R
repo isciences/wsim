@@ -99,14 +99,32 @@ expand_dates <- function(fname) {
 #' @return a vector of dates in YYYYMM format
 date_range <- function(start, stop, step) {
   dates <- c()
+
+  if (nchar(start) == 4) {
+    increment_date <- add_years
+  } else if (nchar(start) == 6) {
+    increment_date <- add_months
+  } else if (nchar(start) == 8) {
+    increment_date <- add_days
+  }
+
   while(start <= stop) {
     dates <- c(dates, start)
-    start <- add_months(start, step)
+    start <- increment_date(start, step)
   }
   return(dates)
 }
 
-#' Add a specificed number of months to a date
+#' Add a specified number of years to a year
+#'
+#' @param yyyy year in YYYY format
+#' @param n    number of years to add
+#' @return yyyy + n
+add_years <- function(yyyy, n) {
+  sprintf("%04d", as.integer(yyyy) + n)
+}
+
+#' Add a specified number of months to a date
 #'
 #' @param yyyymm date in YYYYMM format
 #' @param n      number of months to add to date
@@ -114,7 +132,6 @@ date_range <- function(start, stop, step) {
 add_months <- function(yyyymm, n) {
   year <-  as.integer(substr(yyyymm, 1, 4))
   month <- as.integer(substr(yyyymm, 5, 6))
-
 
   month <- month + n
 
@@ -124,4 +141,13 @@ add_months <- function(yyyymm, n) {
   }
 
   return(sprintf('%04d%02d', year, month))
+}
+
+#' Add a specified number of days to a date
+#'
+#' @param yyyymmdd date in YYYYMMDD format
+#' @param n        number of days to add to date
+#' @return yyyymmdd + n
+add_days <- function(yyyymmdd, n) {
+  strftime(as.Date(yyyymmdd, "%Y%m%d") + n, "%Y%m%d")
 }

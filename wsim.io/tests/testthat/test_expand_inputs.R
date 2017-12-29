@@ -62,3 +62,22 @@ test_that("Multiple date ranges can be included, giving a Cartestian product", {
       'results_201203_fcst201207.nc')
   )
 })
+
+test_that("Dates can be expended in YYYYMMDD format as well as YYYYMM", {
+  expect_equal(
+    expand_inputs('PRECIP_[20170101:20170104].RT', check_exists=FALSE),
+    c('PRECIP_20170101.RT',
+      'PRECIP_20170102.RT',
+      'PRECIP_20170103.RT',
+      'PRECIP_20170104.RT')
+  )
+})
+
+test_that("YYYY format works too", {
+  expect_equal(
+    expand_inputs('income_[2002:2006:2].csv', check_exists=FALSE),
+    c('income_2002.csv',
+      'income_2004.csv',
+      'income_2006.csv')
+  )
+})
