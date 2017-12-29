@@ -17,7 +17,7 @@ WSIM_DIR=$2
 INDIR=$3
 OUTDIR=$4
 
-OUTFILE=${OUTDIR}/pwetdays_${YEARMON}.nc
+OUTFILE=${OUTDIR}/wetdays_${YEARMON}.nc
 
 YEAR=${YEARMON:0:4}
 DAYS_IN_MONTH=$(date -d "${YEARMON}01 + 1 month - 1 day" "+%d")
