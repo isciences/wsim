@@ -19,6 +19,12 @@ build-ci:
 push-ci:
 	docker push isciences/wsim-gitlabci:latest
 
+build-dev:
+	docker build -t isciences/wsim:2_dev .
+
+push-dev:
+	docker push isciences/wsim:2_dev
+
 build:
 	docker build -t isciences/wsim:2_latest .
 
