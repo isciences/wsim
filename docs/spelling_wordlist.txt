@@ -4,6 +4,7 @@ ISciences
 Makefile
 Makefiles
 Rcpp
+Terradynamic
 Vörösmarty
 WSIM
 abind

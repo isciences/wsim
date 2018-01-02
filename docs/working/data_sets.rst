@@ -49,6 +49,11 @@ Simulated Topological Network Flow Directions
 
 A global flow direction grid at 0.5-degree resolution is available from the `Simulated Topological Networks (STN-30p) project <http://www.wsag.unh.edu/Stn-30/stn-30.html>`_.
 
+Global Flow Directions derived from Dominant River Tracing (DRT)
+----------------------------------------------------------------
+
+The Numerical Terradynamic Simulation Group at the University of Montana publishes near-global flow direction grids (84 degrees North to 56 degrees South) at various resolutions, derived using a dominant river tracing (DRT) algorithm. Data can be accessed from `this link <http://www.ntsg.umt.edu/project/drt.php>`_.
+
 ISRIC WISE-Derived Soil Properties
 ----------------------------------
 
