@@ -20,12 +20,17 @@ OUTDIR=$4
 OUTFILE=${OUTDIR}/wetdays_${YEARMON}.nc
 
 YEAR=${YEARMON:0:4}
-DAYS_IN_MONTH=$(date -d "${YEARMON}01 + 1 month - 1 day" "+%d")
-
 if (( $YEAR < 1979 )); then
 	(>&2 echo "Daily precipitation data not available before 1979")
 	exit 1
-elif (( $YEAR < 2006 )); then
+fi
+
+DAYS_IN_MONTH=$(date -d "${YEARMON}01 + 1 month - 1 day" "+%d")
+
+# There is some inconsistency in how daily precipitation files are named
+# from year to year. Because we want to be able to mirror this data source
+# using wget, we don't correct the inconsistencies in our local copy.
+if (( $YEAR < 2006 )); then
 	EXT=".gz"
 elif (( $YEAR < 2007)); then
 	EXT="RT.gz"
