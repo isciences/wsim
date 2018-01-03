@@ -5,7 +5,7 @@ def q(txt):
 
 def forecast_convert(infile, outfile):
     return [
-        os.path.join('{BINDIR}', 'utils', 'forecast_convert.sh'),
+        os.path.join('{BINDIR}', 'utils', 'noaa_cfsv2_forecast', 'convert_cfsv2_forecast.sh'),
         q(infile),
         q(outfile)
     ]
