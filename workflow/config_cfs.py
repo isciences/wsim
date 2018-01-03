@@ -21,10 +21,8 @@ class Static:
 
 class NCEP(paths.Forcing):
 
-    # TODO remove dependency on "Derived" ?
-    def __init__(self, source, derived):
+    def __init__(self, source):
         self.source = source
-        self.derived = derived
 
     def prep_steps(self, yearmon):
         steps = []
@@ -32,44 +30,30 @@ class NCEP(paths.Forcing):
         year, month = dates.parse_yearmon(yearmon)
 
         if year >= 1979:
-            daily_precip_files = [self.precip_daily(date).file for date in dates.days_in_month(yearmon)]
-
             steps.append(
                 Step(
                     targets=self.p_wetdays(yearmon=yearmon).file,
-                    dependencies=daily_precip_files,
+                    dependencies=[],
                     commands=[
-                        commands.wsim_integrate(
-                            inputs=[file + '::1@[x-1]->Pr' for file in daily_precip_files],
-                            stats=['fraction_defined_above_zero'],
-                            output='$@'
-                        ),
-                        ['ncrename', '-O', '-vPr_fraction_defined_above_zero,pWetDays', '$@']
+                        [
+                            os.path.join('{BINDIR}',
+                                         'utils',
+                                         'noaa_cpc_daily_precip',
+                                         'compute_noaa_cpc_pwetdays.sh'),
+                            yearmon,
+                            '{BINDIR}',
+                            os.path.join(self.source,
+                                         'NCEP',
+                                         'Daily_precip'),
+                            os.path.join(self.source,
+                                         'NCEP',
+                                         'wetdays')
+                        ]
                     ]
                 )
             )
 
         return steps
-
-    def precip_daily(self, yyyymmdd):
-        # There is some inconsistency in how daily precipitation files are named
-        # from year to year. Because we want to be able to mirror this data source
-        # using wget, we don't correct the inconsistencies in our local copy.
-        year = int(yyyymmdd[:4])
-
-        filename = 'PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{DATE}'.format(DATE=yyyymmdd)
-        if year < 1979:
-            raise Exception('Daily precipitation not available before 1979')
-        if year < 2006:
-            filename += '.gz'
-        elif year == 2006:
-            filename += 'RT.gz'
-        elif year in (2007, 2008):
-            filename += '.RT.gz'
-        else:
-            filename += '.RT'
-
-        return paths.Vardef(os.path.join(self.source, 'NCEP', 'Daily_precip', str(year), filename), '1')
 
     def precip_monthly(self, **kwargs):
         return paths.Vardef(os.path.join(self.source, 'NCEP', 'P', 'P_{yearmon}.nc'.format_map(kwargs)), 'P')
@@ -82,9 +66,9 @@ class NCEP(paths.Forcing):
         month = int(kwargs['yearmon'][4:])
 
         if year < 1979:
-            return paths.Vardef(os.path.join(self.source, 'WetDay_CRU', 'cru_pWD_LTMEAN_{month:02d}.img'.format(month=month)), '1')
+            return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays_ltmean', 'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)), 'pWetDays')
         else:
-            return paths.Vardef(os.path.join(self.derived, 'prepared_inputs', 'wetdays_{yearmon}.nc'.format_map(kwargs)), 'pWetDays')
+            return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays', 'wetdays_{yearmon}.nc'.format_map(kwargs)), 'pWetDays')
 
 class CFSForecast(paths.Forcing):
 
@@ -152,7 +136,7 @@ class CFSForecast(paths.Forcing):
 class CFSConfig(ConfigBase):
 
     def __init__(self, source, derived):
-        self._observed = NCEP(source, derived)
+        self._observed = NCEP(source)
         self._forecast = CFSForecast(source, derived)
         self._static = Static(source)
         self._workspace = paths.DefaultWorkspace(derived)
