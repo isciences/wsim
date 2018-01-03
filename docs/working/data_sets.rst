@@ -1,7 +1,22 @@
 WSIM Data Sets
-==============
+**************
 
 This section provides some examples of parameter and forcing datasets that are suitable for use with WSIM.
+
+Forcing Datasets
+================
+
+CFSv2 Temperature and Precipitation Forecasts
+---------------------------------------------
+
+NOAA's CFSv2 model provides forecasts of monthly average temperature and precipitation with lead times of 1-9 months.
+Forecasts are issued every six hours.
+Forecast data issued over the past seven days is availabile in a `rolling archive <http://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/>`_.
+A `long-term archive <https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/>`_ stores earlier forecasts, from April 2011 onward.
+
+WSIM provides scripts to download forecast files from NOAA's archives and extract temperature and precipitation from the Gaussian-grid GRIB files provided by NOAA into netCDF files on a half-degree Cartesian grid.
+
+The ``wsim_correct`` tool can then be used to bias-correct these forecasts based on retrospective forecast data.
 
 GHCN+CAMS Temperature and PREC/L Precipitation Data
 ---------------------------------------------------
@@ -43,6 +58,9 @@ The NOAA/CPC Unified Gauge-Based Analysis of Global Daily Precipitation dataset 
 It can be used to compute the number of wet days per month from January 1979-present.
 
 The data is available `by FTP <ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/>`_, with an individual file for each day. Files are stored in a raw binary format which can be read directly with the ``wsim.io`` R package.
+
+Parameter Datasets
+==================
 
 Simulated Topological Network Flow Directions
 ---------------------------------------------
