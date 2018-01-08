@@ -20,7 +20,7 @@ data TAWC values:
 * -7: Rocky sublayers
 * -9: Urban areas, other miscellaneous units
 
-Usage: extract_isric_tawc [--max_depth=<depth> --data=<data> --missing=<missing> --codes=<codes> ] --output=<output>
+Usage: extract_isric_tawc [--max_depth=<depth> --data=<data> --missing=<missing> --codes=<codes> --raster=<raster> --output=<output>]
 
 --data=<data>       comma-separated file with soil parameters for all map units [default: HW30s_FULL.txt]
 --missing=<missing> comma-separated file defining TAWC values (cm/m) for missing data codes [default: tawc_missing.csv]
