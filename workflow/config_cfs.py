@@ -39,15 +39,15 @@ class NCEP(paths.Forcing):
                             os.path.join('{BINDIR}',
                                          'utils',
                                          'noaa_cpc_daily_precip',
-                                         'compute_noaa_cpc_pwetdays.sh'),
-                            yearmon,
-                            '{BINDIR}',
-                            os.path.join(self.source,
-                                         'NCEP',
-                                         'Daily_precip'),
-                            os.path.join(self.source,
-                                         'NCEP',
-                                         'wetdays')
+                                         'compute_noaa_cpc_pwetdays.py'),
+                            '--bindir', '{BINDIR}',
+                            '--yearmon', yearmon,
+                            '--input_dir', os.path.join(self.source,
+                                                        'NCEP',
+                                                        'Daily_precip'),
+                            '--output_dir', os.path.join(self.source,
+                                                         'NCEP',
+                                                         'wetdays')
                         ]
                     ]
                 )
