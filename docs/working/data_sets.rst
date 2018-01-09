@@ -1,5 +1,5 @@
-WSIM Data Sets
-**************
+Data Sets
+*********
 
 This section provides some examples of parameter and forcing datasets that are suitable for use with WSIM.
 
