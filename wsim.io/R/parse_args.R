@@ -26,13 +26,14 @@ parse_args <- function(usage, args=commandArgs(TRUE), types=list()) {
     if (!is.null(parsed[[arg]])) {
       typ <- types[[arg]]
       if (!is.null(typ)) {
-        if (typ == 'integer') {
-          parsed[[arg]] <- as.integer(parsed[[arg]])
-        } else if (typ == 'double') {
-          parsed[[arg]] <- as.double(parsed[[arg]])
-        } else {
-          stop('Unknown data type')
-        }
+        cast_fn <- switch(typ,
+          integer=as.integer,
+          double=as.double,
+          numeric=as.numeric,
+          logical=as.logical
+        )
+
+        parsed[[arg]] <- cast_fn(parsed[[arg]])
       }
     }
   }
