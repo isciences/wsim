@@ -95,7 +95,7 @@ test_that('We can compute the standard anomales for a raster of observations giv
   # Cell 42,59
   expected_std_anomaly <- -0.246
 
-  std_anomalies <- gevStandardize(gev_params, bt_ro_max_24mo)
+  std_anomalies <- standard_anomaly('gev', gev_params, bt_ro_max_24mo)
 
   expect_equal(std_anomalies[1,1], expected_std_anomaly, tolerance=1e-3, check.attributes=FALSE)
 })
