@@ -14,7 +14,7 @@ import shutil
 from urllib.request import urlopen
 
 def parse_args(args):
-    parser = argparse.ArgumentParser('Compute pWetDays from NOAA/CPC daily precipitation data')
+    parser = argparse.ArgumentParser('Download a CFSv2 forecast GRIB file')
 
     parser.add_argument('--timestamp',
                         help='Forecast timestamp in YYYYMMHH format',
