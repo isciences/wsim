@@ -4,7 +4,7 @@
 #'               The following variables are required:
 #'               \describe{
 #'               \item{elevation}{mean grid cell elevation in meters}
-#'               \item{flow_directions}{flow direction grid described in \link{calculateFlow}}
+#'               \item{flow_directions}{flow direction grid described in \link{accumulate_flow}}
 #'               \item{Wc}{soil moisture capacity in millimeters}
 #'               }
 #' @param state a \code{wsim.lsm.state} object containing an input state for the model.
