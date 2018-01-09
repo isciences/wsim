@@ -1,6 +1,6 @@
 #' Get a function to compute a named statistic over a vector of observations
 #'
-#' @param stat name of statistic. Supported statistics are:
+#' @param name name of statistic. Supported statistics are:
 #' \describe{
 #' \item{min}{minimum defined value}
 #' \item{max}{maximum defined value}
