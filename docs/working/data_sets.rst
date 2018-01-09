@@ -9,14 +9,34 @@ Forcing Datasets
 CFSv2 Temperature and Precipitation Forecasts
 ---------------------------------------------
 
-NOAA's CFSv2 model provides forecasts of monthly average temperature and precipitation with lead times of 1-9 months.
+NOAA's CFSv2 model provides global forecasts of monthly average temperature and precipitation with lead times of 1-9 months.
 Forecasts are issued every six hours.
-Forecast data issued over the past seven days is availabile in a `rolling archive <http://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/>`_.
+
+Forecast data issued over the past seven days is available in a `rolling archive <http://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/>`_.
 A `long-term archive <https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/>`_ stores earlier forecasts, from April 2011 onward.
 
-WSIM provides scripts to download forecast files from NOAA's archives and extract temperature and precipitation from the Gaussian-grid GRIB files provided by NOAA into netCDF files on a half-degree Cartesian grid.
+CFSv2 forecast data is provided on a 384x190 Gaussian grid.  
+WSIM provides scripts to download forecast files from NOAA's archives and extract temperature and precipitation from the Gaussian-grid GRIB files into netCDF files on a half-degree Cartesian grid.
+
+The ``download_cfsv2_forecast.py`` script downloads a forecast GRIB file given a timestamp and target month, sourcing the file from the appropriate NOAA archive:
+
+.. code-block:: console
+
+  utils/noaa_cfsv2_forecast/download_cfsv2_forecast.py \
+     --timestamp 2018010906 \
+     --target 201806 \
+     --output_dir /tmp/forecasts
+
+The ``convert_cfsv2.sh`` script can then be used to convert the GRIB file into netCDF:
+
+.. code-block:: console
+
+  utils/noaa_cfsv2_forecast/convert_cfsv2_forecast.sh \
+     /tmp/forecasts/flxf.01.2018010906.201806.avrg.grib.grb2
+     /tmp/forecasts/fcst2018010906_trgt201806.nc
 
 The ``wsim_correct`` tool can then be used to bias-correct these forecasts based on retrospective forecast data.
+A detailed discussion of forecast bias correction is provided :doc:`here </concepts/forecast_bias_correction>`.
 
 GHCN+CAMS Temperature and PREC/L Precipitation Data
 ---------------------------------------------------
