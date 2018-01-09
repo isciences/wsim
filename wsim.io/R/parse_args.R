@@ -6,8 +6,8 @@
 #'
 #' @param usage a docopt string describing program usage
 #' @param args a list of command-line arguments
-#' @param type an optional list of types to which specific
-#'             arguments should be coerced, e.g. \code{list(num_cores="integer")}
+#' @param types an optional list of types to which specific
+#'              arguments should be coerced, e.g. \code{list(num_cores="integer")}
 #' @return a list of parsed arguments
 #'
 #' @export

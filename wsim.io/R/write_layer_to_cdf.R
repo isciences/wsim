@@ -8,7 +8,6 @@
 #'                list(key='distribution', val='GEV'), # global attribute
 #'                list(var='precipitation', key='units', val='mm)
 #'              )
-#' @param na.value NODATA value
 #' @param prec data type for values.  Valid types:
 #'       * short
 #'       * integer

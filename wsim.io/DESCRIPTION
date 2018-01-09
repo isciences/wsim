@@ -2,7 +2,7 @@ Package: wsim.io
 Title: WSIM I/O functions
 Version: 0.0.0.9000
 Authors@R: person("ISciences, L.L.C.", email = "dbaston@isciences.com", role = c("aut", "cre", "cph"))
-Description: The wsim.io package provides functionality to handle data used by WSIM
+Description: The wsim.io package provides functionality to read and write data used by WSIM.
 Depends: R (>= 3.4.0)
 License: file LICENSE
 Imports: 

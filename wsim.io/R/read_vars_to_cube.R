@@ -2,10 +2,10 @@
 #'
 #' @param vardefs a list or vector of variable definitions
 #'                as described in \code{\link{parse_vardef}}
-#' @attrs_to_read a vector of global attribute names to be
-#'                read from the first variable definition
-#'                and attached as attributes to the returned
-#'                array.
+#' @param attrs_to_read a vector of global attribute names to be
+#'                      read from the first variable definition
+#'                      and attached as attributes to the returned
+#'                      array.
 #' @return a 3D array.  The dimnames of the third dimension
 #'         will contain the variable names of the inputs, and
 #'        the extent will be attached as an attribute.

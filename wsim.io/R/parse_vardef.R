@@ -46,6 +46,15 @@ parse_vardef <- function(vardef) {
   make_vardef(filename=fname, vars=vars)
 }
 
+#' Create a \code{wsim.io.vardef}
+#'
+#' A \code{wsim.io.vardef} is a reference to a file
+#' from which one or more variables can be read.
+#'
+#' @param filename filename of vardef
+#' @param vars     list of \code{wsim.io.var}
+#'
+#' @return a constructed \code{wsim.io.vardef}
 #' @export
 make_vardef <- function(filename, vars) {
   def <- list(
@@ -58,6 +67,11 @@ make_vardef <- function(filename, vars) {
   return(def)
 }
 
+#' Check if an object is a \code{wsim.io.vardef}
+#'
+#' @param v a thing to test
+#'
+#' @return true if \code{v} is a \code{wsim.io.vardef}
 #' @export
 is.wsim.io.vardef <- function(v) {
   class(v) == 'wsim.io.vardef'
@@ -83,6 +97,20 @@ parse_var <- function(var) {
   ))
 }
 
+#' Create a \code{wsim.io.var}
+#'
+#' A \code{wsim.io.var} is a reference to a variable
+#' to which zero or more transformations may be applied,
+#' and whose name may be changed.
+#'
+#' @param var_in     name of the variable to read
+#' @param var_out    optional name to which the variable
+#'                   should be changed. If left as the default
+#'                   NULL, \code{var_out} will be the same as
+#'                   \code{var_in}.
+#' @param transforms a character vector containing zero or
+#'                   more text representations of transformations
+#'                   to be applied to \code{var_in} after it is read.
 #' @export
 make_var <- function(var_in, var_out=NULL, transforms=as.character(c())) {
   if (is.null(var_out)) {
@@ -99,6 +127,12 @@ make_var <- function(var_in, var_out=NULL, transforms=as.character(c())) {
   return(var)
 }
 
+#' Check if an object is a \code{wsim.io.var}
+#'
+#' @param v a thing to test
+#'
+#' @return true if \code{v} is a \code{wsim.io.var}
+#' @export
 #' @export
 is.wsim.io.var <- function(v) {
   class(v) == 'wsim.io.var'
@@ -106,19 +140,19 @@ is.wsim.io.var <- function(v) {
 
 #' @method print wsim.io.var
 #' @export
-print.wsim.io.var <- function(v, ...) {
-  cat(toString(v), '\n')
+print.wsim.io.var <- function(x, ...) {
+  cat(toString(x), '\n')
 }
 
 #' @method toString wsim.io.var
 #' @export
-toString.wsim.io.var <- function(v) {
-  s <- v$var_in
-  for (transform in v$transforms) {
+toString.wsim.io.var <- function(x, ...) {
+  s <- x$var_in
+  for (transform in x$transforms) {
     s <- paste0(s, '@', transform)
   }
-  if (v$var_out != v$var_in) {
-    s <- paste0(s, '->', v$var_out)
+  if (x$var_out != x$var_in) {
+    s <- paste0(s, '->', x$var_out)
   }
 
   s

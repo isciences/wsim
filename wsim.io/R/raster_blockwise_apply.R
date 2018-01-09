@@ -86,8 +86,11 @@ create_tiff_like <- function(rast, filename_out, datatype) {
 #' @param filename     Filename of raster to read
 #' @param filename_out Filename of output GeoTIFF
 #' @param fun          Function to apply to each cell of input
+#' @param nodata       NODATA value to use for \code{filename_out}
+#' @param band         The band of \code{filename} to read
 #' @param datatype     Data type of output raster (allowable type
 #'                     names are defined by the \code{rgdal} package.)
+#'
 #' @export
 raster_blockwise_apply <- function(filename,
                                    filename_out,

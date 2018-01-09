@@ -8,6 +8,7 @@
 #' @param vars List of matrices containing values to write,
 #'             or a 3D with dimension names on the third
 #'             dimension.
+#' @param filename Name of output file
 #' @param extent vector of (xmin, xmax, ymin, ymax)
 #' @param xmin lowest longitude value (left side of cell)
 #' @param xmax highest longitude value (right side of cell)
@@ -23,6 +24,20 @@
 #'              \item{key}{Name of the attribute}
 #'              \item{val}{Value of the attribute}
 #'              }
+#' @param prec   The numerical precision with which \code{vars}
+#'               should be written. Can be either a character vector,
+#'               in which case the same precision will be used for
+#'               all variables, or a list whose names correspond to
+#'               the names of \code{vars}, specifying a precision for
+#'               each variable. Acceptable precision descriptions
+#'               include:
+#'               \itemize{
+#'               \item byte
+#'               \item integer
+#'               \item single
+#'               \item float
+#'               \item double
+#'               }
 #' @param append Determines if we should add variables to an existing
 #'               file, if present.
 #'

@@ -1,13 +1,25 @@
 #' Parse a metadata attribute destined for a NetCDF file
 #'
-#' @param text representation of attribute
-#' @param list representation of attribute
+#' @param attr text representation of attribute in the
+#'             following format:
+#'
+#'             var_name:attr_name=attr_val
+#'
+#'             If no var_name is specified, the attribute
+#'             will be interpreted to be a global attribute.
+#'
+#'             If no attr_val is specified, it will be set
+#'             to NULL in the returned list.
+#'
+#' @return a list representation of attribute, with items
+#'         var, key, and val corresponding to var_name, attr_name,
+#'         and attr_val
 #' @export
 parse_attr <- function(attr) {
   split_kv <- strsplit(attr, '=', fixed=TRUE)[[1]]
   key <- split_kv[1]
   val <- paste0(split_kv[-1])
-  
+
   # If no val specified
   if (length(val) == 0) {
     val <- NULL
