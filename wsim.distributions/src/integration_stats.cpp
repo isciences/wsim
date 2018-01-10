@@ -2,13 +2,34 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+// This file provides optimized implementations of various
+// simple statistics functions (min, max, avg, etc.) used
+// by wsim_integrate.
+//
+// These functions are substantially faster than calling
+// "apply" with the native R versions. A benchmark example
+// with the "sum" function is below.
+//
+// stack <- array(runif(1e6), dim=c(100, 100, 100))
+// stack[sample.int(1e6, size=1e4)] <- NA
+// microbenchmark(
+//   aperm(apply(stack, MARGIN=c(2,1), FUN=function(x) sum(x, na.rm=TRUE))),
+//   stack_sum(stack)
+// )
+//
+// # Unit: milliseconds
+// #   expr                   min         lq        mean     median         uq       max neval
+// #   aperm(apply...)  54.258379 111.651094  110.963339 118.903153 126.053525 186.31030   100
+// #   stack_sum(stack)  3.654879   3.822992    5.137139   4.211196   4.823422  70.25946   100
+//
+
 using VectorToVectorFunction= std::function<std::vector<double>(const std::vector<double> &, int n)>;
 using VectorToDoubleFunction= std::function<double(const std::vector<double> &, int n)>;
 
 //' Apply function f over each slice [i, j, ] in an array
 //' f must return a scalar
-NumericVector stack_apply (const NumericVector & v,
-                           VectorToDoubleFunction f) {
+static NumericVector stack_apply (const NumericVector & v,
+                                  VectorToDoubleFunction f) {
 
   IntegerVector dims = v.attr("dim");
   if (dims.length() < 2 || dims.length() > 3) {
@@ -172,48 +193,89 @@ static double quantile (const std::vector<double> & v, int n, double q) {
 }
 
 
+//' Compute the sum of defined elements for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the sum for each [row, col, ]
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_sum (const NumericVector & v) {
   return stack_apply(v, sum_n);
 }
 
+//' Compute the mean defined element for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the mean value for each [row, col, ]
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_mean (const NumericVector & v) {
   return stack_apply(v, mean_n);
 }
 
+//' Compute the minimum defined element for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the minimum value for each [row, col, ]
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_min (const NumericVector & v) {
   return stack_apply(v, min_n);
 }
 
+//' Compute the maximum defined element for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the maximum value for each [row, col, ]
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_max (const NumericVector & v) {
   return stack_apply(v, max_n);
 }
 
+//' Compute the fraction of defined elements for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the computed fraction for each [row, col, ]
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_frac_defined (const NumericVector & v) {
   return stack_apply(v, frac_defined_n);
 }
 
+//' Compute the fraction of defined elements above zero for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the computed fraction for each [row, col, ]
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_frac_defined_above_zero (const NumericVector & v) {
   return stack_apply(v, frac_defined_above_zero_n);
 }
 
+//' Compute a given quantile of defined elements for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//' @param q a quantile to compute, q within [0,1]
+//'
+//' @return a matrix with the specified quantile for each [row, col, ]
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_quantile (const NumericVector & v, double q) {
   return stack_apply(v, std::bind(quantile, std::placeholders::_1, std::placeholders::_2, q));
 }
 
+//' Compute the median of defined elementsn for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the median for each [row, col, ]
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_median (const NumericVector & v) {
