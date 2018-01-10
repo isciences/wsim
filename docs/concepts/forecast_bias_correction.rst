@@ -63,8 +63,8 @@ Once extracted, distributions can be fit for each pixel-month using ``wsim_fit``
   for lead in {1..9} ; do
     for month in {01..12} ; do
       ./wsim_fit.R \
-        --input "hindcasts/tmp2m_*trgt*${month}_lead${lead}.nc::tmp2m@[x-271.15]->T" \
-        --output "hindcast_fits/T_month_${month}_lead_${lead}.nc"
+        --input "hindcasts/tmp2m_*trgt*${month}_lead${lead}.nc::tmp2m@[x-273.15]->T" \
+        --output "hindcast_fits/T_month_${month}_lead_${lead}.nc" \
         --distribution gev
     done
   done
