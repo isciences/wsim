@@ -37,10 +37,11 @@ main <- function(raw_args) {
   tawc_agg <- aggregate(tawc, fact=args$res/res(tawc), fun=mean, na.rm=TRUE)
 
   info("Adjusting TAWC to extent of", args$minlon, args$maxlon, args$minlat, args$maxlat)
-  resampled <- resample(tawc_agg, raster(xmn=args$minlat,
-                                         xmx=args$maxlat,
-                                         ymn=args$minlon,
-                                         ymx=args$maxlon))
+  resampled <- resample(tawc_agg, raster(xmn=args$minlon,
+                                         xmx=args$maxlon,
+                                         ymn=args$minlat,
+                                         ymx=args$maxlat))
+
 
   info("Writing results to", args$output)
   writeRaster(resampled, args$output)
