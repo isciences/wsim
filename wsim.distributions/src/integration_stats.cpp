@@ -23,8 +23,16 @@ using namespace Rcpp;
 // #   stack_sum(stack)  3.654879   3.822992    5.137139   4.211196   4.823422  70.25946   100
 //
 
-using VectorToVectorFunction= std::function<std::vector<double>(const std::vector<double> &, int n)>;
-using VectorToDoubleFunction= std::function<double(const std::vector<double> &, int n)>;
+// Define types for functions that either:
+//
+// a) accept a vector and return a scalar (VectorToDoubleFunction), or
+// b) accept a vector and return a vector (VectorToVectorFunction)
+//
+// In both cases, the function receives a vector of arguments, and an
+// integer number of arguments. Any arguments at indices between
+// argv.size() and argc should be interpreted as NA.
+using VectorToVectorFunction= std::function<std::vector<double>(const std::vector<double> & argv, int argc)>;
+using VectorToDoubleFunction= std::function<double(const std::vector<double> & argv, int argc)>;
 
 //' Apply function f over each slice [i, j, ] in an array
 //' f must return a scalar
@@ -136,20 +144,12 @@ static inline double sum_n (const std::vector<double> & v, int n) {
   return std::accumulate(v.begin(), std::next(v.begin(), n), 0.0);
 }
 
-//' Compute the fraction of values that are defined
-//'
-//' @param v a vector of numeric values with NAs removed
-//' @param n number of values in the vector to consider (may be less than
-//'          the length of the vector)
+//' Compute the fraction of first n elements in a vector that are defined
 static inline double frac_defined_n (const std::vector<double> & v, int n) {
   return n / ( (double) v.size() );
 }
 
 //' Compute the fraction of defined values that are above zero
-//'
-//' @param v a vector of numeric values with NAs removed
-//' @param n number of values in the vector to consider (may be less than
-//'          the length of the vector)
 static inline double frac_defined_above_zero_n (const std::vector<double> & v, int n) {
   if (n == 0) {
     return NA_REAL;

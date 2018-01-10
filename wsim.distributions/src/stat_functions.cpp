@@ -165,30 +165,41 @@ double wsim_cdfgev(double x, double location, double scale, double shape) {
   return cdf<gev_tag>(x, location, scale, shape);
 }
 
+//' Compute the quantile of each observation in a matrix using the GEV distribution
+//'
+//' @param data a matrix of observations
+//' @param location location parameter from distribution fit
+//' @param scale    scale parameter from distribution fit
+//' @param shape    shape parameter from distribution fit
+//'
+//' @return a matrix of computed quantiles
 //' @export
 // [[Rcpp::export]]
 NumericMatrix gev_quantiles(const NumericMatrix & data, const NumericMatrix & location, const NumericMatrix & scale, const NumericMatrix & shape) {
   return quantiles<gev_tag>(data, location, scale, shape);
 }
 
+//' Compute the quantile of each observation in a matrix using the Pearson Type-III distribution
+//' @inheritParams gev_quantiles
+//' @return a matrix of computed quantiles
 //' @export
 // [[Rcpp::export]]
 NumericMatrix pe3_quantiles(const NumericMatrix & data, const NumericMatrix & location, const NumericMatrix & scale, const NumericMatrix & shape) {
   return quantiles<pe3_tag>(data, location, scale, shape);
 }
 
-//' gev_correct
+//' Bias-correct a forecast using GEV distribution
 //'
 //' Bias-correct a forecast using quantile-matching on computed distributions
 //' of retrospective forecasts and observations.
 //'
-//' @param forecast A matrix representing forecast values
-//' @param obs_location location parameter from observed data
-//' @param obs_scale scale parameter from observed data
-//' @param obs_shape shape parameter from observed data
+//' @param data           matrix representing forecast values
+//' @param obs_location   location parameter from observed data
+//' @param obs_scale      scale parameter from observed data
+//' @param obs_shape      shape parameter from observed data
 //' @param retro_location location parameter from retrospective data
-//' @param retro_scale scale parameter from retrospective data
-//' @param retro_shape shape parameter from retrospective data
+//' @param retro_scale    scale parameter from retrospective data
+//' @param retro_shape    shape parameter from retrospective data
 //' @param extreme_cutoff clamping value for computed forecast quantiles
 //'        (\code{1/extreme_cutoff < quantile < 1 - 1/extreme_cutoff})
 //' @param when_dist_undefined assumed quantile of forecast when
@@ -210,7 +221,12 @@ NumericMatrix gev_forecast_correct(const NumericMatrix & data,
   return forecast_correct<gev_tag>(data, obs_location, obs_scale, obs_shape, retro_location, retro_scale, retro_shape, extreme_cutoff, when_dist_undefined);
 }
 
-//' @inheritParams gev_correct
+//' Bias-correct a forecast using Pearson Type-III distribution
+//'
+//' Bias-correct a forecast using quantile-matching on computed distributions
+//' of retrospective forecasts and observations.
+//'
+//' @inheritParams gev_forecast_correct
 //' @export
 // [[Rcpp::export]]
 NumericMatrix pe3_forecast_correct(const NumericMatrix & data,

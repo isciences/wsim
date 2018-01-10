@@ -6,7 +6,7 @@ using namespace Rcpp;
 //'
 //' @param vals A vector in which some values should be replaced
 //' @param subs A vector containing a sequence of replacement values,
-//              in the form val_1, replacement_1, val_2, replacement_2, ...
+//'             in the form val_1, replacement_1, val_2, replacement_2, ...
 //'
 //' @export
 // [[Rcpp::export]]
