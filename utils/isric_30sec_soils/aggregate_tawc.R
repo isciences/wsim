@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-wsim.io::logging_init('downsample_tawc')
+wsim.io::logging_init('aggregate_tawc')
 
 suppressMessages({
   require(wsim.io)
@@ -44,7 +44,7 @@ main <- function(raw_args) {
 
 
   info("Writing results to", args$output)
-  writeRaster(resampled, args$output)
+  writeRaster(resampled, args$output, overwrite=TRUE)
 }
 
 tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
