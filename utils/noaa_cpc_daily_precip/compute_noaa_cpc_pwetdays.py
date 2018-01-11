@@ -83,7 +83,7 @@ def main(raw_args):
 
     execute(['ncrename',
              '-O',
-             '-vPr_fraction_defined_above_zero,pWetdays',
+             '-vPr_fraction_defined_above_zero,pWetDays',
              output_file])
 
 if __name__ == "__main__":
