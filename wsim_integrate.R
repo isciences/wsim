@@ -21,9 +21,8 @@ Options:
 --keepvarnames      do not append name of stat to output variable names
 '->usage
 
-attrs_for_stat <- function(var_attrs, var, stat) {
+attrs_for_stat <- function(var_attrs, var, stat, stat_var) {
   # Autogenerate metadata
-  stat_var <- paste0(var, '_', tolower(stat))
 
   Filter(Negate(is.null), lapply(names(var_attrs[[var]]), function(field) {
     # Don't pass "dim" R attr, or _FillValue/missing_data netCDF attr through
@@ -183,7 +182,7 @@ main <- function(raw_args) {
 
             integrated[[stat_var]] <- stat_fn(data)
 
-            attrs <- c(attrs, attrs_for_stat(var_attrs, var_name, parsed_stat$stat))
+            attrs <- c(attrs, attrs_for_stat(var_attrs, var_name, parsed_stat$stat, stat_var))
 
             wsim.io::info('done')
           }
