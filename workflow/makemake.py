@@ -87,6 +87,8 @@ def main(raw_args):
 
     steps = []
 
+    steps += config.global_prep()
+
     if config.should_run_spinup() and not args.nospinup:
         steps += spinup.spinup(config)
 

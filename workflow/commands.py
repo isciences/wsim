@@ -111,6 +111,9 @@ def wsim_integrate(**kwargs):
     if type(output) is str:
         output = [output]
 
+    if kwargs.get('keepvarnames', False):
+        cmd.append('--keepvarnames')
+
     for f in output:
         cmd += ['--output', q(f)]
 

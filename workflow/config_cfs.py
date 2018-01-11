@@ -24,6 +24,31 @@ class NCEP(paths.Forcing):
     def __init__(self, source):
         self.source = source
 
+    def compute_wetday_ltmeans(self, start_year, stop_year):
+        steps = []
+
+        wetday_ltmean_years = range(start_year, stop_year + 1)
+        for month in range(1, 13):
+            input_vardefs=[self.p_wetdays(yearmon=dates.format_yearmon(year, month)) for year in wetday_ltmean_years]
+            ltmean_file=self.p_wetdays(yearmon=dates.format_yearmon(start_year - 1, month)).file,
+
+            steps.append(
+                Step(
+                    targets=ltmean_file,
+                    dependencies=[input.file for input in input_vardefs],
+                    commands=[
+                        commands.wsim_integrate(
+                            stats=['ave'],
+                            inputs=input_vardefs,
+                            output=ltmean_file,
+                            keepvarnames=True
+                        )
+                    ]
+                ),
+            )
+
+        return steps
+
     def prep_steps(self, yearmon):
         steps = []
 
@@ -138,6 +163,9 @@ class CFSConfig(ConfigBase):
         self._forecast = CFSForecast(source, derived)
         self._static = Static(source)
         self._workspace = paths.DefaultWorkspace(derived)
+
+    def global_prep(self):
+        return self._observed.compute_wetday_ltmeans(1979, 2008)
 
     def historical_years(self):
         return range(1948, 2017)

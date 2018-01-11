@@ -38,6 +38,9 @@ class ConfigBase(metaclass=abc.ABCMeta):
     def observed_data(self):
         pass
 
+    def global_prep(self):
+        return []
+
     def should_run_spinup(self):
         return True
 
