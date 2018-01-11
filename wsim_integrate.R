@@ -10,7 +10,7 @@ suppressMessages({
 '
 Compute summary statistics from multiple observations
 
-Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>)... [--window=<window>] [--attr=<attr>...]
+Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>)... [--window=<window>] [--attr=<attr>...] [--keepvarnames]
 
 Options:
 --stat <stat>       a summary statistic (min, max, ave, sum)
@@ -18,6 +18,7 @@ Options:
 --output <file>     output file(s) to write integrated results
 --window <window>   size of rolling window to use for integration (e.g. 6 files)
 --attr <attr>       optional attribute(s) to be attached to output netCDF
+--keepvarnames      do not append name of stat to output variable names
 '->usage
 
 attrs_for_stat <- function(var_attrs, var, stat) {
@@ -95,6 +96,10 @@ main <- function(raw_args) {
     }
   }
 
+  if (args$keepvarnames && length(args$stat) > 1) {
+    die_with_message("Can't keep original variable names if > 1 stat is being computed.")
+  }
+
   inputs <- expand_inputs(args$input)
 
   if (is.null(args$window)) {
@@ -168,7 +173,11 @@ main <- function(raw_args) {
         for (stat in args$stat) {
           parsed_stat <- parse_stat(stat)
           if (length(parsed_stat$vars) == 0 || var_name %in% parsed_stat$vars) {
-            stat_var <- paste0(var_name, '_', tolower(parsed_stat$stat))
+            if (args$keepvarnames) {
+              stat_var <- var_name
+            } else {
+              stat_var <- paste0(var_name, '_', tolower(parsed_stat$stat))
+            }
             stat_fn <- wsim.distributions::find_stat(parsed_stat$stat)
             wsim.io::info('Computing', parsed_stat$stat, '...')
 
