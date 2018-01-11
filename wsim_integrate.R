@@ -85,7 +85,7 @@ main <- function(raw_args) {
   outfiles <- do.call(c, lapply(args$output, wsim.io::expand_dates))
   for (outfile in outfiles) {
     if (!can_write(outfile)) {
-      die_with_message("Cannot open ", outfile, " for writing.")
+      die_with_message("Cannot open", outfile, "for writing.")
     }
   }
 
