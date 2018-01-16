@@ -80,7 +80,7 @@ It can be used to compute the number of wet days per month from January 1979-pre
 The data is available `by FTP <ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/>`_, with an individual file for each day. Files are stored in a raw binary format which can be read directly with the ``wsim.io`` R package.
 
 NLDAS-2 Primary Forcing Dataset
----------------------------
+-------------------------------
 
 The NLDAS Phase 2 Primary Forcing datset provides, among other variables, monthly average temperature and precipitation from 1979-present on the 0.125-degree NLDAS grid.
 Data is available in GRIB format `from NASA <https://disc.sci.gsfc.nasa.gov/datasets/NLDAS_FORA0125_M_V002/summary?keywords=NLDAS>`_.
