@@ -6,7 +6,7 @@ The core objective of the soil moisture/runoff component is to estimate soil moi
 Water Balance
 =============
 
-The WSIM model is based on the Thornthwaite (1948, 1955) water balance equation:
+The WSIM model is based on the Thornthwaite :cite:`Thornthwaite:1948,Thornthwaite:1955` water balance equation:
 
 .. math::
   :label: thornthwaite
@@ -49,7 +49,7 @@ Potential Evapotranspiration
 ============================
 
 There are numerous formulations for estimating potential evapotranspiration (:math:`E_0`) which can, broadly speaking, be divided into two major categories:  
-The first category consists of highly simplified reduced-form estimates based on empirical fits for a given reference land cover of short grass. Examples include formulas proposed by Hamon, Thornthwaite, Turc, Jensen-Haise, Hargreaves, and others (Federer et al., 1996; Vörösmarty et al., 1998; Lu et al., 2005; Oudin et al., 2005; Kingston et al., 2009). 
+The first category consists of highly simplified reduced-form estimates based on empirical fits for a given reference land cover of short grass. Examples include formulas proposed by Hamon, Thornthwaite, Turc, Jensen-Haise, Hargreaves, and others (:cite:`Federer:2010,Vorosmarty:1998,Lu:2005,Oudin:2005,Kingston:2009`).
 However, it is well known that land cover is a major factor in estimating potential evapotranspiration and it is widely assumed that formulations that take land cover into account are more accurate. 
 All other factors being equal, bare ground will have the lowest potential evapotranspiration and deciduous forest will have the highest.
 
@@ -58,16 +58,16 @@ These process-based or combination methods can explicitly account for different 
 These methods include the Priestly-Taylor, McNaughton-Black, Penman-Monteith and Shuttleworth-Wallace methods. 
 The most sophisticated method is the Shuttleworth-Wallace method, which is a modification of Penman-Monteith (the most commonly used method and the FAO standard). 
 Shuttleworth-Wallace modifies Penman-Monteith to incorporate a term for bare soil. 
-These methods are all described in Lu et al. (2005), Oudin et al. (2005), and Vörösmarty et al. (1998). 
-See also Zhou et al. (2006) and Zhou et al. (2009) for a description of Shuttleworth-Wallace and how it could be parameterized with global data. 
+These methods are all described in :cite:`Lu:2005`, :cite:`Oudin:2005`, and :cite:`Vorosmarty:1998`.
+See also :cite:`Zhou:2006` and :cite:`Zhou:2009` for a description of Shuttleworth-Wallace and how it could be parameterized with global data. 
 
-Vörösmarty et al. (1998) compared 11 different methods of modeling potential evapotranspiration, including methods that either did or did not incorporate differences in land cover. 
+Vörösmarty et al. (:cite:`Vorosmarty:1998`) compared 11 different methods of modeling potential evapotranspiration, including methods that either did or did not incorporate differences in land cover. 
 They found that the two best methods for minimizing bias and mean annual error were Hamon's method and the Shuttleworth-Wallace method. 
-More recently, Oudin et al. (2005) also compared a number of different potential evapotranspiration methods (27 in all). 
+More recently, Oudin et al. :cite:`Oudin:2005` also compared a number of different potential evapotranspiration methods (27 in all). 
 They also found that simple “reference” approaches such as Hamon's and McGuinness' performed better than more complex variations. 
-As Oudin et al. (2005) wrote:  “...if a simple temperature-based [potential evapotranspiration] estimation works as well as a Penman-type model, why not using [sic] a simpler model with lower data requirements?”
+As Oudin et al. :cite:`Oudin:2005` wrote:  “...if a simple temperature-based [potential evapotranspiration] estimation works as well as a Penman-type model, why not using [sic] a simpler model with lower data requirements?”
 
-Based on this literature and concurring advice from our science advisors, WSIM chose to implement Hamon’s Equation (1961, 1963) to estimate potential evapotranspiration as specified in Vörösmarty et al. (1998):
+Based on this literature and concurring advice from our science advisors, WSIM chose to implement Hamon’s Equation (:cite:`Hamon:1961`, :cite:`Hamon:1963`) to estimate potential evapotranspiration as specified in :cite:`Vorosmarty:1998`:
 
 .. math::
   :label: hamon
@@ -80,7 +80,7 @@ where
 :math:`T_m` is the mean temperature in Celsius, and 
 :math:`e_{T_m}` is the saturated vapor pressure at :math:`T_m` in kPa.
 
-We estimate :math:`e_{T_m}` using Buck’s Equation (Buck, 1981, 1996, as cited by Vömel, 2005):
+We estimate :math:`e_{T_m}` using Buck’s Equation (:cite:`Buck:1981,Vomel:2016`):
 
 .. math::
   :label: bucks
@@ -113,7 +113,7 @@ The unitless drying function, :math:`g(W_s, W_c, E_0, P)`, is defined as:
     W_s \frac{1 - e^{ -\beta \left(E_0 - P\right)}}{1 - e^{-\beta}} & \beta \ge 1
   \end{cases} \textrm{ and } \beta = \frac{E_0}{W_s}
 
-The specification follows Vörösmarty et al. (1998).
+The specification follows Vörösmarty et al. :cite:`Vorosmarty:1998`.
 The WSIM team defined :math:`g_2(W_s, E_0, P)` to ensure that when :math:`P < E_0`, :math:`-g(W_s, W_c, E_0, P) \le W_s` (i.e., imposing a constraint that :math:`\frac{dW}{dt} \le W_s`).
 
 Evapotranspiration
@@ -128,7 +128,7 @@ Returning to Equation :eq:`thornthwaite`, actual evapotranspiration (:math:`E`) 
   E_0               & P \ge E_0
   \end{cases}  
 
-Returning to Equation :eq:`effective_precipitation`, WSIM follows Vörösmarty et al. (1998) to estimate snow accumulation (:math:`S_a`) and snow melt (:math:`S_m`).
+Returning to Equation :eq:`effective_precipitation`, WSIM follows Vörösmarty et al. :cite:`Vorosmarty:1998` to estimate snow accumulation (:math:`S_a`) and snow melt (:math:`S_m`).
 When monthly average temperature is less than or equal to -1ºC, we assume all precipitation accumulates as snow pack.
 This snow pack then melts when monthly average temperature is greater than -1ºC.
 In elevations less than or equal to 500m, the entire snow pack melts in one month.
@@ -143,7 +143,7 @@ Runoff
 Finally, WSIM computes two forms of runoff.
 The runoff as specified above (:math:`R`) is always zero during periods when precipitation accumulates as snow pack.
 This is clearly a falsehood, since most rivers continue to flow in the winter.
-Therefore, we follow Vörösmarty et al. (1998) by including some logic for detention pools (lakes, ponds, shallow groundwater, etc.) that slow down the rate at which runoff as computed above leaves a given grid cell. 
+Therefore, we follow Vörösmarty et al. :cite:`Vorosmarty:1998` by including some logic for detention pools (lakes, ponds, shallow groundwater, etc.) that slow down the rate at which runoff as computed above leaves a given grid cell. 
 The revised runoff that accounts for detention pools (:math:`R'`) is computed as the sum of detained runoff due to net precipitation (:math:`R_p'`) and detained runoff due to snow melt (:math:`R_s'`) with a monthly time step as described in 
 Equations 11, 12, and 13 below. (:math:`D_r`) and (:math:`D_s`) represent the detention pools due to rain and snow, respectively.
 
@@ -173,17 +173,3 @@ Equations 11, 12, and 13 below. (:math:`D_r`) and (:math:`D_s`) represent the de
 where :math:`z` is elevation in meters, and 
 :math:`m` is the number of consecutive months of melting conditions (:math:`T > -1 \mathrm{^\circ C}`).
 
-.. spelling::
-
-  et
-  al
-  Hamon
-  Shuttleworth
-  Oudin
-  Zhou
-  Vömel
-  Federer
-  Monteith
-  Haise
-  Turc
-  Thornthwaite

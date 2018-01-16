@@ -2,8 +2,8 @@ Flow Accumulation
 *****************
 
 WSIM uses a traditional pixel-to-pixel based flow accumulation algorithm  to compute total blue water.
-This algorithm uses an eight-neighbor flow direction grid that identifies the downstream grid cell for each grid cell (Vörösmarty, 2010).
-This algorithm has two major benefits:
+This algorithm uses an eight-neighbor flow direction grid that identifies the downstream grid cell for each grid cell.
+The algorithm has two major benefits:
 it is well known and easy to implement,
 and it produces results that highlight the specific paths of the stream network during periods of extreme anomalies. 
 

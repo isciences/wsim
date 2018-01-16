@@ -15,5 +15,3 @@ The flow accumulation component then sums a number of water-related parameters (
    water_balance.rst
    flow_accumulation.rst 
 
-.. bibliography:: ../../references.bib
-   :style: plain
