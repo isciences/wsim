@@ -33,7 +33,8 @@
 # ones.
 extensions = [
   'sphinx.ext.mathjax',
-  'sphinxcontrib.spelling'
+  'sphinxcontrib.spelling',
+  'sphinxcontrib.bibtex'
 ]
 math_number_all = True
 
