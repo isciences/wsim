@@ -16,11 +16,13 @@ disaggregate
 docopt
 downsampled
 evapotranspiration
+exceedance
 filename
 filenames
 filesystem
 hindcast
 hindcasts
+indices
 kPa
 lmom
 lubridate
