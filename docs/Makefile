@@ -14,6 +14,14 @@ help:
 
 .PHONY: help Makefile
 
+images:
+	mkdir -p _generated
+	cd _generated ; \
+	for script in `find ../ -name "*.R"` ; do \
+		echo $${script}; \
+		Rscript $${script}; \
+	done \
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
