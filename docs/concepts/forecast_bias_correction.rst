@@ -17,6 +17,10 @@ To do this, WSIM uses a quantile-matching correction method based on the estimat
 
 where :math:`\hat{z}_0` represents the corrected forecast value, :math:`F_0` is the CDF for the observed data at a specific pixel/month/lead time combination, :math:`F_m` is the CDF for the forecast data at the same pixel/month/lead time, and :math:`z_m` represents the forecast value to be corrected.
 This method determines the quantile represented by :math:`z_m` on the model distribution, and then translates that quantile back into the original units by means of the observed distribution.
+The following picture provides a graphical representation of the procedure:
+
+.. figure:: /_static/bias_correction_graph.svg
+  :align: center
 
 This approach requires two sets of data for each parameter to be corrected: one set to estimate the CDF of the modeled data and one set for the observed data.
 
