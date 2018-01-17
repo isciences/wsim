@@ -93,20 +93,24 @@ Soil Drying
 Returning to Equation :eq:`soil_moisture_change`, the soil moisture deficit (:math:`D_{ws}`) is the amount of water needed within a time step to fill the remaining soil water holding capacity (:math:`W_c` in mm) while satisfying potential evapotranspiration (:math:`E_0`). :math:`W_s` is the soil moisture in mm.
 
 .. math::
+  :label: soil_moisture_deficit
 
   D_{ws} = \left( W_c - W_s \right) + E_0
 
 The unitless drying function, :math:`g(W_s, W_c, E_0, P)`, is defined as:
 
 .. math::
+  :label: drying
 
   g(W_s, W_c, E_0, P) = g_1(W_s, W_c) g_2(W_s, E_0, P)
 
 .. math::
+  :label: drying_1
 
   g_1(W_s, W_c) = \frac{1-e^{\frac{-\alpha W_s}{W_c}}}{1 - e^{-\alpha}} \textrm{ and } \alpha = 5.0
 
 .. math::
+  :label: drying_2
 
   g_2(W_s, E_0, P) = \begin{cases}
     E_0 - P                                                         & \beta < 1 \\
@@ -122,6 +126,7 @@ Evapotranspiration
 Returning to Equation :eq:`thornthwaite`, actual evapotranspiration (:math:`E`) is calculated as:
 
 .. math::
+  :label: evapotranspiration
 
   E = \begin{cases}
   P - \frac{dW}{dt} & P < E_0 \\
