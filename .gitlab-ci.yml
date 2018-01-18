@@ -9,8 +9,8 @@ stages:
         - release
 
 variables:
-        CONTAINER_TEST_IMAGE: isciences/wsim:2_$CI_COMMIT_REF_NAME
-        CONTAINER_RELEASE_IMAGE: isciences/wsim:2_latest
+        CONTAINER_TEST_IMAGE: isciences/wsim:$CI_COMMIT_REF_NAME
+        CONTAINER_RELEASE_IMAGE: isciences/wsim:latest
 
 before_script:
         - docker login -u isciences -p $DOCKERHUB_PW

@@ -13,13 +13,13 @@ To pull the image from the repository, run the following commands on a system wi
 .. code-block:: console
 
    docker login
-   docker pull isciences/wsim:2_latest
+   docker pull isciences/wsim:latest
 
 You can run the WSIM container in interactive mode using:
 
 .. code-block:: console
 
-   docker run -it isciences/wsim:2_latest
+   docker run -it isciences/wsim:latest
 
 Refer to Docker documentation for more details, such as accessing the local filesystem from within the running container.
 
