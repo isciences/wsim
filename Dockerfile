@@ -16,5 +16,7 @@ COPY utils /wsim/utils
 COPY workflow /wsim/workflow
 COPY *.R /wsim/
 
+COPY Makefile /wsim/
+
 WORKDIR /wsim
 
