@@ -25,7 +25,9 @@ main <- function(raw_args) {
     parallel::setDefaultCluster(c1)
   }
 
-  inputs_stacked <- wsim.io::read_vars_to_cube(wsim.io::expand_inputs(args$input))
+  expanded_inputs <- wsim.io::expand_inputs(args$input)
+  wsim.io::info('Preparing to load vars from', length(expanded_inputs), "files.")
+  inputs_stacked <- wsim.io::read_vars_to_cube(expanded_inputs)
   extent <- attr(inputs_stacked, 'extent')
 
   wsim.io::info('Read', dim(inputs_stacked)[[3]], 'inputs.')
