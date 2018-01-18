@@ -8,7 +8,7 @@ Structure
 
 The core functionality of WSIM is provided through R packages.
 These packages are generally independent, but some functionality of ``wsim.io`` is accessed from other packages.
-Where performance is critical, code is written in C++ and exposed to R using the Rcpp package.
+Where performance is critical, code is written in C++ and exposed to R using the ``Rcpp`` package.
 Some use is made of C++11, which is not compliant with CRAN.
 
 Functionality provided by the R packages is exposed to users through a series of command-line tools.
@@ -20,14 +20,21 @@ Testing
 =======
 
 Each R package contains an independent test suite, managed using the ``testthat`` package.
-Currently, a small number of tests depend on resources stored on the ISciences internal network.
+Currently, a small number of regression tests depend on resources that are not included in the git repository.
+If these resources are available, their location must be specified with the ``WSIM_TEST_DATA`` environment variable.
 These tests are automatically skipped when these resources are inaccessible.
 
+.. note::
+   The ``isciences/wsim-gitlabci`` Docker image contains all files necessary to run regression tests.
+
 Tests are run on commit using GitLab `CI <https://gitlab.com/isciences/wsim/wsim2/pipelines>`_.
-The build environment used by the GitLab CI runner is managed using Docker.
-A Dockerfile for this image is stored within the ``ci`` subdirectory of the repository.
-The image itself is published to Docker Hub as ``isciences/wsim-gitlabci``.
-This image does not contain WSIM code or binaries, but includes all dependencies needed to build the code and run the test suite.
+The GitLab CI test runner pulls the latest published image of the ``isciences/wsim-gitlabci`` build environment.
+It builds the ``isciences/wsim`` image on top of this environment, and then runs the test suite within the built container.
+If the tests pass (and the commit is to the `master` branch), GitLab CI tags the image as ``isciences/wsim:2_latest`` and pushes it to Docker Hub.
+
+.. note::
+   The ``isciences/wsim-gitlabci`` image is manually built and pushed when needed.
+   This is done to reduce the execution time of the GitLab CI build and test pipeline.
 
 Documentation
 =============
