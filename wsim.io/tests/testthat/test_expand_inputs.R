@@ -81,3 +81,15 @@ test_that("YYYY format works too", {
       'income_2006.csv')
   )
 })
+
+test_that("It fails on invalid dates", {
+  expect_error(
+    expand_inputs('cookies_[200204:20120412].txt', check_exists=FALSE) # someone forgot the second colon
+  )
+})
+
+test_that("It fails if the stop date is before the start date", {
+  expect_error(
+    expand_inputs('cookies_[20171231:20171201].txt', check_exists=FALSE) # can't go backwards
+  )
+})

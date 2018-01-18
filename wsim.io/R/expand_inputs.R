@@ -82,6 +82,9 @@ expand_dates <- function(fname) {
   range_stop  <- range[2]
   range_step  <- ifelse(length(range) > 2, as.integer(range[3]), 1)
 
+  stopifnot(nchar(range_start) == nchar(range_stop))
+  stopifnot(range_start < range_stop)
+
   as.vector(sapply(date_range(range_start, range_stop, range_step),
          function(date) {
            paste0(substring(fname, 0, pos - 1), # everything before the match
