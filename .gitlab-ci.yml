@@ -1,5 +1,38 @@
-image: isciences/wsim-gitlabci
+image: docker:latest
 
-check:
+services:
+        - docker:dind
+
+stages:
+        - build
+        - test
+        - release
+
+variables:
+        CONTAINER_TEST_IMAGE: isciences/wsim:2_$CI_COMMIT_REF_NAME
+        CONTAINER_RELEASE_IMAGE: isciences/wsim:2_latest
+
+before_script:
+        - docker login -u isciences -p $DOCKERHUB_PW
+
+build:
+        stage: build
         script:
-                - make install check
+                - docker build --pull -t $CONTAINER_TEST_IMAGE .
+                - docker push $CONTAINER_TEST_IMAGE
+
+test:
+        stage: test
+        script: 
+                - docker pull $CONTAINER_TEST_IMAGE
+                - docker run $CONTAINER_TEST_IMAGE make check
+
+release-image:
+        stage: release
+        script:
+                - docker pull $CONTAINER_TEST_IMAGE
+                - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
+                - docker push $CONTAINER_RELEASE_IMAGE
+        only:
+                - master
+
