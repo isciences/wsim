@@ -34,8 +34,8 @@ using namespace Rcpp;
 using VectorToVectorFunction= std::function<std::vector<double>(const std::vector<double> & argv, int argc)>;
 using VectorToDoubleFunction= std::function<double(const std::vector<double> & argv, int argc)>;
 
-//' Apply function f over each slice [i, j, ] in an array
-//' f must return a scalar
+// Apply function f over each slice [i, j, ] in an array
+// f must return a scalar
 static NumericVector stack_apply (const NumericVector & v,
                                   VectorToDoubleFunction f) {
 
@@ -72,8 +72,8 @@ static NumericVector stack_apply (const NumericVector & v,
   return out;
 }
 
-//' Apply function f over each slice [i, j, ] in an array
-//' f must return a vector of length `depth_out`
+// Apply function f over each slice [i, j, ] in an array
+// f must return a vector of length `depth_out`
 NumericVector stack_apply (const NumericVector & v,
                            VectorToVectorFunction f,
                            int depth_out) {
@@ -115,7 +115,7 @@ NumericVector stack_apply (const NumericVector & v,
   return out;
 }
 
-//' Compute the min of first n elements in a vector
+// Compute the min of first n elements in a vector
 static inline double min_n (const std::vector<double> & v, int n) {
   if (n == 0) {
     return NA_REAL;
@@ -123,7 +123,7 @@ static inline double min_n (const std::vector<double> & v, int n) {
   return *std::min_element(v.begin(), std::next(v.begin(), n));
 }
 
-//' Compute the max of first n elements in a vector
+// Compute the max of first n elements in a vector
 static inline double max_n (const std::vector<double> & v, int n) {
   if (n == 0) {
     return NA_REAL;
@@ -131,7 +131,7 @@ static inline double max_n (const std::vector<double> & v, int n) {
   return *std::max_element(v.begin(), std::next(v.begin(), n));
 }
 
-//' Compute the mean of first n elements in a vector
+// Compute the mean of first n elements in a vector
 static inline double mean_n (const std::vector<double> & v, int n) {
   if (n == 0) {
     return NA_REAL;
@@ -139,17 +139,17 @@ static inline double mean_n (const std::vector<double> & v, int n) {
   return std::accumulate(v.begin(), std::next(v.begin(), n), 0.0) / n;
 }
 
-//' Compute the sum of first n elements in a vector
+// Compute the sum of first n elements in a vector
 static inline double sum_n (const std::vector<double> & v, int n) {
   return std::accumulate(v.begin(), std::next(v.begin(), n), 0.0);
 }
 
-//' Compute the fraction of first n elements in a vector that are defined
+// Compute the fraction of first n elements in a vector that are defined
 static inline double frac_defined_n (const std::vector<double> & v, int n) {
   return n / ( (double) v.size() );
 }
 
-//' Compute the fraction of defined values that are above zero
+// Compute the fraction of defined values that are above zero
 static inline double frac_defined_above_zero_n (const std::vector<double> & v, int n) {
   if (n == 0) {
     return NA_REAL;
@@ -160,18 +160,18 @@ static inline double frac_defined_above_zero_n (const std::vector<double> & v, i
                        [](double d) { return d > 0; }) / ( (double) n);
 }
 
-//' Compute a sample quantile of a given vector.
-//'
-//' This function is provided for improved performance over the built-in
-//' \code{quantile} function. Interpolation is performed using the default
-//' method 7 specified in documentation for \code{quantile}.
-//'
-//' @param v a vector of numeric values with NAs removed
-//' @param n number of values in the vector to consider (may be less than
-//'          the length of the vector)
-//' @param q quantile to compute
-//'
-//' @return sample quantile \code{q} of \code{v}
+// Compute a sample quantile of a given vector.
+//
+// This function is provided for improved performance over the built-in
+// \code{quantile} function. Interpolation is performed using the default
+// method 7 specified in documentation for \code{quantile}.
+//
+// @param v a vector of numeric values with NAs removed
+// @param n number of values in the vector to consider (may be less than
+//          the length of the vector)
+// @param q quantile to compute
+//
+// @return sample quantile \code{q} of \code{v}
 static double quantile (const std::vector<double> & v, int n, double q) {
   if (q < 0 || q > 1)
     return NA_REAL;
