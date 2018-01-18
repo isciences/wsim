@@ -7,8 +7,7 @@ RUN yum update -y \
 RUN yum install -y \
 	R-core \
 	R-devel \
-	python3
-
+	python34
 
 RUN yum install -y \
     gdal \
@@ -33,7 +32,7 @@ RUN yum install -y \
     proj-static \
     wgrib
 
-RUN Rscript -e 'install.packages(c("foreach", "lubridate", "abind", "futile.logger", "devtools","testthat","roxygen2","raster","Rcpp","lmom","docopt"), dependencies = TRUE, repos="http://cran.us.r-project.org")'
+RUN Rscript -e 'install.packages(c("lubridate", "abind", "futile.logger", "devtools","testthat","roxygen2","raster","Rcpp","lmom","docopt"), dependencies = TRUE, repos="http://cran.us.r-project.org")'
 RUN Rscript -e 'devtools::install_github("hadley/pkgdown")'
 
 # Add wgrib2 for converting CFS forecast data
