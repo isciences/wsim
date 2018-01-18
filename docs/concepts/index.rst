@@ -7,4 +7,4 @@ WSIM Concepts
     anomaly_calculations
     composite_indices
     forecast_bias_correction
-    lsm/index
+    lsm
