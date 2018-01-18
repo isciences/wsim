@@ -17,7 +17,7 @@ main <- function(raw_args) {
 
   outfile <- args$output
   if (!wsim.io::can_write(outfile)) {
-    wsim.io::die_with_message("Cannot open ", outfile, " for writing.")
+    wsim.io::die_with_message("Cannot open", outfile, "for writing.")
   }
 
   if (args$cores > 1) {
@@ -47,7 +47,7 @@ main <- function(raw_args) {
                                list(var=NULL,key="distribution",val=distribution)
                              ))
 
-  wsim.io::info('Wrote fits to ', outfile)
+  wsim.io::info('Wrote fits to', outfile)
 }
 
 tryCatch(main(commandArgs(TRUE)), error=wsim.io::die_with_message)
