@@ -9,13 +9,13 @@ suppressMessages({
 '
 Aggregate a raster of TAWC values to a coarser grid
 
-Usage: aggregate_tawc [options]
+Usage: aggregate_tawc --res=<value> [--minlat=<value> --maxlat=<value> --minlon=<value> --maxlon=<value>] --input=<file> --output=<file>
 
 --res=<value>       Output resolution, degrees
---minlat=<value>    Minimum latitude
---maxlat=<value>    Maximum latitude
---minlon=<value>    Minimum longitude
---maxlon=<value>    Maximum longitude
+--minlat=<value>    Minimum latitude [default: -90]
+--maxlat=<value>    Maximum latitude [default: 90]
+--minlon=<value>    Minimum longitude [default: -180]
+--maxlon=<value>    Maximum longitude [default: 180]
 --input=<file>      File containing TAWC at native resolution
 --output=<file>     Output file location
 '->usage
@@ -48,3 +48,4 @@ main <- function(raw_args) {
 }
 
 tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
+#main(commandArgs(trailingOnly=TRUE))
