@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from __future__ import print_function # Avoid bombing in Python 2 before we even hit our version check
 
 import sys
