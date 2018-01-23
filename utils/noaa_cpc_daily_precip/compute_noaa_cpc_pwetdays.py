@@ -56,23 +56,11 @@ def main(raw_args):
     if year < 1979:
         sys.exit("Daily precipitation data not available before 1979")
 
-    # There is some inconsistency in how daily precipitation files are named
-    # from year to year. Because we want to be able to mirror this data source
-    # using wget, we don't correct the inconsistencies in our local copy.
-    if year < 2006:
-        ext = ".gz"
-    elif year < 2007:
-        ext = "RT.gz"
-    elif year < 2009:
-        ext = ".RT.gz"
-    else:
-        ext = ".RT"
-
     input_files = os.path.join(args.input_dir,
                                str(year),
-                               'PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.[{YEARMON}01:{YEARMON}{DAYS_IN_MONTH:02d}]{EXT}::1@[x-1]->Pr'.format(YEARMON=args.yearmon,
-                                                                                                                                     DAYS_IN_MONTH=calendar.monthrange(year, month)[1],
-                                                                                                                                     EXT=ext))
+                               'PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.[{YEARMON}01:{YEARMON}{DAYS_IN_MONTH:02d}].gz::1@[x-1]->Pr'.format(YEARMON=args.yearmon,
+                                                                                                                                     DAYS_IN_MONTH=calendar.monthrange(year, month)[1]))
+    os.makedirs(args.output_dir, exist_ok=True)
     output_file = os.path.join(args.output_dir, 'wetdays_{}.nc'.format(args.yearmon))
 
     execute([os.path.join(args.bindir, 'wsim_integrate.R'),
