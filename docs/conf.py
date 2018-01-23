@@ -176,4 +176,7 @@ texinfo_documents = [
 ]
 
 
+def setup(app):
+    app.add_javascript('https://www.googletagmanager.com/gtag/js?id=UA-112929598-1')
+    app.add_javascript('custom.js')
 
