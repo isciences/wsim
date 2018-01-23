@@ -102,6 +102,18 @@ Global Flow Directions derived from Dominant River Tracing (DRT)
 
 The Numerical Terradynamic Simulation Group at the University of Montana publishes near-global flow direction grids (84 degrees North to 56 degrees South) at various resolutions, derived using a dominant river tracing (DRT) algorithm. Data can be accessed from `this link <http://www.ntsg.umt.edu/project/drt.php>`_.
 
+Global Multi-resolution Terrain Elevation Data 2010 (GMTED2010)
+---------------------------------------------------------------
+
+The GMTED2010 dataset, developed by the USGS and NGA, provides global or near-global elevation data based on a compilation of 11 raster-based elevation datasets.
+The data is offered at three resolutions, with varying coverages:
+
+* 30 arc-seconds, from 84 degrees north to 90 degrees south
+* 15 arc-seconds, from 84 degrees north to 56 degrees south
+* 7.5 arc-seconds, from 84 degrees north to 56 degrees south
+
+Data can be download in Arc/Info binary grid format from `this link <https://topotools.cr.usgs.gov/GMTED_viewer/gmted2010_global_grids.php>`_.
+
 ISRIC WISE-Derived Soil Properties
 ----------------------------------
 
