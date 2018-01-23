@@ -4,12 +4,13 @@ wsim.io::logging_init('wsim_fit')
 '
 Fit statistical distributions.
 
-Usage: wsim_fit (--distribution=<dist>) (--input=<file>)... (--output=<file>) [--cores=<num>]
+Usage: wsim_fit (--distribution=<dist>) (--input=<file>)... (--output=<file>) [--cores=<num>] [--attr=<attr>]...
 
 --distribution <dist> the statistical distribution to be fit
 --input <file>        Files to read observations
---ouput <file>        Output netCDF file with distribution fit parameters
+--output <file>       Output netCDF file with distribution fit parameters
 --cores <num>         Number of CPU cores to use [default: 1]
+--attr <attr>         Optional attribute(s) to write to output netCDF file
 '->usage
 
 main <- function(raw_args) {
@@ -24,6 +25,8 @@ main <- function(raw_args) {
     c1 <- parallel::makeCluster(args$cores)
     parallel::setDefaultCluster(c1)
   }
+
+  output_attrs <- lapply(args$attr, wsim.io::parse_attr)
 
   expanded_inputs <- wsim.io::expand_inputs(args$input)
   wsim.io::info('Preparing to load vars from', length(expanded_inputs), "files.")
@@ -45,9 +48,11 @@ main <- function(raw_args) {
   wsim.io::write_vars_to_cdf(fits,
                              outfile,
                              extent=extent,
-                             attrs=list(
-                               list(var=NULL,key="distribution",val=distribution)
-                             ))
+                             attrs=c(
+                               output_attrs,
+                               list(
+                                 list(var=NULL,key="distribution",val=distribution)
+                             )))
 
   wsim.io::info('Wrote fits to', outfile)
 }
