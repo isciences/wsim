@@ -10,7 +10,6 @@ if sys.version_info.major < 3:
 import argparse
 import datetime
 import os
-import shutil
 from urllib.request import urlopen
 
 def parse_args(args):
