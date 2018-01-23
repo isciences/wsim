@@ -62,6 +62,14 @@ class Forcing(metaclass=ABCMeta):
     def prep_steps(self, **kwargs):
         """
         Returns one or more Steps needed to prepare this dataset for use
+        for a given yearmon/target month/ensemble member
+        """
+        return []
+
+    def global_prep_steps(self):
+        """
+        Returns one or more Steps needed to prepare this dataset for use
+        (included only once for all yearmons/targets/members)
         """
         return []
 
