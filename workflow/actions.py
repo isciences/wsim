@@ -1,7 +1,7 @@
 from paths import read_vars, Vardef
 from step import Step
-from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_fit, wsim_lsm
-from dates import days_in_month, get_next_yearmon, rolling_window
+from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm
+from dates import get_next_yearmon, rolling_window
 
 def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
 
@@ -68,9 +68,9 @@ def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months
             dependencies=[
                 current_state,
                 forcing,
-                #static.wc().file,
-                #static.flowdir().file,
-                #static.elevation().file
+                static.wc().file,
+                static.flowdir().file,
+                static.elevation().file
             ],
             commands=[
                 wsim_lsm(

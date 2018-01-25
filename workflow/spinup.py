@@ -111,7 +111,10 @@ def spinup(config):
         steps.append(Step(
             targets=config.workspace().final_state_norms(),
             dependencies=[config.workspace().climate_norm_forcing(month=month) for month in all_months] + [
-                config.workspace().initial_state()
+                config.workspace().initial_state(),
+                config.static_data().wc().file,
+                config.static_data().flowdir().file,
+                config.static_data().elevation().file,
             ],
             commands=[
                 wsim_lsm(
