@@ -40,7 +40,8 @@ main <- function(raw_args) {
   resampled <- resample(tawc_agg, raster(xmn=args$minlon,
                                          xmx=args$maxlon,
                                          ymn=args$minlat,
-                                         ymx=args$maxlat))
+                                         ymx=args$maxlat,
+                                         res=args$res))
 
 
   info("Writing results to", args$output)
