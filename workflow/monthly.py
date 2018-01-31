@@ -24,11 +24,11 @@ def monthly_observed(config, yearmon):
         steps += time_integrate(config.workspace(), config.integrated_vars(), yearmon=yearmon, window=window)
 
     # Compute return periods
-    for window in [None] + config.integration_windows():
+    for window in [1] + config.integration_windows():
         steps += compute_return_periods(config.workspace(), config.lsm_vars(), config.integrated_vars(), yearmon=yearmon, window=window)
 
     # Compute composite indicators
-    for window in [None] + config.integration_windows():
+    for window in [1] + config.integration_windows():
         steps += composite_indicators(config.workspace(), window=window, yearmon=yearmon)
 
     return steps
@@ -59,11 +59,11 @@ def monthly_forecast(config, yearmon):
                 # Time integrate the results
                 steps += time_integrate(config.workspace(), config.integrated_vars(), window=window, yearmon=yearmon, target=target, member=member, lead_months=lead_months)
 
-            for window in [None] + config.integration_windows():
+            for window in [1] + config.integration_windows():
                 # Compute return periods
                 steps += compute_return_periods(config.workspace(), config.lsm_vars(), config.integrated_vars(), yearmon=yearmon, window=window, target=target, member=member)
 
-        for window in [None] + config.integration_windows():
+        for window in [1] + config.integration_windows():
             steps += result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
             steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
             steps += composite_indicators(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)

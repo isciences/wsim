@@ -3,9 +3,9 @@ from abc import ABCMeta, abstractmethod
 
 def read_vars(*args):
     file = args[0]
-    vars = args[1:]
+    var_list = args[1:]
 
-    return file + '::' + ','.join(vars)
+    return file + '::' + ','.join(var_list)
 
 def date_range(*args):
     step = 1
@@ -13,14 +13,14 @@ def date_range(*args):
     if len(args) == 1 and type(args[0]) is list:
         begin = args[0][0]
         end   = args[0][-1]
-
     elif len(args) >= 2:
         begin = args[0]
         end = args[1]
 
         if len(args) == 3:
             step = args[2]
-
+    else:
+        raise Exception('Invalid date range')
 
     return '[{}:{}:{}]'.format(begin, end, step)
 
@@ -96,7 +96,8 @@ class DefaultWorkspace:
     def make_path(self, thing, **kwargs):
         return os.path.join(self.outputs, thing, self.make_filename(thing, **kwargs))
 
-    def make_filename(self, thing, *, yearmon, window=None, target=None, member=None):
+    @staticmethod
+    def make_filename(thing, *, yearmon, window=None, target=None, member=None):
         filename = thing
 
         if window:
@@ -112,30 +113,34 @@ class DefaultWorkspace:
 
         filename += '.nc'
 
-        return filename.format(window=window, yearmon=yearmon, target=target, member=member)
+        return filename.format(thing=thing, window=window, yearmon=yearmon, target=target, member=member)
 
     # Summaries of data from multi-member forecast ensembles
-    def composite_summary(self, **kwargs):
-        return self.make_path('composite', **kwargs)
+    def composite_summary(self, *, yearmon, window=1, target=None):
+        assert window is not None
+        return self.make_path('composite', yearmon=yearmon, window=window, target=target)
 
-    def return_period_summary(self, **kwargs):
-        return self.make_path('rp_summary', **kwargs)
+    def return_period_summary(self, *, yearmon, window=1, target):
+        assert window is not None
+        return self.make_path('rp_summary', yearmon=yearmon, window=window, target=target)
 
     def results_summary(self, **kwargs):
         return self.make_path('results_summary', **kwargs)
 
     # Individual model inputs, outputs, and derivatives
-    def state(self, **kwargs):
-        return self.make_path('state', **kwargs)
+    def state(self, *, yearmon, member=None, target=None):
+        return self.make_path('state', yearmon=yearmon, member=member, target=target)
 
-    def forcing(self, **kwargs):
-        return self.make_path('forcing', **kwargs)
+    def forcing(self, *, yearmon, member=None, target=None):
+        return self.make_path('forcing', yearmon=yearmon, member=member, target=target)
 
-    def results(self, **kwargs):
-        return self.make_path('results', **kwargs)
+    def results(self, *, yearmon, window=1, member=None, target=None):
+        assert window is not None
+        return self.make_path('results', yearmon=yearmon, window=window, member=member, target=target)
 
-    def return_period(self, **kwargs):
-        return self.make_path('rp', **kwargs)
+    def return_period(self, *, yearmon, window=1, member=None, target=None):
+        assert window is not None
+        return self.make_path('rp', yearmon=yearmon, window=window, member=member, target=target)
 
     # Spinup files
     def spinup_state(self, yearmon=None):

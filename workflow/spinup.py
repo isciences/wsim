@@ -241,7 +241,7 @@ def spinup(config):
             all_fits.append(config.workspace().fit_obs(var=param, month=month))
 
             steps.append(Step(
-                targets=[config.workspace().fit_obs(var=param, month=month)],
+                targets=[config.workspace().fit_obs(var=param, month=month, window=1)],
                 dependencies=input_files,
                 commands=[
                     wsim_fit(
@@ -249,7 +249,7 @@ def spinup(config):
                         inputs=[read_vars(config.workspace().results(yearmon=date_range(format_yearmon(config.result_fit_years()[0], month),
                                                                                         format_yearmon(config.result_fit_years()[-1], month),
                                                                                         12)), param)],
-                        output=config.workspace().fit_obs(var=param, month=month)
+                        output=config.workspace().fit_obs(var=param, month=month, window=1)
                     )
                 ]
             ))

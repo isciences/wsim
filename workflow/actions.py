@@ -55,7 +55,7 @@ def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months
         current_state = workspace.state(yearmon=yearmon)
         next_state = workspace.state(yearmon=get_next_yearmon(yearmon))
 
-    results = workspace.results(yearmon=yearmon, target=target, member=member)
+    results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
     forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
 
     return [
@@ -116,8 +116,8 @@ def time_integrate(workspace, integrated_vars, *, yearmon, target=None, window=N
         )
     ]
 
-def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, window=None, target=None, member=None):
-    if window is None:
+def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, window, target=None, member=None):
+    if window == 1:
         rp_vars = lsm_vars
     else:
         rp_vars = [var + '_' + stat
@@ -149,7 +149,7 @@ def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, win
 def composite_indicators(workspace, *, yearmon, window=None, target=None, quantile=None):
     q = '_q{quantile}'.format(quantile=quantile) if quantile else ''
 
-    if window is None:
+    if window == 1:
         deficit=[
             '$<::PETmE_rp' + q + '@fill0@negate->Neg_PETmE',
             '$<::Ws_rp' + q +'->Ws',
