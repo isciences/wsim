@@ -52,7 +52,7 @@ def main(raw_args):
     gribfile = "flxf.01.{TIMESTAMP}.{TARGET}.avrg.grib.grb2".format(TIMESTAMP=args.timestamp,
                                                                     TARGET=args.target)
 
-    start_of_rolling_archive = datetime.datetime.now() - datetime.timedelta(days=7)
+    start_of_rolling_archive = datetime.datetime.now() - datetime.timedelta(days=6) # should have 7 days but doesn't always
     timestamp_datetime = datetime.datetime(year, month, day, hour)
 
     if timestamp_datetime > start_of_rolling_archive:
@@ -60,7 +60,7 @@ def main(raw_args):
         url_pattern = 'http://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}'
     else:
         print("Using long-term archive URL")
-        url_pattern = 'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:02d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}'
+        url_pattern = 'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}'
 
     url = url_pattern.format(YEAR=year,
                              MONTH=month,
