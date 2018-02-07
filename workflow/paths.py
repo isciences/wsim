@@ -81,9 +81,6 @@ class DefaultWorkspace:
     def root(self):
         return self.outputs
 
-    def climate_norms(self, **kwargs):
-        return os.path.join(self.outputs, 'spinup', 'climate_norms_{month:02d}.nc'.format_map(kwargs))
-
     def climate_norm_forcing(self, **kwargs):
         return os.path.join(self.outputs, 'spinup', 'climate_norm_forcing_{month:02d}.nc'.format_map(kwargs))
 

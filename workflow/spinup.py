@@ -55,50 +55,33 @@ def spinup(config):
         # a single "monthly norm" temperature and precipitation file for each month.
         for month in all_months:
             historical_yearmons = [format_yearmon(year, month) for year in config.historical_years()]
-            climate_norms = config.workspace().climate_norms(month=month)
+            climate_norm_forcing = config.workspace().climate_norm_forcing(month=month)
 
             input_files = set([config.observed_data().temp_monthly(yearmon=yearmon).file for yearmon in historical_yearmons] +
                               [config.observed_data().precip_monthly(yearmon=yearmon).file for yearmon in historical_yearmons]+
                               [config.observed_data().p_wetdays(yearmon=yearmon).file for yearmon in historical_yearmons])
 
             steps.append(Step(
-                targets=config.workspace().climate_norms(month=month),
+                targets=climate_norm_forcing,
                 dependencies=list(input_files),
                 commands=[
                     wsim_integrate(
                         inputs=[config.observed_data().precip_monthly(yearmon=yearmon).read_as('Pr') for yearmon in historical_yearmons],
                         stats=['ave'],
-                        output=climate_norms
+                        keepvarnames=True,
+                        output=climate_norm_forcing
                     ),
                     wsim_integrate(
                         inputs=[config.observed_data().temp_monthly(yearmon=yearmon).read_as('T') for yearmon in historical_yearmons],
                         stats=['ave'],
-                        output=climate_norms
+                        keepvarnames=True,
+                        output=climate_norm_forcing
                     ),
                     wsim_integrate(
                         inputs=[config.observed_data().p_wetdays(yearmon=yearmon).read_as('pWetDays') for yearmon in historical_yearmons],
                         stats=['ave'],
-                        output=climate_norms
-                    )
-                ]
-            ))
-
-            steps.append(Step(
-                targets=config.workspace().climate_norm_forcing(month=month),
-                dependencies=climate_norms,
-                commands=[
-                    wsim_merge(
-                        inputs=[read_vars(climate_norms,
-                                          'T_ave->T',
-                                          'Pr_ave->Pr',
-                                          'pWetDays_ave->pWetDays')],
-                        output=config.workspace().climate_norm_forcing(month=month),
-                        attrs=[
-                            'T:units',
-                            'T:standard_name',
-                            'Pr:units',
-                            'Pr:standard_name'
-                        ]
+                        keepvarnames=True,
+                        output=climate_norm_forcing
                     )
                 ]
             ))
