@@ -215,16 +215,16 @@ def spinup(config):
             ]
         ))
 
-    all_fits = []
-    # Compute monthly fits over the fit period
+    # Compute monthly fits (and then anomalies) over the fit period
     for param in config.lsm_vars():
         for month in all_months:
             input_files = [config.workspace().results(yearmon=format_yearmon(year, month)) for year in config.result_fit_years()]
 
-            all_fits.append(config.workspace().fit_obs(var=param, month=month))
+            fit_file = config.workspace().fit_obs(var=param, month=month, window=1)
 
+            # Step for fits
             steps.append(Step(
-                targets=[config.workspace().fit_obs(var=param, month=month, window=1)],
+                targets=[fit_file],
                 dependencies=input_files,
                 commands=[
                     wsim_fit(
@@ -237,6 +237,28 @@ def spinup(config):
                 ]
             ))
 
+#            # Steps for anomalies
+#            for yearmon in [format_yearmon(year, month) for year in config.result_fit_years()]:
+#                steps.append(Step(
+#                    targets=[config.workspace().standard_anomaly()],
+#                    dependencies=fit_file, # don't need input_files, because they're already needed to build fit_file
+#                    commands=[
+#                        wsim_anom(
+#                            distribution=config.distribution,
+#                            fits=fit_file,
+#                            obs=config.workspace().results(yearmon=yearmon, window=1),
+#                            sa=config.workspace().standard_anomaly(yearmon=yearmon, window=1)
+#                        )
+#                    ]
+#                ))
+#
+#    # Compute composite anomalies
+#    for month in all_months:
+#        for year in config.result_fit_years():
+#            steps.append(Step(
+#                targets=[config.workspace()]
+#            ))
+
     # Compute fits for time-integrated parameters
     fit_yearmons = [format_yearmon(year, month) for year in config.result_fit_years() for month in all_months]
 
@@ -247,8 +269,6 @@ def spinup(config):
                     yearmons = [t for t in fit_yearmons[window-1:] if int(t[-2:]) == month]
 
                     input_files = [config.workspace().results(yearmon=yearmon, window=window) for yearmon in yearmons]
-
-                    all_fits.append(config.workspace().fit_obs(var=param, month=month, stat=stat, window=window))
 
                     steps.append(Step(
                         targets=[config.workspace().fit_obs(var=param, month=month, stat=stat, window=window)],
@@ -262,18 +282,5 @@ def spinup(config):
                             )
                         ]
                     ))
-
-    # Add a phony target for all fits
-    # TODO indicate this as phony
-    steps.append(Step(
-        targets="all_fits",
-        dependencies=all_fits,
-        commands=[]
-    ))
-    #steps.append(Step(
-    #    targets="all_integrated",
-    #    dependencies=all_integrated,
-    #    commands=[]
-    #))
 
     return steps

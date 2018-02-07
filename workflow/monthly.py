@@ -30,6 +30,7 @@ def monthly_observed(config, yearmon):
     # Compute composite indicators
     for window in [1] + config.integration_windows():
         steps += composite_indicators(config.workspace(), window=window, yearmon=yearmon)
+        steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
 
     return steps
 
@@ -67,5 +68,6 @@ def monthly_forecast(config, yearmon):
             steps += result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
             steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
             steps += composite_indicators(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
+            steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
 
     return steps

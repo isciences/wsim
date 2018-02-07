@@ -119,22 +119,26 @@ def wsim_integrate(**kwargs):
 
     return cmd
 
-def wsim_composite(**kwargs):
+def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None, clamp=None, output):
     cmd = [ os.path.join('{BINDIR}', 'wsim_composite.R') ]
 
-    for var in kwargs.get('surplus', []):
-        cmd += ['--surplus', q(var)]
+    if surplus:
+        for var in surplus:
+            cmd += ['--surplus', q(var)]
 
-    for var in kwargs.get('deficit', []):
-        cmd += ['--deficit', q(var)]
+    if deficit:
+        for var in deficit:
+            cmd += ['--deficit', q(var)]
 
-    if 'both_threshold' in kwargs:
-        cmd += ['--both_threshold', str(kwargs['both_threshold'])]
+    if both_threshold:
+        cmd += ['--both_threshold', str(both_threshold)]
 
-    if 'mask' in kwargs:
-        cmd += ['--mask', q(kwargs['mask'])]
+    if mask:
+        cmd += ['--mask', q(mask)]
 
-    cmd += ['--output', q(kwargs['output'])]
+    if clamp:
+        cmd += ['--clamp', str(clamp)]
+
+    cmd += ['--output', q(output)]
 
     return cmd
-

@@ -8,7 +8,7 @@ suppressMessages({
 '
 Compute composite indicators
 
-Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> [--mask=<file>] [--clip=<value>] --output=<file>
+Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> [--mask=<file>] [--clamp=<value>] --output=<file>
 
 Options:
 --surplus <file>...      One or more variables containing return periods that represent surpluses
@@ -16,7 +16,7 @@ Options:
 --both_threshold <value> Threshold value for assigning a pixel to both surplus and deficit
 --output <file>          Output file containing composite indicators
 --mask <file>            Optional mask to use for computed indicators
---clip <value>           Absolute value at which to clip return periods [default: 60]
+--clamp <value>          Optional absolute value at which to clamp inputs
 '->usage
 
 clamp <- function(vals, minval, maxval) {
@@ -43,7 +43,7 @@ main <- function(raw_args) {
   args <- wsim.io::parse_args(usage,
                               raw_args,
                               types=list(both_threshold= 'integer',
-                                         clip= 'integer'))
+                                         clamp= 'integer'))
 
   if (is.null(args$deficit)) {
     wsim.io::die_with_message("Must supply at least one deficit indicator.")
@@ -72,12 +72,18 @@ main <- function(raw_args) {
   }
 
   max_surplus_indices <- wsim.distributions::array_apply(surpluses, which.max.na)
-  max_surplus_values <- clamp(vals_for_depth_index(surpluses, max_surplus_indices), -args$clip, args$clip)
+  max_surplus_values <- vals_for_depth_index(surpluses, max_surplus_indices)
+  if (!is.null(args$clamp)) {
+    max_surplus_values <- clamp(max_surplus_values, -args$clamp, args$clamp)
+  }
 
   wsim.io::info('Computed composite surplus.')
 
   min_deficit_indices <- wsim.distributions::array_apply(deficits, which.min.na)
-  min_deficit_values <- clamp(vals_for_depth_index(deficits, min_deficit_indices), -args$clip, args$clip)
+  min_deficit_values <- vals_for_depth_index(deficits, min_deficit_indices)
+  if (!is.null(args$clamp)) {
+    min_surplus_values <- clamp(min_surplus_values, -args$clamp, args$clamp)
+  }
 
   wsim.io::info('Computed composite deficit.')
 

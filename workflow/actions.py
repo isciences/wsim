@@ -150,56 +150,103 @@ def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, win
         )
     ]
 
+def composite_vars(*, method, window, quantile):
+    quantile_text = '_q{}'.format(quantile) if quantile else ''
+
+    if method == 'return_period':
+        rp_or_sa = 'rp'
+    elif method == 'standard_anomaly':
+        rp_or_sa = 'sa'
+
+    if window == 1:
+        deficit=[
+            'PETmE_{rp_or_sa}{quantile}@fill0@negate->Neg_PETmE',
+            'Ws_{rp_or_sa}{quantile}->Ws',
+            'Bt_RO_{rp_or_sa}{quantile}->Bt_RO'
+        ]
+        surplus=[
+            'RO_mm_{rp_or_sa}{quantile}->RO_mm',
+            'Bt_RO_{rp_or_sa}{quantile}->Bt_RO'
+        ]
+        mask='Ws_{rp_or_sa}{quantile}'
+    else:
+        deficit=[
+            'PETmE_sum_{rp_or_sa}{quantile}@fill0@negate->Neg_PETmE',
+            'Ws_ave_{rp_or_sa}{quantile}->Ws',
+            'Bt_RO_sum_{rp_or_sa}{quantile}->Bt_RO'
+        ]
+        surplus=[
+            'RO_mm_sum_{rp_or_sa}{quantile}->RO_mm',
+            'Bt_RO_sum_{rp_or_sa}{quantile}->Bt_RO'
+        ]
+        mask='Ws_ave_{rp_or_sa}{quantile}'
+
+    fmt = lambda x : x.format(quantile=quantile_text, rp_or_sa=rp_or_sa)
+
+    return {
+        'deficit' : [fmt(d) for d in deficit],
+        'surplus' : [fmt(s) for s in surplus],
+        'mask'    : fmt(mask)
+    }
+
 def composite_indicators(workspace, *, yearmon, window=None, target=None, quantile=None):
     # If we're working with a forecast, we should have also have the desired
     # quantile of the ensemble members
     assert (quantile is None) == (target is None)
 
-    quantile_text = '_q{}'.format(quantile) if quantile else ''
-
-    if window == 1:
-        deficit=[
-            '{infile}::PETmE_rp{quantile}@fill0@negate->Neg_PETmE',
-            '{infile}::Ws_rp{quantile}->Ws',
-            '{infile}::Bt_RO_rp{quantile}->Bt_RO'
-        ]
-        surplus=[
-            '{infile}::RO_mm_rp{quantile}->RO_mm',
-            '{infile}::Bt_RO_rp{quantile}->Bt_RO'
-        ]
-        mask='{infile}::Ws_rp{quantile}'
-    else:
-        deficit=[
-            '{infile}::PETmE_sum_rp{quantile}@fill0@negate->Neg_PETmE',
-            '{infile}::Ws_ave_rp{quantile}->Ws',
-            '{infile}::Bt_RO_sum_rp{quantile}->Bt_RO'
-        ]
-        surplus=[
-            '{infile}::RO_mm_sum_rp{quantile}->RO_mm',
-            '{infile}::Bt_RO_sum_rp{quantile}->Bt_RO'
-        ]
-        mask='{infile}::Ws_ave_rp{quantile}'
+    cvars = composite_vars(method='return_period', window=window, quantile=quantile)
 
     if target:
         infile = workspace.return_period_summary(yearmon=yearmon, target=target, window=window)
     else:
         infile = workspace.return_period(yearmon=yearmon, window=window)
 
+    outfile = workspace.composite_summary(yearmon=yearmon, target=target, window=window)
+
     return [
         Step(
-            targets=workspace.composite_summary(yearmon=yearmon, target=target, window=window),
+            targets=outfile,
             dependencies=[infile],
             commands=[
                 wsim_composite(
-                    surplus=[s.format(infile=infile, quantile=quantile_text) for s in surplus],
-                    deficit=[d.format(infile=infile, quantile=quantile_text) for d in deficit],
+                    surplus=[infile + '::' + var for var in cvars['surplus']],
+                    deficit=[infile + '::' + var for var in cvars['deficit']],
                     both_threshold=3,
-                    mask=mask.format(infile=infile, quantile=quantile_text),
-                    output='$@'
+                    mask=infile + '::' + cvars['mask'],
+                    output=outfile,
+                    clamp=60
                 )
             ]
         )
     ]
+
+def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantile=None):
+    cvars = composite_vars(method='standard_anomaly', window=window, quantile=quantile)
+
+    if target:
+        infile = workspace.standard_anomaly_summary(yearmon=yearmon, target=target, window=window)
+    else:
+        infile = workspace.standard_anomaly(yearmon=yearmon, window=window)
+
+    outfile = workspace.composite_anomaly(yearmon=yearmon, target=target, window=window)
+
+    return [
+        Step(
+            targets=outfile,
+            dependencies=[infile],
+            commands=[
+                wsim_composite(
+                    surplus=[infile + '::' + var for var in cvars['surplus']],
+                    deficit=[infile + '::' + var for var in cvars['deficit']],
+                    both_threshold=0.4307273, # corresponds with rp of 3
+                    mask=infile + '::' + cvars['mask'],
+                    output=outfile
+                )
+            ]
+        )
+    ]
+
+
 
 def result_summary(workspace, ensemble_members, *, yearmon, target=None, window=None):
     ensemble_results = [workspace.results(yearmon=yearmon, target=target, member=member) for member in ensemble_members]

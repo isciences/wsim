@@ -117,12 +117,22 @@ class DefaultWorkspace:
         assert window is not None
         return self.make_path('composite', 'composite', yearmon=yearmon, window=window, target=target)
 
+    def composite_anomaly(self, *, yearmon, window=1, target=None):
+        return self.make_path('composite_anom', 'composite_anom', yearmon=yearmon, window=window, target=target)
+
     def return_period_summary(self, *, yearmon, window=1, target):
         assert window is not None
 
         root = 'rp_summary' if window == 1 else 'rp_integrated_summary'
 
         return self.make_path(root, 'rp_summary', yearmon=yearmon, window=window, target=target)
+
+    def standard_anomaly_summary(self, *, yearmon, window=1, target):
+        assert window is not None
+
+        root = 'anom_summary' if window == 1 else 'anom_integrated_summary'
+
+        return self.make_path(root, 'anom_summary', yearmon=yearmon, window=window, target=target)
 
     def results_summary(self, *, yearmon, window, target=None):
         root = 'results_summary' if window ==1 else 'results_integrated_summary'
