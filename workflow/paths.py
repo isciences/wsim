@@ -93,8 +93,8 @@ class DefaultWorkspace:
     def final_state_norms(self):
         return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')
 
-    def make_path(self, thing, **kwargs):
-        return os.path.join(self.outputs, thing, self.make_filename(thing, **kwargs))
+    def make_path(self, root, thing, **kwargs):
+        return os.path.join(self.outputs, root, self.make_filename(thing, **kwargs))
 
     @staticmethod
     def make_filename(thing, *, yearmon, window=None, target=None, member=None):
@@ -118,29 +118,40 @@ class DefaultWorkspace:
     # Summaries of data from multi-member forecast ensembles
     def composite_summary(self, *, yearmon, window=1, target=None):
         assert window is not None
-        return self.make_path('composite', yearmon=yearmon, window=window, target=target)
+        return self.make_path('composite', 'composite', yearmon=yearmon, window=window, target=target)
 
     def return_period_summary(self, *, yearmon, window=1, target):
         assert window is not None
-        return self.make_path('rp_summary', yearmon=yearmon, window=window, target=target)
 
-    def results_summary(self, **kwargs):
-        return self.make_path('results_summary', **kwargs)
+        root = 'rp_summary' if window == 1 else 'rp_integrated_summary'
+
+        return self.make_path(root, 'rp_summary', yearmon=yearmon, window=window, target=target)
+
+    def results_summary(self, *, yearmon, window, target=None):
+        root = 'results_summary' if window ==1 else 'results_integrated_summary'
+
+        return self.make_path(root, 'results_summary', yearmon=yearmon, window=window, target=target)
 
     # Individual model inputs, outputs, and derivatives
     def state(self, *, yearmon, member=None, target=None):
-        return self.make_path('state', yearmon=yearmon, member=member, target=target)
+        return self.make_path('state', 'state', yearmon=yearmon, member=member, target=target)
 
     def forcing(self, *, yearmon, member=None, target=None):
-        return self.make_path('forcing', yearmon=yearmon, member=member, target=target)
+        return self.make_path('forcing', 'forcing', yearmon=yearmon, member=member, target=target)
 
     def results(self, *, yearmon, window=1, member=None, target=None):
         assert window is not None
-        return self.make_path('results', yearmon=yearmon, window=window, member=member, target=target)
+
+        root = 'results' if window == 1 else 'results_integrated'
+
+        return self.make_path(root, 'results', yearmon=yearmon, window=window, member=member, target=target)
 
     def return_period(self, *, yearmon, window=1, member=None, target=None):
         assert window is not None
-        return self.make_path('rp', yearmon=yearmon, window=window, member=member, target=target)
+
+        root = 'rp' if window == 1 else 'rp_integrated'
+
+        return self.make_path(root, 'rp', yearmon=yearmon, window=window, member=member, target=target)
 
     # Spinup files
     def spinup_state(self, yearmon=None):

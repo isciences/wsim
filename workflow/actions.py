@@ -147,6 +147,10 @@ def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, win
     ]
 
 def composite_indicators(workspace, *, yearmon, window=None, target=None, quantile=None):
+    # If we're working with a forecast, we should have also have the desired
+    # quantile of the ensemble members
+    assert (quantile is None) == (target is None)
+
     q = '_q{quantile}'.format(quantile=quantile) if quantile else ''
 
     if window == 1:
