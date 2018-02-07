@@ -151,30 +151,30 @@ def composite_indicators(workspace, *, yearmon, window=None, target=None, quanti
     # quantile of the ensemble members
     assert (quantile is None) == (target is None)
 
-    q = '_q{quantile}'.format(quantile=quantile) if quantile else ''
+    quantile_text = '_q{}'.format(quantile) if quantile else ''
 
     if window == 1:
         deficit=[
-            '$<::PETmE_rp' + q + '@fill0@negate->Neg_PETmE',
-            '$<::Ws_rp' + q +'->Ws',
-            '$<::Bt_RO_rp' + q +'->Bt_RO'
+            '{infile}::PETmE_rp{quantile}@fill0@negate->Neg_PETmE',
+            '{infile}::Ws_rp{quantile}->Ws',
+            '{infile}::Bt_RO_rp{quantile}->Bt_RO'
         ]
         surplus=[
-            '$<::RO_mm_rp' + q + '->RO_mm',
-            '$<::Bt_RO_rp' + q + '->Bt_RO'
+            '{infile}::RO_mm_rp{quantile}->RO_mm',
+            '{infile}::Bt_RO_rp{quantile}->Bt_RO'
         ]
-        mask='$<::Ws_rp' + q
+        mask='{infile}::Ws_rp{quantile}'
     else:
         deficit=[
-            '$<::PETmE_sum_rp' + q + '@fill0@negate->Neg_PETmE',
-            '$<::Ws_ave_rp' + q + '->Ws',
-            '$<::Bt_RO_sum_rp' + q + '->Bt_RO'
+            '{infile}::PETmE_sum_rp{quantile}@fill0@negate->Neg_PETmE',
+            '{infile}::Ws_ave_rp{quantile}->Ws',
+            '{infile}::Bt_RO_sum_rp{quantile}->Bt_RO'
         ]
         surplus=[
-            '$<::RO_mm_sum_rp' + q + '->RO_mm',
-            '$<::Bt_RO_sum_rp' + q + '->Bt_RO'
+            '{infile}::RO_mm_sum_rp{quantile}->RO_mm',
+            '{infile}::Bt_RO_sum_rp{quantile}->Bt_RO'
         ]
-        mask='$<::Ws_ave_rp' + q
+        mask='{infile}::Ws_ave_rp{quantile}'
 
     if target:
         infile = workspace.return_period_summary(yearmon=yearmon, target=target, window=window)
@@ -187,10 +187,10 @@ def composite_indicators(workspace, *, yearmon, window=None, target=None, quanti
             dependencies=[infile],
             commands=[
                 wsim_composite(
-                    surplus=surplus,
-                    deficit=deficit,
+                    surplus=[s.format(infile=infile, quantile=quantile_text) for s in surplus],
+                    deficit=[d.format(infile=infile, quantile=quantile_text) for d in deficit],
                     both_threshold=3,
-                    mask=mask,
+                    mask=mask.format(infile=infile, quantile=quantile_text),
                     output='$@'
                 )
             ]

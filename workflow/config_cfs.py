@@ -404,6 +404,9 @@ class CFSForecast(paths.Forcing):
         target = kwargs['target']
         member = kwargs['member']
 
+        outfile=self.forecast_raw(member=member, target=target)
+        infile=self.forecast_grib(member=member, target=target)
+
         return [
             # Download the GRIB, if needed
             Step(
@@ -421,10 +424,10 @@ class CFSForecast(paths.Forcing):
             ),
             # Convert the forecast data from GRIB to netCDF
             Step(
-                targets=self.forecast_raw(member=member, target=target),
-                dependencies=[self.forecast_grib(member=member, target=target)],
+                targets=outfile,
+                dependencies=[infile],
                 commands=[
-                    commands.forecast_convert('$<', '$@')
+                    commands.forecast_convert(infile, outfile)
                 ]
             )
         ]
