@@ -51,7 +51,7 @@ class Step:
         if self.comment:
             txt += "#" + self.comment + '\n'
 
-        txt += self.targetString(keys) + ' : ' + ' '.join(format_vars(dep, keys) for dep in self.dependencies) + '\n'
+        txt += self.targetString(keys) + ' : | ' + ' '.join(format_vars(dep, keys) for dep in self.dependencies) + '\n'
 
         for command in self.get_mkdir_commands() + self.commands:
             for i in range(len(command)):
