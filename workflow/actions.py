@@ -129,18 +129,22 @@ def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, win
     else:
         month = int(yearmon[-2:])
 
+    rp_file = workspace.return_period(yearmon=yearmon, target=target, window=window, member=member)
+    sa_file = workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member)
+
     return [
         Step(
             comment="Return periods" + ("(" + str(window) + "mo)" if window is not None else ""),
-            targets=workspace.return_period(yearmon=yearmon, target=target, window=window, member=member),
+            targets=[rp_file, sa_file],
             dependencies=
-            [workspace.fit_obs(var=var, window=window, month=month) for var in rp_vars] +
-            [workspace.results(yearmon=yearmon, target=target, window=window, member=member)],
+                [workspace.fit_obs(var=var, window=window, month=month) for var in rp_vars] +
+                [workspace.results(yearmon=yearmon, target=target, window=window, member=member)],
             commands=[
                 wsim_anom(
                     fits=workspace.fit_obs(var=var, window=window, month=month),
                     obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), var),
-                    rp='$@')
+                    rp=rp_file,
+                    sa=sa_file)
                 for var in rp_vars
             ]
         )

@@ -10,17 +10,17 @@ def forecast_convert(infile, outfile):
         q(outfile)
     ]
 
-def wsim_anom(**kwargs):
+def wsim_anom(*, fits, obs, rp=None, sa=None):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_anom.R'),
-        '--fits', q(kwargs['fits']),
-        '--obs',  q(kwargs['obs'])
+        '--fits', q(fits),
+        '--obs',  q(obs)
     ]
 
-    if 'rp' in kwargs:
-        cmd += '--rp', q(kwargs['rp'])
-    if 'sa' in kwargs:
-        cmd += '--sa', q(kwargs['sa'])
+    if rp:
+        cmd += ['--rp', q(rp)]
+    if sa:
+        cmd += ['--sa', q(sa)]
 
     return cmd
 

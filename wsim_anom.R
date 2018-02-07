@@ -15,8 +15,8 @@ Usage: wsim_anom --fits=<fits> --obs=<file> [--sa=<file>] [--rp=<file>]
 Options:
 --fits <file>  netCDF file containing distribution fit parameters
 --obs <file>   Raster file containing observed values
---sa <file>    output location for NetCDF file of standard anomalies
---rp <file>    output location for NetCDF file of return periods
+--sa <file>    output location for netCDF file of standard anomalies
+--rp <file>    output location for netCDF file of return periods
 '->usage
 
 main <- function(raw_args) {

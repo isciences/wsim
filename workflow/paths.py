@@ -150,6 +150,12 @@ class DefaultWorkspace:
 
         return self.make_path(root, 'rp', yearmon=yearmon, window=window, member=member, target=target)
 
+    def standard_anomaly(self, *, yearmon, window=1, member=None, target=None):
+        assert window is not None
+
+        root = 'anom' if window == 1 else 'anom_integrated'
+        return self.make_path(root, 'anom', yearmon=yearmon, window=window, member=member, target=target)
+
     # Spinup files
     def spinup_state(self, yearmon=None):
         return os.path.join(self.outputs, 'spinup', 'spinup_state_{yearmon}.nc'.format(yearmon=yearmon))
