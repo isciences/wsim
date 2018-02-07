@@ -1,10 +1,15 @@
+#' Strip trailing newline characters from text
+strip <- function(text) {
+  gsub('[\r\n]*$', '', text)
+}
+
 #' Generate a log message at the \code{ERROR} level
 #'
 #' @param ... Any number of string-convertible objects
 #'
 #' @export
 error <- function(...) {
-  futile.logger::flog.error(paste(lapply(list(...), toString), collapse=' '))
+  futile.logger::flog.error(strip(paste(lapply(list(...), toString), collapse=' ')))
 }
 
 #' Generate a log message at the \code{FATAL} level
@@ -13,7 +18,7 @@ error <- function(...) {
 #'
 #' @export
 fatal <- function(...) {
-  futile.logger::flog.fatal(paste(lapply(list(...), toString), collapse=' '))
+  futile.logger::flog.fatal(strip(paste(lapply(list(...), toString), collapse=' ')))
 }
 
 #' Generate a log message at the \code{INFO} level
@@ -22,7 +27,7 @@ fatal <- function(...) {
 #'
 #' @export
 info <- function(...) {
-  futile.logger::flog.info(paste(lapply(list(...), toString), collapse=' '))
+  futile.logger::flog.info(strip(paste(lapply(list(...), toString), collapse=' ')))
 }
 
 #' Generate a log message at the \code{WARN} level
@@ -31,7 +36,7 @@ info <- function(...) {
 #'
 #' @export
 warn <- function(...) {
-  futile.logger::flog.warn(paste(lapply(list(...), toString), collapse=' '))
+  futile.logger::flog.warn(strip(paste(lapply(list(...), toString), collapse=' ')))
 }
 
 #' Initialize logging functionality
