@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'WSIM'
-copyright = '2017, ISciences, LLC'
+copyright = '2017-2018, ISciences, LLC'
 author = 'ISciences, LLC'
 
 # The version info for the project you're documenting, acts as replacement for
