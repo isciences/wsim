@@ -8,3 +8,4 @@ WSIM Concepts
     composite_indices
     forecast_bias_correction
     lsm
+    spinup
