@@ -29,7 +29,8 @@ Bias Correction of CFSv2 Forecast Data
 
 WSIM can bias-correct CFSv2 forecasts using the above procedure, once distributions for observed and forecast data have been estimated for each pixel/month/lead time.
 
-Distributions for forecast data can be estimated using a set of reforecasts (hindcasts) published by NCEP for the 28-year period from 1982-2009.
+Distributions for forecast data can be estimated using a set of reforecasts (hindcasts) published by NCEP for the 27-year period from 1983-2009.
+(Some hindcasts are available that target 1982 and 2010, but they are not available for all target month / lead-time combinations.)
 Every five days within the hindcast period, a forecast is published at 12 AM, 6 AM, 12 PM, and 6 PM.
 This allows construction of a 24-member forecast ensemble for each forecast issue month and target month.
 (As a particularity of the five-day spacing between forecasts, a 28-member ensemble is available for forecasts issued in November.)
@@ -58,18 +59,12 @@ The following command can be use to extract all forecasts from all GRIB files:
 
 .. code-block:: console
 
-  ls -1 *.grb2 | xargs -I{} /wsim/utils/hindcast_extract.sh {} workspace/source/cfs_hindcasts
+  ls -1 *.grb2 | xargs -I{} /wsim/utils/hindcast_extract.sh {} workspace/source/NCEP_CFSv2/hindcasts
 
-Once extracted, distributions can be fit for each pixel-month using ``wsim_fit``:
+Once extracted, distributions can be fit for each pixel-month using ``wsim_fit``.
+The ``hindcast_fit`` script automates this process:
 
 .. code-block:: console
 
-  for lead in {1..9} ; do
-    for month in {01..12} ; do
-      ./wsim_fit.R \
-        --input "hindcasts/tmp2m_*trgt*${month}_lead${lead}.nc::tmp2m@[x-273.15]->T" \
-        --output "hindcast_fits/T_month_${month}_lead_${lead}.nc" \
-        --distribution gev
-    done
-  done
- 
+  utils/noaa_cfsv2_forecast/hindcast_fit.sh workspace/source/NCEP_CFSv2/hindcasts workspace/source/NCEP workspace/source/NCEP_CFSv2/hindcast_fits
+
