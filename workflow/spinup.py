@@ -154,16 +154,9 @@ def spinup(config):
                     wsim_integrate(
                         inputs=spinup_states,
                         stats=['ave'],
-                        output='$@'
-                    ),
-                    ['ncrename',
-                     '-vDs_ave,Ds',
-                     '-vDr_ave,Dr',
-                     '-vWs_ave,Ws',
-                     '-vSnowpack_ave,Snowpack',
-                     '-vsnowmelt_month_ave,snowmelt_month',
-                     '$@'],
-
+                        output='$@',
+                        keepvarnames=True
+                    )
                 ]
             ))
 
