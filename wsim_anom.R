@@ -48,6 +48,7 @@ main <- function(raw_args) {
     write_vars_to_cdf(to_write,
                       filename=args$sa,
                       extent=attr(fits, 'extent'),
+                      prec='single',
                       append=TRUE)
     wsim.io::info("Wrote standard anomalies to", args$sa)
   }
@@ -61,6 +62,7 @@ main <- function(raw_args) {
     write_vars_to_cdf(to_write,
                       filename=args$rp,
                       extent=attr(fits, 'extent'),
+                      prec='single',
                       append=TRUE)
     wsim.io::info("Wrote return periods to", args$rp)
   }
