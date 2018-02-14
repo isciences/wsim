@@ -268,7 +268,7 @@ def spinup(config):
                         dependencies=input_files,
                         commands=[
                             wsim_fit(
-                                distribution="gev",
+                                distribution=config.distribution,
                                 inputs=[read_vars(config.workspace().results(yearmon=date_range(yearmons[0], yearmons[-1], 12),
                                                                              window=window), param + '_' + stat)],
                                 output='$@'
