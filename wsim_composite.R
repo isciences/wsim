@@ -82,7 +82,7 @@ main <- function(raw_args) {
   min_deficit_indices <- wsim.distributions::array_apply(deficits, which.min.na)
   min_deficit_values <- vals_for_depth_index(deficits, min_deficit_indices)
   if (!is.null(args$clamp)) {
-    min_surplus_values <- clamp(min_surplus_values, -args$clamp, args$clamp)
+    min_deficit_values <- clamp(min_deficit_values, -args$clamp, args$clamp)
   }
 
   wsim.io::info('Computed composite deficit.')
