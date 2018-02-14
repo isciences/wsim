@@ -3,7 +3,7 @@ from commands import *
 from dates import format_yearmon, get_next_yearmon, all_months
 from paths import read_vars, date_range
 
-from actions import create_forcing_file
+from actions import create_forcing_file, compute_return_periods, composite_anomalies
 
 def spinup(config):
     """
@@ -209,7 +209,7 @@ def spinup(config):
         ))
 
     # Compute monthly fits (and then anomalies) over the fit period
-    for param in config.lsm_vars():
+    for param in config.lsm_var_names():
         for month in all_months:
             input_files = [config.workspace().results(yearmon=format_yearmon(year, month)) for year in config.result_fit_years()]
 
@@ -230,27 +230,18 @@ def spinup(config):
                 ]
             ))
 
-#            # Steps for anomalies
-#            for yearmon in [format_yearmon(year, month) for year in config.result_fit_years()]:
-#                steps.append(Step(
-#                    targets=[config.workspace().standard_anomaly()],
-#                    dependencies=fit_file, # don't need input_files, because they're already needed to build fit_file
-#                    commands=[
-#                        wsim_anom(
-#                            distribution=config.distribution,
-#                            fits=fit_file,
-#                            obs=config.workspace().results(yearmon=yearmon, window=1),
-#                            sa=config.workspace().standard_anomaly(yearmon=yearmon, window=1)
-#                        )
-#                    ]
-#                ))
-#
-#    # Compute composite anomalies
-#    for month in all_months:
-#        for year in config.result_fit_years():
-#            steps.append(Step(
-#                targets=[config.workspace()]
-#            ))
+    # Steps for anomalies and composite anomalies
+    for month in all_months:
+        for yearmon in [format_yearmon(year, month) for year in config.result_fit_years()]:
+            steps += compute_return_periods(config.workspace(),
+                                            var_names=config.lsm_var_names(),
+                                            yearmon=yearmon,
+                                            window=1)
+
+            steps += composite_anomalies(config.workspace(),
+                                         yearmon=yearmon,
+                                         window=1,
+                                         quantile=50)
 
     # Compute fits for time-integrated parameters
     fit_yearmons = [format_yearmon(year, month) for year in config.result_fit_years() for month in all_months]
