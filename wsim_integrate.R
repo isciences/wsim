@@ -189,7 +189,7 @@ main <- function(raw_args) {
         }
 
         wsim.io::info("Writing to", outfiles[outfile_number])
-        wsim.io::write_vars_to_cdf(integrated, outfiles[outfile_number], extent=extent, attrs=attrs, append=TRUE)
+        wsim.io::write_vars_to_cdf(integrated, outfiles[outfile_number], extent=extent, attrs=attrs, prec='single', append=TRUE)
         outfile_number <- outfile_number+1
       }
 
