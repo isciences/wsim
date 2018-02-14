@@ -110,14 +110,14 @@ main <- function(raw_args) {
   }
 
   if (window > length(inputs)) {
-    die_with_message("Cannot compute using window size of ", window,
-                     " with only ", length(inputs), " input files.")
+    die_with_message("Cannot compute using window size of", window,
+                     "with only ", length(inputs), "input files.")
   }
 
   if (length(outfiles) != frames) {
-    die_with_message("Given ", length(inputs), " inputs and window size ",
-                     window, ", expected ", frames, " output files ",
-                     "but got ", length(outfiles), ".")
+    die_with_message("Given", length(inputs), "inputs and window size ",
+                     window, ", expected ", frames, "output files",
+                     "but got", length(outfiles), ".")
   }
 
   first_input <- wsim.io::read_vars(inputs[[1]])
