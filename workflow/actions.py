@@ -116,14 +116,7 @@ def time_integrate(workspace, integrated_vars, *, yearmon, target=None, window=N
         )
     ]
 
-def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, window, target=None, member=None):
-    if window == 1:
-        rp_vars = lsm_vars
-    else:
-        rp_vars = [var + '_' + stat
-                   for var, stats in integrated_vars.items()
-                   for stat in stats]
-
+def compute_return_periods(workspace, *, var_names, yearmon, window, target=None, member=None):
     if target:
         month = int(target[-2:])
     else:
@@ -137,7 +130,7 @@ def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, win
             comment="Return periods" + ("(" + str(window) + "mo)" if window is not None else ""),
             targets=[rp_file, sa_file],
             dependencies=
-                [workspace.fit_obs(var=var, window=window, month=month) for var in rp_vars] +
+                [workspace.fit_obs(var=var, window=window, month=month) for var in var_names] +
                 [workspace.results(yearmon=yearmon, target=target, window=window, member=member)],
             commands=[
                 wsim_anom(
@@ -145,7 +138,7 @@ def compute_return_periods(workspace, lsm_vars, integrated_vars, *, yearmon, win
                     obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), var),
                     rp=rp_file,
                     sa=sa_file)
-                for var in rp_vars
+                for var in var_names
             ]
         )
     ]

@@ -110,3 +110,9 @@ class ConfigBase(metaclass=abc.ABCMeta):
             'Ws'        : [ 'ave' ]
         }
 
+    def integrated_var_names(self):
+        """
+        Provides a flat list of time-integrated variable names
+        """
+        return [var + '_' + stat for var, stats in self.integrated_vars().items() for stat in stats]
+
