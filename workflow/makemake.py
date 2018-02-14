@@ -27,6 +27,9 @@ def parse_args(args):
     parser.add_argument('--config',
                         help='Python file describing run configuration',
                         required=True)
+    parser.add_argument('--forecasts',
+                        default="latest",
+                        help='Write steps for forecasts [all, none, latest] (default: latest)')
     parser.add_argument('--nospinup',
                         help='Skip model spin-up steps',
                         action='store_true')
@@ -51,6 +54,9 @@ def parse_args(args):
 
     if parsed.stop is None:
         parsed.stop = parsed.start
+
+    if parsed.forecasts not in ('all', 'none', 'latest'):
+        sys.exit('--forecasts flag must be one of: all, none, latest')
 
     return parsed
 
@@ -96,8 +102,7 @@ def main(raw_args):
     for i, yearmon in enumerate(reversed(list(dates.get_yearmons(args.start, args.stop)))):
         steps += monthly.monthly_observed(config, yearmon)
 
-        # Only add forecast steps for the final yearmon
-        if i == 0:
+        if args.forecasts == 'all' or (args.forecasts == 'latest' and i == 0):
             steps += monthly.monthly_forecast(config, yearmon)
 
     duplicate_targets = find_duplicate_targets(steps)
