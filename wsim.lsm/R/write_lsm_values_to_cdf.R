@@ -9,7 +9,7 @@
 #' @param fname Output filename
 #'
 #' @export
-write_lsm_values_to_cdf <- function(values, fname) {
+write_lsm_values_to_cdf <- function(values, fname, prec) {
   stopifnot(is.wsim.lsm.forcing(values) ||
             is.wsim.lsm.results(values) ||
             is.wsim.lsm.state(values))
@@ -63,5 +63,6 @@ write_lsm_values_to_cdf <- function(values, fname) {
                              fname,
                              extent=values$extent,
                              fname,
-                             attrs=flat_attrs)
+                             attrs=flat_attrs,
+                             prec=prec)
 }

@@ -75,14 +75,14 @@ main <- function(raw_args) {
         fname <- gsub("%T", state$yearmon, args$results)
         fname <- gsub("%N", iter_num, fname)
         wsim.io::info("Writing model results to", fname)
-        wsim.lsm::write_lsm_values_to_cdf(iter$obs, fname)
+        wsim.lsm::write_lsm_values_to_cdf(iter$obs, fname, prec='single')
       }
 
       if (write_all_states) {
         fname <- gsub("%T", iter$next_state$yearmon, args$next_state)
         fname <- gsub("%N", iter_num, fname)
         wsim.io::info("  Writing next state to", fname)
-        wsim.lsm::write_lsm_values_to_cdf(iter$next_state, fname)
+        wsim.lsm::write_lsm_values_to_cdf(iter$next_state, fname, prec='double')
       }
 
       state <- iter$next_state
@@ -95,12 +95,12 @@ main <- function(raw_args) {
   if (!write_all_states) {
     fname <- args$next_state
     wsim.io::info("Writing final state to", fname)
-    wsim.lsm::write_lsm_values_to_cdf(state, fname)
+    wsim.lsm::write_lsm_values_to_cdf(state, fname, prec='double')
   }
   if (!write_all_results) {
     fname <- args$results
     wsim.io::info("Writing results to", fname)
-    wsim.lsm::write_lsm_values_to_cdf(results, fname)
+    wsim.lsm::write_lsm_values_to_cdf(results, fname, prec='single')
   }
 }
 
