@@ -360,11 +360,10 @@ class CFSForecast(paths.Forcing):
     def precip_monthly(self, **kwargs):
         return paths.Vardef(self.forecast_corrected(**kwargs), 'Pr')
 
-    def p_wetdays(self, **kwargs):
-        return paths.Vardef(os.path.join(self.source,
-                                         'NCEP',
-                                         'wetdays',
-                                         'wetdays_{yearmon}.nc'.format_map(kwargs)), 'pWetDays')
+    def p_wetdays(self, *, yearmon=None, target, member=None):
+        month = int(target[4:])
+
+        return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays_ltmean', 'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)), 'pWetDays')
 
     def fit_obs(self, **kwargs):
         return os.path.join(self.source,
