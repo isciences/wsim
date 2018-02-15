@@ -11,3 +11,7 @@ white-space: normal !important;
      overflow: visible !important;
    }
  }
+
+.wy-side-nav-search, .wy-nav-top {
+  background: #3399cc;
+}
