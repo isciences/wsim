@@ -82,7 +82,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -91,6 +90,10 @@ todo_include_todos = False
 import sphinx_rtd_theme
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+html_show_sphinx = False
+html_show_sourcelink = False
+html_show_copyright = False
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -126,12 +129,11 @@ html_sidebars = {
     ]
 }
 
-html_show_sourcelink = False
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'WSIMdoc'
+
 
 
 # -- Options for LaTeX output ---------------------------------------------
