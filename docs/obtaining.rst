@@ -26,8 +26,8 @@ Refer to Docker documentation for more details, such as accessing the local file
 From GitLab
 ===========
 
-A copy of the WSIM source code can be downloaded from GitLab at `this url <https://gitlab.com/isciences/wsim/wsim2/repository/master/archive.zip>`_.
-Access to the ``wsim2`` project is required.
+A copy of the WSIM source code can be downloaded from GitLab at `this url <https://gitlab.com/isciences/wsim/wsim/repository/master/archive.zip>`_.
+Access to the ``wsim`` project is required.
 Some WSIM functionality has external dependencies on tools such as ``wgrib2`` and ``nco`` that are not included in the repository.
 These tools are found in the WSIM Docker image, or can be installed manually.
 
