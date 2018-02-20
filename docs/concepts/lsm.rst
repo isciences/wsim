@@ -68,11 +68,11 @@ Beginning a model iteration
 The LSM operates on a monthly timestep.
 At the beginning each step, four state variables must be defined for each pixel:
 
-* Soil moisture (:math:`W_s`)
-* The amount of detained runoff from rainfall (:math:`D_r`)
-* The amount of detained runoff from snowmelt (:math:`D_s`)
-* The snowpack water equivalent
-* The number of consecutive months of melting conditions
+* soil moisture (:math:`W_s`)
+* the amount of detained runoff from rainfall (:math:`D_r`)
+* the amount of detained runoff from snowmelt (:math:`D_s`)
+* the snowpack water equivalent
+* the number of consecutive months of melting conditions
 
 The three driver variables are used to advance the model for a single one-month timestep, producing updated versions of the state variables:
 
@@ -151,7 +151,7 @@ Buck’s Equation (:cite:`Buck:1981,Vomel:2016`) is used to estimate :math:`e_{T
 
 .. note::
 
-  There are numerous formulations for estimating potential evapotranspiration (:math:`E_0`) which can, broadly speaking, be divided into two major categories:  
+  There are numerous formulations for estimating potential evapotranspiration (:math:`E_0`) which can, broadly speaking, be divided into two major categories.
   The first category consists of highly simplified reduced-form estimates based on empirical fits for a given reference land cover of short grass. Examples include formulas proposed by Hamon, Thornthwaite, Turc, Jensen-Haise, Hargreaves, and others (:cite:`Federer:2010,Vorosmarty:1998,Lu:2005,Oudin:2005,Kingston:2009`).
   However, it is well known that land cover is a major factor in estimating potential evapotranspiration and it is widely assumed that formulations that take land cover into account are more accurate. 
   All other factors being equal, bare ground will have the lowest potential evapotranspiration and deciduous forest will have the highest.

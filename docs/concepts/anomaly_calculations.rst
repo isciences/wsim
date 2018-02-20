@@ -3,7 +3,7 @@ Anomaly and Return Period Calculations
 
 The central premise of WSIM is that populations structure their activities based on expected availability of water, and that stresses are created when conditions vary behind these historically-derived expectations.
 The magnitude of the stress is typically a function of the rarity of the event.
-Populations that live in regions with a history of high variability in water supplies generally develop coping mechanisms to adapt (e.g., dams for irrigation and flood control.)
+Populations that live in regions with a history of high variability in water supplies generally develop coping mechanisms to adapt (e.g., dams for irrigation and flood control).
 However, when a given event is rare, it can overwhelm existing adaptations and has the potential to become an economic and human security concern.
 As a result, WSIM transforms all of its water security indicators from scientific units (e.g., millimeters or cubic meters) into return periods expressed in years.
 The inverse of the return period is the probability of observing an event greater than or equal to a given magnitude in a given year, so a 5-year event would have a 20% probability of occurring in any given year.

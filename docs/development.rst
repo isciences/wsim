@@ -39,7 +39,7 @@ If the tests pass (and the commit is to the `master` branch), GitLab CI tags the
 Documentation
 =============
 
-General WSIM documentation, such as this page is generated using Sphinx from manually-authored reST files stored in the git repository.
+General WSIM documentation (such as this page) is generated using Sphinx from manually-authored reST files stored in the git repository.
 
 R package documentation is automatically generated from source comments, using the ``Roxygen2`` package.
 The HTML versions of this documentation are generated using ``pkgdown``.
