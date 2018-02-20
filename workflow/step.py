@@ -42,7 +42,7 @@ class Step:
     def get_mkdir_commands(self):
         dirs = set([os.path.dirname(target) for target in self.target])
 
-        return [ ['mkdir', '-p', dir ] for dir in dirs ]
+        return [ ['mkdir', '-p', dir ] for dir in dirs if dir != '']
 
     def get_text(self, keys=None):
         if keys is None:
