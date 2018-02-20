@@ -51,7 +51,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'WSIM'
+project = 'WSIM<br/>Water Security Indicator Model'
 copyright = '2017-2018, ISciences, LLC'
 author = 'ISciences, LLC'
 
