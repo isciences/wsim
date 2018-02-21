@@ -70,23 +70,15 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return [ 3, 6, 12, 24, 36, 60 ]
 
-    def lsm_vars(self):
+    def lsm_var_names(self):
         return [
             'Bt_RO',
-            'Bt_Runoff',
-            'EmPET',
             'PETmE',
             'PET',
             'P_net',
-            #    'Pr',
-            'RO_m3',
             'RO_mm',
-            'Runoff_mm',
-            'Runoff_m3',
             'Sa',
             'Sm',
-            #    'Snowpack',
-            #    'T',
             'Ws'
         ]
 
@@ -97,14 +89,14 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return {
             'Bt_RO'     : [ 'min', 'max', 'sum' ],
-            'Bt_Runoff' : [ 'sum' ],
-            'EmPET'     : [ 'sum' ],
+            #'Bt_Runoff' : [ 'sum' ],
+            #'EmPET'     : [ 'sum' ],
             'E'         : [ 'sum' ],
             'PETmE'     : [ 'sum' ],
             'P_net'     : [ 'sum' ],
             #'Pr'        : [ 'sum' ]n
             'RO_mm'     : [ 'sum' ],
-            'Runoff_mm' : [ 'sum' ],
+            #'Runoff_mm' : [ 'sum' ],
             #'Snowpack'  : [ 'sum' ],
             #'T'         : [ 'ave' ],
             'Ws'        : [ 'ave' ]
