@@ -83,4 +83,4 @@ An example hotspot map is displayed below.
    working/index
    development
    references
-   Technical Specification </WSIM_Tech_Report_WE_final.pdf#://>
+
