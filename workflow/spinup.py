@@ -5,7 +5,7 @@ from paths import read_vars, date_range
 
 from actions import create_forcing_file, compute_return_periods, composite_anomalies
 
-def spinup(config):
+def spinup(config, meta_steps):
     """
     Produces the Steps needed to spin up a model from a series
     of observed data files.

@@ -13,6 +13,8 @@ import spinup
 import dates
 import argparse
 
+from step import Step
+
 def load_config(path, source, derived):
     from importlib.machinery import SourceFileLoader
     return SourceFileLoader("config", path).load_module().config(source, derived)
@@ -65,7 +67,7 @@ def find_duplicate_targets(steps):
     duplicates = set()
 
     for step in steps:
-        for target in step.target:
+        for target in step.targets:
             if target in targets:
                 duplicates.add(target)
             targets.add(target)
@@ -79,7 +81,6 @@ def write_makefile(filename, steps, bindir):
         outfile.write('.DELETE_ON_ERROR:\n')
         outfile.write('.SECONDARY:\n')
         outfile.write('.SUFFIXES:\n')
-
         outfile.write('\n')
 
         for step in reversed(steps):
@@ -96,20 +97,27 @@ def main(raw_args):
 
     steps += config.global_prep()
 
+    meta_steps = dict(
+        all_monthly_composites=[],
+        all_composites=[],
+    )
+
     if config.should_run_spinup() and not args.nospinup:
-        steps += spinup.spinup(config)
+        steps += spinup.spinup(config, meta_steps)
 
     for i, yearmon in enumerate(reversed(list(dates.get_yearmons(args.start, args.stop)))):
-        steps += monthly.monthly_observed(config, yearmon)
+        steps += monthly.monthly_observed(config, yearmon, meta_steps)
 
         if args.forecasts == 'all' or (args.forecasts == 'latest' and i == 0):
-            steps += monthly.monthly_forecast(config, yearmon)
+            steps += monthly.monthly_forecast(config, yearmon, meta_steps)
 
     duplicate_targets = find_duplicate_targets(steps)
     if duplicate_targets:
         for target in duplicate_targets[:100]:
             print("Duplicate target encountered:", target, file=sys.stderr)
-        #sys.exit(1)
+
+    for meta_step, deps in meta_steps.items():
+        steps.append(Step(targets=meta_step, dependencies=deps, commands=[]))
 
     write_makefile(os.path.join(args.workspace, args.makefile), steps, args.bindir)
 

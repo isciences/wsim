@@ -1,6 +1,6 @@
 from actions import *
 
-def monthly_observed(config, yearmon):
+def monthly_observed(config, yearmon, meta_steps):
     print('Generating steps for', yearmon, 'observed data')
 
     steps = []
@@ -30,12 +30,17 @@ def monthly_observed(config, yearmon):
 
     # Compute composite indicators
     for window in [1] + config.integration_windows():
-        steps += composite_indicators(config.workspace(), window=window, yearmon=yearmon)
+        composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon)
+        steps += composite_indicator_steps
         steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
+        for step in composite_indicator_steps:
+            meta_steps['all_composites'] += step.targets
+            if window == 1:
+                meta_steps['all_monthly_composites'] += step.targets
 
     return steps
 
-def monthly_forecast(config, yearmon):
+def monthly_forecast(config, yearmon, meta_steps):
     steps = []
 
     for i, target in enumerate(config.forecast_targets(yearmon)):
@@ -69,7 +74,13 @@ def monthly_forecast(config, yearmon):
         for window in [1] + config.integration_windows():
             steps += result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
             steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
-            steps += composite_indicators(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
             steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
+
+            composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
+            steps += composite_indicator_steps
+            for step in composite_indicator_steps:
+                meta_steps['all_composites'] += step.targets
+                if window == 1:
+                    meta_steps['all_monthly_composites'] += step.targets
 
     return steps
