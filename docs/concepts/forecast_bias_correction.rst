@@ -29,7 +29,7 @@ Bias Correction of CFSv2 Forecast Data
 
 WSIM can bias-correct CFSv2 forecasts using the above procedure, once distributions for observed and forecast data have been estimated for each pixel/month/lead time.
 
-Distributions for forecast data can be estimated using a set of reforecasts (hindcasts) published by NCEP for the 27-year period from 1983-2009.
+Distributions for forecast data can be estimated using a set of reforecasts (hindcasts) published by `NCEP <http://www.ncep.noaa.gov/>`_ for the 27-year period from 1983-2009.
 (Some hindcasts are available that target 1982 and 2010, but they are not available for all target month / lead-time combinations.)
 Every five days within the hindcast period, a forecast is published at 12 AM, 6 AM, 12 PM, and 6 PM.
 This allows construction of a 24-member forecast ensemble for each forecast issue month and target month.

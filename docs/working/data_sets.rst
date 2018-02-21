@@ -9,7 +9,7 @@ Forcing Datasets
 CFSv2 Temperature and Precipitation Forecasts
 ---------------------------------------------
 
-NOAA's CFSv2 model provides global forecasts of monthly average temperature and precipitation with lead times of 1-9 months.
+NOAA's `CFSv2 <http://cfs.ncep.noaa.gov/>`_ model provides global forecasts of monthly average temperature and precipitation with lead times of 1-9 months.
 Forecasts are issued every six hours.
 
 Forecast data issued over the past seven days is available in a `rolling archive <http://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/>`_.
@@ -82,7 +82,7 @@ The data is available `by FTP <ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/G
 NLDAS-2 Primary Forcing Dataset
 -------------------------------
 
-The NLDAS Phase 2 Primary Forcing dataset provides, among other variables, monthly average temperature and precipitation from 1979-present on the 0.125-degree NLDAS grid.
+The `NLDAS <https://ldas.gsfc.nasa.gov/nldas/>`_ Phase 2 Primary Forcing dataset provides, among other variables, monthly average temperature and precipitation from 1979-present on the 0.125-degree NLDAS grid.
 Data is available in GRIB format `from NASA <https://disc.sci.gsfc.nasa.gov/datasets/NLDAS_FORA0125_M_V002/summary?keywords=NLDAS>`_.
 
 Wet days are not included in the monthly average files.
@@ -105,7 +105,7 @@ The Numerical Terradynamic Simulation Group at the University of Montana publish
 Global Multi-resolution Terrain Elevation Data 2010 (GMTED2010)
 ---------------------------------------------------------------
 
-The GMTED2010 dataset, developed by the USGS and NGA, provides global or near-global elevation data based on a compilation of 11 raster-based elevation datasets.
+The `GMTED2010 <https://topotools.cr.usgs.gov/gmted_viewer/>`_ dataset, developed by the `USGS <https://www.usgs.gov/>`_ and `NGA <https://www.nga.mil/Pages/Default.aspx>`_, provides global or near-global elevation data based on a compilation of 11 raster-based elevation datasets.
 The data is offered at three resolutions, with varying coverages:
 
 * 30 arc-seconds, from 84 degrees north to 90 degrees south

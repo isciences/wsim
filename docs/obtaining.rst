@@ -1,7 +1,7 @@
 Obtaining WSIM
 **************
 
-WSIM can be obtained from Docker Hub or from GitLab.
+WSIM can be obtained from `Docker Hub <https://hub.docker.com>`_ or from `GitLab <https://www.gitlab.com>`_.
 
 From Docker Hub
 ===============

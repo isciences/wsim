@@ -9,7 +9,7 @@ Structure
 The core functionality of WSIM is provided through R packages.
 These packages are generally independent, but some functionality of ``wsim.io`` is accessed from other packages.
 Where performance is critical, code is written in C++ and exposed to R using the ``Rcpp`` package.
-Some use is made of C++11, which is not compliant with CRAN.
+Some use is made of C++11, which is not compliant with `CRAN <https://cran.r-project.org/>`_.
 
 Functionality provided by the R packages is exposed to users through a series of command-line tools.
 
@@ -27,7 +27,7 @@ These tests are automatically skipped when these resources are inaccessible.
 .. note::
    The ``isciences/wsim-gitlabci`` Docker image contains all files necessary to run regression tests.
 
-Tests are run on commit using GitLab `CI <https://gitlab.com/isciences/wsim/wsim2/pipelines>`_.
+Tests are run on commit using `GitLab CI <https://gitlab.com/isciences/wsim/wsim2/pipelines>`_.
 The GitLab CI test runner pulls the latest published image of the ``isciences/wsim-gitlabci`` build environment.
 It builds the ``isciences/wsim`` image on top of this environment, and then runs the test suite within the built container.
 If the tests pass (and the commit is to the `master` branch), GitLab CI tags the image as ``isciences/wsim:2_latest`` and pushes it to Docker Hub.
@@ -39,7 +39,7 @@ If the tests pass (and the commit is to the `master` branch), GitLab CI tags the
 Documentation
 =============
 
-General WSIM documentation (such as this page) is generated using Sphinx from manually-authored reST files stored in the git repository.
+General WSIM documentation (such as this page) is generated using `Sphinx <http://www.sphinx-doc.org/en/master/>`_ from manually-authored `reST <http://docutils.sourceforge.net/rst.html>`_ files stored in the git repository.
 
 R package documentation is automatically generated from source comments, using the ``Roxygen2`` package.
 The HTML versions of this documentation are generated using ``pkgdown``.
