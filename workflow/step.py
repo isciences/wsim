@@ -14,16 +14,6 @@
 import os
 import sys
 
-def flatten(lis):
-    """Given a list, possibly nested to any level, return it flattened."""
-    new_lis = []
-    for item in lis:
-        if type(item) == type([]):
-            new_lis.extend(flatten(item))
-        else:
-            new_lis.append(item)
-    return new_lis
-
 class Step:
     def __init__(self, targets, dependencies, commands, comment=None):
         if type(targets) is str:
@@ -34,7 +24,7 @@ class Step:
 
         self.targets = targets
         self.dependencies = dependencies
-        self.commands = [flatten(command) for command in commands]
+        self.commands = commands
         self.comment = comment
 
     def format_vars(self, txt, vars):
