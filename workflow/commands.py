@@ -37,95 +37,94 @@ def wsim_anom(*, fits, obs, rp=None, sa=None):
 
     return cmd
 
-def wsim_fit(**kwargs):
+def wsim_fit(*, distribution, inputs, output):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_fit.R'),
-        '--distribution', kwargs['distribution'],
+        '--distribution', distribution,
     ]
 
-    for input in kwargs['inputs']:
+    for input in inputs:
         cmd += ['--input', q(input)]
 
-    cmd += ['--output', q(kwargs['output'])]
+    cmd += ['--output', output]
 
     return cmd
 
-def wsim_lsm(**kwargs):
+def wsim_lsm(*, wc, flowdir, elevation, state, forcing, results, next_state, loop=None):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_lsm.R'),
-        '--wc',         q(kwargs['wc']),
-        '--flowdir',    q(kwargs['flowdir']),
-        '--elevation',  q(kwargs['elevation']),
-        '--state',      q(kwargs['state'])]
+        '--wc',         q(wc),
+        '--flowdir',    q(flowdir),
+        '--elevation',  q(elevation),
+        '--state',      q(state)]
 
-    if type(kwargs['forcing']) is str:
-        cmd += [ '--forcing',    q(kwargs['forcing']) ]
+    if type(forcing) is str:
+        cmd += [ '--forcing',    q(forcing) ]
     else:
-        for forcing in kwargs['forcing']:
+        for forcing in forcing:
             cmd += [ '--forcing', q(forcing) ]
 
     cmd += [
-        '--results',    q(kwargs['results']),
-        '--next_state', q(kwargs['next_state'])
+        '--results',    q(results),
+        '--next_state', q(next_state)
     ]
 
-    if 'loop' in kwargs:
-        cmd += ['--loop', str(kwargs['loop'])]
+    if loop:
+        cmd += ['--loop', str(loop)]
 
     return cmd
 
-def wsim_merge(**kwargs):
+def wsim_merge(*, inputs, output, attrs=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_merge.R') ]
 
-    for arg in kwargs['inputs']:
+    for arg in inputs:
         cmd += ['--input', q(arg)]
 
-    cmd += ['--output', q(kwargs['output'])]
+    cmd += ['--output', q(output)]
 
-    attrs = kwargs.get('attrs', [])
-    for attr in attrs:
-        cmd += ['--attr', attr]
+    if attrs:
+        for attr in attrs:
+            cmd += ['--attr', attr]
 
     return cmd
 
-def wsim_correct(**kwargs):
+def wsim_correct(*, retro, obs, forecast, output, append=False):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_correct.R'),
-        '--retro',    q(kwargs['retro']),
-        '--obs',      q(kwargs['obs']),
-        '--forecast', q(kwargs['forecast']),
-        '--output',   q(kwargs['output'])
+        '--retro',    q(retro),
+        '--obs',      q(obs),
+        '--forecast', q(forecast),
+        '--output',   q(output)
     ]
 
-    if kwargs.get('append'):
+    if append:
         cmd.append('--append')
 
     return cmd
 
-def wsim_integrate(**kwargs):
+def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, attrs=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_integrate.R') ]
 
-    for stat in kwargs['stats']:
+    for stat in stats:
         cmd += ['--stat', stat]
 
-    inputs = kwargs['inputs']
     if type(inputs) is str:
         inputs = [inputs]
     for input in inputs:
         cmd += '--input', q(input)
 
-    for attr in kwargs.get('attrs', []):
-        cmd += ['--attr', attr]
+    if attrs:
+        for attr in attrs:
+            cmd += ['--attr', attr]
 
-    if 'window' in kwargs:
-        cmd += ['--window', str(kwargs['window'])]
+    if window:
+        cmd += ['--window', str(window)]
 
-    output = kwargs['output']
+    if keepvarnames:
+        cmd.append('--keepvarnames')
+
     if type(output) is str:
         output = [output]
-
-    if kwargs.get('keepvarnames', False):
-        cmd.append('--keepvarnames')
 
     for f in output:
         cmd += ['--output', q(f)]
