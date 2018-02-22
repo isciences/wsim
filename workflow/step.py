@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import os
+import sys
 
 def flatten(lis):
     """Given a list, possibly nested to any level, return it flattened."""
@@ -44,7 +45,7 @@ class Step:
         try:
             return txt.format_map(vars)
         except (AttributeError, ValueError) as e:
-            print("Failed to sub", txt, "in step for", self.targets)
+            print("Failed to sub", txt, "in step for", self.targets, file=sys.stderr)
             raise e
 
     def use_pattern_rules(self):
@@ -97,10 +98,8 @@ class Step:
                 try:
                     txt += token.format_map(keys)
                 except Exception as e:
-                    print("Error subbing", token)
-                    print(keys)
-                    print(e)
-                    raise
+                    print("Error subbing", token, "with", keys, file=sys.stderr)
+                    raise e
                 if token.endswith('\\'):
                     txt += '\n\t   '
                 else:
