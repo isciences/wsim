@@ -27,13 +27,6 @@ class Step:
         self.commands = commands
         self.comment = comment
 
-    def format_vars(self, txt, vars):
-        try:
-            return txt.format_map(vars)
-        except (AttributeError, ValueError) as e:
-            print("Failed to sub", txt, "in step for", self.targets, file=sys.stderr)
-            raise e
-
     def use_pattern_rules(self):
         # GNU Make only supports multiple targets when we use a pattern-style rule.
         # So we fake a patten by replacing our file extension with a %.
@@ -46,12 +39,12 @@ class Step:
     def target_string(self, keys):
         trgts = self.patternize(self.targets) if self.use_pattern_rules() else self.targets
 
-        return ' '.join(self.format_vars(target, keys) for target in trgts)
+        return ' '.join(target.format_map(keys) for target in trgts)
 
     def dependency_string(self, keys):
         deps = self.dependencies if not self.use_pattern_rules() else [dep.replace('.', '%') for dep in self.dependencies]
 
-        return ' '.join(self.format_vars(dep, keys) for dep in deps)
+        return ' '.join(dep.format_map(keys) for dep in deps)
 
     @classmethod
     def target_separator(cls, use_order_only_rules):
