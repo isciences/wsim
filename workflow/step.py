@@ -32,10 +32,6 @@ class Step:
         if type(dependencies) is str:
             dependencies = [dependencies]
 
-        if len(targets) > 1:
-            dependencies = [dep.replace('.', '%') for dep in dependencies]
-            targets = [trg.replace('.', '%') for trg in targets]
-
         self.targets = targets
         self.dependencies = dependencies
         self.commands = [flatten(command) for command in commands]
