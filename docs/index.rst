@@ -1,5 +1,5 @@
-WSIM documentation
-================================
+WSIM - Water Security Indicator Model
+=====================================
 
 The Water Security Indicator Model (WSIM) is an open-source project developed by ISciences, LLC.
 
@@ -72,6 +72,19 @@ An example hotspot map is displayed below.
   WSIM is designed to produce regular reports with global coverage at a minimal lag relative to the release of observational and forecast temperature and precipitation data used to drive the core model.
   This requirement leads to the use of simple models within the core of WSIM, but does not preclude the use of WSIM components with output of more complex models that are external to WSIM.
   In fact, WSIM's workflow module provides an example integration of WSIM analytical tools with outputs from the Noah land surface model, run by the Global Land Data Assimilation System (GLDAS).
+
+Contributors
+^^^^^^^^^^^^
+
+.. image:: https://static1.squarespace.com/static/551e8d99e4b0751e1a311984/t/5527dee4e4b06a882556fe4f/1518717771310/?format=1500w
+   :target: https://www.isciences.com
+
+WSIM is developed by `ISciences, LLC <https://www.isciences.com>`_.
+
+.. image:: http://www.federalsolutions.com/uploads/2/5/2/6/25268217/8714808.jpg?128
+   :target: http://www.erdc.usace.army.mil
+
+The U.S. Army Engineer Research and Development Center (`ERDC <http://www.erdc.usace.army.mil/>`_) sponsors development of WSIM.
 
 .. toctree::
    :maxdepth: 2
