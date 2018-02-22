@@ -89,7 +89,7 @@ class Step:
         """
         dirs = set([os.path.dirname(target) for target in self.targets])
 
-        return [ ['mkdir', '-p', dir ] for dir in dirs if dir != '']
+        return [ ['mkdir', '-p', dir ] for dir in sorted(dirs) if dir != '']
 
     def get_text(self, keys=None, use_order_only_rules=True):
         """
