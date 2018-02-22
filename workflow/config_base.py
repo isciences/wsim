@@ -27,6 +27,9 @@ class ConfigBase(metaclass=abc.ABCMeta):
         pass
 
     def historical_yearmons(self):
+        """
+        Provides all YYYYMM time steps within the historical period
+        """
         return [dates.format_yearmon(year, month)
                 for year in self.historical_years()
                 for month in dates.all_months]
@@ -52,9 +55,18 @@ class ConfigBase(metaclass=abc.ABCMeta):
         pass
 
     def global_prep(self):
+        """
+        Returns a (possibly empty) list of steps that are included exactly once in the Makefile, regardless
+        of which time steps/forecasts/etc. are also present in the Makefile.
+        :return:
+        """
         return []
 
     def should_run_spinup(self):
+        """
+        Indicates whether this configuration requires a spinup phase.
+        :return:
+        """
         return True
 
     def should_run_lsm(self, yearmon=None):
@@ -65,14 +77,14 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
     def forecast_targets(self, yearmon):
         """
-        Provides a list of forecast targets for a given yearmon, or an empty
+        Provides a list of forecast target YYYYMM values for a given YYYYMM, or an empty
         list if the configuration does not contain forecasts.
         """
         return []
 
     def forecast_ensemble_members(self, yearmon):
         """
-        Provides a list of forecast ensemble members for a given yearmon, or
+        Provides a list of forecast ensemble members for a given YYYYMM, or
         an empty list if the configuration does not contain forecasts.
         """
         return []
@@ -83,7 +95,10 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return [ 3, 6, 12, 24, 36, 60 ]
 
-    def lsm_var_names(self):
+    def lsm_rp_vars(self):
+        """
+        Provides a list of LSM output variables for which return periods should be calculated
+        """
         return [
             'Bt_RO',
             'PETmE',
@@ -95,29 +110,23 @@ class ConfigBase(metaclass=abc.ABCMeta):
             'Ws'
         ]
 
-    def integrated_vars(self):
+    def lsm_integrated_vars(self):
         """
         Provides a dictionary whose keys are LSM output variables to be time-integrated, and whose
         values are lists of stats to apply to each of those variables (min, max, ave, etc.)
         """
         return {
             'Bt_RO'     : [ 'min', 'max', 'sum' ],
-            #'Bt_Runoff' : [ 'sum' ],
-            #'EmPET'     : [ 'sum' ],
             'E'         : [ 'sum' ],
             'PETmE'     : [ 'sum' ],
             'P_net'     : [ 'sum' ],
-            #'Pr'        : [ 'sum' ]n
             'RO_mm'     : [ 'sum' ],
-            #'Runoff_mm' : [ 'sum' ],
-            #'Snowpack'  : [ 'sum' ],
-            #'T'         : [ 'ave' ],
             'Ws'        : [ 'ave' ]
         }
 
-    def integrated_var_names(self):
+    def lsm_integrated_var_names(self):
         """
         Provides a flat list of time-integrated variable names
         """
-        return [var + '_' + stat for var, stats in self.integrated_vars().items() for stat in stats]
+        return [var + '_' + stat for var, stats in self.lsm_integrated_vars().items() for stat in stats]
 

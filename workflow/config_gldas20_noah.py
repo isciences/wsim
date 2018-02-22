@@ -45,43 +45,23 @@ class GLDAS20_Noah(ConfigBase):
     def workspace(self):
         return self._workspace
 
-    def lsm_vars(self):
+    def lsm_rp_vars(self):
         return [
             'Bt_RO',
-            #'Bt_Runoff',
-            #'EmPET',
             'PETmE',
-            #'PET',
-            #'P_net',
-            #    'Pr',
-            #'RO_m3',
             'RO_mm',
-            #'Runoff_mm',
-            #'Runoff_m3',
-            #'Sa',
-            #'Sm',
-            #    'Snowpack',
-            #    'T',
             'Ws'
         ]
 
-    def integrated_vars(self):
+    def lsm_integrated_vars(self):
         """
         Provides a dictionary whose keys are LSM output variables to be time-integrated, and whose
         values are lists of stats to apply to each of those variables (min, max, ave, etc.)
         """
         return {
             'Bt_RO'     : [ 'min', 'max', 'sum' ],
-            #'Bt_Runoff' : [ 'sum' ],
-            #'EmPET'     : [ 'sum' ],
-            #'E'         : [ 'sum' ],
             'PETmE'     : [ 'sum' ],
-            #'P_net'     : [ 'sum' ],
-            #'Pr'        : [ 'sum' ],
             'RO_mm'     : [ 'sum' ],
-            #'Runoff_mm' : [ 'sum' ],
-            #'Snowpack'  : [ 'sum' ],
-            #'T'         : [ 'ave' ],
             'Ws'        : [ 'ave' ]
         }
 

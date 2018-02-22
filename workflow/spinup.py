@@ -29,7 +29,7 @@ def spinup(config, meta_steps):
     # Produce a map, integrated_stats, that is the inverse
     # of integrated_vars
     integrated_stats = {}
-    for var, varstats in config.integrated_vars().items():
+    for var, varstats in config.lsm_integrated_vars().items():
         for stat in varstats:
             if stat not in integrated_stats:
                 integrated_stats[stat] = []
@@ -211,7 +211,7 @@ def spinup(config, meta_steps):
             commands=[
                 wsim_integrate(
                     inputs=read_vars(config.workspace().results(yearmon=date_range(config.historical_yearmons()[0],
-                                                                                   config.historical_yearmons()[-1])), *config.integrated_vars().keys()),
+                                                                                   config.historical_yearmons()[-1])), *config.lsm_integrated_vars().keys()),
                     window=window,
                     stats=[stat + '::' + ','.join(vars) for stat, vars in integrated_stats.items()],
                     attrs=['integration_period={}'.format(window)],
@@ -222,7 +222,7 @@ def spinup(config, meta_steps):
         ))
 
     # Compute monthly fits (and then anomalies) over the fit period
-    for param in config.lsm_var_names():
+    for param in config.lsm_rp_vars():
         for month in all_months:
             input_files = [config.workspace().results(yearmon=format_yearmon(year, month)) for year in config.result_fit_years()]
 
@@ -247,7 +247,7 @@ def spinup(config, meta_steps):
     for month in all_months:
         for yearmon in [format_yearmon(year, month) for year in config.result_fit_years()]:
             steps += compute_return_periods(config.workspace(),
-                                            var_names=config.lsm_var_names(),
+                                            var_names=config.lsm_rp_vars(),
                                             yearmon=yearmon,
                                             window=1)
 
@@ -259,8 +259,8 @@ def spinup(config, meta_steps):
     # Compute fits for time-integrated parameters
     fit_yearmons = [format_yearmon(year, month) for year in config.result_fit_years() for month in all_months]
 
-    for param in config.integrated_vars().keys():
-        for stat in config.integrated_vars()[param]:
+    for param in config.lsm_integrated_vars().keys():
+        for stat in config.lsm_integrated_vars()[param]:
             for window in config.integration_windows():
                 for month in all_months:
                     yearmons = [t for t in fit_yearmons[window-1:] if int(t[-2:]) == month]

@@ -92,11 +92,13 @@ def write_makefile(filename, steps, bindir):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, 'w') as outfile:
-        outfile.write('.DELETE_ON_ERROR:\n')
-        outfile.write('.SECONDARY:\n')
-        outfile.write('.SUFFIXES:\n')
+        outfile.write('.DELETE_ON_ERROR:\n') # Delete partially-created files on error or cancel
+        outfile.write('.SECONDARY:\n')       # Prevent removal of targets considered "intermediate"
+        outfile.write('.SUFFIXES:\n')        # Disable implicit rules
         outfile.write('\n')
 
+        # Reverse the steps so that spinup stuff is at the end. This is just to improve readability
+        # if the user wants to manually inspect the Makefile
         for step in reversed(steps):
             outfile.write(step.get_text({'BINDIR' : bindir}))
             outfile.write('\n')
