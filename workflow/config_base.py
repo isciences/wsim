@@ -52,7 +52,17 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def observed_data(self):
+        """
+        Returns a Forcing instance capable of providing data for a given YYYYMM
+        :return:
+        """
         pass
+
+    def forecast_data(self):
+        """
+        Returns a Forcing instance capable of providing data for a given YYYYMM/forecast target/ensemble member
+        :return:
+        """
 
     def global_prep(self):
         """
@@ -73,6 +83,10 @@ class ConfigBase(metaclass=abc.ABCMeta):
         return True
 
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
+        """
+        Provides a list of one or more postprocessing steps to be applied to LSM results
+        for a givem YYYYMM/forecast target/ensemble member
+        """
         return []
 
     def forecast_targets(self, yearmon):

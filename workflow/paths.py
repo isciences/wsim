@@ -94,15 +94,6 @@ class DefaultWorkspace:
     def root(self):
         return self.outputs
 
-    def climate_norm_forcing(self, **kwargs):
-        return os.path.join(self.outputs, 'spinup', 'climate_norm_forcing_{month:02d}.nc'.format_map(kwargs))
-
-    def initial_state(self):
-        return os.path.join(self.outputs, 'spinup', 'initial_state.nc')
-
-    def final_state_norms(self):
-        return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')
-
     def make_path(self, root, thing, **kwargs):
         return os.path.join(self.outputs, root, self.make_filename(thing, **kwargs))
 
@@ -180,14 +171,23 @@ class DefaultWorkspace:
         return self.make_path(root, 'anom', yearmon=yearmon, window=window, member=member, target=target)
 
     # Spinup files
+    def initial_state(self):
+        return os.path.join(self.outputs, 'spinup', 'initial_state.nc')
+
+    def climate_norm_forcing(self, **kwargs):
+        return os.path.join(self.outputs, 'spinup', 'climate_norm_forcing_{month:02d}.nc'.format_map(kwargs))
+
+    def final_state_norms(self):
+        return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')
+
     def spinup_state(self, yearmon=None):
         return os.path.join(self.outputs, 'spinup', 'spinup_state_{yearmon}.nc'.format(yearmon=yearmon))
 
     def spinup_state_pattern(self):
         return self.spinup_state(yearmon='%T')
 
-    def spinup_mean_state(self, **kwargs):
-        return os.path.join(self.outputs, 'spinup', 'spinup_mean_state_month_{month:02d}.nc'.format_map(kwargs))
+    def spinup_mean_state(self, *, month):
+        return os.path.join(self.outputs, 'spinup', 'spinup_mean_state_month_{month:02d}.nc'.format(month=month))
 
     def fit_obs(self, **kwargs):
         filename = '{var}'

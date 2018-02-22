@@ -465,19 +465,16 @@ class CFSConfig(ConfigBase):
         return range(1950, 2010) #1950-2009
 
     def forecast_ensemble_members(self, yearmon):
+        # Build an ensemble of 28 forecasts by taking the four
+        # forecasts issued on each of the last 7 days of the month.
         last_day = dates.get_last_day_of_month(yearmon)
 
-        return [yearmon + '{:02d}{:02d}'.format(day, hour)
+        return ['{}{:02d}{:02d}'.format(yearmon, day, hour)
                 for day in range(last_day - 6, last_day + 1)
                 for hour in (0, 6, 12, 18)]
 
     def forecast_targets(self, yearmon):
-        targets = [dates.get_next_yearmon(yearmon)]
-
-        for _ in range(8):
-            targets.append(dates.get_next_yearmon(targets[-1]))
-
-        return targets
+        return dates.get_next_yearmons(yearmon, 9)
 
     def forecast_data(self):
         return self._forecast

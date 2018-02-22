@@ -61,6 +61,15 @@ def get_next_yearmon(yearmon):
 
     return format_yearmon(year, month)
 
+def get_next_yearmons(yearmon, n):
+    targets = [get_next_yearmon(yearmon)]
+
+    for _ in range(n - 1):
+        targets.append(get_next_yearmon(targets[-1]))
+
+    return targets
+
+
 def rolling_window(yearmon, n):
     window = [yearmon]
 
