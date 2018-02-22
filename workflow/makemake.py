@@ -105,11 +105,7 @@ def write_makefile(filename, steps, bindir):
 
         print("Done")
 
-def main(raw_args):
-    args = parse_args(raw_args)
-
-    config = load_config(args.config, args.source, args.workspace)
-
+def generate_steps(config, start, stop, no_spinup, forecasts):
     steps = []
 
     steps += config.global_prep()
@@ -119,22 +115,31 @@ def main(raw_args):
         all_composites=[],
     )
 
-    if config.should_run_spinup() and not args.nospinup:
+    if config.should_run_spinup() and not no_spinup:
         steps += spinup.spinup(config, meta_steps)
 
-    for i, yearmon in enumerate(reversed(list(dates.get_yearmons(args.start, args.stop)))):
+    for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop)))):
         steps += monthly.monthly_observed(config, yearmon, meta_steps)
 
-        if args.forecasts == 'all' or (args.forecasts == 'latest' and i == 0):
+        if forecasts == 'all' or (forecasts == 'latest' and i == 0):
             steps += monthly.monthly_forecast(config, yearmon, meta_steps)
+
+    for meta_step, deps in meta_steps.items():
+        steps.append(Step(targets=meta_step, dependencies=deps, commands=[]))
+
+    return steps
+
+def main(raw_args):
+    args = parse_args(raw_args)
+
+    config = load_config(args.config, args.source, args.workspace)
+
+    steps = generate_steps(config, args.start, args.stop, args.nospinup, args.forecasts)
 
     duplicate_targets = find_duplicate_targets(steps)
     if duplicate_targets:
         for target in duplicate_targets[:100]:
             print("Duplicate target encountered:", target, file=sys.stderr)
-
-    for meta_step, deps in meta_steps.items():
-        steps.append(Step(targets=meta_step, dependencies=deps, commands=[]))
 
     write_makefile(os.path.join(args.workspace, args.makefile), steps, args.bindir)
 

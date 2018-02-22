@@ -14,6 +14,7 @@
 import unittest
 
 from config_cfs import CFSConfig
+from makemake import generate_steps, find_duplicate_targets
 
 class TestStep(unittest.TestCase):
     source = '/tmp/source'
@@ -32,5 +33,16 @@ class TestStep(unittest.TestCase):
         config = CFSConfig(self.source, self.derived)
 
         self.assertEqual(60, len(config.result_fit_years()))
+
+    def test_no_duplicate_steps(self):
+        config = CFSConfig(self.source, self.derived)
+
+        steps = generate_steps(config, '201701', '201701', False, 'latest')
+
+        self.assertEqual(0, len(find_duplicate_targets(steps)))
+
+TestStep().test_no_duplicate_steps()
+
+
 
 
