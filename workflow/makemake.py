@@ -99,6 +99,7 @@ def write_makefile(filename, steps, bindir):
 
         for step in reversed(steps):
             outfile.write(step.get_text({'BINDIR' : bindir}))
+            outfile.write('\n')
 
         print("Done")
 

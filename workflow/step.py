@@ -84,7 +84,7 @@ class Step:
             keys = {}
         txt = ""
         if self.comment:
-            txt += "#" + self.comment + '\n'
+            txt += '# ' + self.comment + '\n'
 
         txt += self.target_string(keys) + self.target_separator(use_order_only_rules) + self.dependency_string(keys) + '\n'
 
@@ -106,5 +106,5 @@ class Step:
                     txt += ' '
 
             txt += '\n'
-        return txt + '\n'
+        return txt
 
