@@ -371,10 +371,10 @@ class CFSConfig(ConfigBase):
             self._forecast.global_prep_steps()
 
     def historical_years(self):
-        return range(1948, 2017)
+        return range(1948, 2018) # 1948-2017
 
     def result_fit_years(self):
-        return range(1950, 2010) #1950-2009
+        return range(1950, 2010) # 1950-2009
 
     def forecast_ensemble_members(self, yearmon):
         # Build an ensemble of 28 forecasts by taking the four
