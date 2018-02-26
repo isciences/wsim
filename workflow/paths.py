@@ -49,30 +49,30 @@ class Vardef:
     def __str__(self):
         return self.file + '::' + self.var
 
-class Forcing(metaclass=ABCMeta):
+class ForecastForcing(metaclass=ABCMeta):
 
     @abstractmethod
-    def precip_monthly(self, **kwargs):
+    def precip_monthly(self, *, yearmon, target, member):
         """
         Return a Vardef for the precipitation variable
         """
         pass
 
     @abstractmethod
-    def temp_monthly(self, **kwargs):
+    def temp_monthly(self, *, yearmon, target, member):
         """
         Return a Vardef for the average monthly temparature
         """
         pass
 
     @abstractmethod
-    def p_wetdays(self, **kwargs):
+    def p_wetdays(self, *, yearmon, target, member):
         """
         Return a Vardef for the percentage of wet days in a month
         """
         pass
 
-    def prep_steps(self, **kwargs):
+    def prep_steps(self, *, yearmon, target, member):
         """
         Returns one or more Steps needed to prepare this dataset for use
         for a given yearmon/target month/ensemble member
@@ -86,6 +86,43 @@ class Forcing(metaclass=ABCMeta):
         """
         return []
 
+class ObservedForcing(metaclass=ABCMeta):
+
+    @abstractmethod
+    def precip_monthly(self, *, yearmon):
+        """
+        Return a Vardef for the precipitation variable
+        """
+        pass
+
+    @abstractmethod
+    def temp_monthly(self, *, yearmon):
+        """
+        Return a Vardef for the average monthly temparature
+        """
+        pass
+
+    @abstractmethod
+    def p_wetdays(self, *, yearmon):
+        """
+        Return a Vardef for the percentage of wet days in a month
+        """
+        pass
+
+    def prep_steps(self, *, yearmon):
+        """
+        Returns one or more Steps needed to prepare this dataset for use
+        for a given yearmon
+        """
+        return []
+
+    def global_prep_steps(self):
+        """
+        Returns one or more Steps needed to prepare this dataset for use
+        (included only once for all yearmons)
+        """
+        return []
+
 class DefaultWorkspace:
 
     def __init__(self, outputs):
@@ -94,8 +131,8 @@ class DefaultWorkspace:
     def root(self):
         return self.outputs
 
-    def make_path(self, root, thing, **kwargs):
-        return os.path.join(self.outputs, root, self.make_filename(thing, **kwargs))
+    def make_path(self, root, thing, *, yearmon=None, window=None, target=None, member=None):
+        return os.path.join(self.outputs, root, self.make_filename(thing, yearmon=yearmon, window=window, target=target, member=member))
 
     @staticmethod
     def make_filename(thing, *, yearmon, window=None, target=None, member=None):
@@ -174,8 +211,8 @@ class DefaultWorkspace:
     def initial_state(self):
         return os.path.join(self.outputs, 'spinup', 'initial_state.nc')
 
-    def climate_norm_forcing(self, **kwargs):
-        return os.path.join(self.outputs, 'spinup', 'climate_norm_forcing_{month:02d}.nc'.format_map(kwargs))
+    def climate_norm_forcing(self, *, month):
+        return os.path.join(self.outputs, 'spinup', 'climate_norm_forcing_{month:02d}.nc'.format(month=month))
 
     def final_state_norms(self):
         return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')
@@ -189,17 +226,17 @@ class DefaultWorkspace:
     def spinup_mean_state(self, *, month):
         return os.path.join(self.outputs, 'spinup', 'spinup_mean_state_month_{month:02d}.nc'.format(month=month))
 
-    def fit_obs(self, **kwargs):
+    def fit_obs(self, var, month, window, stat=None):
         filename = '{var}'
 
-        if 'stat' in kwargs and kwargs['stat'] is not None:
+        if stat:
             filename += '_{stat}'
 
-        if 'window' in kwargs and kwargs['window'] is not None:
+        if window:
             filename += '_{window}mo'
 
         filename += '_month_{month:02d}.nc'
 
-        return os.path.join(self.outputs, 'fits', filename.format_map(kwargs))
+        return os.path.join(self.outputs, 'fits', filename.format_map(locals()))
 
 

@@ -176,7 +176,7 @@ class Static:
     def elevation(self):
         return paths.Vardef(os.path.join(self.source, 'GMTED2010', 'gmted2010_05deg.tif'), '1')
 
-class NCEP(paths.Forcing):
+class NCEP(paths.ObservedForcing):
 
     def __init__(self, source):
         self.source = source
@@ -246,7 +246,7 @@ class NCEP(paths.Forcing):
 
         return steps
 
-    def prep_steps(self, yearmon):
+    def prep_steps(self, *, yearmon):
         """
         Prep steps are data preparation tasks that are executed once per model iteration.
         They may include downloading, unpackaging, aggregation, or conversion of data inputs.
@@ -346,61 +346,63 @@ class NCEP(paths.Forcing):
     def full_precip_file(self):
         return os.path.join(self.source, 'NCEP', 'p.long')
 
-    def temp_monthly(self, **kwargs):
-        return paths.Vardef(os.path.join(self.source, 'NCEP', 'T', 'T_{yearmon}.nc'.format_map(kwargs)), 'T')
+    def temp_monthly(self, *, yearmon, target=None, member=None):
+        return paths.Vardef(os.path.join(self.source, 'NCEP', 'T', 'T_{yearmon}.nc'.format(yearmon=yearmon)), 'T')
 
-    def precip_monthly(self, **kwargs):
-        return paths.Vardef(os.path.join(self.source, 'NCEP', 'P', 'P_{yearmon}.nc'.format_map(kwargs)), 'P')
+    def precip_monthly(self, *, yearmon, target=None, member=None):
+        return paths.Vardef(os.path.join(self.source, 'NCEP', 'P', 'P_{yearmon}.nc'.format(yearmon=yearmon)), 'P')
 
-    def p_wetdays(self, **kwargs):
-        year = int(kwargs['yearmon'][:4])
-        month = int(kwargs['yearmon'][4:])
+    def p_wetdays(self, *, yearmon, target=None, member=None):
+        year = int(yearmon[:4])
+        month = int(yearmon[4:])
 
         if year < 1979:
             return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays_ltmean', 'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)), 'pWetDays')
         else:
-            return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays', 'wetdays_{yearmon}.nc'.format_map(kwargs)), 'pWetDays')
+            return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays', 'wetdays_{yearmon}.nc'.format(yearmon=yearmon)), 'pWetDays')
 
-class CFSForecast(paths.Forcing):
+class CFSForecast(paths.ForecastForcing):
 
     def __init__(self, source, derived):
         self.source = source
         self.derived = derived
 
-    def temp_monthly(self, **kwargs):
-        return paths.Vardef(self.forecast_corrected(**kwargs), 'T')
+    def temp_monthly(self, *, yearmon, target, member):
+        return paths.Vardef(self.forecast_corrected(target=target, member=member), 'T')
 
-    def precip_monthly(self, **kwargs):
-        return paths.Vardef(self.forecast_corrected(**kwargs), 'Pr')
+    def precip_monthly(self, *, yearmon, target, member):
+        return paths.Vardef(self.forecast_corrected(target=target, member=member), 'Pr')
 
     def p_wetdays(self, *, yearmon=None, target, member=None):
         month = int(target[4:])
 
         return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays_ltmean', 'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)), 'pWetDays')
 
-    def fit_obs(self, **kwargs):
+    def fit_obs(self, *, var, month):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'hindcast_fits',
-                            'obs_{var}_month_{month:02d}.nc'.format_map(kwargs))
+                            'obs_{var}_month_{month:02d}.nc'.format(var=var, month=month))
 
-    def fit_retro(self, **kwargs):
+    def fit_retro(self, *, var, target_month, lead_months):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'hindcast_fits',
-                            'retro_{var}_month_{target_month:02d}_lead_{lead_months:d}.nc'.format_map(kwargs))
+                            'retro_{var}_month_{target_month:02d}_lead_{lead_months:d}.nc'.format(var=var,
+                                                                                                  target_month=target_month,
+                                                                                                  lead_months=lead_months))
 
-    def forecast_raw(self, **kwargs):
+    def forecast_raw(self, *, target, member):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'raw_nc',
-                            'cfs_trgt{target}_fcst{member}_raw.nc'.format_map(kwargs))
+                            'cfs_trgt{target}_fcst{member}_raw.nc'.format(target=target, member=member))
 
-    def forecast_corrected(self, **kwargs):
+    def forecast_corrected(self, *, target, member):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'corrected',
-                            'cfs_trgt{target}_fcst{member}_corrected.nc'.format_map(kwargs))
+                            'cfs_trgt{target}_fcst{member}_corrected.nc'.format(target=target, member=member))
 
     def grib_dir(self, *, member):
         return os.path.join(self.source,
@@ -412,10 +414,7 @@ class CFSForecast(paths.Forcing):
         return os.path.join(self.grib_dir(member=member),
                             'flxf.01.{member}.{target}.avrg.grib.grb2'.format(member=member, target=target))
 
-    def prep_steps(self, **kwargs):
-        target = kwargs['target']
-        member = kwargs['member']
-
+    def prep_steps(self, *, yearmon=None, target, member):
         outfile=self.forecast_raw(member=member, target=target)
         infile=self.forecast_grib(member=member, target=target)
 
