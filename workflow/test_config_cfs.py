@@ -11,10 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import timeit
+import tempfile
+import subprocess
+import sys
 import unittest
 
 from config_cfs import CFSConfig
-from makemake import generate_steps, find_duplicate_targets
+from makemake import generate_steps, find_duplicate_targets, write_makefile
 
 class TestStep(unittest.TestCase):
     source = '/tmp/source'
@@ -34,6 +39,19 @@ class TestStep(unittest.TestCase):
 
         self.assertEqual(60, len(config.result_fit_years()))
 
+    def test_all_steps_buildable(self):
+        config = CFSConfig(self.source, self.derived)
+
+        steps = generate_steps(config, '201701', '201701', False, 'latest')
+
+        unbuildable = unbuildable_targets(steps)
+
+        if unbuildable:
+            for step in unbuildable:
+                for t in step.targets:
+                    print("Don't know how to build", t, "(depends on", ",".join(step.dependencies), ")", file=sys.stderr)
+            self.fail('Unbuildable targets found')
+
     def test_no_duplicate_steps(self):
         config = CFSConfig(self.source, self.derived)
 
@@ -41,8 +59,36 @@ class TestStep(unittest.TestCase):
 
         self.assertEqual(0, len(find_duplicate_targets(steps)))
 
-TestStep().test_no_duplicate_steps()
+def unbuildable_targets(steps):
+    """
+    Walk the dependency tree of a number of steps and make sure that all steps are buildable
+    (i.e., the step either has know dependencies or depends on a step that, in turn, has no
+    dependencies)
 
+    Return a list of steps that cannot be built.
+    """
+    known = set()
 
+    remaining_to_validate = list(steps)
+    stuck = False
+
+    while not stuck:
+        could_not_validate = []
+        stuck = True
+
+        for step in remaining_to_validate:
+            deps = [step.dependencies] if type(step.dependencies) is str else step.dependencies
+            targets = [step.targets] if type(step.targets) is str else step.targets
+
+            if all(d in known for d in deps):
+                stuck = False
+                for t in targets:
+                    known.add(t)
+            else:
+                could_not_validate.append(step)
+
+        remaining_to_validate = could_not_validate
+
+    return remaining_to_validate
 
 
