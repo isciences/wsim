@@ -17,7 +17,7 @@ from paths import Vardef
 
 from config_base import ConfigBase
 
-class StaticNLDAS():
+class StaticNLDAS:
 
     def __init__(self, source):
         self.source = source

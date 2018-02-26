@@ -44,7 +44,6 @@ def spinup(config, meta_steps):
             targets=config.workspace().initial_state(),
             dependencies=[],
             commands=[
-                # TODO have to remove hardcoded var here..
                 wsim_merge(
                     inputs=[read_vars(config.static_data().wc().file,
                                       config.static_data().wc().var + "@fill0@[0.3*x+1e-5]->Ws",
@@ -213,7 +212,7 @@ def spinup(config, meta_steps):
                     inputs=read_vars(config.workspace().results(yearmon=date_range(config.historical_yearmons()[0],
                                                                                    config.historical_yearmons()[-1])), *config.lsm_integrated_vars().keys()),
                     window=window,
-                    stats=[stat + '::' + ','.join(vars) for stat, vars in integrated_stats.items()],
+                    stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
                     attrs=['integration_period={}'.format(window)],
                     output=config.workspace().results(yearmon=date_range(yearmons[0], yearmons[-1]),
                                                       window=window)

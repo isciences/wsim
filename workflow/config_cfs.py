@@ -25,9 +25,9 @@ class Static:
         self.source = source
 
     def prep_flowdir(self):
-        dir = os.path.join(self.source, 'STN_30')
+        dirname = os.path.join(self.source, 'STN_30')
         url = 'global_30_minute_potential_network_v601_asc.zip'
-        zip_path = os.path.join(dir, url.split('/')[-1])
+        zip_path = os.path.join(dirname, url.split('/')[-1])
 
         return [
             # Download flow grid
@@ -35,7 +35,7 @@ class Static:
                 targets=zip_path,
                 dependencies=[],
                 commands=[
-                    [ 'wget', '--directory-prefix', dir, url ]
+                    [ 'wget', '--directory-prefix', dirname, url ]
                 ]
             ),
 
@@ -44,17 +44,17 @@ class Static:
                 targets=self.flowdir().file,
                 dependencies=zip_path,
                 commands=[
-                    [ 'unzip', '-j', zip_path, 'global_potential_network_v601_asc/g_network.asc', '-d', dir ],
+                    [ 'unzip', '-j', zip_path, 'global_potential_network_v601_asc/g_network.asc', '-d', dirname ],
                     [ 'touch', self.flowdir().file ]
                 ]
             )
         ]
 
     def prep_elevation(self):
-        dir = os.path.join(self.source, 'GMTED2010')
+        dirname = os.path.join(self.source, 'GMTED2010')
         url = 'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip'
-        zip_path = os.path.join(dir, url.split('/')[-1])
-        raw_file = os.path.join(dir, 'mn30_grd')
+        zip_path = os.path.join(dirname, url.split('/')[-1])
+        raw_file = os.path.join(dirname, 'mn30_grd')
 
         return [
             # Download elevation data
@@ -62,7 +62,7 @@ class Static:
                 targets=zip_path,
                 dependencies=[],
                 commands=[
-                    [ 'wget', '--directory-prefix', dir, url ]
+                    [ 'wget', '--directory-prefix', dirname, url ]
                 ]
             ),
 
@@ -71,7 +71,7 @@ class Static:
                 targets=raw_file,
                 dependencies=zip_path,
                 commands=[
-                    [ 'unzip', '-d', dir, zip_path ],
+                    [ 'unzip', '-d', dirname, zip_path ],
                     [ 'touch', raw_file ]
                 ]
             ),
@@ -92,11 +92,11 @@ class Static:
         ]
 
     def prep_wc(self):
-        dir = os.path.join(self.source, 'ISRIC')
+        dirname = os.path.join(self.source, 'ISRIC')
         url = 'ftp://ftp.isric.org/wise/wise_30sec_v1.zip'
-        zip_path = os.path.join(dir, url.split('/')[-1])
-        raw_file = os.path.join(dir, 'HW30s_FULL.txt') # there are others, but might as well avoid a multi-target rule
-        full_res_file = os.path.join(dir, 'wise_30sec_v1_tawc.tif')
+        zip_path = os.path.join(dirname, url.split('/')[-1])
+        raw_file = os.path.join(dirname, 'HW30s_FULL.txt') # there are others, but might as well avoid a multi-target rule
+        full_res_file = os.path.join(dirname, 'wise_30sec_v1_tawc.tif')
 
         return [
             # Download ISRIC data
@@ -106,7 +106,7 @@ class Static:
                 commands=[
                     [
                         'wget',
-                        '--directory-prefix', dir,
+                        '--directory-prefix', dirname,
                         '--user', 'public',
                         '--password', 'public',
                         url
@@ -120,7 +120,7 @@ class Static:
                 dependencies=zip_path,
                 commands=[
                     [
-                        'unzip', '-j', zip_path, '-d', dir,
+                        'unzip', '-j', zip_path, '-d', dirname,
                         'wise_30sec_v1/Interchangeable_format/HW30s_FULL.txt',
                         'wise_30sec_v1/Interchangeable_format/wise_30sec_v1.tif',
                         'wise_30sec_v1/Interchangeable_format/wise_30sec_v1.tsv'
@@ -136,10 +136,10 @@ class Static:
                 commands=[
                     [
                         os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'extract_isric_tawc.R'),
-                        '--data',      os.path.join(dir, 'HW30s_FULL.txt'),
+                        '--data',      os.path.join(dirname, 'HW30s_FULL.txt'),
                         '--missing',   os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'example_tawc_defaults.csv'),
-                        '--codes',     os.path.join(dir, 'wise_30sec_v1.tsv'),
-                        '--raster',    os.path.join(dir, 'wise_30sec_v1.tif'),
+                        '--codes',     os.path.join(dirname, 'wise_30sec_v1.tsv'),
+                        '--raster',    os.path.join(dirname, 'wise_30sec_v1.tif'),
                         '--max_depth', '1'
                     ]
                 ]

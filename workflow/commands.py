@@ -43,8 +43,8 @@ def wsim_fit(*, distribution, inputs, output):
         '--distribution', distribution,
     ]
 
-    for input in inputs:
-        cmd += ['--input', q(input)]
+    for i in inputs:
+        cmd += ['--input', q(i)]
 
     cmd += ['--output', output]
 
@@ -110,8 +110,8 @@ def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, at
 
     if type(inputs) is str:
         inputs = [inputs]
-    for input in inputs:
-        cmd += '--input', q(input)
+    for i in inputs:
+        cmd += '--input', q(i)
 
     if attrs:
         for attr in attrs:

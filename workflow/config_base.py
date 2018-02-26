@@ -24,7 +24,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         Provides a list of the years of historical record available for use
         during spin-up.
         """
-        pass
+        return []
 
     def historical_yearmons(self):
         """
@@ -103,13 +103,15 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return []
 
-    def integration_windows(self):
+    @staticmethod
+    def integration_windows():
         """
         Provides a list of integration windows (in months)
         """
         return [ 3, 6, 12, 24, 36, 60 ]
 
-    def lsm_rp_vars(self):
+    @staticmethod
+    def lsm_rp_vars():
         """
         Provides a list of LSM output variables for which return periods should be calculated
         """
@@ -124,7 +126,8 @@ class ConfigBase(metaclass=abc.ABCMeta):
             'Ws'
         ]
 
-    def lsm_integrated_vars(self):
+    @staticmethod
+    def lsm_integrated_vars():
         """
         Provides a dictionary whose keys are LSM output variables to be time-integrated, and whose
         values are lists of stats to apply to each of those variables (min, max, ave, etc.)

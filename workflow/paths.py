@@ -79,7 +79,8 @@ class ForecastForcing(metaclass=ABCMeta):
         """
         return []
 
-    def global_prep_steps(self):
+    @staticmethod
+    def global_prep_steps():
         """
         Returns one or more Steps needed to prepare this dataset for use
         (included only once for all yearmons/targets/members)
