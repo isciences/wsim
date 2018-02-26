@@ -42,7 +42,7 @@ def spinup(config, meta_steps):
         # soil moisture set to 30% of capacity.)
         steps.append(Step(
             targets=config.workspace().initial_state(),
-            dependencies=[],
+            dependencies=[config.static_data().wc().file],
             commands=[
                 wsim_merge(
                     inputs=[read_vars(config.static_data().wc().file,
