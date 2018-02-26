@@ -20,151 +20,17 @@ from config_base import ConfigBase
 from step import Step
 import commands
 
+from data_sources import isric, gmted, stn30
+
 class Static:
     def __init__(self, source):
         self.source = source
 
-    def prep_flowdir(self):
-        dirname = os.path.join(self.source, 'STN_30')
-        url = 'global_30_minute_potential_network_v601_asc.zip'
-        zip_path = os.path.join(dirname, url.split('/')[-1])
-
-        return [
-            # Download flow grid
-            Step(
-                targets=zip_path,
-                dependencies=[],
-                commands=[
-                    [ 'wget', '--directory-prefix', dirname, url ]
-                ]
-            ),
-
-            # Unzip flow grid
-            Step(
-                targets=self.flowdir().file,
-                dependencies=zip_path,
-                commands=[
-                    [ 'unzip', '-j', zip_path, 'global_potential_network_v601_asc/g_network.asc', '-d', dirname ],
-                    [ 'touch', self.flowdir().file ]
-                ]
-            )
-        ]
-
-    def prep_elevation(self):
-        dirname = os.path.join(self.source, 'GMTED2010')
-        url = 'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip'
-        zip_path = os.path.join(dirname, url.split('/')[-1])
-        raw_file = os.path.join(dirname, 'mn30_grd')
-
-        return [
-            # Download elevation data
-            Step(
-                targets=zip_path,
-                dependencies=[],
-                commands=[
-                    [ 'wget', '--directory-prefix', dirname, url ]
-                ]
-            ),
-
-            # Unzip elevation data
-            Step(
-                targets=raw_file,
-                dependencies=zip_path,
-                commands=[
-                    [ 'unzip', '-d', dirname, zip_path ],
-                    [ 'touch', raw_file ]
-                ]
-            ),
-
-            # Aggregate elevation data
-            Step(
-                targets=self.elevation().file,
-                dependencies=raw_file,
-                commands=[
-                    [
-                        os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'aggregate_tawc.R'),
-                        '--res', '0.5',
-                        '--input', raw_file,
-                        '--output', self.elevation().file
-                    ]
-                ]
-            )
-        ]
-
-    def prep_wc(self):
-        dirname = os.path.join(self.source, 'ISRIC')
-        url = 'ftp://ftp.isric.org/wise/wise_30sec_v1.zip'
-        zip_path = os.path.join(dirname, url.split('/')[-1])
-        raw_file = os.path.join(dirname, 'HW30s_FULL.txt') # there are others, but might as well avoid a multi-target rule
-        full_res_file = os.path.join(dirname, 'wise_30sec_v1_tawc.tif')
-
-        return [
-            # Download ISRIC data
-            Step(
-                targets=zip_path,
-                dependencies=[],
-                commands=[
-                    [
-                        'wget',
-                        '--directory-prefix', dirname,
-                        '--user', 'public',
-                        '--password', 'public',
-                        url
-                    ]
-                ]
-            ),
-
-            # Unzip ISRIC data
-            Step(
-                targets=raw_file,
-                dependencies=zip_path,
-                commands=[
-                    [
-                        'unzip', '-j', zip_path, '-d', dirname,
-                        'wise_30sec_v1/Interchangeable_format/HW30s_FULL.txt',
-                        'wise_30sec_v1/Interchangeable_format/wise_30sec_v1.tif',
-                        'wise_30sec_v1/Interchangeable_format/wise_30sec_v1.tsv'
-                    ],
-                    [ 'touch', raw_file ]
-                ]
-            ),
-
-            # Create TAWC TIFF
-            Step(
-                targets=full_res_file,
-                dependencies=raw_file,
-                commands=[
-                    [
-                        os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'extract_isric_tawc.R'),
-                        '--data',      os.path.join(dirname, 'HW30s_FULL.txt'),
-                        '--missing',   os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'example_tawc_defaults.csv'),
-                        '--codes',     os.path.join(dirname, 'wise_30sec_v1.tsv'),
-                        '--raster',    os.path.join(dirname, 'wise_30sec_v1.tif'),
-                        '--max_depth', '1'
-                    ]
-                ]
-            ),
-
-            # Aggregate TAWC data
-            Step(
-                targets=self.wc().file,
-                dependencies=full_res_file,
-                commands=[
-                    [
-                        os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'aggregate_tawc.R'),
-                        '--res', '0.5',
-                        '--input', full_res_file,
-                        '--output', self.wc().file
-                    ]
-                ]
-            )
-        ]
-
     def global_prep_steps(self):
         return \
-            self.prep_elevation() + \
-            self.prep_flowdir() + \
-            self.prep_wc()
+            gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, resolution=0.5) + \
+            isric.global_tawc(source_dir=self.source, filename=self.wc().file, resolution=0.5) + \
+            stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5)
 
     # Static inputs
     def wc(self):
