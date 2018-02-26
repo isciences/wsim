@@ -34,7 +34,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   wget \
   && rm -rf /var/lib/apt/lists*
 
-RUN MAKE='make -j8' Rscript -e 'install.packages(c("lubridate", "abind", "futile.logger", "devtools","testthat","roxygen2","raster","Rcpp","lmom","docopt"), dependencies = TRUE, repos="http://cran.rstudio.com")'
+RUN MAKE='make -j8' Rscript -e 'install.packages(c( \
+  "Rcpp", \
+  "abind", \
+  "devtools", \
+  "docopt", \
+  "futile.logger", \
+  "lmom", \
+  "lubridate", \
+  "raster", \
+  "roxygen2", \
+  "testthat" \
+), dependencies = TRUE, repos="http://cran.rstudio.com")'
 RUN MAKE='make -j8' Rscript -e 'devtools::install_github("hadley/pkgdown")'
 
 # Add wgrib2 for converting CFS forecast data
