@@ -1,5 +1,3 @@
-from actions import *
-
 # Copyright (c) 2018 ISciences, LLC.
 # All rights reserved.
 #
@@ -12,6 +10,8 @@ from actions import *
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from actions import *
 
 def monthly_observed(config, yearmon, meta_steps):
     print('Generating steps for', yearmon, 'observed data')
