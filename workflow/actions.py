@@ -11,10 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from paths import read_vars, Vardef
 from step import Step
 from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm
 from dates import get_next_yearmon, rolling_window
+
+def extract_from_tar(tarfile, to_extract):
+    return [
+        [
+            'tar',
+            'xzf',
+            tarfile,
+            to_extract,
+            '-C',
+            os.path.dirname(tarfile)
+        ]
+    ]
 
 def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
 

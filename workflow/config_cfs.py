@@ -20,6 +20,7 @@ import commands
 import dates
 import paths
 
+from actions import extract_from_tar
 from config_base import ConfigBase
 from data_sources import isric, gmted, stn30
 from step import Step
@@ -302,18 +303,6 @@ class CFSForecast(paths.ForecastForcing):
                 ]
             )
         )
-
-        def extract_from_tar(tarfile, to_extract):
-            return [
-                [
-                    'tar',
-                    'xzf',
-                    tarfile,
-                    to_extract,
-                    '-C',
-                    os.path.dirname(tarfile)
-                ]
-            ]
 
         for var in ('T', 'Pr'):
             for month in range(1, 13):
