@@ -19,15 +19,15 @@ push-ci:
 	docker push isciences/wsim-gitlabci:latest
 
 build-dev:
-	docker build -t isciences/wsim:2_dev .
+	docker build -t isciences/wsim:dev .
 
 push-dev:
-	docker push isciences/wsim:2_dev
+	docker push isciences/wsim:dev
 
 build:
-	docker build -t isciences/wsim:2_latest .
+	docker build -t isciences/wsim:latest .
 
 push:
-	docker push isciences/wsim:2_latest
+	docker push isciences/wsim:latest
 
 .PHONY: check html
