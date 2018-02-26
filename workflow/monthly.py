@@ -18,19 +18,21 @@ def monthly_observed(config, yearmon, meta_steps):
 
     steps = []
 
-    # Don't add LSM steps if we would already have run this date as part of spinup
-    if yearmon not in config.historical_yearmons():
-        if config.should_run_lsm(yearmon):
-            # Prepare the dataset for use (convert from GRIB to netCDF, compute pWetDays, etc.)
-            steps += config.observed_data().prep_steps(yearmon=yearmon)
+    # Skip if we would already have run this date as part of spinup
+    if yearmon in config.historical_yearmons():
+        return []
 
-            # Combine forcing data for LSM run
-            steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon)
+    if config.should_run_lsm(yearmon):
+        # Prepare the dataset for use (convert from GRIB to netCDF, compute pWetDays, etc.)
+        steps += config.observed_data().prep_steps(yearmon=yearmon)
 
-            # Run the LSM
-            steps += run_lsm(config.workspace(), config.static_data(), yearmon=yearmon)
+        # Combine forcing data for LSM run
+        steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon)
 
-        steps += config.result_postprocess_steps(yearmon=yearmon)
+        # Run the LSM
+        steps += run_lsm(config.workspace(), config.static_data(), yearmon=yearmon)
+
+    steps += config.result_postprocess_steps(yearmon=yearmon)
 
     # Do time integration
     for window in config.integration_windows():

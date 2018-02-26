@@ -25,6 +25,14 @@ class TestCFSConfig(unittest.TestCase):
     source = '/tmp/source'
     derived = '/tmp/derived'
 
+    def fail_on_duplicate_targets(self, steps):
+        duplicate_targets = find_duplicate_targets(steps)
+
+        if duplicate_targets:
+            for target in duplicate_targets:
+                print("Duplicate target:", target, file=sys.stderr)
+            self.fail('Duplicate targets found')
+
     def test_ensemble_selection(self):
         config = CFSConfig(self.source, self.derived)
 
@@ -42,7 +50,10 @@ class TestCFSConfig(unittest.TestCase):
     def test_all_steps_buildable(self):
         config = CFSConfig(self.source, self.derived)
 
-        steps = generate_steps(config, '201701', '201701', False, 'latest')
+        # Find the timestep that's one month beyond our historical period
+        yearmon = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=1)
+
+        steps = generate_steps(config, yearmon, yearmon, False, 'latest')
 
         unbuildable = unbuildable_targets(steps)
 
@@ -52,12 +63,14 @@ class TestCFSConfig(unittest.TestCase):
                     print("Don't know how to build", t, "(depends on", ",".join(step.dependencies), ")", file=sys.stderr)
             self.fail('Unbuildable targets found')
 
-    def test_no_duplicate_steps(self):
+    def test_no_duplicate_targets(self):
         config = CFSConfig(self.source, self.derived)
 
-        steps = generate_steps(config, '201701', '201701', False, 'latest')
+        # Shouldn't get duplicate steps within spinup period
+        self.fail_on_duplicate_targets(generate_steps(config, '196404', '196404', False, 'latest'))
 
-        self.assertEqual(0, len(find_duplicate_targets(steps)))
+        # Or after it
+        self.fail_on_duplicate_targets(generate_steps(config, '201801', '201801', False, 'latest'))
 
     @unittest.skip
     def test_makefile_readable(self):
@@ -91,10 +104,12 @@ def unbuildable_targets(steps):
     """
     known = set()
 
+    max_depth = 0
     remaining_to_validate = list(steps)
     stuck = False
 
     while not stuck:
+        max_depth += 1
         could_not_validate = []
         stuck = True
 
@@ -110,6 +125,8 @@ def unbuildable_targets(steps):
                 could_not_validate.append(step)
 
         remaining_to_validate = could_not_validate
+
+    print('Maximum dependency tree depth:', max_depth)
 
     return remaining_to_validate
 
