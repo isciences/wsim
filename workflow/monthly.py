@@ -85,8 +85,12 @@ def monthly_forecast(config, yearmon, meta_steps):
                 steps += compute_return_periods(config.workspace(), var_names=config.lsm_integrated_var_names(), yearmon=yearmon, window=window, target=target, member=member)
 
         for window in [1] + config.integration_windows():
+            # Summarize forecast ensemble
             steps += result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
             steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
+            steps += standard_anomaly_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
+
+            # Generate composite indicators from summarized ensemble data
             steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
 
             composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)

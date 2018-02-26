@@ -288,6 +288,24 @@ def return_period_summary(workspace, ensemble_members, *, yearmon, target=None, 
         )
     ]
 
+def standard_anomaly_summary(workspace, ensemble_members, *, yearmon, target=None, window=None):
+    ensemble_anomalies = [workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members]
+
+    return [
+        Step(
+            targets=workspace.standard_anomaly_summary(yearmon=yearmon, target=target, window=window),
+            dependencies=ensemble_anomalies,
+            commands=[
+                wsim_integrate(
+                    inputs=ensemble_anomalies,
+                    stats=['q25', 'q50', 'q75'],
+                    output='$@'
+                )
+            ]
+        )
+    ]
+
+
 def correct_forecast(data, *, member, target, lead_months):
     target_month = int(target[-2:])
 
