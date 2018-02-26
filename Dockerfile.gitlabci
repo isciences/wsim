@@ -1,44 +1,46 @@
-FROM centos:7.4.1708
+FROM debian:stretch
 
-RUN yum update -y \
-	&& yum clean all \
-	&& yum install -y epel-release
+RUN apt-get update  && apt-get install -y \
+  gnupg \
+  && rm -rf /var/lib/apt/lists*
 
-RUN yum install -y \
-	R-core \
-	R-devel \
-	python34
+RUN apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
 
-RUN yum install -y \
-    gdal \
-    gdal-devel \
-    gdal-libs \
-    geos \
-    geos-devel \
-    hdf \
-    hdf-devel \
-    hdf5 \
-    hdf5-devel \
-    libcurl-devel \
-    libssh2-devel \
-    libxml2-devel \
-    nco \
-    netcdf \
-    netcdf-devel \
-    openssl-devel \
-    proj-devel \
-    proj-epsg \
-    proj-nad \
-    proj-static \
-    wgrib
+RUN echo "deb http://cran.rstudio.com/bin/linux/debian stretch-cran34/\n" \
+  >> /etc/apt/sources.list
 
-RUN Rscript -e 'install.packages(c("lubridate", "abind", "futile.logger", "devtools","testthat","roxygen2","raster","Rcpp","lmom","docopt"), dependencies = TRUE, repos="http://cran.us.r-project.org")'
-RUN Rscript -e 'devtools::install_github("hadley/pkgdown")'
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  g++ \
+  gcc \
+  gfortran \
+  libc-dev \
+  libcurl4-openssl-dev \
+  libgdal20 \
+  libgdal-dev \
+  libgeos-3.5.1 \
+  libgeos-dev \
+  libnetcdf-dev \
+  libnetcdf11 \
+  libproj-dev \
+  libproj12 \
+  libssl-dev \
+  libssh2-1-dev \
+  libxml2-dev \
+  make \
+  nco \
+  python3 \
+  r-base-core \
+  r-base-dev \
+  wget \
+  && rm -rf /var/lib/apt/lists*
+
+RUN MAKE='make -j8' Rscript -e 'install.packages(c("lubridate", "abind", "futile.logger", "devtools","testthat","roxygen2","raster","Rcpp","lmom","docopt"), dependencies = TRUE, repos="http://cran.rstudio.com")'
+RUN MAKE='make -j8' Rscript -e 'devtools::install_github("hadley/pkgdown")'
 
 # Add wgrib2 for converting CFS forecast data
-# We need to compile it outselves becuse the packaged version
+# We need to compile it ourselves because the packaged version
 # doesn't have support for regridding.
-RUN curl -o /tmp/wgrib2.tgz http://www.ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz && \
+RUN wget -P /tmp http://www.ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz && \
   cd /tmp && \
   tar xzvf wgrib2.tgz && \
   cd grib2 && \

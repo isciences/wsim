@@ -1,4 +1,4 @@
-FROM isciences/wsim-gitlabci
+FROM isciences/wsim-gitlabci:latest
 
 COPY wsim.io /wsim/wsim.io
 WORKDIR /wsim/wsim.io
