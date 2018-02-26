@@ -21,7 +21,7 @@ import unittest
 from config_cfs import CFSConfig
 from makemake import generate_steps, find_duplicate_targets, write_makefile
 
-class TestStep(unittest.TestCase):
+class TestCFSConfig(unittest.TestCase):
     source = '/tmp/source'
     derived = '/tmp/derived'
 
@@ -58,6 +58,28 @@ class TestStep(unittest.TestCase):
         steps = generate_steps(config, '201701', '201701', False, 'latest')
 
         self.assertEqual(0, len(find_duplicate_targets(steps)))
+
+    @unittest.skip
+    def test_makefile_readable(self):
+        config = CFSConfig(self.source, self.derived)
+
+        bindir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
+
+        steps = generate_steps(config, '201701', '201701', False, 'latest')
+
+        filename = tempfile.mkstemp()[-1]
+
+        write_makefile(filename, steps, bindir)
+
+        print('Wrote Makefile to', filename)
+
+        start = timeit.default_timer()
+        print('Checking Makefile...')
+        return_code = subprocess.call(['make', '-f', filename, '-q', 'all_composites'])
+        self.assertEqual(1, return_code) # Make returns 2 for invalid Makefile, 1 for "target needs to be built"
+        end = timeit.default_timer()
+
+        print('Makefile validated in', end-start)
 
 def unbuildable_targets(steps):
     """
