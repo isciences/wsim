@@ -13,14 +13,16 @@
 
 # This configuration file is provided as an example of an automated operational WSIM workflow.
 
-import paths
-import dates
 import os
-from config_base import ConfigBase
-from step import Step
-import commands
+import re
 
+import commands
+import dates
+import paths
+
+from config_base import ConfigBase
 from data_sources import isric, gmted, stn30
+from step import Step
 
 class Static:
     def __init__(self, source):
@@ -279,6 +281,62 @@ class CFSForecast(paths.ForecastForcing):
     def forecast_grib(self, *, member, target):
         return os.path.join(self.grib_dir(member=member),
                             'flxf.01.{member}.{target}.avrg.grib.grb2'.format(member=member, target=target))
+
+    def global_prep_steps(self):
+        tarfile_dir = os.path.join(self.source,
+                                   'NCEP_CFSv2')
+        tarfile = os.path.join(tarfile_dir, 'hindcast_fits.tar.gz')
+        steps = []
+
+        steps.append(
+            Step(
+                targets=tarfile,
+                dependencies=[],
+                commands=[
+                    [
+                        'wget',
+                        '--continue',
+                        '-P', tarfile_dir,
+                        'https://s3.us-east-2.amazonaws.com/wsim-datasets/hindcast_fits.tar.gz'
+                     ]
+                ]
+            )
+        )
+
+        def extract_from_tar(tarfile, to_extract):
+            return [
+                [
+                    'tar',
+                    'xzf',
+                    tarfile,
+                    to_extract,
+                    '-C',
+                    os.path.dirname(tarfile)
+                ]
+            ]
+
+        for var in ('T', 'Pr'):
+            for month in range(1, 13):
+                fitfile =  self.fit_obs(var=var, month=month)
+                fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
+
+                steps.append(Step(
+                    targets=fitfile,
+                    dependencies=tarfile,
+                    commands=extract_from_tar(tarfile, fitfile_arcname)
+                ))
+
+                for lead in range(1, 10):
+                    fitfile =  self.fit_retro(var=var, target_month=month, lead_months=lead)
+                    fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
+
+                    steps.append(Step(
+                        targets=fitfile,
+                        dependencies=tarfile,
+                        commands=extract_from_tar(tarfile, fitfile_arcname)
+                    ))
+
+        return steps
 
     def prep_steps(self, *, yearmon=None, target, member):
         outfile=self.forecast_raw(member=member, target=target)
