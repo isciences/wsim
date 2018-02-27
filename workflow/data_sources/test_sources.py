@@ -29,31 +29,32 @@ def execute_steps(steps, target):
 
 class TestSources(unittest.TestCase):
 
+    def setUp(self):
+        self.source_dir = tempfile.mkdtemp()
+        self.outfile = tempfile.mktemp()
+
+    def tearDown(self):
+        if os.path.exists(self.outfile):
+            os.remove(self.outfile)
+        shutil.rmtree(self.source_dir)
+
     @unittest.skip
     def test_isric_tawc(self):
-        source_dir = tempfile.mkdtemp()
-        outfile = os.path.join(source_dir, 'my_tawc_file.tif')
-
-        steps = isric.global_tawc(source_dir=source_dir,
-                                  filename=outfile,
+        steps = isric.global_tawc(source_dir=self.source_dir,
+                                  filename=self.outfile,
                                   resolution=1.0)
 
-        return_code = execute_steps(steps, outfile)
-
-        shutil.rmtree(source_dir)
+        return_code = execute_steps(steps, self.outfile)
 
         self.assertEqual(0, return_code)
 
     @unittest.skip
     def test_stn30(self):
-        source_dir = tempfile.mkdtemp()
-
-        steps = stn30.global_flow_direction(source_dir=source_dir,
+        steps = stn30.global_flow_direction(source_dir=self.source_dir,
+                                            filename=self.outfile,
                                             resolution=0.5)
 
-        return_code = execute_steps(steps, os.path.join(source_dir, 'STN_30', 'g_network.asc'))
-
-        shutil.rmtree(source_dir)
+        return_code = execute_steps(steps, self.outfile)
 
         self.assertEqual(0, return_code)
 
