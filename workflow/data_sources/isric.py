@@ -64,6 +64,7 @@ def global_tawc(*, source_dir, filename, resolution):
                     '--missing',   os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'example_tawc_defaults.csv'),
                     '--codes',     os.path.join(dirname, 'wise_30sec_v1.tsv'),
                     '--raster',    os.path.join(dirname, 'wise_30sec_v1.tif'),
+                    '--output',    full_res_file,
                     '--max_depth', '1'
                 ]
             ]
