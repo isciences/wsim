@@ -47,12 +47,13 @@ RUN MAKE='make -j8' Rscript -e 'install.packages(c( \
   "readr", \
   "roxygen2", \
   "testthat" \
-), dependencies = TRUE, repos="http://cran.rstudio.com")'
+), dependencies = NA, repos="http://cran.rstudio.com")'
 RUN MAKE='make -j8' Rscript -e 'devtools::install_github("hadley/pkgdown")'
 
 # Add wgrib2 for converting CFS forecast data
 # We need to compile it ourselves because the packaged version
 # doesn't have support for regridding.
+# Don't try parallel make here, it won't work.
 RUN wget -P /tmp http://www.ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz && \
   cd /tmp && \
   tar xzvf wgrib2.tgz && \
