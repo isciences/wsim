@@ -47,7 +47,7 @@ def global_elevation(source_dir, filename, resolution):
             dependencies=raw_file,
             commands=[
                 [
-                    os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'aggregate_tawc.R'),
+                    os.path.join('{BINDIR}', 'utils', 'aggregate.R'),
                     '--res', str(resolution),
                     '--input', raw_file,
                     '--output', filename

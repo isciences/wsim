@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-wsim.io::logging_init('aggregate_tawc')
+wsim.io::logging_init('aggregate')
 
 suppressMessages({
   require(wsim.io)
@@ -21,16 +21,16 @@ suppressMessages({
 })
 
 '
-Aggregate a raster of TAWC values to a coarser grid
+Aggregate a raster to a coarser grid using the mean of defined values
 
-Usage: aggregate_tawc --res=<value> [--minlat=<value> --maxlat=<value> --minlon=<value> --maxlon=<value>] --input=<file> --output=<file>
+Usage: aggregate --res=<value> [--minlat=<value> --maxlat=<value> --minlon=<value> --maxlon=<value>] --input=<file> --output=<file>
 
 --res=<value>       Output resolution, degrees
 --minlat=<value>    Minimum latitude [default: -90]
 --maxlat=<value>    Maximum latitude [default: 90]
 --minlon=<value>    Minimum longitude [default: -180]
 --maxlon=<value>    Maximum longitude [default: 180]
---input=<file>      File containing TAWC at native resolution
+--input=<file>      File containing values at native resolution
 --output=<file>     Output file location
 '->usage
 
@@ -45,17 +45,17 @@ main <- function(raw_args) {
     die_with_message("Can not open", args$output, "for writing.")
   }
 
-  info("Reading TAWC values from", args$input)
-  tawc <- raster(args$input)
-  info("Aggregating TAWC to resolution of", args$res)
-  tawc_agg <- aggregate(tawc, fact=args$res/res(tawc), fun=mean, na.rm=TRUE)
+  info("Reading values from", args$input)
+  values <- raster(args$input)
+  info("Aggregating values to resolution of", args$res)
+  values_agg <- aggregate(values, fact=args$res/res(values), fun=mean, na.rm=TRUE)
 
-  info("Adjusting TAWC to extent of", args$minlon, args$maxlon, args$minlat, args$maxlat)
-  resampled <- resample(tawc_agg, raster(xmn=args$minlon,
-                                         xmx=args$maxlon,
-                                         ymn=args$minlat,
-                                         ymx=args$maxlat,
-                                         res=args$res))
+  info("Adjusting aggregated values to extent of", args$minlon, args$maxlon, args$minlat, args$maxlat)
+  resampled <- resample(values_agg, raster(xmn=args$minlon,
+                                           xmx=args$maxlon,
+                                           ymn=args$minlat,
+                                           ymx=args$maxlat,
+                                           res=args$res))
 
 
   info("Writing results to", args$output)

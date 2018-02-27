@@ -76,7 +76,7 @@ def global_tawc(*, source_dir, filename, resolution):
             dependencies=full_res_file,
             commands=[
                 [
-                    os.path.join('{BINDIR}', 'utils', 'isric_30sec_soils', 'aggregate_tawc.R'),
+                    os.path.join('{BINDIR}', 'utils', 'aggregate.R'),
                     '--res', str(resolution),
                     '--input', full_res_file,
                     '--output', filename
