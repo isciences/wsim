@@ -39,10 +39,12 @@ RUN MAKE='make -j8' Rscript -e 'install.packages(c( \
   "abind", \
   "devtools", \
   "docopt", \
+  "dplyr", \
   "futile.logger", \
   "lmom", \
   "lubridate", \
   "raster", \
+  "readr", \
   "roxygen2", \
   "testthat" \
 ), dependencies = TRUE, repos="http://cran.rstudio.com")'
