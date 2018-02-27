@@ -40,7 +40,7 @@ def global_flow_direction(source_dir, filename, resolution):
             dependencies=zip_path,
             commands=[
                 [ 'unzip', '-j', zip_path, 'global_30_minute_potential_network_v601_asc/g_network.asc', '-d', dirname ],
-                [ 'mv', extracted_filename, filename ],
+                [ 'mv', extracted_filename, filename ] if extracted_filename != filename else None,
                 [ 'touch', filename ] # Make extracted date modified > archive date modified
             ]
         )
