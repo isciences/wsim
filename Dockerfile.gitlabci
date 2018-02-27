@@ -43,8 +43,10 @@ RUN MAKE='make -j8' Rscript -e 'install.packages(c( \
   "futile.logger", \
   "lmom", \
   "lubridate", \
+  "ncdf4", \
   "raster", \
   "readr", \
+  "rgdal", \
   "roxygen2", \
   "testthat" \
 ), dependencies = NA, repos="http://cran.rstudio.com")'
