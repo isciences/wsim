@@ -82,3 +82,16 @@ class TestStep(unittest.TestCase):
         self.assertTrue('mkdir -p /tmp/fizz/fuzz' in commands)
         self.assertEqual(2, len(commands))
 
+    def test_empty_inputs_ignored(self):
+        s = Step(targets=['a', None, 'b'],
+                 dependencies=[None, 'c'],
+                 commands=[['cat', 'c', '>', 'a'],
+                           None,
+                           ['wc', 'a', '>', 'b']])
+
+        self.assertEqual(2, len(s.targets))
+        self.assertEqual(1, len(s.dependencies))
+        self.assertEqual(2, len(s.commands))
+
+
+

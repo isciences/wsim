@@ -31,9 +31,9 @@ class Step:
         if type(dependencies) is str:
             dependencies = [dependencies]
 
-        self.targets = targets
-        self.dependencies = dependencies
-        self.commands = commands
+        self.targets = [t for t in targets if t is not None]
+        self.dependencies = [d for d in dependencies if d is not None]
+        self.commands = [c for c in commands if c is not None]
         self.comment = comment
 
     def use_pattern_rules(self):
