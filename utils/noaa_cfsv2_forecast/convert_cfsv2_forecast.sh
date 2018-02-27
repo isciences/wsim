@@ -17,7 +17,7 @@ set -e
 
 display_usage() {
 	echo "Convert a CFS forecast from GRIB2 (Gaussian grid) to netCDF (0.5-degree grid)"
-	echo "forecast_convert.sh [in] [out]"
+	echo "convert_cfsv2_forecast.sh [in] [out]"
 }
 
 if [ $# -le 1 ]
@@ -31,14 +31,18 @@ TEMP_GRB2=/tmp/regrid_halfdeg.$$.grb2
 wgrib2 $1 -match "PRATE:surface|TMP:2 m" -new_grid latlon -179.75:720:0.5 -89.75:360:0.5 $TEMP_GRB2
 wgrib2 $TEMP_GRB2 -nc_grads -netcdf $2
 rm $TEMP_GRB2
-ncrename -h \
-	 -vlatitude,lat \
-	 -vlongitude,lon \
-	 -dlatitude,lat \
-	 -dlongitude,lon \
-	 -vTMP_2maboveground,tmp2m \
-	 -vPRATE_surface,prate \
-	 $2
+
+# Rename each variable in separate commands
+# Some versions of NCO fail to find variables
+# when we perform all of the renames in a single
+# command.
+ncrename -h -vlatitude,lat $2
+ncrename -h -vlongitude,lon $2
+ncrename -h -vTMP_2maboveground,tmp2m $2
+ncrename -h -vPRATE_surface,prate $2
+ncrename -h -dlatitude,lat $2
+ncrename -h -dlongitude,lon $2
+
 # Drop the time dimension
 ncwa -h -O -a time $2 $2
 # Drop the time variable
