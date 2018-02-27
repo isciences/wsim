@@ -307,22 +307,24 @@ class CFSForecast(paths.ForecastForcing):
         for var in ('T', 'Pr'):
             for month in range(1, 13):
                 fitfile =  self.fit_obs(var=var, month=month)
+                fitdir = os.path.dirname(fitfile)
                 fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
 
                 steps.append(Step(
                     targets=fitfile,
                     dependencies=tarfile,
-                    commands=extract_from_tar(tarfile, fitfile_arcname)
+                    commands=extract_from_tar(tarfile, fitfile_arcname, fitdir)
                 ))
 
                 for lead in range(1, 10):
                     fitfile =  self.fit_retro(var=var, target_month=month, lead_months=lead)
+                    fitdir = os.path.dirname(fitfile)
                     fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
 
                     steps.append(Step(
                         targets=fitfile,
                         dependencies=tarfile,
-                        commands=extract_from_tar(tarfile, fitfile_arcname)
+                        commands=extract_from_tar(tarfile, fitfile_arcname, fitdir)
                     ))
 
         return steps

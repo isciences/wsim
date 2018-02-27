@@ -18,15 +18,24 @@ from step import Step
 from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm
 from dates import get_next_yearmon, rolling_window
 
-def extract_from_tar(tarfile, to_extract):
+def extract_from_tar(tarfile, to_extract, dest_dir):
+    """
+    Returns a command to extract a single file from a tarfile and place it in a specified directory
+    :param tarfile: path to tarfile
+    :param to_extract: path of item within tarfile
+    :param dest_dir: path to which item should be extracted (path within tarfile will be stripped)
+    :return: command
+    """
+    trim_dirs = to_extract.count(os.sep)
+
     return [
         [
             'tar',
             'xzf',
             tarfile,
-            to_extract,
-            '-C',
-            os.path.dirname(tarfile)
+            '--strip-components', str(trim_dirs),
+            '--directory', dest_dir,
+            to_extract
         ]
     ]
 
