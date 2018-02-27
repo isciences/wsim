@@ -58,3 +58,14 @@ class TestSources(unittest.TestCase):
 
         self.assertEqual(0, return_code)
 
+    @unittest.skip
+    def test_gmted(self):
+        steps = gmted.global_elevation(source_dir=self.source_dir,
+                                       filename=self.outfile,
+                                       resolution=2.0)
+
+        return_code = execute_steps(steps, self.outfile)
+
+        self.assertEqual(0, return_code)
+
+
