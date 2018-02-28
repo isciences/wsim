@@ -93,7 +93,15 @@ class TestStep(unittest.TestCase):
         self.assertEqual(1, len(s.dependencies))
         self.assertEqual(2, len(s.commands))
 
+    def test_filenames_expanded(self):
+        s = Step(targets='fit.nc',
+                 dependencies='values[2014:2016].nc::Ws',
+                 commands=['fitit'])
 
+        self.assertSetEqual(
+            {'values2014.nc', 'values2015.nc', 'values2016.nc'},
+            s.dependencies
+        )
 
     def test_step_merge(self):
         step1 = Step(targets='frosting',
