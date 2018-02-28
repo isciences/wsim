@@ -274,4 +274,7 @@ class DefaultWorkspace:
 
         return os.path.join(self.outputs, 'fits', filename.format_map(locals()))
 
+    def fit_composite_anomalies(self, window):
+        return os.path.join(self.outputs, 'fits', 'composite_anom_{window}mo.nc'.format(window=window))
+
 
