@@ -40,7 +40,15 @@ class ConfigBase(metaclass=abc.ABCMeta):
         Provides a list of years of data to be considered in fitting distributions
         for computed variables.
         """
-        pass
+        return []
+
+    def result_fit_yearmons(self):
+        """
+        Provides all YYYYMM time steps within the result fitting period
+        """
+        return [dates.format_yearmon(year, month)
+                for year in self.result_fit_years()
+                for month in dates.all_months]
 
     @abc.abstractmethod
     def static_data(self):
