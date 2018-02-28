@@ -50,6 +50,11 @@ def date_range(*args):
 RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
 
 def expand_filename_dates(filename):
+    # Short-circuit regex test.
+    # This statement improves program runtime by ~50%.
+    if not '[' in filename:
+        return [filename]
+
     match = re.search(RE_DATE_RANGE, filename)
 
     if not match:
