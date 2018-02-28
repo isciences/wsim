@@ -12,19 +12,28 @@
 # limitations under the License.
 
 import calendar
+import datetime
 
 all_months = range(1, 13)
 
 def parse_yearmon(yearmon):
+    """
+    Parse a YYYYMM string and return a (year, month) integer tuple
+    """
     return int(yearmon[:4]), int(yearmon[4:])
 
-def format_yearmon(year, month):
-    return '{}{:02d}'.format(year, month)
 
-def format_mon(month):
-    return '{:02d}'.format(month)
+def format_yearmon(year, month):
+    """
+    Format a year and month as YYYYMM
+    """
+    return '{:04d}{:02d}'.format(year, month)
+
 
 def get_yearmons(start, stop):
+    """
+    Generate all YYYYMM strings between "start" and "stop"
+    """
     start_year, start_month = parse_yearmon(start)
     stop_year, stop_month = parse_yearmon(stop)
 
@@ -38,10 +47,18 @@ def get_yearmons(start, stop):
         start = get_next_yearmon(start)
         yield start
 
+
 def get_last_day_of_month(yearmon):
+    """
+    Get integer last day or month for YYYYMM
+    """
     return calendar.monthrange(*parse_yearmon(yearmon))[1]
 
+
 def get_previous_yearmon(yearmon):
+    """
+    Get previous YYYYMM to input
+    """
     year, month = parse_yearmon(yearmon)
 
     month -= 1
@@ -51,7 +68,11 @@ def get_previous_yearmon(yearmon):
 
     return format_yearmon(year, month)
 
+
 def get_next_yearmon(yearmon):
+    """
+    Get next YYYYMM to input
+    """
     year, month = parse_yearmon(yearmon)
 
     month += 1
@@ -61,7 +82,11 @@ def get_next_yearmon(yearmon):
 
     return format_yearmon(year, month)
 
+
 def get_next_yearmons(yearmon, n):
+    """
+    Get next n YYYYMMs after input
+    """
     targets = [get_next_yearmon(yearmon)]
 
     for _ in range(n - 1):
@@ -71,6 +96,9 @@ def get_next_yearmons(yearmon, n):
 
 
 def rolling_window(yearmon, n):
+    """
+    Return n months ending with (and including) input
+    """
     window = [yearmon]
 
     while len(window) < n:
@@ -79,4 +107,69 @@ def rolling_window(yearmon, n):
     return window
 
 def days_in_month(yearmon):
+    """
+    Return YYYYMMDD strings for each day in input YYYYMM
+    """
     return [yearmon + '{:02d}'.format(day + 1) for day in range(calendar.monthrange(*parse_yearmon(yearmon))[1])]
+
+def add_years(yyyy, n):
+    """
+    Add n years to YYYY
+    """
+    return '{:04d}'.format(int(yyyy) + n)
+
+def add_months(yyyymm, n):
+    """
+    Add n months to YYYYMM
+    """
+    year = int(yyyymm[:4])
+    month = int(yyyymm[4:])
+
+    month += n
+
+    while month > 12:
+        month -= 12
+        year += 1
+
+    return '{:04d}{:02d}'.format(year, month)
+
+def add_days(yyyymmdd, n):
+    """
+    Add n days to YYYYMMDD
+    """
+    date = datetime.date(int(yyyymmdd[0:4]),
+                         int(yyyymmdd[4:6]),
+                         int(yyyymmdd[6:8]))
+
+    date += datetime.timedelta(days=n)
+
+    return date.strftime('%Y%m%d')
+
+def expand_date_range(start, stop, step):
+    """
+    Return all dates in the list >= start and <= stop, separated by step.
+    Inputs may be YYYY, YYYYMM, or YYYYMMDD strings
+    """
+    dates = [start]
+
+    if len(start) != len(stop):
+        raise ValueError("Start and stop dates must be in same format")
+
+    if len(start) == 4:
+        increment_date = add_years
+    elif len(start) == 6:
+        increment_date = add_months
+    elif len(start) == 8:
+        increment_date = add_days
+    else:
+        raise ValueError("Unknown date format")
+
+    while True:
+        next = increment_date(dates[-1], step)
+        if next <= stop:
+            dates.append(next)
+        else:
+            break
+
+    return dates
+

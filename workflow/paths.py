@@ -12,7 +12,11 @@
 # limitations under the License.
 
 import os
+import re
+
 from abc import ABCMeta, abstractmethod
+
+import dates
 
 def read_vars(*args):
     file = args[0]
@@ -21,6 +25,12 @@ def read_vars(*args):
     return file + '::' + ','.join(var_list)
 
 def date_range(*args):
+    """
+    Create a date range string (as used by the wsim.io R package) given any of:
+    - start, stop
+    - start, stop, step
+    - list (from which start and stop will be extracted, and a step of 1 assumed)
+    """
     step = 1
 
     if len(args) == 1 and type(args[0]) is list:
@@ -36,6 +46,25 @@ def date_range(*args):
         raise Exception('Invalid date range')
 
     return '[{}:{}:{}]'.format(begin, end, step)
+
+RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
+
+def expand_filename_dates(filename):
+    match = re.search(RE_DATE_RANGE, filename)
+
+    if not match:
+        return [filename]
+
+    start = match.group('start')
+    stop = match.group('stop')
+    step = int(match.group('step') or 1)
+
+    filenames = []
+    for d in dates.expand_date_range(start, stop, step):
+        filenames.append(filename[:match.start()] + d + filename[match.end():])
+
+    return filenames
+
 
 class Vardef:
 
