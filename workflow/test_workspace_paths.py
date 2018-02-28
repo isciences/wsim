@@ -49,7 +49,7 @@ class TestWorkspacePaths(unittest.TestCase):
         # Observed data
         self.assertEqual(
             join(self.root, 'results', 'results_1mo_201612.nc'),
-            self.ws.results(yearmon='201612')
+            self.ws.results(yearmon='201612', window=1)
         )
 
         # Observed data
@@ -61,7 +61,7 @@ class TestWorkspacePaths(unittest.TestCase):
         # Forecast data
         self.assertEqual(
             join(self.root, 'results', 'results_1mo_201612_trgt201703_fcstCFS13.nc'),
-            self.ws.results(yearmon='201612', target='201703', member='CFS13')
+            self.ws.results(yearmon='201612', window=1, target='201703', member='CFS13')
         )
 
         self.assertEqual(
