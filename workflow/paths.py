@@ -21,6 +21,12 @@ def read_vars(*args):
     return file + '::' + ','.join(var_list)
 
 def date_range(*args):
+    """
+    Create a date range string (as used by the wsim.io R package) given any of:
+    - start, stop
+    - start, stop, step
+    - list (from which start and stop will be extracted, and a step of 1 assumed)
+    """
     step = 1
 
     if len(args) == 1 and type(args[0]) is list:
