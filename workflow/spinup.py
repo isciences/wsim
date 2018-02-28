@@ -66,16 +66,15 @@ def spinup(config, meta_steps):
 
     # Steps for anomalies and composite anomalies
     for window in [1] + config.integration_windows():
-        for month in all_months:
-            for yearmon in [format_yearmon(year, month) for year in config.result_fit_years()]:
-                steps += compute_return_periods(config.workspace(),
-                                                var_names=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
-                                                yearmon=yearmon,
-                                                window=window)
+        for yearmon in config.result_fit_yearmons()[window-1:]:
+            steps += compute_return_periods(config.workspace(),
+                                            var_names=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
+                                            yearmon=yearmon,
+                                            window=window)
 
-                steps += composite_anomalies(config.workspace(),
-                                             yearmon=yearmon,
-                                             window=window)
+            steps += composite_anomalies(config.workspace(),
+                                         yearmon=yearmon,
+                                         window=window)
 
     # Fit distribution of composite anomalies
     for window in [1] + config.integration_windows():
@@ -294,8 +293,7 @@ def fit_var(config, *, param, month, stat=None, window=1):
     """
     Compute fits for param in given month over fitting period
     """
-    fit_yearmons = [format_yearmon(year, month) for year in config.result_fit_years() for month in all_months]
-    yearmons = [t for t in fit_yearmons[window-1:] if int(t[-2:]) == month]
+    yearmons = [t for t in config.result_fit_yearmons()[window-1:] if int(t[-2:]) == month]
 
     if stat:
         param_to_read = param + '_' + stat
