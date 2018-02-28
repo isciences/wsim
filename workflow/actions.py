@@ -11,33 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 from paths import read_vars, Vardef
 from step import Step
 from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm
 from dates import get_next_yearmon, rolling_window
-
-def extract_from_tar(tarfile, to_extract, dest_dir):
-    """
-    Returns a command to extract a single file from a tarfile and place it in a specified directory
-    :param tarfile: path to tarfile
-    :param to_extract: path of item within tarfile
-    :param dest_dir: path to which item should be extracted (path within tarfile will be stripped)
-    :return: command
-    """
-    trim_dirs = to_extract.count(os.sep)
-
-    return [
-        [
-            'tar',
-            'xzf',
-            tarfile,
-            '--strip-components', str(trim_dirs),
-            '--directory', dest_dir,
-            to_extract
-        ]
-    ]
 
 def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
 
@@ -46,41 +23,27 @@ def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
     wetdays = data.p_wetdays(yearmon=yearmon, target=target, member=member)
 
     return [
-        Step(
-            comment="Create forcing file",
-            targets=workspace.forcing(yearmon=yearmon, target=target, member=member),
-            dependencies=[precip.file, temp.file, wetdays.file],
-            commands=[
-                wsim_merge(
-                    inputs=[
-                        precip.read_as('Pr'),
-                        temp.read_as('T'),
-                        wetdays.read_as('pWetDays')
-                    ],
-                    attrs=filter(None, [
-                        ('target=' + target) if target else None,
-                        ('member=' + member) if member else None,
-                        'T:units',
-                        'T:standard_name',
-                        'Pr:units',
-                        'Pr:standard_name'
-                    ]),
-                    output= '$@'
-                )
-            ]
+        wsim_merge(
+            inputs=[
+                precip.read_as('Pr'),
+                temp.read_as('T'),
+                wetdays.read_as('pWetDays')
+            ],
+            attrs=filter(None, [
+                ('target=' + target) if target else None,
+                ('member=' + member) if member else None,
+                'T:units',
+                'T:standard_name',
+                'Pr:units',
+                'Pr:standard_name'
+            ]),
+            output=workspace.forcing(yearmon=yearmon, target=target, member=member)
         )
     ]
 
+
 def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months=0):
-    is_forecast = True if member else False
-
-    if is_forecast:
-        comment = "Run LSM with forecast data"
-    else:
-        comment = "Run LSM with observed data"
-
-
-    if is_forecast:
+    if member:
         if lead_months > 1:
             current_state = workspace.state(yearmon=yearmon, target=target, member=member)
         else:
@@ -95,32 +58,17 @@ def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months
     forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
 
     return [
-        Step(
-            comment=comment,
-            targets=[
-                results,
-                next_state
-            ],
-            dependencies=[
-                current_state,
-                forcing,
-                static.wc().file,
-                static.flowdir().file,
-                static.elevation().file
-            ],
-            commands=[
-                wsim_lsm(
-                    state=current_state,
-                    elevation=static.elevation(),
-                    wc=static.wc(),
-                    flowdir=static.flowdir(),
-                    forcing=forcing,
-                    results=results,
-                    next_state=next_state
-                )
-            ]
+        wsim_lsm(
+            state=current_state,
+            elevation=static.elevation(),
+            wc=static.wc(),
+            flowdir=static.flowdir(),
+            forcing=forcing,
+            results=results,
+            next_state=next_state
         )
     ]
+
 
 def time_integrate(workspace, integrated_vars, *, yearmon, target=None, window=None, member=None, lead_months=None):
     months = rolling_window(target if target else yearmon, window)
@@ -132,25 +80,23 @@ def time_integrate(workspace, integrated_vars, *, yearmon, target=None, window=N
         window_observed = months
         window_forecast = []
 
-    prev_results = [workspace.results(yearmon=x) for x in window_observed] + \
-                   [workspace.results(yearmon=yearmon, member=member, target=x) for x in window_forecast]
+    prev_results = [workspace.results(yearmon=x, window=1) for x in window_observed] + \
+                   [workspace.results(yearmon=yearmon, member=member, target=x, window=1) for x in window_forecast]
 
-    return [
-        Step(
-            comment="Time integration of observed results (" + str(window) + " months)",
-            targets=workspace.results(yearmon=yearmon, target=target, window=window, member=member),
-            dependencies=prev_results,
-            commands=[
-                wsim_integrate(
-                    inputs=[read_vars(f, var) for f in prev_results],
-                    stats=stats,
-                    attrs=['integration_period=' + str(window)],
-                    output='$@'
-                )
-                for var, stats in integrated_vars.items()
-            ]
+    step = Step()
+
+    for var, stats in integrated_vars.items():
+        step = step.merge(
+            wsim_integrate(
+                inputs=[read_vars(f, var) for f in prev_results],
+                stats=stats,
+                attrs=['integration_period=' + str(window)],
+                output=workspace.results(yearmon=yearmon, window=window, target=target, member=member)
+            )
         )
-    ]
+
+    return [step]
+
 
 def compute_return_periods(workspace, *, var_names, yearmon, window, target=None, member=None):
     if target:
@@ -161,23 +107,18 @@ def compute_return_periods(workspace, *, var_names, yearmon, window, target=None
     rp_file = workspace.return_period(yearmon=yearmon, target=target, window=window, member=member)
     sa_file = workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member)
 
-    return [
-        Step(
-            comment="Return periods" + ("(" + str(window) + "mo)" if window is not None else ""),
-            targets=[rp_file, sa_file],
-            dependencies=
-                [workspace.fit_obs(var=var, window=window, month=month) for var in var_names] +
-                [workspace.results(yearmon=yearmon, target=target, window=window, member=member)],
-            commands=[
-                wsim_anom(
-                    fits=workspace.fit_obs(var=var, window=window, month=month),
-                    obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), var),
-                    rp=rp_file,
-                    sa=sa_file)
-                for var in var_names
-            ]
+    step = Step()
+    for var in var_names:
+        step = step.merge(
+            wsim_anom(
+                fits=workspace.fit_obs(var=var, window=window, month=month),
+                obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), var),
+                rp=rp_file,
+                sa=sa_file)
         )
-    ]
+
+    return [step]
+
 
 def composite_vars(*, method, window, quantile):
     quantile_text = '_q{}'.format(quantile) if quantile else ''
@@ -218,6 +159,7 @@ def composite_vars(*, method, window, quantile):
         'mask'    : fmt(mask)
     }
 
+
 def composite_indicators(workspace, *, yearmon, window=None, target=None, quantile=None):
     # If we're working with a forecast, we should have also have the desired
     # quantile of the ensemble members
@@ -233,21 +175,16 @@ def composite_indicators(workspace, *, yearmon, window=None, target=None, quanti
     outfile = workspace.composite_summary(yearmon=yearmon, target=target, window=window)
 
     return [
-        Step(
-            targets=outfile,
-            dependencies=[infile],
-            commands=[
-                wsim_composite(
-                    surplus=[infile + '::' + var for var in cvars['surplus']],
-                    deficit=[infile + '::' + var for var in cvars['deficit']],
-                    both_threshold=3,
-                    mask=infile + '::' + cvars['mask'],
-                    output=outfile,
-                    clamp=60
-                )
-            ]
+        wsim_composite(
+            surplus=[infile + '::' + var for var in cvars['surplus']],
+            deficit=[infile + '::' + var for var in cvars['deficit']],
+            both_threshold=3,
+            mask=infile + '::' + cvars['mask'],
+            output=outfile,
+            clamp=60
         )
     ]
+
 
 def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantile=None):
     cvars = composite_vars(method='standard_anomaly', window=window, quantile=quantile)
@@ -260,71 +197,42 @@ def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantil
     outfile = workspace.composite_anomaly(yearmon=yearmon, target=target, window=window)
 
     return [
-        Step(
-            targets=outfile,
-            dependencies=[infile],
-            commands=[
-                wsim_composite(
-                    surplus=[infile + '::' + var for var in cvars['surplus']],
-                    deficit=[infile + '::' + var for var in cvars['deficit']],
-                    both_threshold=0.4307273, # corresponds with rp of 3
-                    mask=infile + '::' + cvars['mask'],
-                    output=outfile
-                )
-            ]
+        wsim_composite(
+            surplus=[infile + '::' + var for var in cvars['surplus']],
+            deficit=[infile + '::' + var for var in cvars['deficit']],
+            both_threshold=0.4307273, # corresponds with rp of 3
+            mask=infile + '::' + cvars['mask'],
+            output=outfile
         )
     ]
 
 
-
-def result_summary(workspace, ensemble_members, *, yearmon, target=None, window=None):
-    ensemble_results = [workspace.results(yearmon=yearmon, target=target, member=member) for member in ensemble_members]
-
+def result_summary(workspace, ensemble_members, *, yearmon, target, window=None):
     return [
-        Step(
-            targets=workspace.results_summary(yearmon=yearmon, target=target, window=window),
-            dependencies=ensemble_results,
-            commands=[
-                wsim_integrate(
-                    inputs=ensemble_results,
-                    stats=['q25', 'q50', 'q75'],
-                    output='$@'
-                )
-            ]
+        wsim_integrate(
+            inputs=[workspace.results(yearmon=yearmon, window=window, target=target, member=member) for member in ensemble_members],
+            stats=['q25', 'q50', 'q75'],
+            output=workspace.results_summary(yearmon=yearmon, window=window, target=target)
         )
     ]
 
-def return_period_summary(workspace, ensemble_members, *, yearmon, target=None, window=None):
-    ensemble_rps = [workspace.return_period(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members]
 
+def return_period_summary(workspace, ensemble_members, *, yearmon, target, window=None):
     return [
-        Step(
-            targets=workspace.return_period_summary(yearmon=yearmon, target=target, window=window),
-            dependencies=ensemble_rps,
-            commands=[
-                wsim_integrate(
-                    inputs=ensemble_rps,
-                    stats=['q25', 'q50', 'q75'],
-                    output='$@'
-                )
-            ]
+        wsim_integrate(
+            inputs=[workspace.return_period(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members],
+            stats=['q25', 'q50', 'q75'],
+            output=workspace.return_period_summary(yearmon=yearmon, window=window, target=target)
         )
     ]
 
-def standard_anomaly_summary(workspace, ensemble_members, *, yearmon, target=None, window=None):
-    ensemble_anomalies = [workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members]
 
+def standard_anomaly_summary(workspace, ensemble_members, *, yearmon, target, window=None):
     return [
-        Step(
-            targets=workspace.standard_anomaly_summary(yearmon=yearmon, target=target, window=window),
-            dependencies=ensemble_anomalies,
-            commands=[
-                wsim_integrate(
-                    inputs=ensemble_anomalies,
-                    stats=['q25', 'q50', 'q75'],
-                    output='$@'
-                )
-            ]
+        wsim_integrate(
+            inputs=[workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members],
+            stats=['q25', 'q50', 'q75'],
+            output=workspace.standard_anomaly_summary(yearmon=yearmon, window=window, target=target)
         )
     ]
 
@@ -333,27 +241,13 @@ def correct_forecast(data, *, member, target, lead_months):
     target_month = int(target[-2:])
 
     return [
-        Step(
-            targets=data.forecast_corrected(member=member, target=target),
-            dependencies=[data.forecast_raw(member=member, target=target)] +
-                         [data.fit_retro(target_month=target_month,
-                                         lead_months=lead_months,
-                                         var=var)
-                          for var in ('T', 'Pr')] +
-                         [data.fit_obs(month=target_month,
-                                       var=var)
-                          for var in ('T', 'Pr')],
-            commands=[
-                wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='T'),
-                             obs=data.fit_obs(month=target_month, var='T'),
-                             forecast=Vardef(data.forecast_raw(member=member, target=target), 'tmp2m@[x-273.15]').read_as('T'),
-                             output=data.forecast_corrected(member=member, target=target)),
-                wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
-                             obs=data.fit_obs(month=target_month, var='Pr'),
-                             forecast=Vardef(data.forecast_raw(member=member, target=target), 'prate@[x*2628000]').read_as('Pr'),
-                             output=data.forecast_corrected(member=member, target=target),
-                             append=True)
-            ]
-        )
+        wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='T'),
+                     obs=data.fit_obs(month=target_month, var='T'),
+                     forecast=Vardef(data.forecast_raw(member=member, target=target), 'tmp2m@[x-273.15]').read_as('T'),
+                     output=data.forecast_corrected(member=member, target=target)).merge(
+        wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
+                     obs=data.fit_obs(month=target_month, var='Pr'),
+                     forecast=Vardef(data.forecast_raw(member=member, target=target), 'prate@[x*2628000]').read_as('Pr'),
+                     output=data.forecast_corrected(member=member, target=target),
+                     append=True))
     ]
-

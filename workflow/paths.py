@@ -222,7 +222,7 @@ class DefaultWorkspace:
     def forcing(self, *, yearmon, member=None, target=None):
         return self.make_path('forcing', 'forcing', yearmon=yearmon, member=member, target=target)
 
-    def results(self, *, yearmon, window=1, member=None, target=None):
+    def results(self, *, yearmon, window, member=None, target=None):
         assert window is not None
 
         root = 'results' if window == 1 else 'results_integrated'

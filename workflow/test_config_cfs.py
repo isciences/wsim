@@ -95,8 +95,8 @@ class TestCFSConfig(unittest.TestCase):
         self.assertEqual(stop_year - start_year + 1,
                          len(fit_step.dependencies))
 
-        self.assertTrue(str(start_year) in fit_step.dependencies[0])
-        self.assertTrue(str(stop_year) in fit_step.dependencies[-1])
+        self.assertTrue(str(start_year) in sorted(list(fit_step.dependencies))[0])
+        self.assertTrue(str(stop_year) in sorted(list(fit_step.dependencies))[-1])
 
     @unittest.skip
     def test_makefile_readable(self):

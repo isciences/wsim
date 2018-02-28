@@ -20,7 +20,6 @@ import commands
 import dates
 import paths
 
-from actions import extract_from_tar
 from config_base import ConfigBase
 from data_sources import isric, gmted, stn30
 from step import Step
@@ -99,18 +98,12 @@ class NCEP(paths.ObservedForcing):
             ltmean_file=self.p_wetdays(yearmon=dates.format_yearmon(start_year - 1, month)).file,
 
             steps.append(
-                Step(
-                    targets=ltmean_file,
-                    dependencies=[vardef.file for vardef in input_vardefs],
-                    commands=[
-                        commands.wsim_integrate(
-                            stats=['ave'],
-                            inputs=input_vardefs,
-                            output=ltmean_file,
-                            keepvarnames=True
-                        )
-                    ]
-                ),
+                commands.wsim_integrate(
+                    stats=['ave'],
+                    inputs=input_vardefs,
+                    output=ltmean_file,
+                    keepvarnames=True
+                )
             )
 
         return steps
@@ -310,22 +303,18 @@ class CFSForecast(paths.ForecastForcing):
                 fitdir = os.path.dirname(fitfile)
                 fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
 
-                steps.append(Step(
-                    targets=fitfile,
-                    dependencies=tarfile,
-                    commands=extract_from_tar(tarfile, fitfile_arcname, fitdir)
-                ))
+                steps.append(
+                    commands.extract_from_tar(tarfile, fitfile_arcname, fitdir)
+                )
 
                 for lead in range(1, 10):
                     fitfile =  self.fit_retro(var=var, target_month=month, lead_months=lead)
                     fitdir = os.path.dirname(fitfile)
                     fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
 
-                    steps.append(Step(
-                        targets=fitfile,
-                        dependencies=tarfile,
-                        commands=extract_from_tar(tarfile, fitfile_arcname, fitdir)
-                    ))
+                    steps.append(
+                        commands.extract_from_tar(tarfile, fitfile_arcname, fitdir)
+                    )
 
         return steps
 
@@ -349,13 +338,7 @@ class CFSForecast(paths.ForecastForcing):
 
             ),
             # Convert the forecast data from GRIB to netCDF
-            Step(
-                targets=outfile,
-                dependencies=[infile],
-                commands=[
-                    commands.forecast_convert(infile, outfile)
-                ]
-            )
+            commands.forecast_convert(infile, outfile)
         ]
 
 class CFSConfig(ConfigBase):
