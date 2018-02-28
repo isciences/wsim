@@ -11,12 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from paths import expand_filename_dates
+
 import os
 import sys
 
+def process_filename(txt):
+    """
+    Strip out variable definitions used by some WSIM tools, and expand
+    date ranges present in the filename
+    """
+    filename = str(txt).split('::')[0]
+    return expand_filename_dates(filename)
+
 class Step:
 
-    def __init__(self, targets, dependencies, commands, comment=None):
+    def __init__(self, *, targets=None, dependencies=None, commands=None, comment=None):
         """
         Initialize a workflow step
 
@@ -25,16 +35,60 @@ class Step:
         :param commands:     a list of
         :param comment:      an optional text comment to be associated with the step
         """
-        if type(targets) is str:
+
+        if targets is None:
+            targets = []
+        elif type(targets) is str:
             targets = [targets]
 
-        if type(dependencies) is str:
+        if dependencies is None:
+            dependencies = []
+        elif type(dependencies) is str:
             dependencies = [dependencies]
 
-        self.targets = [t for t in targets if t is not None]
-        self.dependencies = [d for d in dependencies if d is not None]
+        if commands is None:
+            commands = []
+
         self.commands = [c for c in commands if c is not None]
+
+        self.targets = set()
+        for t in targets:
+            if t is not None and t != '/dev/null':
+                self.targets |= set(process_filename(t))
+
+        self.dependencies = set()
+        for d in dependencies:
+            if d is not None:
+                self.dependencies |= set(process_filename(d))
+
         self.comment = comment
+
+
+    def merge(self, other):
+        """
+        Merge another step into this one, returning a combined step.
+        Commands for the other step will be sequenced after commands
+        for this step. Dependencies of the other step that are
+        supplied by this step will be removed from the dependency list.
+        """
+
+        # Add all targets of other step to our target list
+        combined_targets = self.targets | other.targets
+
+        combined_dependencies = set(self.dependencies)
+
+        # Add dependencies of other step that are not supplied by this
+        # step to our dependency list
+        for d in other.dependencies:
+            if d not in self.targets:
+                combined_dependencies.add(d)
+
+        return Step(
+            targets=combined_targets,
+            dependencies=combined_dependencies,
+            commands=self.commands + other.commands
+        )
+
 
     def use_pattern_rules(self):
         """
@@ -68,13 +122,13 @@ class Step:
         """
         Generate the target portion of the dependency string (the left-hand-side)
         """
-        return ' '.join(self.patternize_if_needed(self.targets))
+        return ' '.join(self.patternize_if_needed(sorted(list(self.targets))))
 
     def dependency_string(self):
         """
         Generate the target portion of the dependency string (the right-hand-side)
         """
-        return ' '.join(self.patternize_if_needed(self.dependencies))
+        return ' '.join(self.patternize_if_needed(sorted(list(self.dependencies))))
 
     @classmethod
     def target_separator(cls, use_order_only_rules):
@@ -126,7 +180,7 @@ class Step:
                 try:
                     txt += token.format_map(keys)
                 except Exception as e:
-                    print("Error subbing", token, "with", keys, file=sys.stderr)
+                    print("Error subbing", token, "with", keys, "in step for", self.targets, file=sys.stderr)
                     raise e
                 if token.endswith('\\'):
                     txt += '\n\t   '
