@@ -14,9 +14,13 @@
 import os
 import timeit
 import tempfile
+import re
 import subprocess
 import sys
 import unittest
+
+import dates
+import spinup
 
 from config_cfs import CFSConfig
 from makemake import generate_steps, find_duplicate_targets, write_makefile
@@ -72,6 +76,28 @@ class TestCFSConfig(unittest.TestCase):
         # Or after it
         self.fail_on_duplicate_targets(generate_steps(config, '201801', '201801', False, 'latest'))
 
+    def test_var_fitting_years(self):
+        # Check that, when fitting time-integrated variables, we correctly truncate the historical range to
+        # account for the integration period
+        config = CFSConfig(self.source, self.derived)
+
+        fit_step = spinup.fit_var(config, param='T', stat='ave', window=24, month=6)[0]
+        input_results = get_arg(fit_step.commands[0], '--input').split('/')[-1]
+
+        start_year = list(config.result_fit_years())[0] + 2
+        stop_year = list(config.result_fit_years())[-1]
+
+        self.assertTupleEqual(
+            (dates.format_yearmon(start_year, 6), dates.format_yearmon(stop_year, 6), '12'),
+            re.search('\[(\d+):(\d+):(\d+)\]', input_results).groups()
+        )
+
+        self.assertEqual(stop_year - start_year + 1,
+                         len(fit_step.dependencies))
+
+        self.assertTrue(str(start_year) in fit_step.dependencies[0])
+        self.assertTrue(str(stop_year) in fit_step.dependencies[-1])
+
     @unittest.skip
     def test_makefile_readable(self):
         config = CFSConfig(self.source, self.derived)
@@ -93,6 +119,11 @@ class TestCFSConfig(unittest.TestCase):
         end = timeit.default_timer()
 
         print('Makefile validated in', end-start)
+
+def get_arg(command, arg):
+    for i, token in enumerate(command):
+        if command[i-1] == arg:
+            return token
 
 def unbuildable_targets(steps):
     """

@@ -126,8 +126,8 @@ class ConfigBase(metaclass=abc.ABCMeta):
             'Ws'
         ]
 
-    @staticmethod
-    def lsm_integrated_vars():
+    @classmethod
+    def lsm_integrated_vars(cls):
         """
         Provides a dictionary whose keys are LSM output variables to be time-integrated, and whose
         values are lists of stats to apply to each of those variables (min, max, ave, etc.)
@@ -141,9 +141,27 @@ class ConfigBase(metaclass=abc.ABCMeta):
             'Ws'        : [ 'ave' ]
         }
 
-    def lsm_integrated_var_names(self):
+    @classmethod
+    def lsm_integrated_stats(cls):
+        """
+        Provides a dictionary whose keys are stat names and whose values are a list of variables
+        two which that stat should be applied. It can be thought of as the inverse of lsm_integrated_vars()
+        """
+        integrated_stats = {}
+
+        for var, varstats in cls.lsm_integrated_vars().items():
+            for stat in varstats:
+                if stat not in integrated_stats:
+                    integrated_stats[stat] = []
+                integrated_stats[stat].append(var)
+
+        return integrated_stats
+
+
+    @classmethod
+    def lsm_integrated_var_names(cls):
         """
         Provides a flat list of time-integrated variable names
         """
-        return [var + '_' + stat for var, stats in self.lsm_integrated_vars().items() for stat in stats]
+        return [var + '_' + stat for var, stats in cls.lsm_integrated_vars().items() for stat in stats]
 
