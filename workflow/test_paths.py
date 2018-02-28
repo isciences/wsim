@@ -13,7 +13,7 @@
 
 import unittest
 
-from paths import date_range
+from paths import *
 
 class TestPaths(unittest.TestCase):
 
@@ -35,6 +35,17 @@ class TestPaths(unittest.TestCase):
         self.assertEqual(
             '[201402:201406:1]',
             date_range(['201402', '201403', '201404', '201405', '201406'])
+        )
+
+    def test_expand_filename_dates(self):
+        self.assertListEqual(
+            ['hurricane.nc'],
+            expand_filename_dates('hurricane.nc')
+        )
+
+        self.assertListEqual(
+            ['hurricane_1938.nc', 'hurricane_1940.nc', 'hurricane_1942.nc', 'hurricane_1944.nc'],
+            expand_filename_dates('hurricane_[1938:1944:2].nc')
         )
 
 

@@ -107,16 +107,21 @@ def rolling_window(yearmon, n):
     return window
 
 def days_in_month(yearmon):
-
     """
     Return YYYYMMDD strings for each day in input YYYYMM
     """
     return [yearmon + '{:02d}'.format(day + 1) for day in range(calendar.monthrange(*parse_yearmon(yearmon))[1])]
 
 def add_years(yyyy, n):
+    """
+    Add n years to YYYY
+    """
     return '{:04d}'.format(int(yyyy) + n)
 
 def add_months(yyyymm, n):
+    """
+    Add n months to YYYYMM
+    """
     year = int(yyyymm[:4])
     month = int(yyyymm[4:])
 
@@ -129,6 +134,9 @@ def add_months(yyyymm, n):
     return '{:04d}{:02d}'.format(year, month)
 
 def add_days(yyyymmdd, n):
+    """
+    Add n days to YYYYMMDD
+    """
     date = datetime.date(int(yyyymmdd[0:4]),
                          int(yyyymmdd[4:6]),
                          int(yyyymmdd[6:8]))
@@ -136,3 +144,32 @@ def add_days(yyyymmdd, n):
     date += datetime.timedelta(days=n)
 
     return date.strftime('%Y%m%d')
+
+def expand_date_range(start, stop, step):
+    """
+    Return all dates in the list >= start and <= stop, separated by step.
+    Inputs may be YYYY, YYYYMM, or YYYYMMDD strings
+    """
+    dates = [start]
+
+    if len(start) != len(stop):
+        raise ValueError("Start and stop dates must be in same format")
+
+    if len(start) == 4:
+        increment_date = add_years
+    elif len(start) == 6:
+        increment_date = add_months
+    elif len(start) == 8:
+        increment_date = add_days
+    else:
+        raise ValueError("Unknown date format")
+
+    while True:
+        next = increment_date(dates[-1], step)
+        if next <= stop:
+            dates.append(next)
+        else:
+            break
+
+    return dates
+

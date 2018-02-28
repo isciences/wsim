@@ -60,3 +60,42 @@ class TestDates(unittest.TestCase):
         self.assertEqual(29, len(days))
         self.assertEqual('20000201', days[0])
         self.assertEqual('20000229', days[-1])
+
+    def test_add_years(self):
+        self.assertEqual('2004', add_years('1996', 8))
+
+    def test_add_months(self):
+        self.assertEqual('200406', add_months('199606', 8*12))
+
+    def test_add_days(self):
+        self.assertEqual('20170225', add_days('20160225', 366))
+
+    def test_date_range(self):
+        self.assertListEqual(
+            ['1999', '2000', '2001'],
+            expand_date_range('1999', '2001', 1)
+        )
+
+        # Can use step > 1
+        self.assertListEqual(
+            ['1999',  '2001'],
+            expand_date_range('1999', '2001', 2)
+        )
+
+        # Overshoots are ignored
+        self.assertListEqual(
+            ['1999'],
+            expand_date_range('1999', '2001', 3)
+        )
+
+        # also works with months
+        self.assertListEqual(
+            ['201711', '201801', '201803'],
+            expand_date_range('201711', '201803', 2)
+        )
+
+        # or days
+        self.assertListEqual(
+            ['20180221', '20180222', '20180223'],
+            expand_date_range('20180221', '20180223', 1)
+        )
