@@ -111,10 +111,11 @@ def generate_steps(config, start, stop, no_spinup, forecasts):
     steps += config.global_prep()
 
     meta_steps = { name : Step.create_meta(name) for name in (
-        'all_composites',
         'all_fits',
-        'all_adjusted_monthly_composites',
+        'all_composites',
         'all_monthly_composites',
+        'all_adjusted_composites',
+        'all_adjusted_monthly_composites',
     )}
 
     if config.should_run_spinup() and not no_spinup:

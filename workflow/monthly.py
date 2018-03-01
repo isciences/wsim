@@ -62,7 +62,7 @@ def monthly_observed(config, yearmon, meta_steps):
         adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window)
         steps += adjusted_indicator_steps
 
-        meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+        meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
         if window == 1:
             meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
 
