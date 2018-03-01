@@ -110,10 +110,12 @@ def generate_steps(config, start, stop, no_spinup, forecasts):
 
     steps += config.global_prep()
 
-    meta_steps = dict(
-        all_monthly_composites=[],
-        all_composites=[],
-    )
+    meta_steps = { name : Step.create_meta(name) for name in (
+        'all_composites',
+        'all_fits',
+        'all_adjusted_monthly_composites',
+        'all_monthly_composites',
+    )}
 
     if config.should_run_spinup() and not no_spinup:
         steps += spinup.spinup(config, meta_steps)
@@ -124,8 +126,7 @@ def generate_steps(config, start, stop, no_spinup, forecasts):
         if forecasts == 'all' or (forecasts == 'latest' and i == 0):
             steps += monthly.monthly_forecast(config, yearmon, meta_steps)
 
-    for meta_step, deps in meta_steps.items():
-        steps.append(Step(targets=meta_step, dependencies=deps, commands=[]))
+        steps += meta_steps.values()
 
     return steps
 

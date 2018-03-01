@@ -48,10 +48,10 @@ def monthly_observed(config, yearmon, meta_steps):
         composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon)
         steps += composite_indicator_steps
         steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
-        for step in composite_indicator_steps:
-            meta_steps['all_composites'] += step.targets
-            if window == 1:
-                meta_steps['all_monthly_composites'] += step.targets
+
+        meta_steps['all_composites'].require(composite_indicator_steps)
+        if window == 1:
+            meta_steps['all_monthly_composites'].require(composite_indicator_steps)
 
         # Express composite anomalies in terms of a return period
         # (relative to historical composite anomalies)
@@ -61,11 +61,10 @@ def monthly_observed(config, yearmon, meta_steps):
         # of the composite surface anomaly and composite deficit anomaly
         adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window)
         steps += adjusted_indicator_steps
-        for step in adjusted_indicator_steps:
-            meta_steps['all_adjusted_monthly_composites'] += step.targets
-            if window == 1:
-                meta_steps['all_adjusted_monthly_composites'] += step.targets
 
+        meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+        if window == 1:
+            meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
 
     return steps
 
@@ -111,9 +110,9 @@ def monthly_forecast(config, yearmon, meta_steps):
 
             composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
             steps += composite_indicator_steps
-            for step in composite_indicator_steps:
-                meta_steps['all_composites'] += step.targets
-                if window == 1:
-                    meta_steps['all_monthly_composites'] += step.targets
+
+            meta_steps['all_composites'].require(composite_indicator_steps)
+            if window == 1:
+                meta_steps['all_monthly_composites'].require(composite_indicator_steps)
 
     return steps

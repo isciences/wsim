@@ -23,7 +23,7 @@ def spinup(config, meta_steps):
     of observed data files.
     """
     steps = []
-    meta_steps['all_fits'] = []
+    all_fits = meta_steps['all_fits']
 
     if config.should_run_lsm():
         print("Adding spinup LSM runs")
@@ -53,16 +53,14 @@ def spinup(config, meta_steps):
     # Compute monthly fits (and then anomalies) over the fit period
     for param in config.lsm_rp_vars():
         for month in all_months:
-            steps += fit_var(config, param=param, month=month)
-            meta_steps['all_fits'].append(config.workspace().fit_obs(var=param, month=month, window=1, stat=None))
+            steps += all_fits.require(fit_var(config, param=param, month=month))
 
     # Compute fits for time-integrated parameters
     for param in config.lsm_integrated_vars().keys():
         for stat in config.lsm_integrated_vars()[param]:
             for window in config.integration_windows():
                 for month in all_months:
-                    steps += fit_var(config, param=param, stat=stat, month=month, window=window)
-                    meta_steps['all_fits'].append(config.workspace().fit_obs(var=param, month=month, window=window, stat=stat))
+                    steps += all_fits.require(fit_var(config, param=param, stat=stat, month=month, window=window))
 
     # Steps for anomalies and composite anomalies
     for window in [1] + config.integration_windows():

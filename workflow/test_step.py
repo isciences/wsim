@@ -133,3 +133,19 @@ class TestStep(unittest.TestCase):
                 ['eat', 'cake'],
                 ['open', 'presents']
             ])
+
+    def test_require(self):
+        meta = Step.create_meta('party')
+
+        meta.require(
+            Step(targets='cake',
+                 dependencies=['frosting', 'base'],
+                 commands=[['a', 'b', 'c']]),
+            Step(targets='presents',
+                 dependencies=['money', 'ideas'],
+                 commands=[['purchase']])
+        )
+
+        self.assertSetEqual(meta.dependencies, { 'cake', 'presents' })
+        self.assertSetEqual(meta.targets, { 'party' })
+        self.assertListEqual(meta.commands, [])

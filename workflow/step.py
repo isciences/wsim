@@ -63,6 +63,14 @@ class Step:
 
         self.comment = comment
 
+    @classmethod
+    def create_meta(cls, meta_step_name, dependencies=None):
+        """
+        Utility method to create a step with no commands, used only
+        as a convenient way to refer to many related steps at once
+        (e.g., "all_composites")
+        """
+        return Step(targets=[meta_step_name], dependencies=dependencies, commands=None)
 
     def merge(self, *others):
         """
@@ -94,6 +102,23 @@ class Step:
             commands=combined_commands
         )
 
+    def require(self, *others):
+        """
+        Add targets of other steps to this step's dependencies
+        Useful in creating meta-steps such as "all_composites"
+
+        As a convenience, return the arguments so that we can
+        use concise constructs like this:
+
+        steps += my_meta.require(*composite_indicators(month=6))
+        """
+        if len(others) == 1 and type(others[0] is list):
+            others = others[0]
+
+        for other in others:
+            self.dependencies |= other.targets
+
+        return others
 
     def use_pattern_rules(self):
         """
@@ -194,3 +219,4 @@ class Step:
 
             txt += '\n'
         return txt
+
