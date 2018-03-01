@@ -41,10 +41,10 @@ class TestCFSConfig(unittest.TestCase):
         config = CFSConfig(self.source, self.derived)
 
         members = config.forecast_ensemble_members('201701')
-        dates = set(m[:8] for m in members)
+        member_dates = set(m[:8] for m in members)
 
         self.assertEqual(28, len(members))
-        self.assertSetEqual(dates, {'20170125', '20170126', '20170127', '20170128', '20170129', '20170130', '20170131'})
+        self.assertSetEqual(member_dates, {'20170125', '20170126', '20170127', '20170128', '20170129', '20170130', '20170131'})
 
     def test_history_length(self):
         config = CFSConfig(self.source, self.derived)
