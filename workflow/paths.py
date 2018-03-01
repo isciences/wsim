@@ -189,21 +189,27 @@ class DefaultWorkspace:
         return filename.format(thing=thing, window=window, yearmon=yearmon, target=target, member=member)
 
     # Summaries of data from multi-member forecast ensembles
-    def composite_summary(self, *, yearmon, window=1, target=None):
+    def composite_summary(self, *, yearmon, window, target=None):
         assert window is not None
         return self.make_path('composite', 'composite', yearmon=yearmon, window=window, target=target)
 
-    def composite_anomaly(self, *, yearmon, window=1, target=None):
+    def composite_summary_adjusted(self, *, yearmon, window, target=None):
+        return self.make_path('composite_adjusted', 'composite_adjusted', yearmon=yearmon, window=window, target=target)
+
+    def composite_anomaly(self, *, yearmon, window, target=None):
         return self.make_path('composite_anom', 'composite_anom', yearmon=yearmon, window=window, target=target)
 
-    def return_period_summary(self, *, yearmon, window=1, target):
+    def composite_anomaly_return_period(self, *, yearmon, window, target=None):
+        return self.make_path('composite_anom_rp', 'composite_anom_rp', yearmon=yearmon, window=window, target=target)
+
+    def return_period_summary(self, *, yearmon, window, target):
         assert window is not None
 
         root = 'rp_summary' if window == 1 else 'rp_integrated_summary'
 
         return self.make_path(root, 'rp_summary', yearmon=yearmon, window=window, target=target)
 
-    def standard_anomaly_summary(self, *, yearmon, window=1, target):
+    def standard_anomaly_summary(self, *, yearmon, window, target):
         assert window is not None
 
         root = 'anom_summary' if window == 1 else 'anom_integrated_summary'
@@ -229,14 +235,14 @@ class DefaultWorkspace:
 
         return self.make_path(root, 'results', yearmon=yearmon, window=window, member=member, target=target)
 
-    def return_period(self, *, yearmon, window=1, member=None, target=None):
+    def return_period(self, *, yearmon, window, member=None, target=None):
         assert window is not None
 
         root = 'rp' if window == 1 else 'rp_integrated'
 
         return self.make_path(root, 'rp', yearmon=yearmon, window=window, member=member, target=target)
 
-    def standard_anomaly(self, *, yearmon, window=1, member=None, target=None):
+    def standard_anomaly(self, *, yearmon, window, member=None, target=None):
         assert window is not None
 
         root = 'anom' if window == 1 else 'anom_integrated'
@@ -261,6 +267,7 @@ class DefaultWorkspace:
     def spinup_mean_state(self, *, month):
         return os.path.join(self.outputs, 'spinup', 'spinup_mean_state_month_{month:02d}.nc'.format(month=month))
 
+    # Distribution fit files
     def fit_obs(self, var, month, window, stat=None):
         filename = '{var}'
 
@@ -274,7 +281,8 @@ class DefaultWorkspace:
 
         return os.path.join(self.outputs, 'fits', filename.format_map(locals()))
 
-    def fit_composite_anomalies(self, window):
-        return os.path.join(self.outputs, 'fits', 'composite_anom_{window}mo.nc'.format(window=window))
+    def fit_composite_anomalies(self, *, indicator, window):
+        return os.path.join(self.outputs, 'fits', 'composite_anom_{indicator}_{window}mo.nc'.format(window=window,
+                                                                                                    indicator=indicator))
 
 

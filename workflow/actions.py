@@ -172,19 +172,41 @@ def composite_indicators(workspace, *, yearmon, window=None, target=None, quanti
     else:
         infile = workspace.return_period(yearmon=yearmon, window=window)
 
-    outfile = workspace.composite_summary(yearmon=yearmon, target=target, window=window)
-
     return [
         wsim_composite(
             surplus=[infile + '::' + var for var in cvars['surplus']],
             deficit=[infile + '::' + var for var in cvars['deficit']],
             both_threshold=3,
             mask=infile + '::' + cvars['mask'],
-            output=outfile,
+            output=workspace.composite_summary(yearmon=yearmon, target=target, window=window),
             clamp=60
         )
     ]
 
+def composite_indicator_return_periods(workspace, *, yearmon, window, target=None):
+    return [
+        wsim_anom(
+            fits=workspace.fit_composite_anomalies(window=window, indicator='surplus'),
+            obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target), 'surplus'),
+            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target)
+        ).merge(
+        wsim_anom(
+            fits=workspace.fit_composite_anomalies(window=window, indicator='deficit'),
+            obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target), 'deficit'),
+            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target)
+        ))
+    ]
+
+def composite_indicator_adjusted(workspace, *, yearmon, window, target=None):
+    return [
+        wsim_composite(
+            surplus=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target), 'surplus_rp').read_as('surplus')],
+            deficit=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target), 'deficit_rp').read_as('deficit')],
+            both_threshold=3,
+            output=workspace.composite_summary_adjusted(yearmon=yearmon, window=window, target=target),
+            clamp=60
+        )
+    ]
 
 def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantile=None):
     cvars = composite_vars(method='standard_anomaly', window=window, quantile=quantile)

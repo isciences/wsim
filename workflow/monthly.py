@@ -53,6 +53,20 @@ def monthly_observed(config, yearmon, meta_steps):
             if window == 1:
                 meta_steps['all_monthly_composites'] += step.targets
 
+        # Express composite anomalies in terms of a return period
+        # (relative to historical composite anomalies)
+        steps += composite_indicator_return_periods(config.workspace(), yearmon=yearmon, window=window)
+
+        # Produce an "adjusted" composite based on the return periods
+        # of the composite surface anomaly and composite deficit anomaly
+        adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window)
+        steps += adjusted_indicator_steps
+        for step in adjusted_indicator_steps:
+            meta_steps['all_adjusted_monthly_composites'] += step.targets
+            if window == 1:
+                meta_steps['all_adjusted_monthly_composites'] += step.targets
+
+
     return steps
 
 def monthly_forecast(config, yearmon, meta_steps):

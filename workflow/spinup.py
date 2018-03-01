@@ -15,7 +15,7 @@ from commands import *
 from dates import format_yearmon, all_months
 from paths import read_vars, date_range
 
-from actions import create_forcing_file, compute_return_periods, composite_anomalies, composite_indicators
+from actions import create_forcing_file, compute_return_periods, composite_anomalies
 
 def spinup(config, meta_steps):
     """
@@ -319,7 +319,10 @@ def fit_composite_anomalies(config, *, window):
     return [
         wsim_fit(
             distribution=config.distribution,
-            inputs=[config.workspace().composite_anomaly(yearmon=date_range(fit_yearmons[0], fit_yearmons[-1]), window=window)],
-            output=config.workspace().fit_composite_anomalies(window=window)
+            inputs=[
+                read_vars(config.workspace().composite_anomaly(yearmon=date_range(fit_yearmons[0], fit_yearmons[-1]), window=window), indicator)
+            ],
+            output=config.workspace().fit_composite_anomalies(indicator=indicator, window=window)
         )
+        for indicator in ('surplus', 'deficit')
     ]
