@@ -113,15 +113,23 @@ class TestStep(unittest.TestCase):
                          ['bake', 'cake'],
                          ['apply', 'frosting']
                      ])
+        step3 = Step(targets='party',
+                     dependencies=['cake', 'presents'],
+                     commands=[
+                         ['eat', 'cake'],
+                         ['open', 'presents']
+                     ])
 
-        combined = step1.merge(step2)
+        combined = step1.merge(step2, step3)
 
-        self.assertSetEqual(combined.targets, { 'cake', 'frosting' })
-        self.assertSetEqual(combined.dependencies, { 'flour', 'water', 'sugar' })
+        self.assertSetEqual(combined.targets, { 'cake', 'frosting', 'party' })
+        self.assertSetEqual(combined.dependencies, { 'flour', 'water', 'sugar', 'presents' })
         self.assertListEqual(
             combined.commands,
             [
                 ['make', 'frosting'],
                 ['bake', 'cake'],
-                ['apply', 'frosting']
+                ['apply', 'frosting'],
+                ['eat', 'cake'],
+                ['open', 'presents']
             ])

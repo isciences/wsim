@@ -64,7 +64,7 @@ class Step:
         self.comment = comment
 
 
-    def merge(self, other):
+    def merge(self, *others):
         """
         Merge another step into this one, returning a combined step.
         Commands for the other step will be sequenced after commands
@@ -72,21 +72,26 @@ class Step:
         supplied by this step will be removed from the dependency list.
         """
 
-        # Add all targets of other step to our target list
-        combined_targets = self.targets | other.targets
-
+        combined_targets = set(self.targets)
         combined_dependencies = set(self.dependencies)
+        combined_commands = list(self.commands)
 
-        # Add dependencies of other step that are not supplied by this
-        # step to our dependency list
-        for d in other.dependencies:
-            if d not in self.targets:
-                combined_dependencies.add(d)
+        for other in others:
+            # Add dependencies of other step that are not supplied by a
+            # previous step to our dependency list
+            for d in other.dependencies:
+                if d not in combined_targets:
+                    combined_dependencies.add(d)
+
+            # Add all targets of other step to our target list
+            combined_targets = combined_targets | other.targets
+
+            combined_commands += other.commands
 
         return Step(
             targets=combined_targets,
             dependencies=combined_dependencies,
-            commands=self.commands + other.commands
+            commands=combined_commands
         )
 
 
@@ -189,4 +194,3 @@ class Step:
 
             txt += '\n'
         return txt
-
