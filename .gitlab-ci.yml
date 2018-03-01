@@ -13,7 +13,7 @@ variables:
         CONTAINER_RELEASE_IMAGE: isciences/wsim:latest
 
 before_script:
-        - docker login -u isciences -p $DOCKERHUB_PW
+        - docker login -u ci4isciences -p $DOCKERHUB_PW
 
 build:
         stage: build
