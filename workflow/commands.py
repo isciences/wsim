@@ -18,7 +18,7 @@ from step import Step
 def q(txt):
     return '"{}"'.format(txt)
 
-def forecast_convert(infile, outfile):
+def forecast_convert(infile, outfile, comment=None):
     return Step(
         targets=outfile,
         dependencies=infile,
@@ -26,10 +26,11 @@ def forecast_convert(infile, outfile):
             [os.path.join('{BINDIR}', 'utils', 'noaa_cfsv2_forecast', 'convert_cfsv2_forecast.sh'),
              infile,
              outfile]
-        ]
+        ],
+        comment=comment
     )
 
-def extract_from_tar(tarfile, to_extract, dest_dir):
+def extract_from_tar(tarfile, to_extract, dest_dir, comment=None):
     """
     Returns a step to extract a single file from a tarfile and place it in a specified directory
     :param tarfile: path to tarfile
@@ -51,10 +52,11 @@ def extract_from_tar(tarfile, to_extract, dest_dir):
                 '--directory', dest_dir,
                 to_extract
             ]
-        ]
+        ],
+        comment=comment
     )
 
-def wsim_anom(*, fits, obs, rp=None, sa=None):
+def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_anom.R'),
         '--fits', q(fits),
@@ -69,10 +71,11 @@ def wsim_anom(*, fits, obs, rp=None, sa=None):
     return Step(
         targets=[rp, sa],
         dependencies=[fits, obs],
-        commands=[cmd]
+        commands=[cmd],
+        comment=comment
     )
 
-def wsim_fit(*, distribution, inputs, output):
+def wsim_fit(*, distribution, inputs, output, comment=None):
     dependencies = []
     targets = []
 
@@ -91,10 +94,11 @@ def wsim_fit(*, distribution, inputs, output):
     return Step(
         targets=targets,
         dependencies=dependencies,
-        commands=[cmd]
+        commands=[cmd],
+        comment=comment
     )
 
-def wsim_lsm(*, wc, flowdir, elevation, state, forcing, results, next_state, loop=None):
+def wsim_lsm(*, wc, flowdir, elevation, state, forcing, results, next_state, loop=None, comment=None):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_lsm.R'),
         '--wc',         q(wc),
@@ -119,10 +123,11 @@ def wsim_lsm(*, wc, flowdir, elevation, state, forcing, results, next_state, loo
     return Step(
         targets=[results, next_state],
         dependencies=[wc, flowdir, elevation, state] + forcing,
-        commands=[cmd]
+        commands=[cmd],
+        comment=comment
     )
 
-def wsim_merge(*, inputs, output, attrs=None):
+def wsim_merge(*, inputs, output, attrs=None, comment=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_merge.R') ]
 
     for arg in inputs:
@@ -137,10 +142,11 @@ def wsim_merge(*, inputs, output, attrs=None):
     return Step(
         targets=output,
         dependencies=inputs,
-        commands=[cmd]
+        commands=[cmd],
+        comment=comment
     )
 
-def wsim_correct(*, retro, obs, forecast, output, append=False):
+def wsim_correct(*, retro, obs, forecast, output, append=False, comment=None):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_correct.R'),
         '--retro',    q(retro),
@@ -155,10 +161,11 @@ def wsim_correct(*, retro, obs, forecast, output, append=False):
     return Step(
         targets=output,
         dependencies=[retro, obs, forecast],
-        commands=[cmd]
+        commands=[cmd],
+        comment=comment
     )
 
-def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, attrs=None):
+def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, attrs=None, comment=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_integrate.R') ]
 
     for stat in stats:
@@ -188,10 +195,11 @@ def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, at
     return Step(
         targets=output,
         dependencies=inputs,
-        commands=[cmd]
+        commands=[cmd],
+        comment=comment
     )
 
-def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None, clamp=None, output):
+def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None, clamp=None, output, comment=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_composite.R') ]
 
     if surplus:
@@ -216,6 +224,7 @@ def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None
     return Step(
         targets=output,
         dependencies=surplus + deficit + [mask],
-        commands=[cmd]
+        commands=[cmd],
+        comment=comment
     )
 
