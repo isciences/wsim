@@ -89,19 +89,16 @@ def find_duplicate_targets(steps):
 
     return sorted(list(duplicates))
 
-def write_makefile(filename, steps, bindir):
+def write_makefile(module, filename, steps, bindir):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, 'w') as outfile:
-        outfile.write('.DELETE_ON_ERROR:\n') # Delete partially-created files on error or cancel
-        outfile.write('.SECONDARY:\n')       # Prevent removal of targets considered "intermediate"
-        outfile.write('.SUFFIXES:\n')        # Disable implicit rules
-        outfile.write('\n')
+        outfile.write(module.header())
 
         # Reverse the steps so that spinup stuff is at the end. This is just to improve readability
         # if the user wants to manually inspect the Makefile
         for step in reversed(steps):
-            outfile.write(gnu_make.write_step_as_make_rule(step, {'BINDIR' : bindir}))
+            outfile.write(module.write_step(step, {'BINDIR' : bindir}))
             outfile.write('\n')
 
         print("Done")
@@ -144,7 +141,7 @@ def main(raw_args):
         for target in duplicate_targets[:100]:
             print("Duplicate target encountered:", target, file=sys.stderr)
 
-    write_makefile(os.path.join(args.workspace, args.makefile), steps, args.bindir)
+    write_makefile(gnu_make, os.path.join(args.workspace, args.makefile), steps, args.bindir)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

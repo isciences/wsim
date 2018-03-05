@@ -58,7 +58,15 @@ def target_separator(use_order_only_rules):
     else:
         return ' : '
 
-def write_step_as_make_rule(step, keys=None, use_order_only_rules=True):
+def header():
+    header  = '.DELETE_ON_ERROR:\n'  # Delete partially-created files on error or cancel
+    header += '.SECONDARY:\n'        # Prevent removal of targets considered "intermediate"
+    header += '.SUFFIXES:\n'         # Disable implicit rules
+    header += '\n'
+
+    return header
+
+def write_step(step, keys=None, use_order_only_rules=True):
     """
     Output this Step in the rule/recipe format used by GNU Make
 
