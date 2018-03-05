@@ -120,52 +120,6 @@ class Step:
 
         return others
 
-    def use_pattern_rules(self):
-        """
-        Determine if we should use pattern-style rules when writing a Step
-        as a Makefile rule. This can be necessary because GNU Make only supports
-        multiple targets in a single rule when using pattern-style rules.
-        In this case, we fake a pattern by replacing periods in our filesnames with %
-
-        :return: True if pattern rules should be used
-        """
-        return len(self.targets) > 1
-
-    @classmethod
-    def patternize(cls, filenames):
-        """
-        Convert each target or dependency in a list to a pattern
-        :param filenames: list of targets or dependencies
-        :return: converted list
-        """
-        return [filename.replace('.', '%') for filename in filenames]
-
-    def patternize_if_needed(self, filenames):
-        """
-        Convert filenames into patterns, if needed
-        :param filenames: list of targets or dependencies
-        :return: possibly converted list
-        """
-        return self.patternize(filenames) if self.use_pattern_rules() else filenames
-
-    def target_string(self):
-        """
-        Generate the target portion of the dependency string (the left-hand-side)
-        """
-        return ' '.join(self.patternize_if_needed(sorted(list(self.targets))))
-
-    def dependency_string(self):
-        """
-        Generate the target portion of the dependency string (the right-hand-side)
-        """
-        return ' '.join(self.patternize_if_needed(sorted(list(self.dependencies))))
-
-    @classmethod
-    def target_separator(cls, use_order_only_rules):
-        if use_order_only_rules:
-            return ' : | '
-        else:
-            return ' : '
 
     def get_mkdir_commands(self):
         """
@@ -174,49 +128,3 @@ class Step:
         dirs = set([os.path.dirname(target) for target in self.targets])
 
         return [ ['mkdir', '-p', d ] for d in sorted(dirs) if d != '']
-
-    def get_text(self, keys=None, use_order_only_rules=True):
-        """
-        Output this Step in the rule/recipe format used by GNU Make
-
-        :param keys:                  optional dictionary of substitutions to make throughout
-                                      the command (e.g., { 'BINDIR' : '/wsim' }
-        :param use_order_only_rules:  if true, instructs make not to rebuild targets when the
-                                      timestamp of dependencies is newer than targets
-        :return:
-        """
-        if keys is None:
-            keys = {}
-        txt = ""
-        if self.comment:
-            txt += '# ' + self.comment + '\n'
-
-        # Rule Description
-        txt += self.target_string().format_map(keys) + \
-               self.target_separator(use_order_only_rules) + \
-               self.dependency_string().format_map(keys) + '\n'
-
-        # Recipe
-        for command in self.get_mkdir_commands() + self.commands:
-            # Split command-line arguments into individual lines for readability
-            # Add a \ to the end of the previous token to indicate a multiline
-            # continuation of a single command
-            for i in range(len(command)):
-                if command[i].startswith('-'):
-                    command[i-1] += ' \\'
-
-            txt += '\t' # Make requires that all lines in recipe start with a tab
-            for token in command:
-                try:
-                    txt += token.format_map(keys)
-                except Exception as e:
-                    print("Error subbing", token, "with", keys, "in step for", self.targets, file=sys.stderr)
-                    raise e
-                if token.endswith('\\'):
-                    txt += '\n\t   '
-                else:
-                    txt += ' '
-
-            txt += '\n'
-        return txt
-

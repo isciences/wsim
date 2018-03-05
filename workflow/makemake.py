@@ -28,6 +28,7 @@ import dates
 import argparse
 
 from step import Step
+from output import gnu_make
 
 def load_config(path, source, derived):
     from importlib.machinery import SourceFileLoader
@@ -100,7 +101,7 @@ def write_makefile(filename, steps, bindir):
         # Reverse the steps so that spinup stuff is at the end. This is just to improve readability
         # if the user wants to manually inspect the Makefile
         for step in reversed(steps):
-            outfile.write(step.get_text({'BINDIR' : bindir}))
+            outfile.write(gnu_make.write_step_as_make_rule(step, {'BINDIR' : bindir}))
             outfile.write('\n')
 
         print("Done")
