@@ -27,11 +27,14 @@ import spinup
 import dates
 import argparse
 
+from importlib.machinery import SourceFileLoader
+
 from step import Step
-from output import gnu_make
+
+def load_module(module):
+    return SourceFileLoader("output_module", os.path.join(os.path.realpath(os.path.dirname(__file__)), 'output', module + '.py')).load_module()
 
 def load_config(path, source, derived):
-    from importlib.machinery import SourceFileLoader
     return SourceFileLoader("config", path).load_module().config(source, derived)
 
 def parse_args(args):
@@ -50,6 +53,9 @@ def parse_args(args):
     parser.add_argument('--nospinup',
                         help='Skip model spin-up steps',
                         action='store_true')
+    parser.add_argument('--module',
+                        help="Name of output module",
+                        default='gnu_make')
     parser.add_argument('--makefile',
                         help='Name of generated makefile',
                         required=False,
@@ -132,6 +138,8 @@ def generate_steps(config, start, stop, no_spinup, forecasts):
 def main(raw_args):
     args = parse_args(raw_args)
 
+    output_module = load_module(args.module)
+
     config = load_config(args.config, args.source, args.workspace)
 
     steps = generate_steps(config, args.start, args.stop, args.nospinup, args.forecasts)
@@ -141,7 +149,9 @@ def main(raw_args):
         for target in duplicate_targets[:100]:
             print("Duplicate target encountered:", target, file=sys.stderr)
 
-    write_makefile(gnu_make, os.path.join(args.workspace, args.makefile), steps, args.bindir)
+    workflow_file = os.path.join(args.workspace, args.makefile)
+    print('Writing output to', workflow_file, 'using module:', args.module)
+    write_makefile(output_module, workflow_file, steps, args.bindir)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
