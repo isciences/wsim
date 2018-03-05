@@ -12,7 +12,7 @@
 # limitations under the License.
 
 from commands import *
-from dates import format_yearmon, all_months
+from dates import format_yearmon, all_months, get_next_yearmon
 from paths import read_vars, date_range
 
 from actions import create_forcing_file, compute_return_periods, composite_anomalies
@@ -113,26 +113,29 @@ def compute_climate_norms(config):
 
     for month in all_months:
         historical_yearmons = [format_yearmon(year, month) for year in config.historical_years()]
-        climate_norm_forcing = config.workspace().climate_norm_forcing(month=month)
 
         steps.append(
             wsim_integrate(
                 inputs=[config.observed_data().precip_monthly(yearmon=yearmon).read_as('Pr') for yearmon in historical_yearmons],
                 stats=['ave'],
                 keepvarnames=True,
-                output=climate_norm_forcing
+                output=config.workspace().climate_norm_forcing(month=month, temporary=True)
             ).merge(
             wsim_integrate(
                 inputs=[config.observed_data().temp_monthly(yearmon=yearmon).read_as('T') for yearmon in historical_yearmons],
                 stats=['ave'],
                 keepvarnames=True,
-                output=climate_norm_forcing
+                output=config.workspace().climate_norm_forcing(month=month, temporary=True)
             )).merge(
             wsim_integrate(
                 inputs=[config.observed_data().p_wetdays(yearmon=yearmon).read_as('pWetDays') for yearmon in historical_yearmons],
                 stats=['ave'],
                 keepvarnames=True,
-                output=climate_norm_forcing
+                output=config.workspace().climate_norm_forcing(month=month, temporary=True)
+            )).merge(
+            move(
+                config.workspace().climate_norm_forcing(month=month, temporary=True),
+                config.workspace().climate_norm_forcing(month=month, temporary=False)
             ))
         )
 

@@ -13,7 +13,7 @@
 
 from paths import read_vars, Vardef
 from step import Step
-from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm
+from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm, move
 from dates import get_next_yearmon, rolling_window
 
 def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
@@ -91,9 +91,14 @@ def time_integrate(workspace, integrated_vars, *, yearmon, target=None, window=N
                 inputs=[read_vars(f, var) for f in prev_results],
                 stats=stats,
                 attrs=['integration_period=' + str(window)],
-                output=workspace.results(yearmon=yearmon, window=window, target=target, member=member)
+                output=workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=True)
             )
         )
+
+    step = step.merge(move(
+        workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=True),
+        workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=False)
+    ))
 
     return [step]
 
@@ -104,8 +109,7 @@ def compute_return_periods(workspace, *, var_names, yearmon, window, target=None
     else:
         month = int(yearmon[-2:])
 
-    rp_file = workspace.return_period(yearmon=yearmon, target=target, window=window, member=member)
-    sa_file = workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member)
+    args = { 'yearmon' : yearmon, 'target' : target, 'window' : window, 'member' : member}
 
     step = Step()
     for var in var_names:
@@ -113,9 +117,18 @@ def compute_return_periods(workspace, *, var_names, yearmon, window, target=None
             wsim_anom(
                 fits=workspace.fit_obs(var=var, window=window, month=month),
                 obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), var),
-                rp=rp_file,
-                sa=sa_file)
+                rp=workspace.return_period(**args, temporary=True),
+                sa=workspace.standard_anomaly(**args, temporary=True))
         )
+
+    step = step\
+    .merge(
+        move(workspace.return_period(**args, temporary=True),
+             workspace.return_period(**args, temporary=False))
+    ).merge(
+        move(workspace.standard_anomaly(**args, temporary=True),
+             workspace.standard_anomaly(**args, temporary=False))
+    )
 
     return [step]
 
@@ -188,12 +201,17 @@ def composite_indicator_return_periods(workspace, *, yearmon, window, target=Non
         wsim_anom(
             fits=workspace.fit_composite_anomalies(window=window, indicator='surplus'),
             obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target), 'surplus'),
-            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target)
+            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=True)
         ).merge(
         wsim_anom(
             fits=workspace.fit_composite_anomalies(window=window, indicator='deficit'),
             obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target), 'deficit'),
-            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target)
+            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=True)
+        ))
+        .merge(
+        move(
+            workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=True),
+            workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=False)
         ))
     ]
 

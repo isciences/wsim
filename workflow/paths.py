@@ -160,14 +160,20 @@ class ObservedForcing(metaclass=ABCMeta):
 
 class DefaultWorkspace:
 
-    def __init__(self, outputs):
+    def __init__(self, outputs, tempdir=None):
         self.outputs = outputs
+        if tempdir:
+            self.tempdir = tempdir
+        else:
+            self.tempdir = os.path.join(self.outputs, '.tmp')
 
     def root(self):
         return self.outputs
 
-    def make_path(self, root, thing, *, yearmon=None, window=None, target=None, member=None):
-        return os.path.join(self.outputs, root, self.make_filename(thing, yearmon=yearmon, window=window, target=target, member=member))
+    def make_path(self, dirname, thing, *, yearmon=None, window=None, target=None, member=None, temporary=False):
+        return os.path.join(self.tempdir if temporary else self.outputs,
+                            dirname,
+                            self.make_filename(thing, yearmon=yearmon, window=window, target=target, member=member))
 
     @staticmethod
     def make_filename(thing, *, yearmon, window=None, target=None, member=None):
@@ -199,8 +205,8 @@ class DefaultWorkspace:
     def composite_anomaly(self, *, yearmon, window, target=None):
         return self.make_path('composite_anom', 'composite_anom', yearmon=yearmon, window=window, target=target)
 
-    def composite_anomaly_return_period(self, *, yearmon, window, target=None):
-        return self.make_path('composite_anom_rp', 'composite_anom_rp', yearmon=yearmon, window=window, target=target)
+    def composite_anomaly_return_period(self, *, yearmon, window, target=None, temporary=False):
+        return self.make_path('composite_anom_rp', 'composite_anom_rp', yearmon=yearmon, window=window, target=target, temporary=temporary)
 
     def return_period_summary(self, *, yearmon, window, target):
         assert window is not None
@@ -228,32 +234,34 @@ class DefaultWorkspace:
     def forcing(self, *, yearmon, member=None, target=None):
         return self.make_path('forcing', 'forcing', yearmon=yearmon, member=member, target=target)
 
-    def results(self, *, yearmon, window, member=None, target=None):
+    def results(self, *, yearmon, window, member=None, target=None, temporary=False):
         assert window is not None
 
         root = 'results' if window == 1 else 'results_integrated'
 
-        return self.make_path(root, 'results', yearmon=yearmon, window=window, member=member, target=target)
+        return self.make_path(root, 'results', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary)
 
-    def return_period(self, *, yearmon, window, member=None, target=None):
+    def return_period(self, *, yearmon, window, member=None, target=None, temporary=False):
         assert window is not None
 
         root = 'rp' if window == 1 else 'rp_integrated'
 
-        return self.make_path(root, 'rp', yearmon=yearmon, window=window, member=member, target=target)
+        return self.make_path(root, 'rp', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary)
 
-    def standard_anomaly(self, *, yearmon, window, member=None, target=None):
+    def standard_anomaly(self, *, yearmon, window, member=None, target=None, temporary=False):
         assert window is not None
 
         root = 'anom' if window == 1 else 'anom_integrated'
-        return self.make_path(root, 'anom', yearmon=yearmon, window=window, member=member, target=target)
+        return self.make_path(root, 'anom', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary)
 
     # Spinup files
     def initial_state(self):
         return os.path.join(self.outputs, 'spinup', 'initial_state.nc')
 
-    def climate_norm_forcing(self, *, month):
-        return os.path.join(self.outputs, 'spinup', 'climate_norm_forcing_{month:02d}.nc'.format(month=month))
+    def climate_norm_forcing(self, *, month, temporary=False):
+        return os.path.join(self.tempdir if temporary else self.outputs,
+                            'spinup',
+                            'climate_norm_forcing_{month:02d}.nc'.format(month=month))
 
     def final_state_norms(self):
         return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')

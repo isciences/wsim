@@ -228,3 +228,7 @@ def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None
         comment=comment
     )
 
+def move(from_path, to_path):
+    return Step(targets=to_path,
+                dependencies=from_path,
+                commands=[[ 'mv', q(from_path), q(to_path) ]])
