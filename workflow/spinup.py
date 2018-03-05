@@ -194,14 +194,7 @@ def run_lsm_from_final_norm_state(config):
         wc=config.static_data().wc(),
         results='/dev/null',
         next_state=config.workspace().spinup_state_pattern()
-    )
-
-    # Remove the %T-wildcard filename that we actually pass to wsim_lsm
-    # Replace it with all of the states that will be generated
-    # (dependency graph can't understand %T)
-    run_lsm.targets.remove(config.workspace().spinup_state_pattern())
-    for yearmon in config.historical_yearmons()[1:]:
-        run_lsm.targets.add(config.workspace().spinup_state(yearmon=yearmon))
+    ).replace_targets_with_tag_file('spinup/spinup_from_climate_norm_final_state')
 
     return [
         make_initial_state,
@@ -220,7 +213,7 @@ def mean_spinup_state(config, month, years):
             stats=['ave'],
             output=config.workspace().spinup_mean_state(month=month),
             keepvarnames=True
-        )
+        ).replace_dependencies('spinup/spinup_from_climate_norm_final_state')
     ]
 
 def run_lsm_from_mean_spinup_state(config):
@@ -255,19 +248,15 @@ def run_lsm_from_mean_spinup_state(config):
         next_state=config.workspace().state(yearmon='%T')
     )
 
-    # Remove the %T-wildcard filename that we actually pass to wsim_lsm
-    # Replace it with all of the states and results that will be generated
-    # (dependency graph can't understand %T)
-    run_lsm.targets.remove(config.workspace().results(window=1, yearmon='%T'))
-    run_lsm.targets.remove(config.workspace().state(yearmon='%T'))
-    for yearmon in config.historical_yearmons():
-        run_lsm.targets.add(config.workspace().results(window=1, yearmon=yearmon))
-    for yearmon in config.historical_yearmons()[1:]:
-        run_lsm.targets.add(config.workspace().state(yearmon=yearmon))
+    tag_steps = create_tag(name='spinup/spinup_1mo_results',
+                           dependencies=[config.workspace().results(window=1, yearmon=y) for y in config.historical_yearmons()] + \
+                                        [config.workspace().state(yearmon=get_next_yearmon(y)) for y in config.historical_yearmons()])
+    run_lsm.replace_targets_with_tag_file('spinup/spinup_1mo_results')
 
     return [
         make_initial_state,
-        run_lsm
+        run_lsm,
+        *tag_steps
     ]
 
 def time_integrate_results(config, window):
@@ -276,18 +265,27 @@ def time_integrate_results(config, window):
     """
     yearmons = config.historical_yearmons()[window-1:]
 
+    integrate = wsim_integrate(
+        inputs=read_vars(config.workspace().results(window=1,
+                                                    yearmon=date_range(config.historical_yearmons()[0],
+                                                                       config.historical_yearmons()[-1])),
+                         *config.lsm_integrated_vars().keys()),
+        window=window,
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats().items()],
+        attrs=['integration_period={}'.format(window)],
+        output=config.workspace().results(yearmon=date_range(yearmons[0], yearmons[-1]),
+                                          window=window)
+    )
+
+    tag_name = 'spinup/spinup_{}mo_results'.format(window)
+
+    tag_steps = create_tag(name=tag_name, dependencies=integrate.targets)
+
+    integrate.replace_targets_with_tag_file(tag_name)
+
     return [
-        wsim_integrate(
-            inputs=read_vars(config.workspace().results(window=1,
-                                                        yearmon=date_range(config.historical_yearmons()[0],
-                                                                           config.historical_yearmons()[-1])),
-                             *config.lsm_integrated_vars().keys()),
-            window=window,
-            stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats().items()],
-            attrs=['integration_period={}'.format(window)],
-            output=config.workspace().results(yearmon=date_range(yearmons[0], yearmons[-1]),
-                                              window=window)
-        )
+        integrate,
+        *tag_steps
     ]
 
 def fit_var(config, *, param, month, stat=None, window=1):

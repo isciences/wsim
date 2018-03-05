@@ -120,6 +120,36 @@ class Step:
 
         return others
 
+    def replace_targets_with_tag_file(self, tag_file_name):
+        """
+        Replace a long list of targets with a single tag file. This is
+        useful when Make struggles with a large number of targets, and
+        the targets are only required by downstream processes as a
+        complete set.
+
+        Returns the step object, to enable use in chaining.
+        """
+        # Burn in the mkdir commands, since the Step will no longer know
+        # its real targets
+        self.commands = self.get_mkdir_commands() + \
+                        self.commands + \
+                        [['touch', tag_file_name]]
+
+        self.targets = { tag_file_name }
+
+        return self
+
+    def replace_dependencies(self, *deps):
+        """
+        Replace a long list of dependencies with a tag file. This can
+        be used to consume the output of a step that produces a tag file.
+
+        Returns the step object, to enable use in chaining.
+        """
+        self.dependencies = set(deps)
+
+        return self
+
 
     def get_mkdir_commands(self):
         """

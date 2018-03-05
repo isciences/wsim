@@ -92,12 +92,6 @@ class TestCFSConfig(unittest.TestCase):
             re.search('\[(\d+):(\d+):(\d+)\]', input_results).groups()
         )
 
-        self.assertEqual(stop_year - start_year + 1,
-                         len(fit_step.dependencies))
-
-        self.assertTrue(str(start_year) in sorted(list(fit_step.dependencies))[0])
-        self.assertTrue(str(stop_year) in sorted(list(fit_step.dependencies))[-1])
-
     @unittest.skip
     def test_makefile_readable(self):
         config = CFSConfig(self.source, self.derived)

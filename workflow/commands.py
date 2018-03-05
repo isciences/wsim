@@ -232,3 +232,7 @@ def move(from_path, to_path):
     return Step(targets=to_path,
                 dependencies=from_path,
                 commands=[[ 'mv', q(from_path), q(to_path) ]])
+
+def create_tag(*, name, dependencies):
+    return [Step(targets=dep, dependencies=name) for dep in dependencies]
+

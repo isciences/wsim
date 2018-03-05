@@ -84,3 +84,40 @@ class TestStep(unittest.TestCase):
         self.assertSetEqual(meta.dependencies, { 'cake', 'presents' })
         self.assertSetEqual(meta.targets, { 'party' })
         self.assertListEqual(meta.commands, [])
+
+    def test_tagged_targets(self):
+        s = Step(targets=['a', 'b', 'c'],
+                 dependencies=[],
+                 commands=[['process', 'a', 'b', 'c']]
+                 ).replace_targets_with_tag_file('tagfile')
+
+        self.assertSetEqual(s.targets, { 'tagfile' })
+        self.assertSetEqual(s.dependencies, set())
+        self.assertListEqual(s.commands,
+                             [['process', 'a', 'b', 'c'],
+                              ['touch', 'tagfile']])
+
+    def test_tagged_targets_with_directory(self):
+        s = Step(targets=['a', 'd/b', 'e/c'],
+                 dependencies=[],
+                 commands=[['process', 'a', 'b', 'c']]
+                 ).replace_targets_with_tag_file('q/tagfile')
+
+        self.assertListEqual(s.commands, [
+            ['mkdir', '-p', 'd'],
+            ['mkdir', '-p', 'e'],
+            ['process', 'a', 'b', 'c'],
+            ['touch', 'q/tagfile']])
+
+
+
+    def test_tagged_dependencies(self):
+        s = Step(targets='cake',
+                 dependencies=['corn syrup', 'flour', 'baking powder', 'carageenan', 'butter', 'eggs', 'chocolate'],
+                 commands=[['make', 'cake']]
+                 ).replace_dependencies('cake_ingredients')
+
+        self.assertSetEqual(s.targets, { 'cake' })
+        self.assertSetEqual(s.dependencies, { 'cake_ingredients' })
+        self.assertListEqual(s.commands, [['make', 'cake']])
+
