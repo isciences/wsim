@@ -217,11 +217,13 @@ test_that("wsim_integrate can apply stats to specific variables", {
   results <- read_vars_from_cdf(output)
 
   expect_equal(results$extent, extent)
-  expect_equal(names(results$data), c('data_a_min',
-                                      'data_a_max',
-                                      'data_b_max',
-                                      'data_c_min',
-                                      'data_c_max'))
+  expect_equal(sort(names(results$data)),
+               sort(
+                 c('data_a_min',
+                   'data_a_max',
+                   'data_b_max',
+                   'data_c_min',
+                   'data_c_max')))
 
   file.remove(output)
 })
