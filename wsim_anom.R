@@ -53,7 +53,7 @@ main <- function(raw_args) {
     var <- attr(fit, 'variable')
     extent <- attr(fit, 'extent')
 
-    if (is.na(var)) {
+    if (is.null(var)) {
       die_with_message("Unknown variable name in fit file", file)
     }
 
@@ -110,6 +110,4 @@ main <- function(raw_args) {
   }
 }
 
-#tryCatch(
-  main(commandArgs(trailingOnly=TRUE))
- # , error=wsim.io::die_with_message)
+tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
