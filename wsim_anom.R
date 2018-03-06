@@ -69,7 +69,7 @@ main <- function(raw_args) {
 
   v <- wsim.io::read_vars_from_cdf(args$obs)
   for (varname in names(v$data)) {
-    obs <- v$data[[1]]
+    obs <- v$data[[varname]]
     fit <- fits[[varname]]
 
     if (is.null(fit)) {
