@@ -131,7 +131,7 @@ def generate_steps(config, start, stop, no_spinup, forecasts):
         if forecasts == 'all' or (forecasts == 'latest' and i == 0):
             steps += monthly.monthly_forecast(config, yearmon, meta_steps)
 
-        steps += meta_steps.values()
+    steps += meta_steps.values()
 
     return steps
 
