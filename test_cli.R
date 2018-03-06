@@ -360,3 +360,37 @@ test_that("wsim_fit saves the distribution and input variable name as attributes
 
   file.remove(output)
 })
+
+test_that("wsim_anom errors out if name of fit variable doesn't match observations", {
+  fitfile <- paste0(tempfile(), '.nc')
+  sa_file <- paste0(tempfile(), '.nc')
+
+  return_code <- system2('./wsim_fit.R', args=c(
+    '--distribution', 'gev',
+    '--input', '"/tmp/constant_1.nc::data->data_q"',
+    '--input', '"/tmp/constant_2.nc::data->data_q"',
+    '--input', '"/tmp/constant_3.nc::data->data_q"',
+    '--output', fitfile
+  ))
+
+  expect_equal(return_code, 0)
+
+  return_code <- system2('./wsim_anom.R', args=c(
+    '--fits', fitfile,
+    '--obs', '"/tmp/constant_2.nc::data->data_q"',
+    '--sa', sa_file
+  ))
+
+  expect_equal(return_code, 0)
+
+  return_code <- system2('./wsim_anom.R', args=c(
+    '--fits', fitfile,
+    '--obs', '"/tmp/constant_2.nc::data->data_z"',
+    '--sa', sa_file
+  ))
+
+  expect_equal(return_code, 1)
+
+  file.remove(fitfile)
+  file.remove(sa_file)
+})

@@ -24,7 +24,7 @@ suppressMessages({
 '
 Compute standard anomalies and/or return periods
 
-Usage: wsim_anom --fits=<fits> --obs=<file> [--sa=<file>] [--rp=<file>]
+Usage: wsim_anom --fits=<fits>... --obs=<file>... [--sa=<file>] [--rp=<file>]
 
 Options:
 --fits <file>  netCDF file containing distribution fit parameters
@@ -46,40 +46,70 @@ main <- function(raw_args) {
     }
   }
 
-  fits <- wsim.io::read_vars_to_cube(args$fits, attrs_to_read=c('distribution'))
-  distribution <- attr(fits, 'distribution')
-  wsim.io::info("Read distribution parameters.")
+  fits <- list()
+  extent <- NULL
+  for (file in args$fits) {
+    fit <- wsim.io::read_vars_to_cube(file, attrs_to_read=c('distribution', 'variable'))
+    var <- attr(fit, 'variable')
+    extent <- attr(fit, 'extent')
+
+    if (is.na(var)) {
+      die_with_message("Unknown variable name in fit file", file)
+    }
+
+    fits[[var]] <- fit
+    wsim.io::info("Read distribution parameters for", var, "(", attr(fit, 'distribution'), ")")
+  }
+
+  sa_to_write <- list()
+  rp_to_write <- list()
+
+  writing_sa <- !is.null(args$sa)
+  writing_rp <- !is.null(args$rp)
 
   v <- wsim.io::read_vars_from_cdf(args$obs)
-  obs <- v$data[[1]]
-  varname <- names(v$data)[1]
+  for (varname in names(v$data)) {
+    obs <- v$data[[1]]
+    fit <- fits[[varname]]
 
-  sa <- standard_anomaly(distribution, fits, obs)
+    if (is.null(fit)) {
+      die_with_message("No fit provided for input variable", varname)
+    }
 
-  if (!is.null(args$sa)) {
-    to_write <- list()
-    to_write[[paste0(varname, '_sa')]] <- sa
-    write_vars_to_cdf(to_write,
+    distribution <- attr(fit, 'distribution')
+
+    sa <- standard_anomaly(distribution, fit, obs)
+    wsim.io::info("Computed standard anomalies for", varname)
+
+    if (writing_sa) {
+      sa_to_write[[paste0(varname, '_sa')]] <- sa
+    }
+
+    if (writing_rp) {
+      rp <- sa2rp(sa)
+      rp_to_write[[paste0(varname, '_rp')]] <- rp
+    }
+  }
+
+  if (writing_sa) {
+    write_vars_to_cdf(sa_to_write,
                       filename=args$sa,
-                      extent=attr(fits, 'extent'),
+                      extent=extent,
                       prec='single',
                       append=TRUE)
     wsim.io::info("Wrote standard anomalies to", args$sa)
   }
 
-  if (!is.null(args$rp)) {
-    rp <- sa2rp(sa)
-
-    to_write <- list()
-    to_write[[paste0(varname, '_rp')]] <- rp
-
-    write_vars_to_cdf(to_write,
+  if (writing_rp) {
+    write_vars_to_cdf(rp_to_write,
                       filename=args$rp,
-                      extent=attr(fits, 'extent'),
+                      extent=extent,
                       prec='single',
                       append=TRUE)
     wsim.io::info("Wrote return periods to", args$rp)
   }
 }
 
-tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
+#tryCatch(
+  main(commandArgs(trailingOnly=TRUE))
+ # , error=wsim.io::die_with_message)

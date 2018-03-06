@@ -111,26 +111,14 @@ def compute_return_periods(workspace, *, var_names, yearmon, window, target=None
 
     args = { 'yearmon' : yearmon, 'target' : target, 'window' : window, 'member' : member}
 
-    step = Step()
-    for var in var_names:
-        step = step.merge(
-            wsim_anom(
-                fits=workspace.fit_obs(var=var, window=window, month=month),
-                obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), var),
-                rp=workspace.return_period(**args, temporary=True),
-                sa=workspace.standard_anomaly(**args, temporary=True))
+    return [
+        wsim_anom(
+            fits=[workspace.fit_obs(var=var, window=window, month=month) for var in var_names],
+            obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), *var_names),
+            rp=workspace.return_period(**args, temporary=False),
+            sa=workspace.standard_anomaly(**args, temporary=False)
         )
-
-    step = step\
-    .merge(
-        move(workspace.return_period(**args, temporary=True),
-             workspace.return_period(**args, temporary=False))
-    ).merge(
-        move(workspace.standard_anomaly(**args, temporary=True),
-             workspace.standard_anomaly(**args, temporary=False))
-    )
-
-    return [step]
+    ]
 
 
 def composite_vars(*, method, window, quantile):

@@ -57,11 +57,21 @@ def extract_from_tar(tarfile, to_extract, dest_dir, comment=None):
     )
 
 def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
+    if type(fits) is str:
+        fits = [fits]
+
+    if type(obs) is str:
+        obs = [obs]
+
     cmd = [
-        os.path.join('{BINDIR}', 'wsim_anom.R'),
-        '--fits', q(fits),
-        '--obs',  q(obs)
+        os.path.join('{BINDIR}', 'wsim_anom.R')
     ]
+
+    for f in fits:
+        cmd += [ '--fits', q(f) ]
+
+    for o in obs:
+         cmd += [ '--obs',  q(o) ]
 
     if rp:
         cmd += ['--rp', q(rp)]
@@ -70,7 +80,7 @@ def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
 
     return Step(
         targets=[rp, sa],
-        dependencies=[fits, obs],
+        dependencies=fits + obs,
         commands=[cmd],
         comment=comment
     )
