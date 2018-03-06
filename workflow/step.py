@@ -24,32 +24,34 @@ def process_filename(txt):
     filename = str(txt).split('::')[0]
     return expand_filename_dates(filename)
 
+def coerce_to_list(thing):
+    if thing is None:
+        return []
+    if type(thing) is str:
+        return [thing]
+    return thing
+
 class Step:
 
-    def __init__(self, *, targets=None, dependencies=None, commands=None, comment=None):
+    def __init__(self, *, targets=None, dependencies=None, commands=None, comment=None, consumes=None):
         """
         Initialize a workflow step
 
         :param targets:      a string or list of strings indicating outputs from the step
         :param dependencies: a string or list of strings indicating dependencies of the step
+        :param consumes:     a string or list of strings indicating files destroyed by the step
+                             (relevant only when multiple steps are merged)
         :param commands:     a list of
         :param comment:      an optional text comment to be associated with the step
         """
 
-        if targets is None:
-            targets = []
-        elif type(targets) is str:
-            targets = [targets]
-
-        if dependencies is None:
-            dependencies = []
-        elif type(dependencies) is str:
-            dependencies = [dependencies]
-
-        if commands is None:
-            commands = []
+        targets = coerce_to_list(targets)
+        dependencies = coerce_to_list(dependencies)
+        consumes = coerce_to_list(consumes)
+        commands = coerce_to_list(commands)
 
         self.commands = [c for c in commands if c is not None]
+        self.consumes = [t for t in consumes if t is not None]
 
         self.targets = set()
         for t in targets:
@@ -95,6 +97,9 @@ class Step:
             combined_targets = combined_targets | other.targets
 
             combined_commands += other.commands
+
+            for t in other.consumes:
+                combined_targets.remove(t)
 
         return Step(
             targets=combined_targets,

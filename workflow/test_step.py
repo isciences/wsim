@@ -69,6 +69,18 @@ class TestStep(unittest.TestCase):
                 ['open', 'presents']
             ])
 
+    def test_merge_with_consumes(self):
+        step1 = Step(targets='cake',
+                     dependencies=['flour', 'frosting'])
+        step2 = Step(targets='party',
+                     dependencies=['presents', 'cake'],
+                     consumes='cake')
+
+        combined = step1.merge(step2)
+
+        self.assertSetEqual(combined.targets, { 'party' })
+        self.assertSetEqual(combined.dependencies, { 'flour', 'frosting', 'presents' })
+
     def test_require(self):
         meta = Step.create_meta('party')
 
@@ -108,8 +120,6 @@ class TestStep(unittest.TestCase):
             ['mkdir', '-p', 'e'],
             ['process', 'a', 'b', 'c'],
             ['touch', 'q/tagfile']])
-
-
 
     def test_tagged_dependencies(self):
         s = Step(targets='cake',
