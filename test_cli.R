@@ -324,3 +324,39 @@ test_that("wsim_integrate doesn't propagage nonstandard _FillValue values", {
   file.remove(input)
   file.remove(output)
 })
+
+test_that("wsim_fit errors out if input variables have different names", {
+  output <- tempfile()
+
+  return_code <- system2('./wsim_fit.R', args=c(
+    '--distribution', 'gev',
+    '--input', '"/tmp/constant_1.nc::data->data_q"',
+    '--input', '"/tmp/constant_2.nc::data->data_q"',
+    '--input', '"/tmp/constant_3.nc::data->data_z"',
+    '--output', output
+  ))
+
+  expect_equal(return_code, 1)
+})
+
+test_that("wsim_fit saves the distribution and input variable name as attributes", {
+  output <- tempfile()
+
+  return_code <- system2('./wsim_fit.R', args=c(
+    '--distribution', 'pe3',
+    '--input', '/tmp/constant_1.nc',
+    '--input', '/tmp/constant_2.nc',
+    '--input', '/tmp/constant_3.nc',
+    '--output', output
+  ))
+
+  expect_equal(return_code, 0)
+
+  cdf <- ncdf4::nc_open(output)
+  expect_equal('pe3', ncdf4::ncatt_get(cdf, 0, 'distribution')$value)
+  expect_equal('data', ncdf4::ncatt_get(cdf, 0, 'variable')$value)
+
+  ncdf4::nc_close(cdf)
+
+  file.remove(output)
+})

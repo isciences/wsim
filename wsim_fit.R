@@ -46,6 +46,12 @@ main <- function(raw_args) {
   inputs_stacked <- wsim.io::read_vars_to_cube(expanded_inputs)
   extent <- attr(inputs_stacked, 'extent')
 
+  if (length(unique(dimnames(inputs_stacked)[[3]])) > 1) {
+    wsim.io::die_with_message("Can't perform fit on heterogeneous input variables ( received input variables:",
+                              do.call(paste, as.list(unique(dimnames(inputs_stacked)[[3]]))), ")")
+  }
+  fit_param_name <- dimnames(inputs_stacked)[[3]][1]
+
   wsim.io::info('Read', dim(inputs_stacked)[[3]], 'inputs.')
 
   distribution <- tolower(args$distribution)
@@ -64,7 +70,8 @@ main <- function(raw_args) {
                              attrs=c(
                                output_attrs,
                                list(
-                                 list(var=NULL,key="distribution",val=distribution)
+                                 list(var=NULL,key="distribution",val=distribution),
+                                 list(var=NULL,key="variable",val=fit_param_name)
                              )))
 
   wsim.io::info('Wrote fits to', outfile)
