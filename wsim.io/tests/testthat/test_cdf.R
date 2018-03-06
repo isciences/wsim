@@ -202,7 +202,34 @@ test_that("we can read multiple variables into a cube", {
   expect_equal(cube[,,"scale"], data$scale)
   expect_equal(cube[,,"shape"], data$shape)
 
+  expect_equal(dimnames(cube)[[3]], c('location', 'scale', 'shape'))
+
   file.remove(fname)
+})
+
+test_that("dimnames preserved with a complex vardef", {
+  tempfile_root <- tempfile()
+
+  fname1 <- paste0(tempfile_root, '_201711.nc')
+  fname2 <- paste0(tempfile_root, '_201710.nc')
+
+  data <- list(
+    location= matrix(runif(9), nrow=3),
+    scale= matrix(runif(9), nrow=3),
+    shape= matrix(runif(9), nrow=3)
+  )
+
+  extent <- c(20, 80, 30, 70)
+
+  write_vars_to_cdf(data, fname1, extent=extent)
+  write_vars_to_cdf(data, fname2, extent=extent)
+
+  cube <- wsim.io::read_vars_to_cube(expand_inputs(paste0(tempfile_root, '_[201710:201711].nc::location,shape')))
+
+  expect_equal(dimnames(cube)[[3]], c('location', 'shape', 'location', 'shape'))
+
+  file.remove(fname1)
+  file.remove(fname2)
 })
 
 test_that("we can read multiple variables from a netCDF into a RasterBrick", {
