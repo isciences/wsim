@@ -18,6 +18,7 @@ import re
 import subprocess
 import sys
 import unittest
+import warnings
 
 import dates
 import spinup
@@ -66,6 +67,21 @@ class TestCFSConfig(unittest.TestCase):
                 for t in step.targets:
                     print("Don't know how to build", t, "(depends on", ",".join(step.dependencies), ")", file=sys.stderr)
             self.fail('Unbuildable targets found')
+
+    def test_complex_rules(self):
+        config = CFSConfig(self.source, self.derived)
+        warnings.simplefilter("always")
+
+        yearmon = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=1)
+
+        steps = generate_steps(config, yearmon, yearmon, False, 'latest')
+
+        threshold = 2
+
+        for step in steps:
+            if len(step.targets) > threshold:
+                warnings.warn("Step with > {} targets: {}".format(threshold, step.comment or "unnamed"))
+                print(step.targets)
 
     def test_no_duplicate_targets(self):
         config = CFSConfig(self.source, self.derived)
