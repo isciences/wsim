@@ -24,6 +24,7 @@
 #'        the extent will be attached as an attribute.
 #' @export
 read_vars_to_cube <- function(vardefs, attrs_to_read=as.character(c())) {
+  vardefs <- lapply(vardefs, parse_vardef)
   vars <- lapply(vardefs, wsim.io::read_vars)
   extent <- vars[[1]]$extent
 
@@ -36,6 +37,8 @@ read_vars_to_cube <- function(vardefs, attrs_to_read=as.character(c())) {
   data <- do.call(c, lapply(vars, `[[`, 'data'))
 
   cube <- abind::abind(data, along=3)
+  dimnames(cube)[[3]] <- as.vector(sapply(vars, function(var) names(var$data)))
+
   attr(cube, 'extent') <- extent
 
   for (attr in attrs_to_read) {
