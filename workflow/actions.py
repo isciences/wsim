@@ -11,8 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
+
 from paths import read_vars, Vardef
-from step import Step
 from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm, move
 from dates import get_next_yearmon, rolling_window
 
@@ -70,7 +71,7 @@ def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months
     ]
 
 
-def time_integrate(workspace, integrated_vars, *, yearmon, target=None, window=None, member=None, lead_months=None):
+def time_integrate(workspace, integrated_stats, *, yearmon, target=None, window=None, member=None, lead_months=None):
     months = rolling_window(target if target else yearmon, window)
 
     if lead_months:
@@ -83,24 +84,14 @@ def time_integrate(workspace, integrated_vars, *, yearmon, target=None, window=N
     prev_results = [workspace.results(yearmon=x, window=1) for x in window_observed] + \
                    [workspace.results(yearmon=yearmon, member=member, target=x, window=1) for x in window_forecast]
 
-    step = Step()
-
-    for var, stats in integrated_vars.items():
-        step = step.merge(
-            wsim_integrate(
-                inputs=[read_vars(f, var) for f in prev_results],
-                stats=stats,
-                attrs=['integration_period=' + str(window)],
-                output=workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=True)
-            )
+    return [
+        wsim_integrate(
+            inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev_results],
+            stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
+            attrs=['integration_period=' + str(window)],
+            output=workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=False)
         )
-
-    step = step.merge(move(
-        workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=True),
-        workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=False)
-    ))
-
-    return [step]
+    ]
 
 
 def compute_return_periods(workspace, *, var_names, yearmon, window, target=None, member=None):
