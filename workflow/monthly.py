@@ -115,4 +115,12 @@ def monthly_forecast(config, yearmon, meta_steps):
             if window == 1:
                 meta_steps['all_monthly_composites'].require(composite_indicator_steps)
 
+            steps += composite_indicator_return_periods(config.workspace(), yearmon=yearmon, window=window, target=target)
+            adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window, target=target)
+            steps += adjusted_indicator_steps
+
+            meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
+            if window == 1:
+                meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+
     return steps
