@@ -14,7 +14,7 @@
 import itertools
 
 from paths import read_vars, Vardef
-from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm, move
+from commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm
 from dates import get_next_yearmon, rolling_window
 
 def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
@@ -178,20 +178,13 @@ def composite_indicators(workspace, *, yearmon, window=None, target=None, quanti
 def composite_indicator_return_periods(workspace, *, yearmon, window, target=None):
     return [
         wsim_anom(
-            fits=workspace.fit_composite_anomalies(window=window, indicator='surplus'),
-            obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target), 'surplus'),
-            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=True)
-        ).merge(
-        wsim_anom(
-            fits=workspace.fit_composite_anomalies(window=window, indicator='deficit'),
-            obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target), 'deficit'),
-            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=True)
-        ))
-        .merge(
-        move(
-            workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=True),
-            workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=False)
-        ))
+            fits=[
+                workspace.fit_composite_anomalies(window=window, indicator='surplus'),
+                workspace.fit_composite_anomalies(window=window, indicator='deficit')
+            ],
+            obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target), 'surplus', 'deficit'),
+            rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=False)
+        )
     ]
 
 def composite_indicator_adjusted(workspace, *, yearmon, window, target=None):
