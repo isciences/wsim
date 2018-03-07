@@ -150,32 +150,31 @@ def unbuildable_targets(steps):
 
     Return a list of steps that cannot be built.
     """
-    known = set()
 
-    max_depth = 0
-    remaining_to_validate = list(steps)
-    stuck = False
+    builder_of = {}
 
-    while not stuck:
-        max_depth += 1
-        could_not_validate = []
-        stuck = True
+    for step in steps:
+        step.depth = None
+        for t in step.targets:
+            builder_of[t] = step
 
-        for step in remaining_to_validate:
-            deps = [step.dependencies] if type(step.dependencies) is str else step.dependencies
-            targets = [step.targets] if type(step.targets) is str else step.targets
+    def step_depth(step):
+        if step.depth is not None:
+            return step.depth
 
-            if all(d in known for d in deps):
-                stuck = False
-                for t in targets:
-                    known.add(t)
-            else:
-                could_not_validate.append(step)
+        if not step.dependencies:
+            return 0
 
-        remaining_to_validate = could_not_validate
+        else:
+            return 1 + max(step_depth(builder_of[d]) if d in builder_of else float('inf') for d in step.dependencies)
+
+    for step in steps:
+        step.depth = step_depth(step)
+
+    max_depth = max(step_depth(step) for step in steps)
 
     print('Maximum dependency tree depth:', max_depth)
 
-    return remaining_to_validate
+    return [step for step in steps if step.depth == float('inf')]
 
 
