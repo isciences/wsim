@@ -76,20 +76,27 @@ class TestCFSConfig(unittest.TestCase):
 
         steps = generate_steps(config, yearmon, yearmon, False, 'latest')
 
-        threshold = 2
+        targets_threshold = 2
+        dependencies_threshold = 100
 
         for step in steps:
-            if len(step.targets) > threshold:
-                warnings.warn("Step with > {} targets: {}".format(threshold, step.comment or "unnamed"))
+            if len(step.targets) > targets_threshold:
+                warnings.warn("Step with > {} targets: {}".format(targets_threshold, step.comment or "unnamed"))
+                print(step.targets)
+            if len(step.dependencies) > dependencies_threshold:
+                warnings.warn("Step with > {} dependencies: {}".format(dependencies_threshold, step.comment or "unnamed"))
                 print(step.targets)
 
     def test_no_duplicate_targets(self):
         config = CFSConfig(self.source, self.derived)
 
-        # Shouldn't get duplicate steps within spinup period
+        # Shouldn't get duplicate steps within fit period
         self.fail_on_duplicate_targets(generate_steps(config, '196404', '196404', False, 'latest'))
 
-        # Or after it
+        # Or after fit period, but still within historical period
+        self.fail_on_duplicate_targets(generate_steps(config, '201504', '201504', False, 'latest'))
+
+        # Or after historical period
         self.fail_on_duplicate_targets(generate_steps(config, '201801', '201801', False, 'latest'))
 
     def test_var_fitting_years(self):
