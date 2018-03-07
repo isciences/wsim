@@ -56,17 +56,19 @@ class TestCFSConfig(unittest.TestCase):
         config = CFSConfig(self.source, self.derived)
 
         # Find the timestep that's one month beyond our historical period
-        yearmon = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=1)
+        yearmon_after_historical = '{year:04d}{month:02d}'.format(year=1 + config.historical_years()[-1], month=1)
+        yearmon_within_historical = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=4)
 
-        steps = generate_steps(config, yearmon, yearmon, False, 'latest')
+        for yearmon in (yearmon_within_historical, yearmon_after_historical):
+            steps = generate_steps(config, yearmon, yearmon, False, 'latest')
 
-        unbuildable = unbuildable_targets(steps)
+            unbuildable = unbuildable_targets(steps)
 
-        if unbuildable:
-            for step in unbuildable:
-                for t in step.targets:
-                    print("Don't know how to build", t, "(depends on", ",".join(step.dependencies), ")", file=sys.stderr)
-            self.fail('Unbuildable targets found')
+            if unbuildable:
+                for step in unbuildable:
+                    for t in step.targets:
+                        print("Don't know how to build", t, "(depends on", ",".join(step.dependencies), ")", file=sys.stderr)
+                self.fail('Unbuildable targets found')
 
     def test_complex_rules(self):
         config = CFSConfig(self.source, self.derived)
