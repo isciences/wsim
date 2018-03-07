@@ -282,6 +282,7 @@ def time_integrate_results(config, window):
     tag_steps = create_tag(name=tag_name, dependencies=integrate.targets)
 
     integrate.replace_targets_with_tag_file(tag_name)
+    integrate.replace_dependencies('spinup/spinup_1mo_results')
 
     return [
         integrate,
