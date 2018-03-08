@@ -48,6 +48,9 @@ def extract_from_tar(tarfile, to_extract, dest_dir, comment=None):
                 'tar',
                 'xzf',
                 tarfile,
+                '--no-same-owner', # prevent permission errors when extracting as root (such as within a Docker container)
+                                   # to CIFS; explanation at the following URL:
+                                   # https://www.krenger.ch/blog/linux-tar-cannot-change-ownership-to-permission-denied/
                 '--strip-components', str(trim_dirs),
                 '--directory', dest_dir,
                 to_extract
