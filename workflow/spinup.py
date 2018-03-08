@@ -264,17 +264,16 @@ def time_integrate_results(config, window):
     """
     Integrate all LSM results with the given time window
     """
-    yearmons = config.result_fit_yearmons()[window-1:]
+    yearmons_in = config.result_fit_yearmons()
+    yearmons_out = yearmons_in[window-1:]
 
     integrate = wsim_integrate(
-        inputs=read_vars(config.workspace().results(window=1,
-                                                    yearmon=date_range(config.historical_yearmons()[0],
-                                                                       config.historical_yearmons()[-1])),
+        inputs=read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in)),
                          *config.lsm_integrated_vars().keys()),
         window=window,
         stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats().items()],
         attrs=['integration_period={}'.format(window)],
-        output=config.workspace().results(yearmon=date_range(yearmons[0], yearmons[-1]),
+        output=config.workspace().results(yearmon=date_range(yearmons_out),
                                           window=window)
     )
 
