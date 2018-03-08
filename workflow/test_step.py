@@ -70,16 +70,17 @@ class TestStep(unittest.TestCase):
             ])
 
     def test_merge_with_consumes(self):
-        step1 = Step(targets='cake',
-                     dependencies=['flour', 'frosting'])
-        step2 = Step(targets='party',
-                     dependencies=['presents', 'cake'],
-                     consumes='cake')
+        step1 = Step(targets='food/cake',
+                     dependencies=['ingredients/flour', 'ingredients/frosting'])
+        step2 = Step(targets='events/party',
+                     dependencies=['presents', 'food/cake'],
+                     consumes='food/cake')
 
         combined = step1.merge(step2)
 
-        self.assertSetEqual(combined.targets, { 'party' })
-        self.assertSetEqual(combined.dependencies, { 'flour', 'frosting', 'presents' })
+        self.assertSetEqual(combined.targets, { 'events/party' })
+        self.assertSetEqual(combined.dependencies, { 'ingredients/flour', 'ingredients/frosting', 'presents' })
+        self.assertSetEqual(combined.working_directories, { 'food', 'events' })
 
     def test_require(self):
         meta = Step.create_meta('party')
@@ -116,10 +117,13 @@ class TestStep(unittest.TestCase):
                  ).replace_targets_with_tag_file('q/tagfile')
 
         self.assertListEqual(s.commands, [
-            ['mkdir', '-p', 'd'],
-            ['mkdir', '-p', 'e'],
             ['process', 'a', 'b', 'c'],
             ['touch', 'q/tagfile']])
+
+        self.assertListEqual(s.get_mkdir_commands(), [
+            ['mkdir', '-p', 'd'],
+            ['mkdir', '-p', 'e']
+        ])
 
     def test_tagged_dependencies(self):
         s = Step(targets='cake',
@@ -130,4 +134,3 @@ class TestStep(unittest.TestCase):
         self.assertSetEqual(s.targets, { 'cake' })
         self.assertSetEqual(s.dependencies, { 'cake_ingredients' })
         self.assertListEqual(s.commands, [['make', 'cake']])
-

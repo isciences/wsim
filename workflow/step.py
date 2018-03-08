@@ -14,7 +14,6 @@
 from paths import expand_filename_dates
 
 import os
-import sys
 
 def process_filename(txt):
     """
@@ -33,7 +32,7 @@ def coerce_to_list(thing):
 
 class Step:
 
-    def __init__(self, *, targets=None, dependencies=None, commands=None, comment=None, consumes=None):
+    def __init__(self, *, targets=None, dependencies=None, commands=None, comment=None, consumes=None, working_directories=None):
         """
         Initialize a workflow step
 
@@ -41,6 +40,9 @@ class Step:
         :param dependencies: a string or list of strings indicating dependencies of the step
         :param consumes:     a string or list of strings indicating files destroyed by the step
                              (relevant only when multiple steps are merged)
+        :param working_directories a string or list of strings indicating directories that should be
+                             created, if not already present, before this step executes. Any directory
+                             included in a target is implied and does not need to be specified.
         :param commands:     a list of
         :param comment:      an optional text comment to be associated with the step
         """
@@ -49,14 +51,17 @@ class Step:
         dependencies = coerce_to_list(dependencies)
         consumes = coerce_to_list(consumes)
         commands = coerce_to_list(commands)
+        working_directories = coerce_to_list(working_directories)
 
         self.commands = [c for c in commands if c is not None]
-        self.consumes = [t for t in consumes if t is not None]
+        self.consumes = {t for t in consumes if t is not None}
 
         self.targets = set()
         for t in targets:
             if t is not None and t != '/dev/null':
                 self.targets |= set(process_filename(t))
+
+        self.working_directories = set(working_directories) | {os.path.dirname(target) for target in self.targets}
 
         self.dependencies = set()
         for d in dependencies:
@@ -85,6 +90,8 @@ class Step:
         combined_targets = set(self.targets)
         combined_dependencies = set(self.dependencies)
         combined_commands = list(self.commands)
+        combined_consumes = set(self.consumes)
+        combined_working_directories = set(self.working_directories)
 
         for other in others:
             # Add dependencies of other step that are not supplied by a
@@ -94,17 +101,21 @@ class Step:
                     combined_dependencies.add(d)
 
             # Add all targets of other step to our target list
-            combined_targets = combined_targets | other.targets
+            combined_targets |= other.targets
+            combined_working_directories |= other.working_directories
 
             combined_commands += other.commands
 
             for t in other.consumes:
                 combined_targets.remove(t)
+                combined_consumes.add(t)
 
         return Step(
             targets=combined_targets,
             dependencies=combined_dependencies,
-            commands=combined_commands
+            commands=combined_commands,
+            consumes=combined_consumes,
+            working_directories=combined_working_directories
         )
 
     def require(self, *others):
@@ -134,12 +145,7 @@ class Step:
 
         Returns the step object, to enable use in chaining.
         """
-        # Burn in the mkdir commands, since the Step will no longer know
-        # its real targets
-        self.commands = self.get_mkdir_commands() + \
-                        self.commands + \
-                        [['touch', tag_file_name]]
-
+        self.commands.append(['touch', tag_file_name])
         self.targets = { tag_file_name }
 
         return self
@@ -155,11 +161,8 @@ class Step:
 
         return self
 
-
     def get_mkdir_commands(self):
         """
         Get commands necessary to create directories for all targets
         """
-        dirs = set([os.path.dirname(target) for target in self.targets])
-
-        return [ ['mkdir', '-p', d ] for d in sorted(dirs) if d != '']
+        return [ ['mkdir', '-p', d ] for d in sorted(self.working_directories) if d != '' ]
