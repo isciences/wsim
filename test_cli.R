@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 # Copyright (c) 2018 ISciences, LLC.
 # All rights reserved.
 #
