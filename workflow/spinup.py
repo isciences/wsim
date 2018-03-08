@@ -194,7 +194,7 @@ def run_lsm_from_final_norm_state(config):
         wc=config.static_data().wc(),
         results='/dev/null',
         next_state=config.workspace().spinup_state_pattern()
-    ).replace_targets_with_tag_file('spinup/spinup_from_climate_norm_final_state')
+    ).replace_targets_with_tag_file(config.workspace().tag('spinup_from_climate_norm_final_state'))
 
     return [
         make_initial_state,
@@ -213,7 +213,7 @@ def mean_spinup_state(config, month, years):
             stats=['ave'],
             output=config.workspace().spinup_mean_state(month=month),
             keepvarnames=True
-        ).replace_dependencies('spinup/spinup_from_climate_norm_final_state')
+        ).replace_dependencies(config.workspace().tag('spinup_from_climate_norm_final_state'))
     ]
 
 def run_lsm_from_mean_spinup_state(config):
@@ -239,6 +239,7 @@ def run_lsm_from_mean_spinup_state(config):
     )
 
     run_lsm = wsim_lsm(
+        comment="LSM run from mean spinup state",
         forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()))],
         state=config.workspace().state(yearmon=first_timestep),
         elevation=config.static_data().elevation(),
@@ -248,10 +249,10 @@ def run_lsm_from_mean_spinup_state(config):
         next_state=config.workspace().state(yearmon='%T')
     )
 
-    tag_steps = create_tag(name='spinup/spinup_1mo_results',
+    tag_steps = create_tag(name=config.workspace().tag('spinup_1mo_results'),
                            dependencies=[config.workspace().results(window=1, yearmon=y) for y in config.historical_yearmons()] + \
                                         [config.workspace().state(yearmon=get_next_yearmon(y)) for y in config.historical_yearmons()])
-    run_lsm.replace_targets_with_tag_file('spinup/spinup_1mo_results')
+    run_lsm.replace_targets_with_tag_file(config.workspace().tag('spinup_1mo_results'))
 
     return [
         make_initial_state,
@@ -277,12 +278,12 @@ def time_integrate_results(config, window):
                                           window=window)
     )
 
-    tag_name = 'spinup/spinup_{}mo_results'.format(window)
+    tag_name = config.workspace().tag('spinup_{}mo_results'.format(window))
 
     tag_steps = create_tag(name=tag_name, dependencies=integrate.targets)
 
     integrate.replace_targets_with_tag_file(tag_name)
-    integrate.replace_dependencies('spinup/spinup_1mo_results')
+    integrate.replace_dependencies(config.workspace().tag('spinup_1mo_results'))
 
     return [
         integrate,

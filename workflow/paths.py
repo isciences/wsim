@@ -275,6 +275,9 @@ class DefaultWorkspace:
     def spinup_mean_state(self, *, month):
         return os.path.join(self.outputs, 'spinup', 'spinup_mean_state_month_{month:02d}.nc'.format(month=month))
 
+    def tag(self, name):
+        return os.path.join(self.outputs, 'tags', name)
+
     # Distribution fit files
     def fit_obs(self, var, month, window, stat=None):
         filename = '{var}'
