@@ -46,21 +46,9 @@ main <- function(raw_args) {
     }
   }
 
-  fits <- list()
-  extent <- NULL
-  for (file in args$fits) {
-    fit <- wsim.io::read_vars_to_cube(file, attrs_to_read=c('distribution', 'variable'))
-    var <- attr(fit, 'variable')
-    extent <- attr(fit, 'extent')
+  fits <- wsim.io::read_fits_from_cdf(args$fits)
 
-    if (is.null(var)) {
-      die_with_message("Unknown variable name in fit file", file)
-    }
-
-    fits[[var]] <- fit
-    wsim.io::info("Read distribution parameters for", var, "(", attr(fit, 'distribution'), ")")
-  }
-
+  extent <- attr(fits[[1]], 'extent')
   sa_to_write <- list()
   rp_to_write <- list()
 

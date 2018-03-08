@@ -346,3 +346,49 @@ test_that("we can expect specific dimensions for a file", {
 
   file.remove(fname)
 })
+
+test_that("we can read fits from multiple netCDFs", {
+  fname1 <- paste0(tempfile(), '.nc')
+  fname2 <- paste0(tempfile(), '.nc')
+
+  data <- function() {
+    list(
+      location= matrix(runif(9), nrow=3),
+      scale= matrix(runif(9), nrow=3),
+      shape= matrix(runif(9), nrow=3)
+    )
+  }
+
+  write_vars_to_cdf(data(), fname1, extent=c(0, 1, 0, 1))
+
+  # Error because variable name is undefined
+  expect_error(read_fits_from_cdf(fname1))
+
+  write_vars_to_cdf(data(), fname1, extent=c(0, 1, 0, 1), attrs=list(list(key="variable", val="rainfall")))
+
+  #Expect error because distribution name is undefined
+  expect_error(read_fits_from_cdf(fname1))
+
+  # Expect error because extents differ
+  write_vars_to_cdf(data(), fname1, extent=c(0, 1, 0, 1), attrs=list(list(key="distribution", val="pe3"),
+                                                                     list(key="variable", val="rainfall")))
+  write_vars_to_cdf(data(), fname2, extent=c(0, 2, 0, 1), attrs=list(list(key="distribution", val="gev"),
+                                                                     list(key="variable", val="temperature")))
+  expect_error(read_fits_from_cdf(c(fname1, fname2)))
+
+  # Should work this time
+  write_vars_to_cdf(data(), fname1, extent=c(0, 1, 0, 1), attrs=list(list(key="distribution", val="pe3"),
+                                                                     list(key="variable", val="rainfall")))
+  write_vars_to_cdf(data(), fname2, extent=c(0, 1, 0, 1), attrs=list(list(key="distribution", val="gev"),
+                                                                     list(key="variable", val="temperature")))
+
+  fits <- read_fits_from_cdf(c(fname1, fname2))
+
+  expect_named(fits, c('rainfall', 'temperature'), ignore.order=TRUE)
+  expect_equal(dim(fits[['rainfall']]), c(3,3,3))
+  expect_equal(dim(fits[['temperature']]), c(3,3,3))
+  expect_equal(dimnames(fits[['rainfall']])[[3]], c('location', 'scale', 'shape'))
+
+  file.remove(fname1)
+  file.remove(fname2)
+})
