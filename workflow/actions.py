@@ -253,13 +253,16 @@ def correct_forecast(data, *, member, target, lead_months):
     target_month = int(target[-2:])
 
     return [
-        wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='T'),
-                     obs=data.fit_obs(month=target_month, var='T'),
-                     forecast=Vardef(data.forecast_raw(member=member, target=target), 'tmp2m@[x-273.15]').read_as('T'),
-                     output=data.forecast_corrected(member=member, target=target)).merge(
-        wsim_correct(retro=data.fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
-                     obs=data.fit_obs(month=target_month, var='Pr'),
-                     forecast=Vardef(data.forecast_raw(member=member, target=target), 'prate@[x*2628000]').read_as('Pr'),
-                     output=data.forecast_corrected(member=member, target=target),
-                     append=True))
+        wsim_correct(
+            retro=[
+                data.fit_retro(target_month=target_month, lead_months=lead_months, var='T'),
+                data.fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
+            ],
+            obs=[
+                data.fit_obs(month=target_month, var='T'),
+                data.fit_obs(month=target_month, var='Pr')
+            ],
+            forecast=data.forecast_raw(member=member, target=target) +  '::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr',
+            output=data.forecast_corrected(member=member, target=target)
+        )
     ]

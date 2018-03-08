@@ -160,10 +160,25 @@ def wsim_merge(*, inputs, output, attrs=None, comment=None):
     )
 
 def wsim_correct(*, retro, obs, forecast, output, append=False, comment=None):
+    if type(retro) is str:
+        retro = [retro]
+
+    if type(obs) is str:
+        obs = [obs]
+
+
     cmd = [
-        os.path.join('{BINDIR}', 'wsim_correct.R'),
-        '--retro',    q(retro),
-        '--obs',      q(obs),
+        os.path.join('{BINDIR}', 'wsim_correct.R')
+    ]
+
+    for fit in retro:
+        cmd += [ '--retro', q(fit) ]
+
+    for fit in obs:
+        cmd += [ '--obs', q(fit) ]
+
+
+    cmd += [
         '--forecast', q(forecast),
         '--output',   q(output)
     ]
@@ -173,7 +188,7 @@ def wsim_correct(*, retro, obs, forecast, output, append=False, comment=None):
 
     return Step(
         targets=output,
-        dependencies=[retro, obs, forecast],
+        dependencies=retro + obs + [forecast],
         commands=[cmd],
         comment=comment
     )

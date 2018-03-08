@@ -28,6 +28,8 @@ read_fits_from_cdf <- function(files) {
 
   for (file in files) {
     fit <- read_vars_to_cube(file, attrs_to_read=c('distribution', 'variable'))
+    attr(fit, 'filename') <- file
+
     var <- attr(fit, 'variable')
     distribution <- attr(fit, 'distribution')
 
