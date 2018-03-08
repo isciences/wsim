@@ -147,6 +147,7 @@ class Step:
         """
         self.commands.append(['touch', tag_file_name])
         self.targets = { tag_file_name }
+        self.working_directories.add(os.path.dirname(tag_file_name))
 
         return self
 

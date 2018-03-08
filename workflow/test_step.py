@@ -102,13 +102,14 @@ class TestStep(unittest.TestCase):
         s = Step(targets=['a', 'b', 'c'],
                  dependencies=[],
                  commands=[['process', 'a', 'b', 'c']]
-                 ).replace_targets_with_tag_file('tagfile')
+                 ).replace_targets_with_tag_file('tag_dir/tagfile')
 
-        self.assertSetEqual(s.targets, { 'tagfile' })
+        self.assertSetEqual(s.targets, { 'tag_dir/tagfile' })
         self.assertSetEqual(s.dependencies, set())
         self.assertListEqual(s.commands,
                              [['process', 'a', 'b', 'c'],
-                              ['touch', 'tagfile']])
+                              ['touch', 'tag_dir/tagfile']])
+        self.assertTrue( 'tag_dir' in s.working_directories)
 
     def test_tagged_targets_with_directory(self):
         s = Step(targets=['a', 'd/b', 'e/c'],
@@ -122,7 +123,8 @@ class TestStep(unittest.TestCase):
 
         self.assertListEqual(s.get_mkdir_commands(), [
             ['mkdir', '-p', 'd'],
-            ['mkdir', '-p', 'e']
+            ['mkdir', '-p', 'e'],
+            ['mkdir', '-p', 'q']
         ])
 
     def test_tagged_dependencies(self):
