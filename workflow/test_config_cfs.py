@@ -117,6 +117,25 @@ class TestCFSConfig(unittest.TestCase):
             re.search('\[(\d+):(\d+):(\d+)\]', input_results).groups()
         )
 
+
+    def test_adjusted_composites(self):
+        # Adjusted composites are tricky, because we can't produce them during result_fit_years.
+
+        config = CFSConfig(self.source, self.derived)
+
+        # Get a timestep that is within the historical period but not the result fit period
+        yearmon = next(iter(set(config.historical_yearmons()) ^ set(config.result_fit_yearmons())))
+
+        expected_filename = config.workspace().composite_summary_adjusted(yearmon=yearmon, window=1)
+
+        steps = generate_steps(config, yearmon, yearmon, False, 'latest')
+
+        for step in steps:
+            if expected_filename in step.targets:
+                return
+
+        self.fail()
+
     @unittest.skip
     def test_makefile_readable(self):
         config = CFSConfig(self.source, self.derived)
