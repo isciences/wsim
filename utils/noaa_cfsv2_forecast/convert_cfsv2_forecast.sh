@@ -27,28 +27,36 @@ then
 fi
 
 TEMP_GRB2=/tmp/regrid_halfdeg.$$.grb2
+TEMP_NC1=/tmp/`basename $2`.tmp1.$$.nc
+TEMP_NC2=/tmp/`basename $2`.tmp2.$$.nc
+TEMP_NC3=/tmp/`basename $2`.tmp3.$$.nc
 
 wgrib2 $1 -match "PRATE:surface|TMP:2 m" -new_grid latlon -179.75:720:0.5 -89.75:360:0.5 $TEMP_GRB2
-wgrib2 $TEMP_GRB2 -nc_grads -netcdf $2
+echo "wgrib2 $TEMP_GRB2 -nc_grads -netcdf $TEMP_NC1"
+wgrib2 $TEMP_GRB2 -nc_grads -netcdf $TEMP_NC1
 rm $TEMP_GRB2
 
 # Rename each variable in separate commands
 # Some versions of NCO fail to find variables
 # when we perform all of the renames in a single
 # command.
-ncrename -h -vlatitude,lat $2
-ncrename -h -vlongitude,lon $2
-ncrename -h -vTMP_2maboveground,tmp2m $2
-ncrename -h -vPRATE_surface,prate $2
-ncrename -h -dlatitude,lat $2
-ncrename -h -dlongitude,lon $2
+ncrename -h -vlatitude,lat $TEMP_NC1
+ncrename -h -vlongitude,lon $TEMP_NC1
+ncrename -h -vTMP_2maboveground,tmp2m $TEMP_NC1
+ncrename -h -vPRATE_surface,prate $TEMP_NC1
+ncrename -h -dlatitude,lat $TEMP_NC1
+ncrename -h -dlongitude,lon $TEMP_NC1
+
+# Use the --no_tmp_fl option to NCO and manage the temp files ourselves
+# Do this to avoid "permission denied" errors when writing to CIFS shares
+# under certain conditions
 
 # Drop the time dimension
-ncwa -h -O -a time $2 $2
+ncwa --no_tmp_fl -h -a time $TEMP_NC1 $TEMP_NC2
 # Drop the time variable
-ncks -h -C -O -x -v time $2 $2
+ncks --no_tmp_fl -h -C -O -x -v time $TEMP_NC2 $TEMP_NC3
 # Add a CRS variable
-ncap -h -O -s 'crs=-9999' $2 $2
+ncap --no_tmp_fl -h -O -s 'crs=-9999' $TEMP_NC3 $2
 ncatted -h -O \
 	-a spatial_ref,crs,c,c,'GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]' \
 	-a grid_mapping_name,crs,c,c,'latitude_longitude' \
@@ -58,4 +66,8 @@ ncatted -h -O \
 	-a grid_mapping,tmp2m,c,c,'crs' \
 	-a grid_mapping,prate,c,c,'crs' \
 	$2
+
+rm $TEMP_NC1
+rm $TEMP_NC2
+rm $TEMP_NC3
 
