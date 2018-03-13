@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import sys
 
 def use_pattern_rules(step):
@@ -59,12 +60,13 @@ def target_separator(use_order_only_rules):
         return ' : '
 
 def header():
-    header  = '.DELETE_ON_ERROR:\n'  # Delete partially-created files on error or cancel
-    header += '.SECONDARY:\n'        # Prevent removal of targets considered "intermediate"
-    header += '.SUFFIXES:\n'         # Disable implicit rules
-    header += '\n'
-
-    return header
+    return '\n'.join([
+        '# Generated on {} by {}'.format(datetime.datetime.now(), ' '.join(sys.argv)),
+        '',
+        '.DELETE_ON_ERROR:',  # Delete partially-created files on error or cancel
+        '.SECONDARY:',        # Prevent removal of targets considered "intermediate"
+        '.SUFFIXES:',         # Disable implicit rules
+    ]) + 2*'\n'
 
 def write_step(step, keys=None, use_order_only_rules=True):
     """
