@@ -65,14 +65,14 @@ class GLDAS20_Noah(ConfigBase):
             'Ws'        : [ 'ave' ]
         }
 
-    def result_postprocess_steps(self, yearmon=None):
+    def result_postprocess_steps(self, yearmon=None, target=None, member=None):
         year, mon =  dates.parse_yearmon(yearmon)
 
         input_file = os.path.join(self._source,
                                   '{:04d}'.format(year),
                                   'GLDAS_NOAH025_M.A{}.020.nc4'.format(yearmon))
 
-        output_file = self.workspace().results(yearmon=yearmon)
+        output_file = self.workspace().results(yearmon=yearmon, window=1)
 
         return [
             Step(
