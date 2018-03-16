@@ -35,11 +35,16 @@ The following R packages are used by WSIM:
 
 - Rcpp
 - abind
+- devtools
 - docopt
+- dplyr
 - futile.logger
 - lmom
 - lubridate
 - ncdf4
+- pkgdown
 - raster
+- readr
 - rgdal
+- roxygen2
 - testthat
