@@ -151,7 +151,7 @@ def main(raw_args):
             print("Duplicate target encountered:", target, file=sys.stderr)
 
     workflow_file = os.path.join(args.workspace, output_filename)
-    print('Writing output to', workflow_file, 'using module:', args.module)
+    print('Writing {} steps to {} using module: {}'.format(len(steps), workflow_file, args.module))
     write_makefile(output_module, workflow_file, steps, args.bindir)
 
 if __name__ == "__main__":
