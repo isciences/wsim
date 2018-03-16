@@ -13,6 +13,8 @@
 
 import io
 
+DEFAULT_FILENAME = 'Snakefile'
+
 def header():
     return ""
 
@@ -32,7 +34,7 @@ def write_step(step, keys=None):
     buff.write('    shell:\n')
     buff.write('        """\n')
 
-    for command in step.commands:
+    for command in step.get_mkdir_commands() + step.commands:
         command_txt = ' '.join(command).format_map(keys)
         for i, d in enumerate(deps):
             command_txt = command_txt.replace(d, '{input[' + str(i) + ']}')

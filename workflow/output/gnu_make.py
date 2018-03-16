@@ -11,8 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
-import sys
+import io
+
+from output.output_modules import creation_string, add_line_continuation_characters, substitute_tokens, write_command
+
+DEFAULT_FILENAME = 'Makefile'
 
 def use_pattern_rules(step):
     """
@@ -61,7 +64,7 @@ def target_separator(use_order_only_rules):
 
 def header():
     return '\n'.join([
-        '# Generated on {} by {}'.format(datetime.datetime.now(), ' '.join(sys.argv)),
+        '# ' + creation_string(),
         '',
         '.DELETE_ON_ERROR:',  # Delete partially-created files on error or cancel
         '.SECONDARY:',        # Prevent removal of targets considered "intermediate"
@@ -80,35 +83,23 @@ def write_step(step, keys=None, use_order_only_rules=True):
     """
     if keys is None:
         keys = {}
-    txt = ""
+
+    buff = io.StringIO()
+
     if step.comment:
-        txt += '# ' + step.comment + '\n'
+        buff.write('# ' + step.comment + '\n')
 
     # Rule Description
-    txt += target_string(step).format_map(keys) + \
-           target_separator(use_order_only_rules) + \
-           dependency_string(step).format_map(keys) + '\n'
+    buff.write(target_string(step).format_map(keys))
+    buff.write(target_separator(use_order_only_rules))
+    buff.write(dependency_string(step).format_map(keys))
 
     # Recipe
     for command in step.get_mkdir_commands() + step.commands:
-        # Split command-line arguments into individual lines for readability
-        # Add a \ to the end of the previous token to indicate a multiline
-        # continuation of a single command
-        for i in range(len(command)):
-            if command[i].startswith('-'):
-                command[i-1] += ' \\'
+        command = add_line_continuation_characters(command)
+        command = substitute_tokens(command, keys)
 
-        txt += '\t' # Make requires that all lines in recipe start with a tab
-        for token in command:
-            try:
-                txt += token.format_map(keys)
-            except Exception as e:
-                print("Error subbing", token, "with", keys, "in step for", step.targets, file=sys.stderr)
-                raise e
-            if token.endswith('\\'):
-                txt += '\n\t   '
-            else:
-                txt += ' '
+        write_command(buff, command, indent='\t')
 
-        txt += '\n'
-    return txt
+    return buff.getvalue()
+

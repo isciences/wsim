@@ -117,7 +117,6 @@ class TestCFSConfig(unittest.TestCase):
             re.search('\[(\d+):(\d+):(\d+)\]', input_results).groups()
         )
 
-
     def test_adjusted_composites(self):
         # Adjusted composites are tricky, because we can't produce them during result_fit_years.
 
@@ -138,6 +137,7 @@ class TestCFSConfig(unittest.TestCase):
 
     @unittest.skip
     def test_makefile_readable(self):
+        import output.gnu_make
         config = CFSConfig(self.source, self.derived)
 
         bindir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
@@ -146,7 +146,7 @@ class TestCFSConfig(unittest.TestCase):
 
         filename = tempfile.mkstemp()[-1]
 
-        write_makefile(filename, steps, bindir)
+        write_makefile(output.gnu_make, filename, steps, bindir)
 
         print('Wrote Makefile to', filename)
 

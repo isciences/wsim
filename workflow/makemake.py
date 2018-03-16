@@ -58,8 +58,7 @@ def parse_args(args):
                         default='gnu_make')
     parser.add_argument('--makefile',
                         help='Name of generated makefile',
-                        required=False,
-                        default='Makefile')
+                        required=False)
     parser.add_argument('--source',
                         help='Root directory for source data files',
                         required=True)
@@ -100,6 +99,7 @@ def write_makefile(module, filename, steps, bindir):
 
     with open(filename, 'w') as outfile:
         outfile.write(module.header())
+        outfile.write(2*'\n')
 
         # Reverse the steps so that spinup stuff is at the end. This is just to improve readability
         # if the user wants to manually inspect the Makefile
@@ -139,6 +139,7 @@ def main(raw_args):
     args = parse_args(raw_args)
 
     output_module = load_module(args.module)
+    output_filename = args.makefile or output_module.DEFAULT_FILENAME
 
     config = load_config(args.config, args.source, args.workspace)
 
@@ -149,7 +150,7 @@ def main(raw_args):
         for target in duplicate_targets[:100]:
             print("Duplicate target encountered:", target, file=sys.stderr)
 
-    workflow_file = os.path.join(args.workspace, args.makefile)
+    workflow_file = os.path.join(args.workspace, output_filename)
     print('Writing output to', workflow_file, 'using module:', args.module)
     write_makefile(output_module, workflow_file, steps, args.bindir)
 
