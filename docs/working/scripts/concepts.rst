@@ -18,6 +18,29 @@ Wildcard expansion
 
 Wildcard expansion can be used with ``--input`` arguments. For example, a pattern like ``--input=temp_19[7-9]*.nc`` could be used to load temperature values from 1970 to 1999.
 
+.. _date-range-expansion:
+
+Date range expansion
+--------------------
+
+Recognizing that filenames are commonly used to encode timestamps, WSIM tools allow a range of files to be specified by including a block of the following form in a filename: ``[date_start:date_stop:step (optional)]``.
+For example, the following text will be interpreted to refer to the 120 monthly files between January 1961 and January 1970 (inclusive):
+
+.. code-block:: console
+
+  --input "results_1mo_[196101:197001].nc"
+
+If we wanted to refer to the 10 files from January only, we could add a step size of 12 months:
+
+.. code-block:: console
+
+  --input "results_1mo_[191601:197001:12].nc"
+
+Dates may be specified at a resolution years (``YYYY``), months (``YYYYMM``), or days (``YYYYMMMDD``).
+The step resolution is assumed to be the same as the date resolution.
+
+Where applicable, date expansion is preferred to wildcard expansion because an error will be generated if any files in the date sequence are missing.
+
 Regular variables
 -----------------
 
@@ -26,7 +49,7 @@ If a raw netCDF filename is provided to an ``--input`` argument, WSIM tools will
 * is not a coordinate variable
 * is associated with at least one dimension
 
-As an example, consider the following netCDF file (representing output from :doc:`wsim_fit`, as described by ``ncinfo``:
+As an example, consider the following netCDF file (representing output from :doc:`wsim_fit <wsim_fit>`, as described by ``ncinfo``:
 
 ::
 
@@ -45,7 +68,10 @@ In this file, `lon` and `lat` are not read by WSIM tools because they are coordi
 Reading specific variables using ``::``
 ---------------------------------------
 
-A filename may optionally followed by ``::``, followed by a comma-separated list of variable names or band numbers in the file. If ``::`` is not provided for a netCDF file, it will be assumed that all "regular" variables in the file should be loaded. A "regular" variable is a variable that is not a coordinate variable, and that is associated with at least one dimension. If ``::`` is not provided for another raster type, only the first band will read read.
+A filename may be optionally followed by ``::`` and a comma-separated list of variable names or band numbers in the file.
+If ``::`` is not provided for a netCDF file, it will be assumed that all "regular" variables in the file should be loaded.
+A "regular" variable is a variable that is not a coordinate variable, and that is associated with at least one dimension.
+If ``::`` is not provided for another raster type, only the first band will read read.
 
 In the netCDF file example shown above:
 
@@ -53,7 +79,9 @@ In the netCDF file example shown above:
 * ``--input=fits.nc::location`` would load only the ``location`` variable
 * ``--input=fits.nc::shape,location`` would load the ``shape`` and ``location`` variables. The same variables could be loaded with multiple arguments (``--input=fits.nc::shape --input=fits.nc::location``) although this is less efficient.
 
-The ``::`` syntax (and other variable operators described below) can be used in conjunction with filename wildcard matching, for example: ``--input="obs_19980[1-6].nc::T,Pr`` could be used to load temperature and precipitation observations from January to June 1980.
+The ``::`` syntax (and other variable operators described below) can be used in conjunction with filename wildcard or date range matching, for example: ``--input="obs_[198001:198006].nc::T,Pr"`` could be used to load temperature and precipitation observations from January to June 1980.
+
+.. _renaming-variables:
 
 Renaming variables using ``->``
 -------------------------------
