@@ -91,6 +91,7 @@ The U.S. Army Engineer Research and Development Center (`ERDC <http://www.erdc.u
    :glob:
    :caption: Contents:
 
+   quick_start
    concepts/index
    obtaining
    working/index

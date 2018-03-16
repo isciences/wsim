@@ -6,6 +6,8 @@ This section provides some examples of parameter and forcing datasets that are s
 Forcing Datasets
 ================
 
+.. _data-cfs:
+
 CFSv2 Temperature and Precipitation Forecasts
 ---------------------------------------------
 
@@ -37,6 +39,8 @@ The ``convert_cfsv2.sh`` script can then be used to convert the GRIB file into n
 
 The ``wsim_correct`` tool can then be used to bias-correct these forecasts based on retrospective forecast data.
 A detailed discussion of forecast bias correction is provided :doc:`here </concepts/forecast_bias_correction>`.
+
+.. _data-ncep:
 
 GHCN+CAMS Temperature and PREC/L Precipitation Data
 ---------------------------------------------------
@@ -92,6 +96,8 @@ This parameter can be computed by summarizing the version of the NLDAS-2 forcing
 Parameter Datasets
 ==================
 
+.. _data-stn30:
+
 Simulated Topological Network Flow Directions
 ---------------------------------------------
 
@@ -101,6 +107,8 @@ Global Flow Directions derived from Dominant River Tracing (DRT)
 ----------------------------------------------------------------
 
 The Numerical Terradynamic Simulation Group at the University of Montana publishes near-global flow direction grids (84 degrees North to 56 degrees South) at various resolutions, derived using a dominant river tracing (DRT) algorithm. Data can be accessed from `this link <http://www.ntsg.umt.edu/project/drt.php>`_.
+
+.. _data-gmted:
 
 Global Multi-resolution Terrain Elevation Data 2010 (GMTED2010)
 ---------------------------------------------------------------
@@ -113,6 +121,8 @@ The data is offered at three resolutions, with varying coverages:
 * 7.5 arc-seconds, from 84 degrees north to 56 degrees south
 
 Data can be download in Arc/Info binary grid format from `this link <https://topotools.cr.usgs.gov/GMTED_viewer/gmted2010_global_grids.php>`_.
+
+.. _data-isric-wise:
 
 ISRIC WISE-Derived Soil Properties
 ----------------------------------
