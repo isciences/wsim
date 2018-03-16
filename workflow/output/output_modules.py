@@ -44,6 +44,7 @@ def substitute_tokens(command_tokens, keys):
 def write_command(buff, command_tokens, indent):
     buff.write(indent)
     for token in command_tokens:
+        buff.write(token)
         if token.endswith('\\'):
             buff.write('\n' + indent + '  ')
         else:

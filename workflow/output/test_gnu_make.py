@@ -82,3 +82,13 @@ class TestGnuMake(unittest.TestCase):
         self.assertTrue('mkdir -p /src' in commands)
         self.assertTrue('mkdir -p /tmp/fizz/fuzz' in commands)
         self.assertEqual(2, len(commands))
+
+    def test_commands_arguments_aligned(self):
+        s = Step(targets='outputs/results.nc', dependencies='inputs.nc', commands=[['process.py', '--input', 'inputs.nc', '--output', 'outputs/results.nc', '--compress', '3', '--nohistory']])
+
+        command_lines = [line.strip() for line in write_step(s).split('\n') if line.startswith('\t')]
+
+        self.assertEqual(7, len(command_lines))
+        self.assertTrue(all(line.startswith('mkdir') or
+                            line.startswith('process.py') or
+                            line.startswith('-') for line in command_lines))

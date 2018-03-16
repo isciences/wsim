@@ -93,6 +93,7 @@ def write_step(step, keys=None, use_order_only_rules=True):
     buff.write(target_string(step).format_map(keys))
     buff.write(target_separator(use_order_only_rules))
     buff.write(dependency_string(step).format_map(keys))
+    buff.write('\n')
 
     # Recipe
     for command in step.get_mkdir_commands() + step.commands:
