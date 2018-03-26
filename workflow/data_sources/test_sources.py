@@ -17,15 +17,19 @@ import subprocess
 import tempfile
 import unittest
 
-from data_sources import isric, stn30, gmted
+from data_sources import isric, stn30, gmted, ntsg_drt
 from makemake import write_makefile
+from output import gnu_make
 
 def execute_steps(steps, target):
     makefile = tempfile.mkstemp()[-1]
     bindir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
-    write_makefile(makefile, steps, bindir)
+    write_makefile(gnu_make, makefile, steps, bindir)
 
-    return subprocess.call(['make', '-f', makefile, target])
+    return_code = subprocess.call(['make', '-f', makefile, target])
+
+    os.remove(makefile)
+    return return_code
 
 class TestSources(unittest.TestCase):
 
@@ -68,4 +72,12 @@ class TestSources(unittest.TestCase):
 
         self.assertEqual(0, return_code)
 
+
+    @unittest.skip
+    def test_ntsg_drt(self):
+        steps = ntsg_drt.global_flow_direction(filename=self.outfile, resolution=0.25)
+
+        return_code = execute_steps(steps, self.outfile)
+
+        self.assertEqual(0, return_code)
 
