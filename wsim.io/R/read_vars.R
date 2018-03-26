@@ -131,8 +131,8 @@ check_extent <- function(def, data, extent) {
   }
 
   stop("Unexpected extent of ", def$filename,
-       " (expected [", paste(extent, collapse=", "), "] ",
-       ", got [", paste(data$extent), "]")
+       " (expected [", paste(extent, collapse=", "), "]",
+       ", got [", paste(data$extent, collapse=", "), "])")
 }
 
 check_dims <- function(def, data, dims) {
@@ -142,7 +142,7 @@ check_dims <- function(def, data, dims) {
 
   stop("Unexpected dimensions of ", def$filename,
        " (expected [", paste(dims, collapse=", "), "] ",
-       ", got [", paste(dim(data$data[[1]]), collapse=", "), "]")
+       ", got [", paste(dim(data$data[[1]]), collapse=", "), "])")
 }
 
 is_mon <- function(fname) {
