@@ -26,8 +26,10 @@ then
 	exit 1
 fi
 
-ncap2 -O -v -s "PETmE=(PotEvap_tavg-Evap_tavg);Ws=(0.1*SoilMoi0_10cm_inst+0.3*SoilMoi10_40cm_inst+0.6*SoilMoi40_100cm_inst);RO_mm=Qs_acc+Qsb_acc+Qsm_acc" $1 $2
-ncpdq -O -a -lat $2 $2 # Flip latitudes to get North -> South ordering
+TMP=`mktemp --suffix ".nc"`
+
+ncap2 -O -v -s "PETmE=(PotEvap_tavg-Evap_tavg);Ws=(0.1*SoilMoi0_10cm_inst+0.3*SoilMoi10_40cm_inst+0.6*SoilMoi40_100cm_inst);RO_mm=Qs_acc+Qsb_acc+Qsm_acc" $1 $TMP
+ncpdq -O -a -lat $TMP $TMP # Flip latitudes to get North -> South ordering
 ncatted -h -O \
 	-a long_name,PETmE,o,c,'Potential minus Actual Evapotranspiration' \
 	-a vmin,PETmE,d,, \
@@ -39,15 +41,15 @@ ncatted -h -O \
 	-a long_name,RO_mm,o,c,'Runoff' \
 	-a standard_name,RO_mm,o,c,'surface_runoff_amount' \
 	-a vmin,RO_mm,d,, \
-	-a vmax,RO_mm,d,, $2
+	-a vmax,RO_mm,d,, $TMP
 
 # Drop the time dimension
-ncwa -h -O -a time $2 $2
+ncwa -h -O -a time $TMP $TMP
 # Drop the time variable
-ncks -h -C -O -x -v time $2 $2
+ncks -h -C -O -x -v time $TMP $TMP
 
 # Add a CRS variable
-ncap -h -O -s 'crs=-9999' $2 $2
+ncap -h -O -s 'crs=-9999' $TMP $TMP
 ncatted -h -O \
 	-a spatial_ref,crs,c,c,'GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]' \
 	-a grid_mapping_name,crs,c,c,'latitude_longitude' \
@@ -57,4 +59,6 @@ ncatted -h -O \
 	-a grid_mapping,PETmE,c,c,'crs' \
 	-a grid_mapping,Ws,c,c,'crs' \
 	-a grid_mapping,RO_mm,c,c,'crs' \
-	$2
+	$TMP
+
+mv $TMP $2
