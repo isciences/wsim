@@ -43,6 +43,10 @@
 read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL) {
   def <- parse_vardef(vardef)
 
+  if(!file.exists(def$filename)) {
+    stop('File ', def$filename, ' does not exist.')
+  }
+
   if(endsWith(def$filename, '.nc')) {
     loaded <- read_vars_from_cdf(vardef)
     check_nvars(def, loaded, expect.nvars)

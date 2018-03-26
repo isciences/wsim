@@ -392,3 +392,9 @@ test_that("we can read fits from multiple netCDFs", {
   file.remove(fname1)
   file.remove(fname2)
 })
+
+test_that('we get a helpful error message when trying to access data that does not exist', {
+  for (f in c('sdfy.nc::sdf', 'sdgy.tif', 'dsaf.mon')) {
+    expect_error(read_vars(f), paste0('does not exist'))
+  }
+})
