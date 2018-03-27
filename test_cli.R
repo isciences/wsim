@@ -398,3 +398,41 @@ test_that("wsim_anom errors out if name of fit variable doesn't match observatio
   file.remove(fitfile)
   file.remove(sa_file)
 })
+
+test_that("wsim_composite does what it's supposed to", {
+  indicators <- tempfile(fileext='.nc')
+  output <- tempfile(fileext='.nc')
+
+  wsim.io::write_vars_to_cdf(
+    list(surp1=rbind(c(1, 1), c(NA, 1)),
+         surp2=rbind(c(2, 2), c(-2, 3)),
+         def1=rbind(c(-1, 3), c(-2, -7)),
+         def2=rbind(c(-2, 1), c(-1, -1))),
+    indicators,
+    extent=c(0, 1, 0, 1))
+
+  return_code <- system2('./wsim_composite.R', args=c(
+    '--surplus', paste0(indicators, '::surp1,surp2'),
+    '--deficit', paste0(indicators, '::def1'),
+    '--deficit', paste0(indicators, '::def2'),
+    '--mask', paste0(indicators, '::surp1'),
+    '--both_threshold', '2',
+    '--clamp', '5',
+    '--output', output
+  ))
+
+  expect_equal(return_code, 0)
+
+  composite <- wsim.io::read_vars(output)
+
+  expect_equal(composite$data$surplus, rbind(c(2, 2), c(NA, 2)), check.attributes=FALSE)
+  expect_equal(composite$data$surplus_cause, rbind(c(2, 2), c(NA, 2)), check.attributes=FALSE)
+
+  expect_equal(composite$data$deficit, rbind(c(-2, 1), c(NA, -5)), check.attributes=FALSE)
+  expect_equal(composite$data$deficit_cause, rbind(c(2, 2), c(NA, 1)), check.attributes=FALSE)
+
+  expect_equal(composite$data$both, rbind(c(0, 0), c(NA, 5)), check.attributes=FALSE)
+
+  file.remove(indicators)
+  file.remove(output)
+})
