@@ -425,7 +425,7 @@ test_that("wsim_composite does what it's supposed to", {
 
   composite <- wsim.io::read_vars(output)
 
-  expect_equal(composite$data$surplus, rbind(c(2, 2), c(NA, 2)), check.attributes=FALSE)
+  expect_equal(composite$data$surplus, rbind(c(2, 2), c(NA, 3)), check.attributes=FALSE)
   expect_equal(composite$data$surplus_cause, rbind(c(2, 2), c(NA, 2)), check.attributes=FALSE)
 
   expect_equal(composite$data$deficit, rbind(c(-2, 1), c(NA, -5)), check.attributes=FALSE)
