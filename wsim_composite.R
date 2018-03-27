@@ -16,7 +16,7 @@
 wsim.io::logging_init('wsim_composite')
 
 suppressMessages({
-  require(abind)
+  require(Rcpp)
 })
 
 '
@@ -43,14 +43,6 @@ vals_for_depth_index <- function(arr, depth) {
                   as.vector(col(depth)),
                   as.vector(depth))],
         dim=dim(depth))
-}
-
-which.min.na <- function(...) {
-  ifelse(all(is.na(...)), NA, which.min(...))
-}
-
-which.max.na <- function(...) {
-  ifelse(all(is.na(...)), NA, which.max(...))
 }
 
 main <- function(raw_args) {
@@ -85,7 +77,7 @@ main <- function(raw_args) {
     mask <- ifelse(!is.na(mask_data), 1, NA)
   }
 
-  max_surplus_indices <- wsim.distributions::array_apply(surpluses, which.max.na)
+  max_surplus_indices <- wsim.distributions::stack_which_max(surpluses)
   max_surplus_values <- vals_for_depth_index(surpluses, max_surplus_indices)
   if (!is.null(args$clamp)) {
     max_surplus_values <- clamp(max_surplus_values, -args$clamp, args$clamp)
@@ -93,7 +85,7 @@ main <- function(raw_args) {
 
   wsim.io::info('Computed composite surplus.')
 
-  min_deficit_indices <- wsim.distributions::array_apply(deficits, which.min.na)
+  min_deficit_indices <- wsim.distributions::stack_which_min(deficits)
   min_deficit_values <- vals_for_depth_index(deficits, min_deficit_indices)
   if (!is.null(args$clamp)) {
     min_deficit_values <- clamp(min_deficit_values, -args$clamp, args$clamp)

@@ -50,7 +50,8 @@ using VectorToDoubleFunction= std::function<double(const std::vector<double> & a
 // Apply function f over each slice [i, j, ] in an array
 // f must return a scalar
 static NumericVector stack_apply (const NumericVector & v,
-                                  VectorToDoubleFunction f) {
+                                  VectorToDoubleFunction f,
+                                  bool remove_na) {
 
   IntegerVector dims = v.attr("dim");
   if (dims.length() < 2 || dims.length() > 3) {
@@ -73,7 +74,7 @@ static NumericVector stack_apply (const NumericVector & v,
       int argc = 0;
       for (int k = 0; k < depth; k++) {
         double val = v[k*cells_per_level + jblock + i];
-        if (!std::isnan(val)) {
+        if (!remove_na || !std::isnan(val)) {
           f_args[argc++] = val;
         }
       }
@@ -89,7 +90,8 @@ static NumericVector stack_apply (const NumericVector & v,
 // f must return a vector of length `depth_out`
 NumericVector stack_apply (const NumericVector & v,
                            VectorToVectorFunction f,
-                           int depth_out) {
+                           int depth_out,
+                           bool remove_na) {
   const IntegerVector dims = v.attr("dim");
   if (dims.length() < 2 || dims.length() > 3) {
     throw std::invalid_argument("Expected array of 2 or 3 dimensions");
@@ -112,7 +114,7 @@ NumericVector stack_apply (const NumericVector & v,
       int argc = 0;
       for (int k = 0; k < depth; k++) {
         double val = v[k*cells_per_level + jblock + i];
-        if (!std::isnan(val)) {
+        if (!remove_na || !std::isnan(val)) {
           f_args[argc++] = k;
         }
       }
@@ -142,6 +144,54 @@ static inline double max_n (const std::vector<double> & v, int n) {
     return NA_REAL;
   }
   return *std::max_element(v.begin(), std::next(v.begin(), n));
+}
+
+// Compute index of the max defined element in a vector
+// Returned value is indexed beginning at 1
+static inline double which_max_n (const std::vector<double> & v, int n) {
+  int max_i;
+  bool found_defined = false;
+
+  for (int i = 0; i < n; i++) {
+    if (!std::isnan(v[i])) {
+      if (!found_defined) {
+        found_defined = true;
+        max_i = i;
+      } else if (v[i] > v[max_i]) {
+        max_i = i;
+      }
+    }
+  }
+
+  if (!found_defined) {
+    return NA_REAL;
+  }
+
+  return 1 + max_i;
+}
+
+// Compute index of the min defined element in a vector
+// Returned value is indexed beginning at 1
+static inline double which_min_n (const std::vector<double> & v, int n) {
+  int min_i;
+  bool found_defined = false;
+
+  for (int i = 0; i < n; i++) {
+    if (!std::isnan(v[i])) {
+      if (!found_defined) {
+        found_defined = true;
+        min_i = i;
+      } else if (v[i] < v[min_i]) {
+        min_i = i;
+      }
+    }
+  }
+
+  if (!found_defined) {
+    return NA_REAL;
+  }
+
+  return 1 + min_i;
 }
 
 // Compute the mean of first n elements in a vector
@@ -214,7 +264,7 @@ static double quantile (const std::vector<double> & v, int n, double q) {
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_sum (const NumericVector & v) {
-  return stack_apply(v, sum_n);
+  return stack_apply(v, sum_n, true);
 }
 
 //' Compute the mean defined element for each row and col in a 3D array
@@ -225,7 +275,7 @@ NumericVector stack_sum (const NumericVector & v) {
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_mean (const NumericVector & v) {
-  return stack_apply(v, mean_n);
+  return stack_apply(v, mean_n, true);
 }
 
 //' Compute the minimum defined element for each row and col in a 3D array
@@ -236,10 +286,25 @@ NumericVector stack_mean (const NumericVector & v) {
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_min (const NumericVector & v) {
-  return stack_apply(v, min_n);
+  return stack_apply(v, min_n, true);
+}
+
+//' Compute the index of the minimum defined element for each row and col in a 3D array
+//'
+//' Returned value is indexed beginning at 1
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the minimum index for each [row, col, ]
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_which_min (const NumericVector & v) {
+  return stack_apply(v, which_min_n, false);
 }
 
 //' Compute the maximum defined element for each row and col in a 3D array
+//'
+//' Returned value is indexed beginning at 1
 //'
 //' @param v 3D array that may contain NA values
 //'
@@ -247,7 +312,18 @@ NumericVector stack_min (const NumericVector & v) {
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_max (const NumericVector & v) {
-  return stack_apply(v, max_n);
+  return stack_apply(v, max_n, true);
+}
+
+//' Compute the index of the maximum defined element for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the maximum index for each [row, col, ]
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_which_max (const NumericVector & v) {
+  return stack_apply(v, which_max_n, false);
 }
 
 //' Compute the fraction of defined elements for each row and col in a 3D array
@@ -258,7 +334,7 @@ NumericVector stack_max (const NumericVector & v) {
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_frac_defined (const NumericVector & v) {
-  return stack_apply(v, frac_defined_n);
+  return stack_apply(v, frac_defined_n, true);
 }
 
 //' Compute the fraction of defined elements above zero for each row and col in a 3D array
@@ -269,7 +345,7 @@ NumericVector stack_frac_defined (const NumericVector & v) {
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_frac_defined_above_zero (const NumericVector & v) {
-  return stack_apply(v, frac_defined_above_zero_n);
+  return stack_apply(v, frac_defined_above_zero_n, true);
 }
 
 //' Compute a given quantile of defined elements for each row and col in a 3D array
@@ -281,7 +357,7 @@ NumericVector stack_frac_defined_above_zero (const NumericVector & v) {
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_quantile (const NumericVector & v, double q) {
-  return stack_apply(v, std::bind(quantile, std::placeholders::_1, std::placeholders::_2, q));
+  return stack_apply(v, std::bind(quantile, std::placeholders::_1, std::placeholders::_2, q), true);
 }
 
 //' Compute the median of defined elementsn for each row and col in a 3D array
@@ -292,5 +368,6 @@ NumericVector stack_quantile (const NumericVector & v, double q) {
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_median (const NumericVector & v) {
-  return stack_apply(v, std::bind(quantile, std::placeholders::_1, std::placeholders::_2, 0.50));
+  return stack_apply(v, std::bind(quantile, std::placeholders::_1, std::placeholders::_2, 0.50), true);
 }
+
