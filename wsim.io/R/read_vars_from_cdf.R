@@ -14,14 +14,17 @@
 #' Read all variables from a netCDF file
 #'
 #' @inheritParams parse_vardef
+#' @inheritParams read_vars
 #' @param vars A list of variables to read.  If NULL (default),
 #'             all variables will be read.
-#' @param z_offset An optional index indicating which slice of
-#'                 data to read in a 3-dimensional netCDF file
-#'                 (elevation, time, etc.)
 #' @return structure described in \code{\link{read_vars}}
 #' @export
-read_vars_from_cdf <- function(vardef, vars=as.character(c()), z_offset=NULL) {
+read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, count=NULL) {
+  stopifnot(is.null(offset) == is.null(count))
+  if (!is.null(offset)) {
+    stopifnot(length(offset) == length(count))
+  }
+
   if (is.wsim.io.vardef(vardef)) {
     def <- vardef
   } else {
@@ -46,6 +49,11 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), z_offset=NULL) {
   dlat <- abs(lats[2] - lats[1])
   dlon <- abs(lons[2] - lons[1])
 
+  if (!is.null(offset)) {
+    lats <- ncdf4::ncvar_get(cdf, latname, start=offset[2], count=count[2])
+    lons <- ncdf4::ncvar_get(cdf, lonname, start=offset[1], count=count[1])
+  }
+
   # Figure out whether we need to adjust a 0-360 dataset to -180-180
   wrap_rows <- NULL
   if (any(lons > 181)) {
@@ -59,7 +67,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), z_offset=NULL) {
   }
 
   # Do we need to flip latitudes?
-  flip_latitudes <- (lats[1] < lats[2])
+  flip_latitudes <- length(lats) > 1 && (lats[1] < lats[2])
 
   extent <- c(min(lons) - dlon/2,
               max(lons) + dlon/2,
@@ -95,13 +103,19 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), z_offset=NULL) {
       # Read this as a regular variable
       for (var_to_load in vars) {
         if (var_to_load$var_in == var$name) {
-          if (is.null(z_offset)) {
+          if (is.null(offset)) {
             d <- ncdf4::ncvar_get(cdf, var$name)
           } else {
+            # Collapse 3D array to 2D array, but don't
+            # collapse a column (e.g., single meridian of longitude)
+            # to a vector
+            collapse <- !is.na(count[3]) && count[3] == 1
+
             d <- ncdf4::ncvar_get(cdf,
                                   var$name,
-                                  start=c(1,   1, z_offset),
-                                  count=c(-1, -1, 1))
+                                  start=offset,
+                                  count=count,
+                                  collapse_degen=collapse)
           }
 
           if (!is.null(wrap_rows)) {

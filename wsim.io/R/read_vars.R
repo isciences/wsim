@@ -21,9 +21,23 @@
 #' @param expect.dims   If specified, \code{read_vars} will throw an
 #'                      error if dimensions of read data are not
 #'                      equal to \code{expect.dims}.
-#' @param expect.extent If speficied, \code{read_vars} will throw an
+#' @param expect.extent If specified, \code{read_vars} will throw an
 #'                      error if extent of read data is not exactly
 #'                      \code{expect.extent}.
+#' @param offset        Specifies dimension-wise (X, Y, ...) offsets
+#'                      from the upper-left corner of the raster
+#'                      (xmin, ymax) from which reading should begin.
+#'                      A value of c(1,1) refers to the corner cell
+#'                      itself (i.e., there is no offset). This
+#'                      follows the convention of the \code{ncdf4}
+#'                      package. If \code{offset} is specified, then
+#'                      \code{count} must also be specified.
+#' @param count         Specifies dimension-wise (X, Y, ...) numbers of
+#'                      cells to read, beginning at the origin cell
+#'                      specified by \code{offset}. A value of \code{-1}
+#'                      signifies that all values after the origin cell
+#'                      should be read. If \code{count} is specified, then
+#'                      \code{origin} must also be specified.
 #'
 #' @return A list having the following structure:
 #' \describe{
@@ -40,7 +54,7 @@
 #' }
 #'
 #' @export
-read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL) {
+read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL, offset=NULL, count=NULL) {
   def <- parse_vardef(vardef)
 
   if(!file.exists(def$filename)) {
@@ -48,7 +62,7 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
   }
 
   if(endsWith(def$filename, '.nc')) {
-    loaded <- read_vars_from_cdf(vardef)
+    loaded <- read_vars_from_cdf(vardef, offset=offset, count=count)
     check_nvars(def, loaded, expect.nvars)
     check_extent(def, loaded, expect.extent)
     check_dims(def, loaded, expect.dims)
@@ -77,15 +91,35 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
       dy <- info[["res.y"]]
       xmin <- info[["ll.x"]]
       ymin <- info[["ll.y"]]
+      nx <- info[["columns"]]
+      ny <- info[["rows"]]
 
-      loaded$extent <- c(xmin,
-                         xmin + dx*info[["columns"]],
-                         ymin,
-                         ymin + dy*info[["rows"]])
+      # Copy the syntax from the ncdf4 package, in which a count of "-1"
+      # is taken to mean "all data including and after the offset"
+      if (count[1] == -1)
+        count[1] = nx - offset[1] + 1
+      if (count[2] == -1)
+        count[2] = ny - offset[2] + 1
 
+      ymax <- ymin + dy*ny
+
+      if (is.null(offset)) {
+        loaded$extent <- c(xmin,
+                           xmin + dx*nx,
+                           ymin,
+                           ymin + dy*ny)
+      } else {
+        loaded$extent <- c(xmin + dx*(offset[1] - 1),
+                           xmin + dx*(offset[1] - 1 + count[1]),
+                           ymax - dy*(offset[2] - 1 + count[2]),
+                           ymax - dy*(offset[2] - 1))
+
+      }
     }
 
     if (is_mon(def$filename)) {
+      stopifnot(is.null(offset) && is.null(count))
+
       vals <- read_mon_file(def$filename)
     } else if (is_ncep_daily_precip(def$filename)) {
       # Ugly special case: a file of global half-degree precipitation from NCEP
@@ -94,12 +128,27 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
       # a path on a NOAA server somewhere) we can't convert them to a standard format like netCDF
       # without fudging our own .ctl file.
       #
+      stopifnot(is.null(offset) && is.null(count))
+
       vals <- read_ncep_daily_precip(def$filename)
     } else {
       rast <- rgdal::GDAL.open(def$filename, read.only=TRUE)
 
-      vals <- t(rgdal::getRasterData(rast,
-                                     band=as.integer(var$var_in)))
+      if (is.null(offset)) {
+        vals <- t(rgdal::getRasterData(rast,
+                                       band=as.integer(var$var_in)))
+      } else {
+        vals <- t(rgdal::getRasterData(rast,
+                                       band=as.integer(var$var_in),
+                                       offset=rev(offset)-1,
+                                       region.dim=rev(count)))
+
+        # Un-collapse dimension
+        if (count[1] == 1) {
+          vals <- matrix(vals, ncol=1)
+        }
+      }
+
       rgdal::GDAL.close(rast)
     }
 

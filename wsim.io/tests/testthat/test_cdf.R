@@ -398,3 +398,107 @@ test_that('we get a helpful error message when trying to access data that does n
     expect_error(read_vars(f), paste0('does not exist'))
   }
 })
+
+test_that('we can read a specific 2d portion of a variable from a netCDF', {
+  fname <- tempfile(fileext='.nc')
+
+  write_vars_to_cdf(list(
+    var1= matrix(1:9, nrow=3, ncol=3, byrow=TRUE),
+    var2= matrix(21:29, nrow=3, ncol=3, byrow=TRUE)
+  ), filename=fname, extent=c(0,1,0,1))
+
+  # Both dimensions offset and count
+  lr <- read_vars_from_cdf(fname, offset=c(2,2), count=c(2,2))
+
+  expect_equal(lr$data$var1, rbind(c(5,6), c(8,9)), check.attributes=FALSE)
+  expect_equal(lr$data$var2, rbind(c(25,26), c(28,29)), check.attributes=FALSE)
+
+  # Only one dimension specified for count
+  middle_col <- read_vars_from_cdf(fname, offset=c(2, 1), count=c(1, -1))
+  expect_equal(middle_col$data$var1, rbind(2, 5, 8), check.attributes=FALSE)
+
+  # Neither dimension specified for count
+  right_col <- read_vars_from_cdf(fname, offset=c(3, 1), count=c(-1, -1))
+  expect_equal(right_col$data$var1, rbind(3, 6, 9), check.attributes=FALSE)
+
+  # Error if offset/count not specified together
+  expect_error(lr <- read_vars_from_cdf(fname, offset=c(2,2)))
+  expect_error(lr <- read_vars_from_cdf(fname, count=c(1,1)))
+
+  # Error if wrong number of dimensions in offset or count
+  expect_error(lr <- read_vars_from_cdf(fname, offset=c(1,2,3), count=c(2,2,2)))
+
+  file.remove(fname)
+})
+
+test_that('data extent is correctly set when reading a 2D subset of a netCDF', {
+  fname <- tempfile(fileext='.nc')
+
+  write_vars_to_cdf(list(data=matrix(1, nrow=360, ncol=720)),
+                    extent=c(-180, 180, -90, 90),
+                    filename=fname)
+
+  one_degree_square <- read_vars(fname, offset=c(214, 92), count=c(2,2))
+  expect_equal(one_degree_square$extent, c(-73.5, -72.5, 43.5, 44.5), check.attributes=FALSE)
+
+  half_degree_square <- read_vars(fname, offset=c(214, 92), count=c(1,1))
+  expect_equal(half_degree_square$extent, c(-73.5, -73.0, 44.0, 44.5), check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
+test_that('we can read a specific 2d portion of a variable from a raster file', {
+  fname <- tempfile(fileext='.tif')
+
+  data <- matrix(1:15, nrow=3, byrow=TRUE)
+
+  rast_out <- methods::new(suppressMessages(methods::getClassDef('GDALTransientDataset', package='rgdal')),
+                           driver=methods::new(methods::getClassDef('GDALDriver', package='rgdal'), 'GTiff'),
+                           cols=ncol(data),
+                           rows=nrow(data),
+                           bands=1,
+                           type='float32')
+
+  rast_out <- rgdal::saveDataset(rast_out,
+                                 fname,
+                                 options=c("COMPRESS=DEFLATE"),
+                                 returnNewObj=TRUE)
+
+  rgdal::putRasterData(rast_out, t(data), band=1)
+  rgdal::GDAL.close(rast_out)
+
+  middle <- read_vars(fname, offset=c(3, 1), count=c(1, -1))
+  expect_equal(middle$data[[1]], rbind(3, 8, 13))
+  expect_equal(middle$extent, c(2, 3, 0, 3))
+
+  lower_right <- read_vars(fname, offset=c(4, 2), count=c(-1, 2))
+  expect_equal(lower_right$data[[1]], rbind(c(9, 10), c(14, 15)), check.attributes=FALSE)
+  expect_equal(lower_right$extent, c(3, 5, 0, 2), check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
+test_that('we can retrieve a vertical slice of a file', {
+  fname <- tempfile(fileext='.nc')
+
+  data <- array(1:(10*5*7), dim=c(10, 5, 7))
+
+  latdim <- ncdf4::ncdim_def("lat", units="degrees_north", vals=as.double(10:1)-0.5)
+  londim <- ncdf4::ncdim_def("lon", units="degrees_east", vals=as.double(1:5)-0.5)
+  elevdim <- ncdf4::ncdim_def("elev", units="fathoms", vals=as.double(1:7)-0.5)
+
+  pressure <- ncdf4::ncvar_def(name="Pressure", units="kPa", dim=list(londim, latdim, elevdim))
+
+  ncout <- ncdf4::nc_create(fname, list(pressure))
+
+  ncdf4::ncvar_put(ncout, pressure, aperm(data, c(2,1,3)))
+
+  ncdf4::nc_close(ncout)
+
+  # Read a single vertical slice
+  slice <- read_vars_from_cdf(fname, offset=c(1,1,3), count=c(-1,-1,1))
+
+  expect_equal(data[,,3], slice$data[[1]], check.attributes=FALSE)
+
+  file.remove(fname)
+})

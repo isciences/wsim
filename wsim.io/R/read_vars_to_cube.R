@@ -13,6 +13,8 @@
 
 #' Read multiple variables to a 3D array
 #'
+#' @inheritParams read_vars
+#'
 #' @param vardefs a list or vector of variable definitions
 #'                as described in \code{\link{parse_vardef}}
 #' @param attrs_to_read a vector of global attribute names to be
@@ -23,9 +25,9 @@
 #'         will contain the variable names of the inputs, and
 #'        the extent will be attached as an attribute.
 #' @export
-read_vars_to_cube <- function(vardefs, attrs_to_read=as.character(c())) {
+read_vars_to_cube <- function(vardefs, attrs_to_read=as.character(c()), offset=NULL, count=NULL) {
   vardefs <- lapply(vardefs, parse_vardef)
-  vars <- lapply(vardefs, wsim.io::read_vars)
+  vars <- lapply(vardefs, function(v) wsim.io::read_vars(v, offset=offset, count=count))
   extent <- vars[[1]]$extent
 
   for (var in vars) {
