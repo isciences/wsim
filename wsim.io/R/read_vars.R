@@ -96,11 +96,6 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
 
       # Copy the syntax from the ncdf4 package, in which a count of "-1"
       # is taken to mean "all data including and after the offset"
-      if (count[1] == -1)
-        count[1] = nx - offset[1] + 1
-      if (count[2] == -1)
-        count[2] = ny - offset[2] + 1
-
       ymax <- ymin + dy*ny
 
       if (is.null(offset)) {
@@ -109,6 +104,11 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
                            ymin,
                            ymin + dy*ny)
       } else {
+        if (count[1] == -1)
+          count[1] = nx - offset[1] + 1
+        if (count[2] == -1)
+          count[2] = ny - offset[2] + 1
+
         loaded$extent <- c(xmin + dx*(offset[1] - 1),
                            xmin + dx*(offset[1] - 1 + count[1]),
                            ymax - dy*(offset[2] - 1 + count[2]),

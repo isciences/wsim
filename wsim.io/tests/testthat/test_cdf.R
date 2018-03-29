@@ -467,6 +467,9 @@ test_that('we can read a specific 2d portion of a variable from a raster file', 
   rgdal::putRasterData(rast_out, t(data), band=1)
   rgdal::GDAL.close(rast_out)
 
+  entire <- read_vars(fname)
+  expect_equal(entire$data[[1]], data, check.attributes=FALSE)
+
   middle <- read_vars(fname, offset=c(3, 1), count=c(1, -1))
   expect_equal(middle$data[[1]], rbind(3, 8, 13))
   expect_equal(middle$extent, c(2, 3, 0, 3))
