@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
+
 from commands import *
 from dates import format_yearmon, all_months, get_next_yearmon
 from paths import read_vars, date_range
@@ -42,9 +44,16 @@ def spinup(config, meta_steps):
             steps += mean_spinup_state(config, month, list(config.historical_years())[2:])
 
         steps += run_lsm_from_mean_spinup_state(config)
+    else:
+        results_1mo = Step.make_empty()
+        for yearmon in config.historical_yearmons():
+            for step in config.result_postprocess_steps(yearmon=yearmon):
+                results_1mo = results_1mo.merge(step)
+        steps += create_tag(name=config.workspace().tag('spinup_1mo_results'),
+                            dependencies=results_1mo.targets)
+        results_1mo.replace_targets_with_tag_file(config.workspace().tag('spinup_1mo_results'))
 
-    for yearmon in config.historical_yearmons():
-        steps += config.result_postprocess_steps(yearmon=yearmon)
+        steps.append(results_1mo)
 
     # Time-integrate the variables
     for window in config.integration_windows():
@@ -222,6 +231,7 @@ def run_lsm_from_mean_spinup_state(config):
     """
     first_timestep = config.historical_yearmons()[0]
     first_month = int(first_timestep[4:])
+    postprocess_steps = list(itertools.chain(*[config.result_postprocess_steps(yearmon=yearmon) for yearmon in config.historical_yearmons()]))
 
     make_initial_state = Step(
         comment="Create initial state file",
@@ -247,7 +257,7 @@ def run_lsm_from_mean_spinup_state(config):
         wc=config.static_data().wc(),
         results=config.workspace().results(window=1, yearmon='%T'),
         next_state=config.workspace().state(yearmon='%T')
-    )
+    ).merge(*itertools.chain(*postprocess_steps))
 
     tag_steps = create_tag(name=config.workspace().tag('spinup_1mo_results'),
                            dependencies=[config.workspace().results(window=1, yearmon=y) for y in config.historical_yearmons()] + \

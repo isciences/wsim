@@ -71,6 +71,10 @@ class Step:
         self.comment = comment
 
     @classmethod
+    def make_empty(cls):
+        return Step()
+
+    @classmethod
     def create_meta(cls, meta_step_name, dependencies=None):
         """
         Utility method to create a step with no commands, used only

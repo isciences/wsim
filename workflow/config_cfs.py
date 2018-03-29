@@ -24,9 +24,9 @@ from config_base import ConfigBase
 from data_sources import isric, gmted, stn30
 from step import Step
 
-class Static:
+class CFSStatic(paths.Static):
     def __init__(self, source):
-        self.source = source
+        super(CFSStatic, self).__init__(source)
 
     def global_prep_steps(self):
         return \
@@ -346,7 +346,7 @@ class CFSConfig(ConfigBase):
     def __init__(self, source, derived):
         self._observed = NCEP(source)
         self._forecast = CFSForecast(source, derived)
-        self._static = Static(source)
+        self._static = CFSStatic(source)
         self._workspace = paths.DefaultWorkspace(derived)
 
     def global_prep(self):

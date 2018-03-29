@@ -158,6 +158,23 @@ class ObservedForcing(metaclass=ABCMeta):
         """
         return []
 
+class Static(metaclass=ABCMeta):
+
+    def __init__(self, source):
+        self.source = source
+
+    def global_prep_steps(self):
+        return []
+
+    def wc(self):
+        return None
+
+    def flowdir(self):
+        return None
+
+    def elevation(self):
+        return None
+
 class DefaultWorkspace:
 
     def __init__(self, outputs, tempdir=None):
