@@ -115,7 +115,7 @@ NumericVector stack_apply (const NumericVector & v,
       for (int k = 0; k < depth; k++) {
         double val = v[k*cells_per_level + jblock + i];
         if (!remove_na || !std::isnan(val)) {
-          f_args[argc++] = k;
+          f_args[argc++] = val;
         }
       }
 
