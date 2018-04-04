@@ -5,16 +5,17 @@ The central premise of WSIM is that populations structure their activities based
 The magnitude of the stress is typically a function of the rarity of the event.
 Populations that live in regions with a history of high variability in water supplies generally develop coping mechanisms to adapt (e.g., dams for irrigation and flood control).
 However, when a given event is rare, it can overwhelm existing adaptations and has the potential to become an economic and human security concern.
-As a result, WSIM transforms all of its water security indicators from scientific units (e.g., millimeters or cubic meters) into return periods expressed in years.
+
+To quantify the rarity of an event, WSIM transforms all of its water security indicators from scientific units (e.g., millimeters or cubic meters) into return periods expressed in years.
 The inverse of the return period is the probability of observing an event greater than or equal to a given magnitude in a given year, so a 5-year event would have a 20% probability of occurring in any given year.
 
-A benefit of using anomalies expressed as return periods is that it only requires the estimates of water security indicators to be accurate relative to one another.
+A benefit of evaluating water stress using return periods, rather than scientific units, is that it only requires estimates of water security indicators to be accurate relative to one another.
 Most surface hydrology models undergo a calibration process based on linear regressions between predicted and observed values.
 This process corrects for bias and scaling issues, but not for skewing.
-Use of return periods implicitly corrects for bias and scaling, but also skew.
+Use of return periods implicitly corrects for bias, scaling, and skewing.
 Users should therefore have greater confidence in the return period estimates than in the raw indicator estimates.
 
-WSIM uses a common statistical method to compute anomalies expressed in return periods.
+WSIM uses a common statistical method to compute return periods.
 
 As an example, consider the set of precipitation observations shown below:
 
@@ -31,7 +32,7 @@ Statistical distribution fitting is performed using the method of L-moments as d
 
 The plot below shows the empirical cumulative probability distribution (black marks) and the fitted theoretical distribution (orange line) for the observed values above.
 The theoretical distribution can be used to obtain the probability of observing a value less than or equal to a given observation; this is done by examining where value falls on the cumulative distribution function.
-In the example, the probability of observing 77 mm of precipitation is less than 0.85.
+In the example, the purple line shows that the probability of observing 77 mm of precipitation is less than 0.85.
 
 .. figure:: /_generated/anomaly_calculations_cdfs.svg
    :align: center
@@ -44,7 +45,7 @@ Finally, the return period is calculated at the inverse of the exceedance probab
    \frac{1}{1 - 0.85} = 6.7
 
 Observations can also be expressed as *standard anomalies*: the value on a standard normal distribution having the same cumulative probability as the observed precipitation on its theoretical distribution.
-This is computed by applying the standard normal quantile function (inverse cumulative distribution function) to the cumulative probability above:
+This is computed by applying the `standard normal quantile function <https://en.wikipedia.org/wiki/Normal_distribution#Quantile_function>`_ (inverse cumulative distribution function) to the cumulative probability above:
 
 .. math::
 
