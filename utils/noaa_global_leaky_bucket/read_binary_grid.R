@@ -16,7 +16,7 @@
 '
 Reads monthly average temperature and precipitation from gridded files provided by NOAA
 
-Usage: read_binary_grid (--input=<file> --var=<varname> --yearmon=<yearmon> --output=<file>) [--begin_date=<yyyymm>]
+Usage: read_binary_grid (--input=<file> --var=<varname> --yearmon=<yearmon> --output=<file>) [--begin_date=<yyyymm>] [--update_url=<url>]
 
 Options:
 --input <file>         File to read
@@ -24,6 +24,7 @@ Options:
 --var <varname>        Indicates whether [T]emperature or [P]recipitation should be read
 --yearmon <yearmon>    Year and month of data to read
 --begin_date <yyyymm>  Start date of data in the file [default: 194801]
+--update_url <url>     URL from which to update input file, if it does not contain requested year and month.
 '->usage
 
 suppressMessages({
@@ -67,12 +68,31 @@ months_diff <- function(a, b) {
 #'
 #' @param fh file handle
 #' @param init_yearmon beginning month of data file
-#' @param yearmon      ending month of data file
+#' @param yearmon      month to seek to
 #' @param nx           number of columns in each grid
-#' @param ny           number of rows in each grid:W
+#' @param ny           number of rows in each grid
 seek_to_month <- function(fh, init_yearmon, yearmon, nx, ny) {
   n <- months_diff(init_yearmon, yearmon)
   seek(fh, where=n*grid_size_with_padding(nx, ny), origin='start')
+}
+
+#' Find latest month available in a binary file
+#'
+#' @param filename
+#' @param init_yearmon beginning month of data file
+#' @param nx           number of columns in each grid
+#' @param ny           number of rows in each grid
+get_last_month <- function(filename, init_yearmon, nx, ny) {
+  n_months <- file.size(filename) / grid_size_with_padding(nx, ny)
+
+  year <- as.integer(substr(init_yearmon, 1, 4))
+  month <- as.integer(substr(init_yearmon, 5, 6)) + (n_months - 1)
+  while(month > 12) {
+    year <- year + 1
+    month <- month - 12
+  }
+
+  return(sprintf('%04d%02d', year, month))
 }
 
 #' Reads the marker value placed before or after a grid
@@ -140,6 +160,22 @@ standard_attrs <- list(
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args)
 
+  if(args$yearmon > get_last_month(args$input, args$begin_date, 720, 360)) {
+    if (!is.null(args$update_url)) {
+      download.file(url=args$update_url, destfile=args$input, method='wget', extra=c('--continue'))
+      if(args$yearmon > get_last_month(args$input, args$begin_date, 720, 360)) {
+        die_with_message(basename(args$input),
+                         "is up to date, but does not include data for",
+                         paste0(args$yearmon, '.'))
+      }
+    } else {
+      die_with_message(basename(args$input),
+                       "only includes data up to",
+                       paste0(get_last_month(args$input, args$begin_date, 720, 360), '.'),
+                       "(You can update it with --update-url.)")
+    }
+  }
+
   year <- as.integer(substr(args$yearmon, 1, 4))
   month <- as.integer(substr(args$yearmon, 5, 6))
 
@@ -160,8 +196,7 @@ main <- function(raw_args) {
 
   if (is.null(dat)) {
     die_with_message('Could not read data for',  args$yearmon,
-                     'from', paste0(args$input, '.'),
-                     'Does the file need to be updated?')
+                     'from', paste0(args$input, '.'))
   } else {
     info('Read data for', args$yearmon)
   }
@@ -176,7 +211,8 @@ main <- function(raw_args) {
 
 }
 
-#if (!interactive()) {
-#  tryCatch(main(commandArgs(trailingOnly=TRUE)), error=die_with_message)
-#}
-main(commandArgs(trailingOnly=TRUE))
+if (!interactive()) {
+  tryCatch(
+    main(commandArgs(trailingOnly=TRUE))
+    , error=die_with_message)
+}

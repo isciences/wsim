@@ -132,6 +132,7 @@ class NCEP(paths.ObservedForcing):
                                      'noaa_global_leaky_bucket',
                                      'read_binary_grid.R'),
                         '--input',   self.full_precip_file(),
+                        '--update_url', 'ftp://ftp.cpc.ncep.noaa.gov/wd51yf/global_monthly/gridded_binary/p.long',
                         '--output',  self.precip_monthly(yearmon=yearmon).file,
                         '--var',     'P',
                         '--yearmon', yearmon,
@@ -152,6 +153,7 @@ class NCEP(paths.ObservedForcing):
                                      'noaa_global_leaky_bucket',
                                      'read_binary_grid.R'),
                         '--input',   self.full_temp_file(),
+                        '--update_url', 'ftp://ftp.cpc.ncep.noaa.gov/wd51yf/global_monthly/gridded_binary/t.long',
                         '--output',  self.temp_monthly(yearmon=yearmon).file,
                         '--var',     'T',
                         '--yearmon', yearmon
