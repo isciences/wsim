@@ -32,24 +32,25 @@ Statistical distribution fitting is performed using the method of L-moments as d
 
 The plot below shows the empirical cumulative probability distribution (black marks) and the fitted theoretical distribution (orange line) for the observed values above.
 The theoretical distribution can be used to obtain the probability of observing a value less than or equal to a given observation; this is done by examining where value falls on the cumulative distribution function.
-In the example, the purple line shows that the probability of observing 77 mm of precipitation is less than 0.85.
 
 .. figure:: /_generated/anomaly_calculations_cdfs.svg
    :align: center
 
-The probability is then converted to an exceedance probability: that of obtaining a value *more extreme* than the observed value (0.15 in the example).
-Finally, the return period is calculated at the inverse of the exceedance probability:
+In the example, the probability of observing 93 mm of precipitation or less is 0.85.
+To express the frequency of a 93 mm as a return period, we first convert the above probability into an exceedance probability (the probability of obtaining a value greater than 93 mm), which is simply :math:`1 - 0.85 = 0.15`.
+The return period is then calculated as the inverse of this exceedance probability, or :math:`1/0.15=6.7`.
+So on average, we should expect to see more than 93 mm of precipitation once every 6.7 years.
 
-.. math::
+The above example shows a case in which precipitation is higher than normal (:math:`0.85 > 0.50`).
+If we had an unusually low precipitation, we express the frequency as a negative return period.
+On the theoretical distribution above, the probability of obtaining less than 35 mm of precipitation is 0.08.
+In this case, we calculate the return period as the negative inverse of this cumulative probability, or :math:`-1/0.08 = -12.5`.
+So on average, we should expect to see less than 35 mm of precipitation once every 12.5 years.
 
-   \frac{1}{1 - 0.85} = 6.7
+Observations can also be expressed as *standardized anomalies*: the value on a standard normal distribution having the same cumulative probability as the observed precipitation on its theoretical distribution.
+This is computed by applying the standard normal quantile function (inverse cumulative distribution function) to the cumulative probabilities above.
 
-Observations can also be expressed as *standard anomalies*: the value on a standard normal distribution having the same cumulative probability as the observed precipitation on its theoretical distribution.
-This is computed by applying the `standard normal quantile function <https://en.wikipedia.org/wiki/Normal_distribution#Quantile_function>`_ (inverse cumulative distribution function) to the cumulative probability above:
+For 93 mm of precipitation, the standardized anomaly is :math:`Q(0.85) = 1.04`; for 35 mm of precipitation, the standardized anomaly is :math:`Q(0.08) = -1.41`.
+When precipitation is greater than average, the standardized anomaly is positive; when precipitation is lower than average, the standardized anomaly is negative.
 
-.. math::
-
-   Q(0.85) = 1.04
-
-Return periods and standard anomalies can be computed using functions in the ``wsim.distributions`` R package, or using the ``wsim_anom`` command-line utility.
-
+Return periods and standardized anomalies can be computed using functions in the ``wsim.distributions`` R package, or using the ``wsim_anom`` command-line utility.

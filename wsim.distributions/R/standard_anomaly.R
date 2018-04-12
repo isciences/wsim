@@ -11,15 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#' Compute the standard anomaly associated with an observation
+#' Compute the standardized anomaly associated with an observation
 #'
 #' @param distribution name of distribution used for \code{dist_params}
 #' @param dist_params 3D arary of distribution parameters
 #' @param obs observed value for which a standard anomaly should be computed
-#' @param min.sa minimum value for clamping computed standard anomaly
-#' @param max.sa maximum value for clamping computed standard anomaly
+#' @param min.sa minimum value for clamping computed standardized anomaly
+#' @param max.sa maximum value for clamping computed standardized anomaly
 #'
-#' @return computed standard anomaly
+#' @return computed standardized anomaly
 #' @export
 standard_anomaly <- function(distribution, dist_params, obs, min.sa=-100, max.sa=100) {
 

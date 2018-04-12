@@ -3,12 +3,6 @@ Land Surface Model
 
 WSIM includes a Land Surface Model (LSM), based on a synthesis of two frequently cited soil moisture/runoff models: 
 WBM :cite:`Fekete:2010` and “Leaky Bucket” :cite:`Huang:1996,VanDenDool:2003`.
-
-Core functionality of the LSM is implemented in the ``wsim.lsm`` R package.
-
-Overview
-========
-
 The LSM is driven by three variables:
 
 * Average monthly temperature (:math:`T`)
@@ -50,6 +44,8 @@ It produces estimates of the following quantities:
    forms (``Runoff_mm`` and ``Bt_Runoff``) that represent runoff computed
    for a model iteration in isolation, ignoring all effects of runoff
    detention between timesteps.
+
+Core functionality of the LSM is implemented in the ``wsim.lsm`` R package.
 
 Data dependencies
 =================
