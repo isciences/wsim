@@ -62,6 +62,18 @@ class TestCFSConfig(unittest.TestCase):
         for yearmon in (yearmon_within_historical, yearmon_after_historical):
             steps = generate_steps(config, yearmon, yearmon, False, 'latest')
 
+            print('Number of steps:', len([step for step in steps if step.commands]))
+
+            targets = set()
+
+            commands = set()
+            for step in steps:
+                for cmd in step.commands:
+                    commands.add(' '.join(cmd))
+                targets |= step.targets
+            print('Number of commands:', len(commands))
+            print('Number of targets:', len(targets))
+
             unbuildable = unbuildable_targets(steps)
 
             if unbuildable:
@@ -106,7 +118,7 @@ class TestCFSConfig(unittest.TestCase):
         # account for the integration period
         config = CFSConfig(self.source, self.derived)
 
-        fit_step = spinup.fit_var(config, param='T', stat='ave', window=24, month=6)[0]
+        fit_step = spinup.fit_var(config, param='RO_mm', stat='ave', window=24, month=6)[0]
         input_results = get_arg(fit_step.commands[0], '--input').split('/')[-1]
 
         start_year = list(config.result_fit_years())[0] + 2
@@ -163,7 +175,7 @@ def get_arg(command, arg):
         if command[i-1] == arg:
             return token
 
-def unbuildable_targets(steps):
+def unbuildable_targets(steps, check_files=False):
     """
     Walk the dependency tree of a number of steps and make sure that all steps are buildable
     (i.e., the step either has know dependencies or depends on a step that, in turn, has no
