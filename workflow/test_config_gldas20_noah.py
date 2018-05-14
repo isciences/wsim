@@ -23,7 +23,7 @@ def strip_existing_dependencies(step):
     step.dependencies = [dep for dep in step.dependencies if not os.path.exists(dep)]
 
 class TestGLDAS20_NoahConfig(unittest.TestCase):
-    source = '~/wsim/source' # Can only run some tests if the inputs actually exist
+    source = os.path.expanduser('~/wsim/source') # Can only run some tests if the inputs actually exist
     derived = '/tmp/derived'
 
     def fail_on_duplicate_targets(self, steps):
