@@ -60,7 +60,7 @@ def spinup(config, meta_steps):
         steps += time_integrate_results(config, window)
 
     # Compute monthly fits (and then anomalies) over the fit period
-    for param in config.lsm_rp_vars():
+    for param in config.lsm_rp_vars() + ['T', 'Pr']:
         for month in all_months:
             steps += all_fits.require(fit_var(config, param=param, month=month))
 
@@ -304,21 +304,25 @@ def fit_var(config, *, param, month, stat=None, window=1):
     Compute fits for param in given month over fitting period
     """
     yearmons = [t for t in config.result_fit_yearmons()[window-1:] if int(t[-2:]) == month]
+    input_range = date_range(yearmons[0], yearmons[-1], 12)
 
     if stat:
         param_to_read = param + '_' + stat
     else:
         param_to_read = param
 
+    if param in ('T', 'Pr'):
+        assert window == 1
+
+        infile = config.workspace().forcing(yearmon=input_range)
+    else:
+        infile = config.workspace().results(yearmon=input_range, window=window)
+
     # Step for fits
     return [
         wsim_fit(
             distribution=config.distribution,
-            inputs=[
-                read_vars(
-                    config.workspace().results(yearmon=date_range(yearmons[0], yearmons[-1], 12), window=window),
-                    param_to_read)
-            ],
+            inputs=[ read_vars(infile, param_to_read) ],
             output=config.workspace().fit_obs(var=param, stat=stat, month=month, window=window)
         )
     ]
