@@ -50,6 +50,12 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   dlon <- abs(lons[2] - lons[1])
 
   if (!is.null(offset)) {
+    # We want to interpret the offset and count relative to the final arrangement,
+    # taking into account y-flipping
+    if (lats[1] < lats[2]) {
+      offset[2] <- length(lats) - (offset[2] + count[2] - 2)
+    }
+
     lats <- ncdf4::ncvar_get(cdf, latname, start=offset[2], count=count[2])
     lons <- ncdf4::ncvar_get(cdf, lonname, start=offset[1], count=count[1])
   }
