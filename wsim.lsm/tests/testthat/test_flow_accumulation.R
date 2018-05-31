@@ -14,7 +14,7 @@
 require(testthat)
 require(Rcpp)
 
-context('Flow accumulator')
+context('Pixel-based flow accumulation')
 
 OUT_EAST <- 1L
 OUT_SOUTHEAST <- 2L
