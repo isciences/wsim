@@ -4,4 +4,4 @@ The Water Security Indicator Model (WSIM) identifies locations that are currentl
 
 Detailed information is available at the [project website](https://wsim.isciences.com).
 
-[![Build Status](https://gitlab.com/isciences/wsim/wsim/badges/master/build.svg)](https://gitlab.com/isciences/isciences/wsim/pipelines)
+[![Build Status](https://gitlab.com/isciences/wsim/wsim/badges/master/build.svg)](https://gitlab.com/isciences/wsim/wsim/pipelines)
