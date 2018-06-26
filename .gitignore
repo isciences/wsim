@@ -1,5 +1,4 @@
 *.sw[mnop]
-*.pyc
 *.o
 *.so
 RcppExports.cpp
