@@ -12,8 +12,11 @@ COPY wsim.distributions /wsim/wsim.distributions
 WORKDIR /wsim/wsim.distributions
 RUN make install
 
-COPY utils /wsim/utils
 COPY workflow /wsim/workflow
+WORKDIR /wsim/workflow
+RUN ./setup.py develop
+
+COPY utils /wsim/utils
 COPY *.R /wsim/
 
 COPY Makefile /wsim/
