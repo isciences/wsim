@@ -59,7 +59,7 @@ An example usage of ``makemake.py`` is as follows:
 
     python3 workflow/makemake.py \
       --bindir /wsim \
-      --config workflow/config_cfs.py \
+      --config workflow/config/config_cfs.py \
       --source ~/wsim/source \
       --workspace ~/wsim/workspaces/oct26 \
       --start 201701
