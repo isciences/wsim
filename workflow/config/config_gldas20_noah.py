@@ -15,8 +15,7 @@ from wsim_workflow.step import Step
 from wsim_workflow import paths
 from wsim_workflow import dates
 from wsim_workflow.config_base import ConfigBase
-
-from data_sources import ntsg_drt
+from wsim_workflow.data_sources import ntsg_drt
 
 import os
 
@@ -86,6 +85,10 @@ class GLDAS20_NoahConfig(ConfigBase):
     @staticmethod
     def integration_windows():
         return [ 12 ]
+
+    @classmethod
+    def forcing_rp_vars(cls):
+        return []
 
     @classmethod
     def lsm_rp_vars(cls):

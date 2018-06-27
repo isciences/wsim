@@ -15,10 +15,10 @@ import os
 import sys
 import unittest
 
-from wsim_workflow.config_gldas20_noah import GLDAS20_NoahConfig
 from wsim_workflow.workflow import generate_steps, find_duplicate_targets
+from wsim_workflow.workflow import unbuildable_targets
 
-from tests.test_config_cfs import unbuildable_targets
+from config_gldas20_noah import GLDAS20_NoahConfig
 
 def strip_existing_dependencies(step):
     step.dependencies = [dep for dep in step.dependencies if not os.path.exists(dep)]

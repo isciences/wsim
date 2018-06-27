@@ -13,14 +13,48 @@
 
 import unittest
 
-from wsim_workflow.config_cfs import CFSConfig
+from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.spinup import *
+from wsim_workflow.dates import parse_yearmon
+from wsim_workflow.paths import Vardef, DefaultWorkspace, ObservedForcing, Static
+
+class FakeForcing(ObservedForcing):
+
+    def p_wetdays(self, *, yearmon):
+        year, mon = parse_yearmon(yearmon)
+        if year >= 1979:
+            return Vardef('wetdays_{}.tif'.format(yearmon), '1')
+        else:
+            return Vardef('wetdays_norms_{}.tif'.format(mon), '1')
+
+    def precip_monthly(self, *, yearmon):
+        return Vardef('precip_{}.tif'.format(yearmon), '1')
+
+    def temp_monthly(self, *, yearmon):
+        return Vardef('temp_{}.tif'.format(yearmon), '1')
+
+class BasicConfig(ConfigBase):
+
+    def historical_years(self):
+        return range(1948, 2018) # 1948-2017
+
+    def result_fit_years(self):
+        return range(1950, 2010) # 1950-2009
+
+    def observed_data(self):
+        return FakeForcing()
+
+    def static_data(self):
+        return Static('fake')
+
+    def workspace(self):
+        return DefaultWorkspace('tmp')
 
 class TestSpinup(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cfg = CFSConfig(source='/tmp/source', derived='/tmp/derived')
+        cls.cfg = BasicConfig() #CFSConfig(source='/tmp/source', derived='/tmp/derived')
 
     def test_compute_climate_norms(self):
         steps = compute_climate_norms(self.cfg)
