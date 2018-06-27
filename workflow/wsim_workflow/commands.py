@@ -65,6 +65,8 @@ def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
 
     if type(obs) is str:
         obs = [obs]
+    else:
+        obs = [o for o in obs if o is not None]
 
     cmd = [
         os.path.join('{BINDIR}', 'wsim_anom.R')

@@ -119,6 +119,16 @@ class ConfigBase(metaclass=abc.ABCMeta):
         return [ 3, 6, 12, 24, 36, 60 ]
 
     @staticmethod
+    def forcing_rp_vars():
+        """
+        Provides a list of forcing variables for which return periods should be calculated
+        """
+        return [
+            'T',
+            'Pr'
+        ]
+
+    @staticmethod
     def lsm_rp_vars():
         """
         Provides a list of LSM output variables for which return periods should be calculated

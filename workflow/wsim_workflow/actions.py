@@ -93,19 +93,26 @@ def time_integrate(workspace, integrated_stats, *, yearmon, target=None, window=
         )
     ]
 
-
-def compute_return_periods(workspace, *, var_names, yearmon, window, target=None, member=None):
+def compute_return_periods(workspace, *, forcing_vars=None, result_vars=None, yearmon, window, target=None, member=None):
     if target:
         month = int(target[-2:])
     else:
         month = int(yearmon[-2:])
 
+    if forcing_vars is None:
+        forcing_vars = []
+    if result_vars is None:
+        result_vars = []
+
     args = { 'yearmon' : yearmon, 'target' : target, 'window' : window, 'member' : member}
 
     return [
         wsim_anom(
-            fits=[workspace.fit_obs(var=var, window=window, month=month) for var in var_names],
-            obs=read_vars(workspace.results(yearmon=yearmon, target=target, window=window, member=member), *var_names),
+            fits=[workspace.fit_obs(var=var, window=window, month=month) for var in forcing_vars + result_vars],
+            obs=[
+                read_vars(workspace.results(**args), *result_vars) if result_vars else None,
+                read_vars(workspace.forcing(yearmon=yearmon, target=target, member=member), *forcing_vars) if forcing_vars else None
+            ],
             rp=workspace.return_period(**args, temporary=False),
             sa=workspace.standard_anomaly(**args, temporary=False)
         )

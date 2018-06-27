@@ -39,9 +39,16 @@ def monthly_observed(config, yearmon, meta_steps):
             steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), yearmon=yearmon, window=window)
 
         # Compute return periods
-        steps += compute_return_periods(config.workspace(), var_names=config.lsm_rp_vars(), yearmon=yearmon, window=1)
+        steps += compute_return_periods(config.workspace(),
+                                        result_vars=config.lsm_rp_vars(),
+                                        forcing_vars=config.forcing_rp_vars(),
+                                        yearmon=yearmon,
+                                        window=1)
         for window in config.integration_windows():
-            steps += compute_return_periods(config.workspace(), var_names=config.lsm_integrated_var_names(), yearmon=yearmon, window=window)
+            steps += compute_return_periods(config.workspace(),
+                                            result_vars=config.lsm_integrated_var_names(),
+                                            yearmon=yearmon,
+                                            window=window)
 
     # Compute composite indicators
     for window in [1] + config.integration_windows():
@@ -97,9 +104,9 @@ def monthly_forecast(config, yearmon, meta_steps):
                 steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), window=window, yearmon=yearmon, target=target, member=member, lead_months=lead_months)
 
             # Compute return periods
-            steps += compute_return_periods(config.workspace(), var_names=config.lsm_rp_vars(), yearmon=yearmon, window=1, target=target, member=member)
+            steps += compute_return_periods(config.workspace(), result_vars=config.lsm_rp_vars(), forcing_vars=config.forcing_rp_vars(), yearmon=yearmon, window=1, target=target, member=member)
             for window in config.integration_windows():
-                steps += compute_return_periods(config.workspace(), var_names=config.lsm_integrated_var_names(), yearmon=yearmon, window=window, target=target, member=member)
+                steps += compute_return_periods(config.workspace(), result_vars=config.lsm_integrated_var_names(), yearmon=yearmon, window=window, target=target, member=member)
 
         for window in [1] + config.integration_windows():
             # Summarize forecast ensemble
