@@ -14,7 +14,7 @@ RUN make install
 
 COPY workflow /wsim/workflow
 WORKDIR /wsim/workflow
-RUN ./setup.py develop
+RUN make install
 
 COPY utils /wsim/utils
 COPY *.R /wsim/
