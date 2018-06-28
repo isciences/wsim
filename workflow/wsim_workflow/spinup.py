@@ -60,7 +60,7 @@ def spinup(config, meta_steps):
         steps += time_integrate_results(config, window)
 
     # Compute monthly fits (and then anomalies) over the fit period
-    for param in config.lsm_rp_vars() + ['T', 'Pr']:
+    for param in config.lsm_rp_vars() + config.forcing_rp_vars():
         for month in all_months:
             steps += all_fits.require(fit_var(config, param=param, month=month))
 
@@ -75,7 +75,8 @@ def spinup(config, meta_steps):
     for window in [1] + config.integration_windows():
         for yearmon in config.result_fit_yearmons()[window-1:]:
             steps += compute_return_periods(config.workspace(),
-                                            var_names=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
+                                            result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
+                                            forcing_vars=config.forcing_rp_vars() if window == 1 else None,
                                             yearmon=yearmon,
                                             window=window)
 
