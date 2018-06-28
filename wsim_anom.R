@@ -78,6 +78,8 @@ main <- function(raw_args) {
         rp <- sa2rp(sa)
         rp_to_write[[paste0(varname, '_rp')]] <- rp
       }
+
+      attr(fits[[varname]], 'used') <- TRUE
     }
   }
 
@@ -97,6 +99,20 @@ main <- function(raw_args) {
                       prec='single',
                       append=TRUE)
     wsim.io::info("Wrote return periods to", args$rp)
+  }
+
+  warn_unused_fits(fits)
+}
+
+# Emit a warning for any fits that weren't flagged as "used"
+# This is to try into catch possible errors with command-line arguments.
+warn_unused_fits <- function(fits) {
+  for (varname in names(fits)) {
+    fit <- fits[[varname]]
+
+    if (!('used' %in% names(attributes(fit)) && attr(fit, 'used', exact=TRUE))) {
+      wsim.io::warn("Fits for variable", varname, "were loaded but never used.")
+    }
   }
 }
 
