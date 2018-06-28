@@ -55,27 +55,29 @@ main <- function(raw_args) {
   writing_sa <- !is.null(args$sa)
   writing_rp <- !is.null(args$rp)
 
-  v <- wsim.io::read_vars_from_cdf(args$obs)
-  for (varname in names(v$data)) {
-    obs <- v$data[[varname]]
-    fit <- fits[[varname]]
+  for (obs_arg in args$obs) {
+    v <- wsim.io::read_vars(obs_arg)
+    for (varname in names(v$data)) {
+      obs <- v$data[[varname]]
+      fit <- fits[[varname]]
 
-    if (is.null(fit)) {
-      die_with_message("No fit provided for input variable", varname)
-    }
+      if (is.null(fit)) {
+        die_with_message("No fit provided for input variable", varname)
+      }
 
-    distribution <- attr(fit, 'distribution')
+      distribution <- attr(fit, 'distribution')
 
-    sa <- standard_anomaly(distribution, fit, obs)
-    wsim.io::info("Computed standard anomalies for", varname)
+      sa <- standard_anomaly(distribution, fit, obs)
+      wsim.io::info("Computed standard anomalies for", varname)
 
-    if (writing_sa) {
-      sa_to_write[[paste0(varname, '_sa')]] <- sa
-    }
+      if (writing_sa) {
+        sa_to_write[[paste0(varname, '_sa')]] <- sa
+      }
 
-    if (writing_rp) {
-      rp <- sa2rp(sa)
-      rp_to_write[[paste0(varname, '_rp')]] <- rp
+      if (writing_rp) {
+        rp <- sa2rp(sa)
+        rp_to_write[[paste0(varname, '_rp')]] <- rp
+      }
     }
   }
 
