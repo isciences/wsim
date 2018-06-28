@@ -55,6 +55,10 @@
 #'
 #' @export
 read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL, offset=NULL, count=NULL) {
+  stopifnot(
+    (is.character(vardef) && length(vardef) == 1)
+    || is.wsim.io.vardef(vardef))
+
   def <- parse_vardef(vardef)
 
   if(!file.exists(def$filename)) {

@@ -195,7 +195,7 @@ test_that("we can read multiple variables into a cube", {
 
   write_vars_to_cdf(data, fname, extent=extent)
 
-  cube <- wsim.io::read_vars_to_cube(fname)
+  cube <- read_vars_to_cube(fname)
 
   expect_equal(attr(cube, "extent"), extent)
   expect_equal(cube[,,"location"], data$location)
@@ -557,4 +557,25 @@ test_that('we can retrieve a vertical slice of a file', {
   expect_equal(data[,,3], slice$data[[1]], check.attributes=FALSE)
 
   file.remove(fname)
+})
+
+test_that('read vars bails if asked to read a list of files at once', {
+  fname1 <- paste0(tempfile(), '.nc')
+  fname2 <- paste0(tempfile(), '.nc')
+
+  data <- function() {
+    list(
+      location= matrix(runif(9), nrow=3),
+      scale= matrix(runif(9), nrow=3),
+      shape= matrix(runif(9), nrow=3)
+    )
+  }
+
+  write_vars_to_cdf(data(), fname1, extent=c(0, 1, 0, 1))
+  write_vars_to_cdf(data(), fname2, extent=c(0, 1, 0, 1))
+
+  expect_error(read_vars(c(fname1, fname2)))
+
+  file.remove(fname1)
+  file.remove(fname2)
 })
