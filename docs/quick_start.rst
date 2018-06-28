@@ -24,24 +24,24 @@ To begin, two directories should be created to store WSIM data:
 * a ``source`` directory, in which WSIM will store raw and processed input data files; and
 * a ``runs`` directory, in which WSIM will create a :ref:`data workspace <data-workspace>` for the model configuration.
 
-In this example, the ``source`` directory is ``/home/dbaston/wsim/source`` and the ``runs`` directory is ``/home/dbaston/wsim/runs``.
-(The ``~`` shortcut for the home directory is not used because it does not function as expected with some Docker commands.)
+In this example, the ``source`` directory is ``~/wsim/source`` and the ``runs`` directory is ``~/wsim/runs``.
 
 Once these directories have been created, a Makefile can be generated with instructions to fetch and preprocess source data, spin-up the land surface model, and produce composite indices of water surplus and deficit.
 The Makefile encapsulates a complex process, requiring about 25,000 steps to spin up a model and produce composite indices.
 (About 75% of these steps occur as part of the model spinup process, and only need to be executed the first time WSIM is run.)
 
-The command below requests a Makefile based on the ``workflow/config_cfs.py`` config file for the ``201801`` (January 2018) model iteration.
+The command below requests a Makefile based on the ``workflow/config/config_cfs.py`` config file for the ``201801`` (January 2018) model iteration.
+(The ``~`` shortcut for the home directory is not used because it does not function as expected with some Docker commands.)
 
 .. code-block:: bash
 
   docker run \
     -it \
     --rm \
-    -v /home/dbaston/wsim:/opt/wsim_data:rw \
+    -v `echo $HOME`/wsim:/opt/wsim_data:rw \
     isciences/wsim:latest \
     workflow/makemake.py \
-      --config workflow/config_cfs.py \
+      --config workflow/config/config_cfs.py \
       --source /opt/wsim_data/source \
       --workspace /opt/wsim_data/runs/quickstart \
       --start 201801
