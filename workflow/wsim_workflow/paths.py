@@ -239,6 +239,9 @@ class DefaultWorkspace:
 
         return self.make_path(root, 'anom_summary', yearmon=yearmon, window=window, target=target)
 
+    def forcing_summary(self, *, yearmon, target):
+        return self.make_path('forcing_summary', 'forcing_summary', yearmon=yearmon, target=target)
+
     def results_summary(self, *, yearmon, window, target=None):
         root = 'results_summary' if window ==1 else 'results_integrated_summary'
 
