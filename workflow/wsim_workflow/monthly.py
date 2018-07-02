@@ -108,9 +108,11 @@ def monthly_forecast(config, yearmon, meta_steps):
             for window in config.integration_windows():
                 steps += compute_return_periods(config.workspace(), result_vars=config.lsm_integrated_var_names(), yearmon=yearmon, window=window, target=target, member=member)
 
+        steps += meta_steps['forcing_summaries'].require(forcing_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target))
+
         for window in [1] + config.integration_windows():
             # Summarize forecast ensemble
-            steps += result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
+            steps += meta_steps['results_summaries'].require(result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window))
             steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
             steps += standard_anomaly_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
 

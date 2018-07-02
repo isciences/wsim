@@ -225,6 +225,15 @@ def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantil
         )
     ]
 
+def forcing_summary(workspace, ensemble_members, *, yearmon, target):
+    return [
+        wsim_integrate(
+            inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member) for member in ensemble_members],
+            stats=['q25', 'q50', 'q75'],
+            output=workspace.forcing_summary(yearmon=yearmon, target=target)
+        )
+    ]
+
 
 def result_summary(workspace, ensemble_members, *, yearmon, target, window=None):
     return [

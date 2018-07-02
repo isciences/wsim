@@ -44,6 +44,8 @@ def generate_steps(config, start, stop, no_spinup, forecasts):
         'all_monthly_composites',
         'all_adjusted_composites',
         'all_adjusted_monthly_composites',
+        'forcing_summaries',
+        'results_summaries'
     )}
 
     if config.should_run_spinup() and not no_spinup:
