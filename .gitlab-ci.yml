@@ -11,6 +11,7 @@ stages:
 variables:
         CONTAINER_TEST_IMAGE: isciences/wsim:$CI_COMMIT_REF_NAME
         CONTAINER_RELEASE_IMAGE: isciences/wsim:latest
+        WSIM_VERSION_BASE: "2.0"
 
 before_script:
         - docker login -u ci4isciences -p $DOCKERHUB_PW
@@ -18,7 +19,11 @@ before_script:
 build:
         stage: build
         script:
-                - docker build --pull -t $CONTAINER_TEST_IMAGE .
+                - docker build --pull 
+                  --build-arg WSIM_VERSION=$(test master = $CI_COMMIT_REF_NAME && echo ${WSIM_VERSION_BASE} && docker run --rm -v $(pwd):/git alpine/git rev-list --count HEAD || echo "0.0")
+                  --build-arg GIT_COMMIT=$(docker run --rm -v $(pwd):/git alpine/git rev-parse HEAD)
+                  -t $CONTAINER_TEST_IMAGE 
+                  .
                 - docker push $CONTAINER_TEST_IMAGE
 
 test:

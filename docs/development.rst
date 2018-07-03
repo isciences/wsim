@@ -48,3 +48,18 @@ R package documentation is automatically generated from source comments, using t
 The HTML versions of this documentation are generated using ``pkgdown``.
 
 Documentation can be built by running ``make html``.
+
+Versioning
+==========
+
+WSIM is versioned using a ``MAJOR.MINOR.REVISION_NUMBER`` scheme, where ``MAJOR.MINOR`` is currently ``2.0``, and ``REVISION_NUMBER`` is the number of commits in the ``master`` branch of the repository.
+
+The values of ``MAJOR`` and ``MINOR`` are set in ``.gitlab-ci.yml``.
+During a GitLab CI build, the complete version number is computed and stored in the following locations:
+
+- the ``WSIM_VERSION`` environment variable
+- the ``DESCRIPTION`` file of each R package
+- the ``__version__`` file of the ``wsim_workflow`` Python package
+
+Containers built from branches other than ``master`` will not have a version number assigned.
+In all cases, a ``GIT_COMMIT`` environment variable is also set in Docker containers.
