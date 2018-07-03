@@ -27,7 +27,7 @@ RUN make install
 
 COPY workflow /wsim/workflow
 WORKDIR /wsim/workflow
-RUN sed -i 's/__version__ = .*/__version__ = '"${WSIM_VERSION}"'/' wsim_workflow/version.py
+RUN sed -i 's/__version__.*/__version__ = "'"$WSIM_VERSION"'"/' wsim_workflow/version.py
 RUN make install
 
 COPY utils /wsim/utils
