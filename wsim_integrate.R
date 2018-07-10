@@ -27,7 +27,9 @@ Compute summary statistics from multiple observations
 Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>)... [--window=<window>] [--attr=<attr>...] [--keepvarnames]
 
 Options:
---stat <stat>       a summary statistic (min, max, ave, sum)
+--stat <stat>       a summary statistic (min, max, ave, sum). By default, the statistic is computed
+                    for all input variables. This can be restricted by providing a list of variables,
+                    such as --stat "max::flow,temp"
 --input <file>      one or more input files or glob patterns
 --output <file>     output file(s) to write integrated results
 --window <window>   size of rolling window to use for integration (e.g. 6 files)
@@ -61,21 +63,6 @@ attrs_for_stat <- function(var_attrs, var, stat, stat_var) {
       ))
      }
   }))
-}
-
-make_stat <- function(stat=NULL, vars=NULL) {
-  list(stat=stat, vars=vars)
-}
-
-parse_stat <- function(stat) {
-  split_stat <- strsplit(stat, '::', fixed=TRUE)[[1]]
-
-  if (length(split_stat) == 1) {
-    return(make_stat(split_stat[1], as.character(c())))
-  }
-
-  vars_for_stat <- strsplit(split_stat[2], ',', fixed=TRUE)[[1]]
-  return(make_stat(split_stat[1], vars_for_stat))
 }
 
 #' Read the unique variables (var_out) that are provided by
