@@ -70,9 +70,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
   )
 
   if (is.array(vars)) {
-    znames <- dimnames(vars)[[3]]
-    vars <- lapply(1:dim(vars)[3], function(z) vars[,,z])
-    names(vars) <- znames
+    vars <- cube_to_matrices(vars)
   }
 
   default_nodata <- list(
@@ -118,15 +116,6 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
 
   dlat <- (maxlat - minlat) / nlat
   dlon <- (maxlon - minlon) / nlon
-
-  print(minlon)
-  print(maxlon)
-  print(minlat)
-  print(maxlat)
-  print(dlon)
-  print(dlat)
-  print(nlon)
-  print(nlat)
 
   # Compute our lat/lon grid (NetCDF uses cell centers, not corners)
   lats <- seq(maxlat - (dlat/2), minlat + (dlat/2), by=-dlat)
