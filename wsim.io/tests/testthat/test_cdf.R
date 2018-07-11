@@ -560,8 +560,8 @@ test_that('we can retrieve a vertical slice of a file', {
 })
 
 test_that('read vars bails if asked to read a list of files at once', {
-  fname1 <- paste0(tempfile(), '.nc')
-  fname2 <- paste0(tempfile(), '.nc')
+  fname1 <- tempfile(fileext='.nc')
+  fname2 <- tempfile(fileext='.nc')
 
   data <- function() {
     list(
@@ -578,4 +578,27 @@ test_that('read vars bails if asked to read a list of files at once', {
 
   file.remove(fname1)
   file.remove(fname2)
+})
+
+test_that('write_vars_to_cdf provides useful errors if extent is not correctly specified', {
+  fname <- tempfile(fileext='.nc')
+
+  data <- list(
+    var= matrix(runif(9), nrow=3)
+  )
+
+  expect_error(write_vars_to_cdf(data, fname),
+               "Must provide either extent or xmin,")
+
+  expect_error(write_vars_to_cdf(data, fname, extent=c(0, 1, 0, 1), xmin=2),
+               "Both extent and xmin.* provided")
+
+  expect_error(write_vars_to_cdf(data, fname, extent=c(1,2,3)),
+               "Extent should be provided as")
+
+  expect_error(write_vars_to_cdf(data, fname, extent=c(1, 0, 0, 1)),
+               "xmax < xmin")
+
+  expect_error(write_vars_to_cdf(data, fname, extent=c(1, 1, 1, 0)),
+               "ymax < ymin")
 })

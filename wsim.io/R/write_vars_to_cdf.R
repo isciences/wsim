@@ -59,6 +59,8 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
   datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
   history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
+  extent <- validate_extent(extent, xmin, xmax, ymin, ymax)
+
   standard_attrs <- list(
     list(key="Conventions", val="CF-1.6"),
     list(var="lon", key="axis", val="X"),
@@ -116,6 +118,15 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
 
   dlat <- (maxlat - minlat) / nlat
   dlon <- (maxlon - minlon) / nlon
+
+  print(minlon)
+  print(maxlon)
+  print(minlat)
+  print(maxlat)
+  print(dlon)
+  print(dlat)
+  print(nlon)
+  print(nlat)
 
   # Compute our lat/lon grid (NetCDF uses cell centers, not corners)
   lats <- seq(maxlat - (dlat/2), minlat + (dlat/2), by=-dlat)
@@ -216,4 +227,34 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
   }
 
   ncdf4::nc_close(ncout)
+}
+
+validate_extent <- function(extent, xmin, xmax, ymin, ymax) {
+  # Must provide extent in one form or another
+  if (is.null(extent) && any(is.null(c(xmin, xmax, ymin, ymax)))) {
+      stop("Must provide either extent or xmin, xmax, ymin, ymax")
+  }
+
+  # Can't provide extent in both forms
+  if (!is.null(extent) && !all(is.null(c(xmin, xmax, ymin, ymax)))) {
+      stop("Both extent and xmin, xmax, ymin, ymax arguments provided.")
+  }
+
+  if (is.null(extent)) {
+    extent <- c(xmin, xmax, ymin, ymax)
+  }
+
+  if (length(extent) != 4) {
+    stop("Extent should be provided as (xmin, xmax, ymin, ymax)")
+  }
+
+  if (extent[2] < extent[1]) {
+    stop("Provided extent has xmax < xmin")
+  }
+
+  if (extent[4] < extent[3]) {
+    stop("Provided extent has ymax < ymin")
+  }
+
+  return(extent)
 }
