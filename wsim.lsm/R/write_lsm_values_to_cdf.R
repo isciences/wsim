@@ -73,9 +73,8 @@ write_lsm_values_to_cdf <- function(values, fname, prec) {
   flat_attrs <- c(do.call(c, lapply(var_attrs, flatten_attributes)), global_attrs)
 
   wsim.io::write_vars_to_cdf(data_vars,
-                             fname,
+                             filename=fname,
                              extent=values$extent,
-                             fname,
                              attrs=flat_attrs,
                              prec=prec)
 }
