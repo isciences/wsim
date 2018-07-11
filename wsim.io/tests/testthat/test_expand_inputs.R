@@ -106,3 +106,10 @@ test_that("It fails if the stop date is before the start date", {
     expand_inputs('cookies_[20171231:20171201].txt', check_exists=FALSE) # can't go backwards
   )
 })
+
+test_that("It gives a reasonable error message if the format is invalid", {
+  expect_error(
+    expand_inputs('cookies_19[20:28].nc', check_exists=FALSE),
+    "Can only expand date ranges in .* format"
+  )
+})
