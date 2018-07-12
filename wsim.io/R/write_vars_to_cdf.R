@@ -97,32 +97,11 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     return(fill)
   }
 
-  if (is.null(extent)) {
-    minlat <- ymin
-    maxlat <- ymax
+  lats <- lat_seq(extent, dim(vars[[1]]))
+  lons <- lon_seq(extent, dim(vars[[1]]))
 
-    minlon <- xmin
-    maxlon <- xmax
-  } else {
-    minlat <- extent[3]
-    maxlat <- extent[4]
-
-    minlon <- extent[1]
-    maxlon <- extent[2]
-  }
-
-  nlat <- dim(vars[[1]])[1]
-  nlon <- dim(vars[[1]])[2]
-
-  dlat <- (maxlat - minlat) / nlat
-  dlon <- (maxlon - minlon) / nlon
-
-  # Compute our lat/lon grid (NetCDF uses cell centers, not corners)
-  lats <- seq(maxlat - (dlat/2), minlat + (dlat/2), by=-dlat)
-  lons <- seq(minlon + (dlon/2), maxlon - (dlon/2), by=dlon)
-
-  latdim <- ncdf4::ncdim_def("lat", units="degrees_north", vals=as.double(lats), longname="Latitude", create_dimvar=TRUE)
-  londim <- ncdf4::ncdim_def("lon", units="degrees_east", vals=as.double(lons), longname="Longitude", create_dimvar=TRUE)
+  latdim <- ncdf4::ncdim_def("lat", units="degrees_north", vals=lats, longname="Latitude", create_dimvar=TRUE)
+  londim <- ncdf4::ncdim_def("lon", units="degrees_east", vals=lons, longname="Longitude", create_dimvar=TRUE)
 
   # Create all variables, putting in blank strings for the units.  We will
   # overwrite this with the actual units, if they have been passed in

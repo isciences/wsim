@@ -34,3 +34,29 @@ test_that('cube_to_matrices avoids dropping dimensions', {
 
   expect_true(all(sapply(mats, is.matrix)))
 })
+
+test_that('latlon sequences are correct', {
+  extent <- c(-180, 180, -90, 90)
+  dims <- c(720, 1440)
+
+  lats <- lat_seq(extent, dims)
+  lons <- lon_seq(extent, dims)
+
+  # sequence have correct length
+  expect_length(lons, 1440)
+  expect_length(lats, 720)
+
+  # latitude is N to S
+  expect_equal(lats, rev(sort(lats)))
+
+  # longitude is W to E
+  expect_equal(lons, sort(lons))
+
+  # spacing is correct
+  expect_equal(lats[1] - lats[2], 0.25)
+  expect_equal(lons[2] - lons[1], 0.25)
+
+  # coordinates represent grid centers
+  expect_equal(lats[1], 89.875)
+  expect_equal(lons[1], -179.875)
+})
