@@ -73,14 +73,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     vars <- cube_to_matrices(vars)
   }
 
-  default_nodata <- list(
-    byte= -127,
-    integer= -9999,
-    single=-3.4028234663852886e+38,
-    float= -3.4028234663852886e+38,
-    double= -3.4028234663852886e+38
-  )
-
+  # Return the data precision for variable named var
   var_prec <- function(var) {
     if (is.character(prec)) {
       return(prec)
@@ -91,8 +84,9 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     }
   }
 
+  # Return a fill value to use for the variable named var
   var_fill <- function(var) {
-    fill <- default_nodata[[var_prec(var)]]
+    fill <- default_netcdf_nodata[[var_prec(var)]]
     stopifnot(!is.null(fill))
     return(fill)
   }
@@ -184,17 +178,29 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     }
   }
 
+  write_crs_attributes(ncout, names(vars))
+
+  ncdf4::nc_close(ncout)
+}
+
+default_netcdf_nodata <- list(
+  byte= -127,
+  integer= -9999,
+  single=-3.4028234663852886e+38,
+  float= -3.4028234663852886e+38,
+  double= -3.4028234663852886e+38
+)
+
+write_crs_attributes <- function(ncout, var_names) {
   ncdf4::ncatt_put(ncout, "crs", "grid_mapping_name", "latitude_longitude")
   ncdf4::ncatt_put(ncout, "crs", "longitude_of_prime_meridian", 0.0)
   ncdf4::ncatt_put(ncout, "crs", "semi_major_axis", 6378137.0)
   ncdf4::ncatt_put(ncout, "crs", "inverse_flattening", 298.257223563)
   ncdf4::ncatt_put(ncout, "crs", "spatial_ref", "GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]")
 
-  for (var in names(vars)) {
+  for (var in var_names) {
     ncdf4::ncatt_put(ncout, var, "grid_mapping", "crs")
   }
-
-  ncdf4::nc_close(ncout)
 }
 
 validate_extent <- function(extent, xmin, xmax, ymin, ymax) {
