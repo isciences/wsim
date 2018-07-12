@@ -119,15 +119,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     ncout <- ncdf4::nc_open(filename, write=TRUE)
 
     # Verify that our dimensions match up before writing
-    if (!is.null(ncout$dim$lat)) {
-      existing_lats <- ncdf4::ncvar_get(ncout, "lat")
-      stopifnot(all(lats == existing_lats))
-    }
-
-    if (!is.null(ncout$dim$lon)) {
-      existing_lons <- ncdf4::ncvar_get(ncout, "lon")
-      stopifnot(all(lons == existing_lons))
-    }
+    check_coordinate_variables(ncout, lat=lats, lon=lons)
 
     # Add any missing variable definitions
     for (var in ncvars) {
@@ -160,27 +152,62 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
 
   # Write attributes
   for (attr in c(standard_attrs, attrs)) {
-    varid <- ifelse(is.null(attr$var), 0, attr$var)
+    update_attribute(ncout, attr$var, attr$key, attr$val, attr$prec)
+  }
 
-    existing <- ncdf4::ncatt_get(ncout, varid, attname=attr$key)
+  write_crs_attributes(ncout, names(vars))
+
+  ncdf4::nc_close(ncout)
+}
+
+#' Validate coordinate variables
+#'
+#' @param ncout a netCDF file opened for writing
+#' @param ... values of any named dimension variables
+check_coordinate_variables <- function(ncout, ...) {
+  vars <- list(...)
+
+  for (v in names(vars)) {
+    if (!is.null(ncout$dim[[v]])) {
+      existing <- ncdf4::ncvar_get(ncout, v)
+      current <- vars[[v]]
+
+      if (length(current) != length(existing)) {
+        stop("Cannot write ", v, " of dimension ", length(current), " to existing file with dimension ", length(existing))
+      }
+
+      if (any(current != existing)) {
+        stop("Values of dimension ", v, " do not match existing values.")
+      }
+    }
+  }
+}
+
+#' Update an attribute in ncout
+#'
+#' @param var the name of the variable to which the attribute
+#'            is associated (or \code{NULL} for a global attribute)
+#' @param key the name of the attribute
+#' @param val the value of the attribute
+#' @param prec the precision of the attribute (or \code{NULL} to
+#'             use the same precision as \code{var})
+update_attribute <- function(ncout, var, key, val, prec) {
+    varid <- ifelse(is.null(var), 0, var)
+
+    existing <- ncdf4::ncatt_get(ncout, varid, attname=key)
 
     # Don't try writing an attribute if our value is equivalent to
     # what's already there.
     # This is to avoid the ncdf4 library thinking we're trying to
     # redefine _FillValue, even if we're (re)-setting it to its
     # current value.
-    if (!existing$hasatt || existing$value != attr$val) {
+    if (!existing$hasatt || existing$value != val) {
       ncdf4::ncatt_put(ncout,
                        varid,
-                       attr$key,
-                       attr$val,
-                       prec=ifelse(is.null(attr$prec), NA, attr$prec))
+                       key,
+                       val,
+                       prec=ifelse(is.null(prec), NA, prec))
     }
-  }
-
-  write_crs_attributes(ncout, names(vars))
-
-  ncdf4::nc_close(ncout)
 }
 
 default_netcdf_nodata <- list(

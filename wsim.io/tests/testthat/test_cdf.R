@@ -272,6 +272,24 @@ test_that("existing files can be appended to", {
   file.remove(fname)
 })
 
+test_that("cannot append if dimensions are not the same", {
+  fname <- tempfile()
+
+  write_vars_to_cdf(list(data=matrix(runif(9), nrow=3)), fname, extent=c(0, 1, 0, 1))
+
+  expect_error(
+    write_vars_to_cdf(list(data2=matrix(runif(9), nrow=3)), fname, extent=c(0, 1, 0, 0.5), append=TRUE),
+    "Values .* do not match existing values"
+  )
+
+  expect_error(
+    write_vars_to_cdf(list(data2=matrix(runif(16), nrow=4)), fname, extent=c(0, 1, 0, 1), append=TRUE),
+    "Cannot write .* dimension 4 .* existing file .* dimension 3"
+  )
+
+  file.remove(fname)
+})
+
 test_that("numeric precision can be specified on a per-variable basis", {
   fname <- tempfile()
   fname <- '/tmp/kansas.nc'
