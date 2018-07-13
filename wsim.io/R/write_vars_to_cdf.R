@@ -11,6 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#' Default NODATA values for various data types
+default_netcdf_nodata <- list(
+  byte= -127,
+  integer= -9999,
+  single=-3.4028234663852886e+38,
+  float= -3.4028234663852886e+38,
+  double= -3.4028234663852886e+38
+)
+
 #' Write a list of matrices to a netCDF file.
 #'
 #' The names of the list elements will be used to name the
@@ -175,7 +184,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
   }
 
   if (is_spatial) {
-    write_crs_attributes(ncout, names(vars))
+    write_wgs84_crs_attributes(ncout, names(vars))
   }
 
   ncdf4::nc_close(ncout)
@@ -231,15 +240,11 @@ update_attribute <- function(ncout, var, key, val, prec) {
     }
 }
 
-default_netcdf_nodata <- list(
-  byte= -127,
-  integer= -9999,
-  single=-3.4028234663852886e+38,
-  float= -3.4028234663852886e+38,
-  double= -3.4028234663852886e+38
-)
-
-write_crs_attributes <- function(ncout, var_names) {
+#' Write CRS attributes for WGS84
+#'
+#' @param ncout    netCDF open for writing
+#' @param varnames list of variable names to which CRS should be associated
+write_wgs84_crs_attributes <- function(ncout, var_names) {
   ncdf4::ncatt_put(ncout, "crs", "grid_mapping_name", "latitude_longitude")
   ncdf4::ncatt_put(ncout, "crs", "longitude_of_prime_meridian", 0.0)
   ncdf4::ncatt_put(ncout, "crs", "semi_major_axis", 6378137.0)
