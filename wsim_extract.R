@@ -81,25 +81,24 @@ main <- function(raw_args) {
 
       st_geometry(features) <- NULL
 
-      write.table(features,
-                  file=args$output,
-                  sep=", ",
-                  row.names=FALSE,
-                  col.names=first_file,
-                  append=!first_file)
+      if (endsWith(args$output, 'csv')) {
+        write.table(features,
+                    file=args$output,
+                    sep=", ",
+                    row.names=FALSE,
+                    col.names=first_file,
+                    append=!first_file)
+      } else {
+        write_vars_to_cdf(vars=features[field_names],
+                          filename=args$output,
+                          ids=features[, args$fid],
+                          prec="single",
+                          append=!first_file)
+      }
       first_file <- FALSE
+      info('Wrote', paste(field_names, collapse=", "), 'to', args$output)
     }
   }
 }
 
 main(commandArgs(trailingOnly=TRUE))
-
-hidden <- function() {
-  main(list(
-    '--boundaries',  "/mnt/fig/Data_Global/HydroBASINS/lev07/hybas_lake_af_lev07_v1c.shp",
-    '--fid',  'HYBAS_ID',
-    '--input', "/mnt/fig/WSIM/WSIM_derived_V2/results/results_1mo_201805.nc::RO_mm",
-    '--stat',  'mean',
-    '--output', '/tmp/results.csv'
-  ))
-}
