@@ -162,6 +162,24 @@ test_that("we can read multiple spatial variables into a cube", {
   file.remove(fname)
 })
 
+test_that("we can read multiple non-spatial variables into a cube", {
+  fname <- tempfile(fileext='.nc')
+
+  write_vars_to_cdf(
+    list(
+      location=runif(8),
+      scale=runif(8),
+      shape=runif(8)),
+    ids=2:9,
+    filename=fname
+  )
+
+  data <- read_vars_to_cube(fname)
+  expect_equal(attr(data, 'ids'), 2:9, check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
 test_that("we can read fits from multiple netCDFs", {
   fname1 <- tempfile(fileext='.nc')
   fname2 <- tempfile(fileext='.nc')
