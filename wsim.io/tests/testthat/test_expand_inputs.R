@@ -13,7 +13,7 @@
 
 require(testthat)
 
-context('Input expansion')
+context('Input expansion (date ranges and globs)')
 
 test_that('We can use glob expansion', {
   dirname <- tempfile('dir')

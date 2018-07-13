@@ -157,7 +157,9 @@ test_that("we can read fits from multiple netCDFs", {
                                                                      list(key="variable", val="rainfall")))
   write_vars_to_cdf(data(), fname2, extent=c(0, 2, 0, 1), attrs=list(list(key="distribution", val="gev"),
                                                                      list(key="variable", val="temperature")))
-  expect_error(read_fits_from_cdf(c(fname1, fname2)))
+  capture.output(
+    expect_error(read_fits_from_cdf(c(fname1, fname2)))
+  )
 
   # Should work this time
   write_vars_to_cdf(data(), fname1, extent=c(0, 1, 0, 1), attrs=list(list(key="distribution", val="pe3"),
@@ -165,7 +167,9 @@ test_that("we can read fits from multiple netCDFs", {
   write_vars_to_cdf(data(), fname2, extent=c(0, 1, 0, 1), attrs=list(list(key="distribution", val="gev"),
                                                                      list(key="variable", val="temperature")))
 
-  fits <- read_fits_from_cdf(c(fname1, fname2))
+  capture.output(
+    fits <- read_fits_from_cdf(c(fname1, fname2))
+  )
 
   expect_named(fits, c('rainfall', 'temperature'), ignore.order=TRUE)
   expect_equal(dim(fits[['rainfall']]), c(3,3,3))
