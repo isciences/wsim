@@ -55,18 +55,14 @@
 #'               file, if present.
 #'
 #'@export
-write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec="double", append=FALSE) {
+write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec="double", append=FALSE) {
   datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
   history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
-  extent <- validate_extent(extent, xmin, xmax, ymin, ymax)
+  is_spatial <- is.null(ids)
 
   standard_attrs <- list(
-    list(key="Conventions", val="CF-1.6"),
-    list(var="lon", key="axis", val="X"),
-    list(var="lon", key="standard_name", val="longitude"),
-    list(var="lat", key="axis", val="Y"),
-    list(var="lat", key="standard_name", val="latitude")
+    list(key="Conventions", val="CF-1.6")
   )
 
   if (is.array(vars)) {
@@ -91,11 +87,28 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     return(fill)
   }
 
-  lats <- lat_seq(extent, dim(vars[[1]]))
-  lons <- lon_seq(extent, dim(vars[[1]]))
+  if (is_spatial) {
+    extent <- validate_extent(extent, xmin, xmax, ymin, ymax)
 
-  latdim <- ncdf4::ncdim_def("lat", units="degrees_north", vals=lats, longname="Latitude", create_dimvar=TRUE)
-  londim <- ncdf4::ncdim_def("lon", units="degrees_east", vals=lons, longname="Longitude", create_dimvar=TRUE)
+    lats <- lat_seq(extent, dim(vars[[1]]))
+    lons <- lon_seq(extent, dim(vars[[1]]))
+
+    dims <- list(
+      ncdf4::ncdim_def("lat", units="degrees_north", vals=lats, longname="Latitude", create_dimvar=TRUE),
+      ncdf4::ncdim_def("lon", units="degrees_east", vals=lons, longname="Longitude", create_dimvar=TRUE)
+    )
+
+    standard_attrs <- c(standard_attrs, list(
+      list(var="lon", key="axis", val="X"),
+      list(var="lon", key="standard_name", val="longitude"),
+      list(var="lat", key="axis", val="Y"),
+      list(var="lat", key="standard_name", val="latitude")
+    ))
+  } else {
+    dims <- list(
+      ncdf4::ncdim_def("id", units="", vals=ids, create_dimvar=TRUE)
+    )
+  }
 
   # Create all variables, putting in blank strings for the units.  We will
   # overwrite this with the actual units, if they have been passed in
@@ -103,7 +116,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
   ncvars <- lapply(names(vars), function(param) {
     ncdf4::ncvar_def(name=param,
                      units="",
-                     dim=list(londim, latdim),
+                     dim=dims,
                      missval=var_fill(param),
                      prec=var_prec(param),
                      compression=1)
@@ -111,15 +124,21 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
 
   names(ncvars) <- names(vars)
 
-  # Add a CRS var
-  ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
+  if (is_spatial) {
+    # Add a CRS var
+    ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
+  }
 
   # Does the file already exist?
   if (append && file.exists(filename)) {
     ncout <- ncdf4::nc_open(filename, write=TRUE)
 
     # Verify that our dimensions match up before writing
-    check_coordinate_variables(ncout, lat=lats, lon=lons)
+    if (is_spatial) {
+      check_coordinate_variables(ncout, lat=lats, lon=lons)
+    } else {
+      check_coordinate_variables(ncout, id=ids)
+    }
 
     # Add any missing variable definitions
     for (var in ncvars) {
@@ -155,7 +174,9 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
     update_attribute(ncout, attr$var, attr$key, attr$val, attr$prec)
   }
 
-  write_crs_attributes(ncout, names(vars))
+  if (is_spatial) {
+    write_crs_attributes(ncout, names(vars))
+  }
 
   ncdf4::nc_close(ncout)
 }
