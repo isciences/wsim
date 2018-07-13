@@ -16,7 +16,7 @@ require(testthat)
 context("Reading netCDF files")
 
 test_that("we can read attributes and variables from a spatial netCDF file into matrices", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
   data <- matrix(runif(4), nrow=2)
 
   write_vars_to_cdf(list(my_data=data),
@@ -49,7 +49,7 @@ test_that("we can read attributes and variables from a spatial netCDF file into 
 })
 
 test_that("we can read attributes and variables from a non-spatial netCDF file into matrices", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
   data <- runif(4)
 
   write_vars_to_cdf(list(my_data=data),
@@ -78,7 +78,7 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
 })
 
 test_that("variables that have no dimensions are read in as attributes", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
 
   latdim <- ncdf4::ncdim_def("lat", units="degrees_north", vals=as.double(1:20), longname="Latitude", create_dimvar=TRUE)
   londim <- ncdf4::ncdim_def("lon", units="degrees_east", vals=as.double(30:70), longname="Longitude", create_dimvar=TRUE)
@@ -104,7 +104,7 @@ test_that("variables that have no dimensions are read in as attributes", {
 })
 
 test_that("we can read only a subset of variables from a netCDF", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
 
   data <- list(
     location= matrix(runif(9), nrow=3),
@@ -122,7 +122,7 @@ test_that("we can read only a subset of variables from a netCDF", {
 })
 
 test_that("we can transform and rename variables", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
 
   data <- list(
     reflectance= matrix(1:9, nrow=3)
@@ -137,8 +137,8 @@ test_that("we can transform and rename variables", {
   file.remove(fname)
 })
 
-test_that("we can read multiple variables into a cube", {
-  fname <- paste0(tempfile(), '.nc')
+test_that("we can read multiple spatial variables into a cube", {
+  fname <- tempfile(fileext='.nc')
 
   data <- list(
     location= matrix(runif(9), nrow=3),
@@ -163,8 +163,8 @@ test_that("we can read multiple variables into a cube", {
 })
 
 test_that("we can read fits from multiple netCDFs", {
-  fname1 <- paste0(tempfile(), '.nc')
-  fname2 <- paste0(tempfile(), '.nc')
+  fname1 <- tempfile(fileext='.nc')
+  fname2 <- tempfile(fileext='.nc')
 
   data <- function() {
     list(
@@ -214,12 +214,12 @@ test_that("we can read fits from multiple netCDFs", {
 
 test_that('we get a helpful error message when trying to access data that does not exist', {
   for (f in c('sdfy.nc::sdf', 'sdgy.tif', 'dsaf.mon')) {
-    expect_error(read_vars(f), paste0('does not exist'))
+    expect_error(read_vars(f), 'does not exist')
   }
 })
 
 test_that("we can expect a specific number of variables in a file", {
-  fname <- paste0(tempfile(), '.nc')
+  fname <- tempfile(fileext='.nc')
 
   data <- list(
     location= matrix(runif(9), nrow=3),
@@ -235,7 +235,7 @@ test_that("we can expect a specific number of variables in a file", {
 })
 
 test_that("we can expect a specific extent for a file", {
-  fname <- paste0(tempfile(), '.nc')
+  fname <- tempfile(fileext='.nc')
 
   data <- list(
     location= matrix(runif(9), nrow=3),
@@ -251,7 +251,7 @@ test_that("we can expect a specific extent for a file", {
 })
 
 test_that("we can expect specific dimensions for a file", {
-  fname <- paste0(tempfile(), '.nc')
+  fname <- tempfile(fileext='.nc')
 
   data <- list(
     location= matrix(runif(9), nrow=3),
@@ -292,7 +292,7 @@ test_that("dimnames preserved with a complex vardef", {
 })
 
 test_that("we can read multiple variables from a netCDF into a RasterBrick", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
 
   data <- list(
     location= matrix(runif(9), nrow=3),
