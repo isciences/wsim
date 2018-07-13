@@ -27,12 +27,17 @@ Perform pixel-based flow accumulation
 Usage: wsim_flow --input=<file> --flowdir=<file> --varname=<varname> --output=<file> [--wrapx --wrapy]
 
 Options:
---input <file>      file containing values to accumulate (runoff)
---flowdir <file>    file containing flow direction values
+--input <file>      file containing values to accumulate (e.g., runoff)
+--flowdir <file>    file containing flow direction values.
+                    When input is a gridded dataset, flowdir should be a grid of the same
+                    extent and resolution, using D8 conventions.
+                    When input is a feature dataset, flowdir should be a list of downstream
+                    feature IDs.
 --varname <varname> output variable name for accumulated values
 --output <file>     file to which accumulated values will be written/appended
 --wrapx             wrap flow in the x-dimension
 --wrapy             wrap flow in the y-dimension
+--invert            send flow upstream instead of downstream
 '->usage
 
 main <- function(raw_args) {
@@ -48,7 +53,8 @@ main <- function(raw_args) {
   flowdir <- wsim.io::read_vars(args$flowdir,
                                 expect.nvars=1,
                                 expect.dims=dim(inputs$data[[1]]),
-                                expect.extent=inputs$extent)
+                                expect.extent=inputs$extent,
+                                expect.ids=inputs$ids)
   wsim.io::info("Read flow directions.")
 
   results <- list()
