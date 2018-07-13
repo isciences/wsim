@@ -77,6 +77,18 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
   file.remove(fname)
 })
 
+test_that("we can check for expected IDs when loading a non-spatial netCDF", {
+  fname <- tempfile(fileext='.nc')
+  data <- runif(10)
+
+  write_vars_to_cdf(list(data=data), fname, ids=11:20)
+
+  expect_error(read_vars(fname, expect.ids=10:19),
+               "Unexpected IDs")
+
+  file.remove(fname)
+})
+
 test_that("variables that have no dimensions are read in as attributes", {
   fname <- tempfile(fileext='.nc')
 
