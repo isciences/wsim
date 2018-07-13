@@ -15,7 +15,7 @@ require(testthat)
 
 context("Reading netCDF files")
 
-test_that("we can read attributes and variables from a netCDF file into matrices", {
+test_that("we can read attributes and variables from a spatial netCDF file into matrices", {
   fname <- tempfile()
   data <- matrix(runif(4), nrow=2)
 
@@ -32,6 +32,38 @@ test_that("we can read attributes and variables from a netCDF file into matrices
 
   # Grid extent is returned as xmin, xmax, ymin, ymax
   expect_equal(v$extent, c(-40, 0, 20, 70))
+
+  # Global attributes are accessible in $attrs
+  expect_equal(v$attrs$yearmon, "201702")
+
+  # No IDs for spatial data
+  expect_null(v$ids)
+
+  # Variable attributes are accessible as attrs of the matrix
+  expect_equal(attr(v$data$my_data, 'station'), 'A')
+
+  # Make sure our data didn't get messed up (transposed, etc.)
+  expect_equal(v$data$my_data, data, check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
+test_that("we can read attributes and variables from a non-spatial netCDF file into matrices", {
+  fname <- tempfile()
+  data <- runif(4)
+
+  write_vars_to_cdf(list(my_data=data),
+                    fname,
+                    ids=2:5,
+                    attrs=list(list(var="my_data", key="station", val="A"),
+                               list(key="yearmon", val="201702")))
+
+  v <- read_vars_from_cdf(fname)
+
+  expect_equal(v$ids, 2:5, check.attributes=FALSE)
+
+  # No extent for non-spatial data
+  expect_null(v$extent)
 
   # Global attributes are accessible in $attrs
   expect_equal(v$attrs$yearmon, "201702")

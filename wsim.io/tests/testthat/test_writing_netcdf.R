@@ -180,3 +180,33 @@ test_that('write_vars_to_cdf provides useful errors if extent is not correctly s
   expect_error(write_vars_to_cdf(data, fname, extent=c(1, 1, 1, 0)),
                "ymax < ymin")
 })
+
+test_that("we can write non-spatial variables and attributes to a netCDF file", {
+  fname <- tempfile()
+  data <- runif(4)
+
+  write_vars_to_cdf(list(my_data=data),
+                    fname,
+                    ids=3:6,
+                    attrs=list(list(var="my_data", key="station", val="A"),
+                               list(key="yearmon", val="201702")))
+
+  expect_true(file.exists(fname))
+
+  cdf <- ncdf4::nc_open(fname)
+
+  expect_equal(length(cdf$dim), 1)
+  expect_equal(cdf$dim[[1]]$name, "id")
+  expect_equal(cdf$dim[[1]]$vals, 3:6, check.attributes=FALSE)
+
+  expect_equal(length(cdf$var), 1)
+  expect_equal(cdf$var[[1]]$name, "my_data")
+
+  expect_equal(ncdf4::ncatt_get(cdf, 0, "yearmon")$value, "201702")
+  expect_equal(ncdf4::ncatt_get(cdf, "my_data", "station")$value, "A")
+
+  expect_equal(ncdf4::ncvar_get(cdf, "my_data"), data, check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
