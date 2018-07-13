@@ -44,7 +44,6 @@ main <- function(raw_args) {
   expanded_inputs <- wsim.io::expand_inputs(args$input)
   wsim.io::info('Preparing to load vars from', length(expanded_inputs), "files.")
   inputs_stacked <- wsim.io::read_vars_to_cube(expanded_inputs)
-  extent <- attr(inputs_stacked, 'extent')
 
   if (length(unique(dimnames(inputs_stacked)[[3]])) > 1) {
     wsim.io::die_with_message("Can't perform fit on heterogeneous input variables ( received input variables:",
@@ -66,7 +65,8 @@ main <- function(raw_args) {
 
   wsim.io::write_vars_to_cdf(fits,
                              outfile,
-                             extent=extent,
+                             extent=attr(inputs_stacked, 'extent'),
+                             ids=attr(inputs_stacked, 'ids'),
                              attrs=c(
                                output_attrs,
                                list(
