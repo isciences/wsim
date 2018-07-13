@@ -210,3 +210,20 @@ test_that("we can write non-spatial variables and attributes to a netCDF file", 
   file.remove(fname)
 })
 
+test_that('ids must be integers or integer-coercible', {
+  fname <- tempfile(fileext='.nc')
+
+  data <- runif(4)
+
+  expect_error(
+    write_vars_to_cdf(list(my_data=data),
+                      fname,
+                      ids=c(3.0, 4.0, 5.0, 6.1)))
+
+  write_vars_to_cdf(list(my_data=data),
+                    fname,
+                    ids=c(3.0, 4.0, 5.0, 6.0))
+
+  file.remove(fname)
+})
+
