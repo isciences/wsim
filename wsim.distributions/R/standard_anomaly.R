@@ -33,7 +33,7 @@ standard_anomaly <- function(distribution, dist_params, obs, min.sa=-100, max.sa
   }
 
   pmin(pmax(stats::qnorm(quantile_fn(obs,
-                                     as.matrix(dist_params[,,1]),
-                                     as.matrix(dist_params[,,2]),
-                                     as.matrix(dist_params[,,3]))), min.sa), max.sa)
+                                     abind::adrop(dist_params[,,1, drop=FALSE], drop=3),
+                                     abind::adrop(dist_params[,,2, drop=FALSE], drop=3),
+                                     abind::adrop(dist_params[,,3, drop=FALSE], drop=3))), min.sa), max.sa)
 }
