@@ -24,7 +24,7 @@ suppressMessages({
 '
 Perform pixel-based flow accumulation
 
-Usage: wsim_flow --input=<file> --flowdir=<file> --varname=<varname> --output=<file> [--wrapx --wrapy]
+Usage: wsim_flow --input=<file> --flowdir=<file> --varname=<varname> --output=<file> [--wrapx --wrapy --invert]
 
 Options:
 --input <file>      file containing values to accumulate (e.g., runoff)
@@ -34,9 +34,9 @@ Options:
                     When input is a feature dataset, flowdir should be a list of downstream
                     feature IDs.
 --varname <varname> output variable name for accumulated values
---output <file>     file to which accumulated values will be written/appended
---wrapx             wrap flow in the x-dimension
---wrapy             wrap flow in the y-dimension
+--output <file>     file to which accumulated values will be written/appendej
+--wrapx             wrap flow in the x-dimension (during pixel-based accumulation)
+--wrapy             wrap flow in the y-dimension (during pixel-based accumulation)
 --invert            send flow upstream instead of downstream
 '->usage
 
@@ -45,6 +45,10 @@ main <- function(raw_args) {
 
   if (!is.null(args$output) && !can_write(args$output)) {
     die_with_message("Cannot open ", args$output, "for writing.")
+  }
+
+  if (args$invert) {
+    die_with_message("--invert not yet supported.")
   }
 
   inputs <- wsim.io::read_vars(args$input, expect.nvars=1)
@@ -57,11 +61,26 @@ main <- function(raw_args) {
                                 expect.ids=inputs$ids)
   wsim.io::info("Read flow directions.")
 
+  pixel_based <- is.null(inputs$ids)
+
+  if (pixel_based) {
+    stopifnot(!args$wrapx)
+    stopifnot(!args$wrapy)
+  }
+
   results <- list()
-  results[[args$varname]] <- wsim.lsm::accumulate_flow(flowdir$data[[1]],
-                                                       inputs$data[[1]],
-                                                       args$wrapx,
-                                                       args$wrapy)
+  if (pixel_based) {
+    # Pixel-based flow accumulation
+    results[[args$varname]] <- wsim.lsm::accumulate_flow(flowdir$data[[1]],
+                                                         inputs$data[[1]],
+                                                         args$wrapx,
+                                                         args$wrapy)
+  } else {
+    # Downstream ID-based flow accumulation
+    results[[args$varname]] <- wsim.lsm::accumulate(inputs$ids,
+                                                    flowdir$data[[1]],
+                                                    inputs$data[[1]])
+  }
 
   info('Flow accumulation complete')
 
@@ -69,10 +88,13 @@ main <- function(raw_args) {
     vars= results,
     filename= args$output,
     extent= inputs$extent,
+    ids= inputs$ids,
     append= TRUE
   )
 
   info('Wrote results to', args$output)
 }
 
-tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
+tryCatch(
+  main(commandArgs(trailingOnly=TRUE))
+, error=wsim.io::die_with_message)
