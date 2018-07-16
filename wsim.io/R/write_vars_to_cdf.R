@@ -285,16 +285,3 @@ validate_extent <- function(extent, xmin, xmax, ymin, ymax) {
 
   return(extent)
 }
-
-coerce_to_integer <- function(vals) {
-  if (is.integer(vals)) {
-    return(vals)
-  }
-
-  int_vals <- as.integer(vals)
-  if (any(vals != int_vals)) {
-    stop("IDs must be integers")
-  }
-
-  return(int_vals)
-}
