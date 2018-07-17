@@ -61,6 +61,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, xmin=NULL, xmax=NULL,
 
   standard_attrs <- list(
     list(key="Conventions", val="CF-1.6"),
+    list(key="wsim_version", val=wsim_version_string()),
     list(var="lon", key="axis", val="X"),
     list(var="lon", key="standard_name", val="longitude"),
     list(var="lat", key="axis", val="Y"),
