@@ -10,6 +10,7 @@ RUN echo "deb http://cran.rstudio.com/bin/linux/debian stretch-cran34/\n" \
   >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+  enchant \
   g++ \
   gcc \
   gfortran \
@@ -25,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libproj12 \
   libssl-dev \
   libssh2-1-dev \
+  libudunits2-dev \
   libxml2-dev \
   make \
   nco \
@@ -34,7 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   wget \
   && rm -rf /var/lib/apt/lists*
 
-RUN MAKE='make -j8' Rscript -e 'install.packages(c( \
+RUN Rscript -e 'install.packages(c( \
   "Rcpp", \
   "abind", \
   "devtools", \
@@ -48,9 +50,13 @@ RUN MAKE='make -j8' Rscript -e 'install.packages(c( \
   "readr", \
   "rgdal", \
   "roxygen2", \
+  "sf", \
   "testthat" \
-), dependencies = NA, repos="http://cran.rstudio.com")'
-RUN MAKE='make -j8' Rscript -e 'devtools::install_github("hadley/pkgdown")'
+), dependencies = NA, repos="http://cran.rstudio.com", Ncpus=4)'
+RUN Rscript -e 'for (pkg in c( \
+      "hadley/pkgdown", \
+      "isciences/exactextractr")) \
+      devtools::install_github(pkg, Ncpus=4)'
 
 # Add wgrib2 for converting CFS forecast data
 # We need to compile it ourselves because the packaged version
@@ -65,6 +71,15 @@ RUN wget -P /tmp http://www.ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz && \
   cd /tmp && \
   rm -rf wgrib2.tgz && \
   rm -rf grib2  
+
+RUN wget -P /tmp https://bootstrap.pypa.io/get-pip.py && \
+    python3 /tmp/get-pip.py && \
+    rm /tmp/get-pip.py && \
+    pip3 install \
+      sphinx \
+      sphinx_rtd_theme \
+      sphinxcontrib.spelling \
+      sphinxcontrib.bibtex
 
 ADD https://s3.us-east-2.amazonaws.com/wsim-regression-data/testdata.tar.gz /
 RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
