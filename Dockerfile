@@ -36,7 +36,9 @@ RUN make install
 COPY utils /wsim/utils
 COPY *.R /wsim/
 
+COPY docs /wsim/docs
 COPY Makefile /wsim/
 
 WORKDIR /wsim
+RUN make html
 
