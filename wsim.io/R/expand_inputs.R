@@ -122,6 +122,8 @@ date_range <- function(start, stop, step) {
     increment_date <- add_months
   } else if (nchar(start) == 8) {
     increment_date <- add_days
+  } else {
+    stop("Can only expand date ranges in YYYY, YYYYMM, or YYYYMMDD format.")
   }
 
   while(start <= stop) {

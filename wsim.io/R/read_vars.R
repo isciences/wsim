@@ -24,6 +24,9 @@
 #' @param expect.extent If specified, \code{read_vars} will throw an
 #'                      error if extent of read data is not exactly
 #'                      \code{expect.extent}.
+#' @param expect.ids    If specified, \code{read_vars} will throw an
+#'                      error if ids of read data are not exactly
+#'                      and in the same order as \code{expect.ids}.
 #' @param offset        Specifies dimension-wise (X, Y, ...) offsets
 #'                      from the upper-left corner of the raster
 #'                      (xmin, ymax) from which reading should begin.
@@ -54,7 +57,7 @@
 #' }
 #'
 #' @export
-read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL, offset=NULL, count=NULL) {
+read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL) {
   stopifnot(
     (is.character(vardef) && length(vardef) == 1)
     || is.wsim.io.vardef(vardef))
@@ -69,6 +72,7 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
     loaded <- read_vars_from_cdf(vardef, offset=offset, count=count)
     check_nvars(def, loaded, expect.nvars)
     check_extent(def, loaded, expect.extent)
+    check_ids(def, loaded, expect.ids)
     check_dims(def, loaded, expect.dims)
     return(loaded)
   }
@@ -182,8 +186,24 @@ check_extent <- function(def, data, extent) {
   }
 
   stop("Unexpected extent of ", def$filename,
-       " (expected [", paste(extent, collapse=", "), "]",
+       " (expected [", paste(extent, collapse=", "), "] ",
        ", got [", paste(data$extent, collapse=", "), "])")
+}
+
+check_ids <- function(def, data, ids) {
+  if (any(ids != data$ids)) {
+    stop("Unexpected IDs in ", def$filename,
+         " (expected [", format_ids(ids, 5), "],",
+         " got [", format_ids(data$ids, 5), "])")
+  }
+}
+
+format_ids <- function(ids, n) {
+  if (length(ids) < n) {
+    paste(ids, collapse=", ")
+  } else {
+    paste0(paste(ids[1:n], collapse=", "), "...")
+  }
 }
 
 check_dims <- function(def, data, dims) {

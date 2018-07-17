@@ -49,6 +49,7 @@ main <- function(raw_args) {
   fits <- wsim.io::read_fits_from_cdf(args$fits)
 
   extent <- attr(fits[[1]], 'extent')
+  ids <- attr(fits[[1]], 'ids')
   sa_to_write <- list()
   rp_to_write <- list()
 
@@ -56,7 +57,10 @@ main <- function(raw_args) {
   writing_rp <- !is.null(args$rp)
 
   for (obs_arg in args$obs) {
-    v <- wsim.io::read_vars(obs_arg)
+    v <- wsim.io::read_vars(obs_arg,
+                            expect.extent=extent,
+                            expect.ids=ids,
+                            expect.dims=dim(fits)[1:2])
     for (varname in names(v$data)) {
       obs <- v$data[[varname]]
       fit <- fits[[varname]]
@@ -68,6 +72,7 @@ main <- function(raw_args) {
       distribution <- attr(fit, 'distribution')
 
       sa <- standard_anomaly(distribution, fit, obs)
+
       wsim.io::info("Computed standard anomalies for", varname)
 
       if (writing_sa) {
@@ -87,6 +92,7 @@ main <- function(raw_args) {
     write_vars_to_cdf(sa_to_write,
                       filename=args$sa,
                       extent=extent,
+                      ids=ids,
                       prec='single',
                       append=TRUE)
     wsim.io::info("Wrote standard anomalies to", args$sa)
@@ -96,6 +102,7 @@ main <- function(raw_args) {
     write_vars_to_cdf(rp_to_write,
                       filename=args$rp,
                       extent=extent,
+                      ids=ids,
                       prec='single',
                       append=TRUE)
     wsim.io::info("Wrote return periods to", args$rp)

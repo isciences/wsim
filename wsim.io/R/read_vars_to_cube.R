@@ -29,10 +29,15 @@ read_vars_to_cube <- function(vardefs, attrs_to_read=as.character(c()), offset=N
   vardefs <- lapply(vardefs, parse_vardef)
   vars <- lapply(vardefs, function(v) wsim.io::read_vars(v, offset=offset, count=count))
   extent <- vars[[1]]$extent
+  ids <- vars[[1]]$ids
 
   for (var in vars) {
     if (!all(var$extent == extent)) {
       stop("Cannot create cube from layers with unequal extents.")
+    }
+
+    if (!all(var$ids == ids)) {
+      stop("Cannot create cube from layers inconsistent ids.")
     }
   }
 
@@ -42,6 +47,7 @@ read_vars_to_cube <- function(vardefs, attrs_to_read=as.character(c()), offset=N
   dimnames(cube)[[3]] <- as.vector(sapply(vars, function(var) names(var$data)))
 
   attr(cube, 'extent') <- extent
+  attr(cube, 'ids') <- ids
 
   for (attr in attrs_to_read) {
     attr(cube, attr) <- vars[[1]]$attrs[[attr]]

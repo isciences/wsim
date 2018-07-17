@@ -25,11 +25,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     stopifnot(length(offset) == length(count))
   }
 
-  if (is.wsim.io.vardef(vardef)) {
-    def <- vardef
-  } else {
-    def <- parse_vardef(vardef)
-  }
+  def <- parse_vardef(vardef)
 
   fname <- def$filename
   if (is.character(vars)) {
@@ -40,45 +36,60 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
 
   cdf <- ncdf4::nc_open(fname)
 
-  latname <- ifelse("lat" %in% names(cdf$dim), "lat", "latitude")
-  lonname <- ifelse("lon" %in% names(cdf$dim), "lon", "longitude")
-
-  lats <- ncdf4::ncvar_get(cdf, latname)
-  lons <- ncdf4::ncvar_get(cdf, lonname)
-
-  dlat <- abs(lats[2] - lats[1])
-  dlon <- abs(lons[2] - lons[1])
-
-  if (!is.null(offset)) {
-    # We want to interpret the offset and count relative to the final arrangement,
-    # taking into account y-flipping
-    if (lats[1] < lats[2]) {
-      offset[2] <- length(lats) - (offset[2] + count[2] - 2)
-    }
-
-    lats <- ncdf4::ncvar_get(cdf, latname, start=offset[2], count=count[2])
-    lons <- ncdf4::ncvar_get(cdf, lonname, start=offset[1], count=count[1])
-  }
-
-  # Figure out whether we need to adjust a 0-360 dataset to -180-180
+  is_spatial <- !("id" %in% names(cdf$dim))
   wrap_rows <- NULL
-  if (any(lons > 181)) {
-    # Hack to handle CFS files using grid corners instead of centers
-    if (lons[1] == 0 && lons[length(lons)] == 359.5) {
-      lons <- lons + 0.5*dlon
+  extent <- NULL
+  ids <- NULL
+
+  if (is_spatial) {
+    latname <- ifelse("lat" %in% names(cdf$dim), "lat", "latitude")
+    lonname <- ifelse("lon" %in% names(cdf$dim), "lon", "longitude")
+
+    lats <- ncdf4::ncvar_get(cdf, latname)
+    lons <- ncdf4::ncvar_get(cdf, lonname)
+
+    dlat <- abs(lats[2] - lats[1])
+    dlon <- abs(lons[2] - lons[1])
+
+    if (!is.null(offset)) {
+      # We want to interpret the offset and count relative to the final arrangement,
+      # taking into account y-flipping
+      if (lats[1] < lats[2]) {
+        offset[2] <- length(lats) - (offset[2] + count[2] - 2)
+      }
+
+      lats <- ncdf4::ncvar_get(cdf, latname, start=offset[2], count=count[2])
+      lons <- ncdf4::ncvar_get(cdf, lonname, start=offset[1], count=count[1])
     }
 
-    wrap_rows <- which(lons > 180)
-    lons <- c(lons[lons > 180] - 360, lons[lons < 180])
+    # Figure out whether we need to adjust a 0-360 dataset to -180-180
+    if (any(lons > 181)) {
+      # Hack to handle CFS files using grid corners instead of centers
+      if (lons[1] == 0 && lons[length(lons)] == 359.5) {
+        lons <- lons + 0.5*dlon
+      }
+
+      wrap_rows <- which(lons > 180)
+      lons <- c(lons[lons > 180] - 360, lons[lons < 180])
+    }
+
+    # Do we need to flip latitudes?
+    flip_latitudes <- length(lats) > 1 && (lats[1] < lats[2])
+
+    extent <- c(min(lons) - dlon/2,
+                max(lons) + dlon/2,
+                min(lats) - dlat/2,
+                max(lats) + dlat/2)
+  } else {
+    flip_latitudes <- FALSE
+
+    if (!is.null(offset)) {
+      stopifnot(length(offset) == 1)
+      ids <- ncdf4::ncvar_get(cdf, "id", start=offset, count=count)
+    } else {
+      ids <- ncdf4::ncvar_get(cdf, "id")
+    }
   }
-
-  # Do we need to flip latitudes?
-  flip_latitudes <- length(lats) > 1 && (lats[1] < lats[2])
-
-  extent <- c(min(lons) - dlon/2,
-              max(lons) + dlon/2,
-              min(lats) - dlat/2,
-              max(lats) + dlat/2)
 
   global_attrs <- ncdf4::ncatt_get(cdf, 0)
 
@@ -157,6 +168,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   return(list(
     attrs= global_attrs,
     data= data,
-    extent= extent
+    extent= extent,
+    ids= ids
   ))
 }

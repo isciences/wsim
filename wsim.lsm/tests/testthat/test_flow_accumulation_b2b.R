@@ -60,8 +60,6 @@ test_that('downstream values are correct', {
 
    basins$downstream_flow <- downstream_flow(basins$id, basins$downstream, basins$flow)
 
-   print(basins$downstream_flow)
-
    expect_equal(basins$downstream_flow,
                 c(0,
                   2,

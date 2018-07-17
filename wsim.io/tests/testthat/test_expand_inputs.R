@@ -13,7 +13,7 @@
 
 require(testthat)
 
-context('Input expansion')
+context('Input expansion (date ranges and globs)')
 
 test_that('We can use glob expansion', {
   dirname <- tempfile('dir')
@@ -104,5 +104,12 @@ test_that("It fails on invalid dates", {
 test_that("It fails if the stop date is before the start date", {
   expect_error(
     expand_inputs('cookies_[20171231:20171201].txt', check_exists=FALSE) # can't go backwards
+  )
+})
+
+test_that("It gives a reasonable error message if the format is invalid", {
+  expect_error(
+    expand_inputs('cookies_19[20:28].nc', check_exists=FALSE),
+    "Can only expand date ranges in .* format"
   )
 })

@@ -113,6 +113,13 @@ test_that('We can compute the standard anomales for a raster of observations giv
   expect_equal(std_anomalies[1,1], expected_std_anomaly, tolerance=1e-3, check.attributes=FALSE)
 })
 
+test_that('We get a comprehensible error message if the distribution passed to stanard_anomaly is invalid', {
+  expect_error(standard_anomaly('gevv',
+                                array(c(1, 1, 1), dim=c(1,1,3)),
+                                matrix(0.5)),
+               'No quantile function available')
+})
+
 test_that('We can convert an standardized anomaly value into a return period', {
   # Expected return period
   # Source: WSIM_derived_V1.2/Observed/Freq/Bt_RO_Max_24mo_freq/Bt_RO_Max_24mo_freq_trgt198402.img

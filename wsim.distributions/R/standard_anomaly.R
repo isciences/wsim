@@ -25,10 +25,15 @@ standard_anomaly <- function(distribution, dist_params, obs, min.sa=-100, max.sa
 
   quantile_fn <- switch(distribution,
                         gev= gev_quantiles,
-                        pe3= pe3_quantiles)
+                        pe3= pe3_quantiles,
+                        NULL)
+
+  if (is.null(quantile_fn)) {
+    stop("No quantile function available for distribution \"", distribution, "\"")
+  }
 
   pmin(pmax(stats::qnorm(quantile_fn(obs,
-                                     as.matrix(dist_params[,,1]),
-                                     as.matrix(dist_params[,,2]),
-                                     as.matrix(dist_params[,,3]))), min.sa), max.sa)
+                                     abind::adrop(dist_params[,,1, drop=FALSE], drop=3),
+                                     abind::adrop(dist_params[,,2, drop=FALSE], drop=3),
+                                     abind::adrop(dist_params[,,3, drop=FALSE], drop=3))), min.sa), max.sa)
 }

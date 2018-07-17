@@ -436,3 +436,82 @@ test_that("wsim_composite does what it's supposed to", {
   file.remove(indicators)
   file.remove(output)
 })
+
+test_that('wsim_flow accumulates flow based on downstream id linkage (basin-to-basin)', {
+  flows <- tempfile(fileext='.nc')
+  downstream <- tempfile(fileext ='.nc')
+  accumulated <- tempfile(fileext='.nc')
+
+  wsim.io::write_vars_to_cdf(
+    vars=list(RO=c(1, 3, 5, 7)),
+    filename=flows,
+    ids=1:4
+  )
+
+  wsim.io::write_vars_to_cdf(
+    vars=list(downstream=c(0, 1, 1, 2)),
+    filename=downstream,
+    ids=1:4
+  )
+
+  return_code <- system2('./wsim_flow.R', args=c(
+    '--input',   flows,
+    '--flowdir', downstream,
+    '--varname', 'Bt_RO',
+    '--out',     accumulated
+  ))
+
+  output <- wsim.io::read_vars(accumulated)
+
+  expect_equal(output$data$Bt_RO, matrix(c(16, 10, 5, 7), nrow=1), check.attributes=FALSE)
+
+  # use same inputs but get downstream flow
+  return_code <- system2('./wsim_flow.R', args=c(
+    '--input',   flows,
+    '--flowdir', downstream,
+    '--varname', 'Bt_RO',
+    '--out',     accumulated,
+    '--invert'
+  ))
+
+  output <- wsim.io::read_vars(accumulated)
+
+  expect_equal(output$data$Bt_RO, matrix(c(0, 1, 1, 4), nrow=1), check.attributes=FALSE)
+
+  file.remove(flows)
+  file.remove(downstream)
+  file.remove(accumulated)
+})
+
+test_that('wsim_flow accumulates flow based on flow direction grid (pixel-based)', {
+  flows <- tempfile(fileext='.nc')
+  flowdirs <- tempfile(fileext ='.nc')
+  accumulated <- tempfile(fileext='.nc')
+
+  wsim.io::write_vars_to_cdf(
+    vars=list(RO=rbind(c(1, 3), c(5, 7))),
+    filename=flows,
+    extent=c(0, 1, 0, 1)
+  )
+
+  wsim.io::write_vars_to_cdf(
+    vars=list(flowdirs=rbind(c(NA, 16), c(64, 64))),
+    filename=flowdirs,
+    extent=c(0, 1, 0, 1)
+  )
+
+  return_code <- system2('./wsim_flow.R', args=c(
+    '--input',   flows,
+    '--flowdir', flowdirs,
+    '--varname', 'Bt_RO',
+    '--out',     accumulated
+  ))
+
+  output <- wsim.io::read_vars(accumulated)
+
+  expect_equal(output$data$Bt_RO, rbind(c(16, 10), c(5, 7)), check.attributes=FALSE)
+
+  file.remove(flows)
+  file.remove(flowdirs)
+  file.remove(accumulated)
+})
