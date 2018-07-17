@@ -8,8 +8,7 @@ Structure
 
 The core functionality of WSIM is provided through :doc:`R packages <working/r_packages/index>`.
 These packages are generally independent, but some functionality of ``wsim.io`` is accessed from other packages.
-Where performance is critical, code is written in C++ and exposed to R using the ``Rcpp`` package.
-Some use is made of C++11, which is not compliant with `CRAN <https://cran.r-project.org/>`_.
+Where performance is critical, code is written in C++11 and exposed to R using the ``Rcpp`` package.
 
 A series of :doc:`command-line tools <working/scripts/index>` provide thin wrappers around the functionality of the R packages.
 
