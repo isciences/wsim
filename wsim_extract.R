@@ -26,7 +26,7 @@ suppressMessages({
 '
 Summarize gridded datasets based on polygon geometries
 
-Usage: wsim_extract.R (--boundaries=<file>)... --fid <column> (--input=<input>)... (--stat=<stat>)... (--output=<output>)
+Usage: wsim_extract.R (--boundaries=<file>)... --fid <column> (--input=<input>)... (--stat=<stat>)... (--output=<output>) [--keepvarnames]
 
 Options:
 --boundaries <file>   one or more datasets of polygonal boundaries
@@ -34,6 +34,7 @@ Options:
 --input <input>       one or more sets of tabular data
 --stat <stat>         one or more summary statistic (min, max, ave, sum)
 --output <file>       output csv file
+--keepvarnames        do not append name of stat to output variable names
 '->usage
 
 main <- function(raw_args) {
@@ -74,7 +75,15 @@ main <- function(raw_args) {
       for (var_name in names(rasters)) {
         stats_for_var <- Filter(function(stat) (length(stat$vars) == 0 || var_name %in% stat$vars), parsed_stats)
         stat_names <- sapply(stats_for_var, function(stat) stat$stat)
-        field_names <- sapply(stat_names, function(stat) paste0(var_name, "_", stat))
+
+        if (args$keepvarnames) {
+          if (length(stats_for_var) > 1) {
+            die_with_message("Can't keep var names when we have > 1 stat for var", var_name)
+          }
+          field_names <- var_name
+        } else {
+          field_names <- sapply(stat_names, function(stat) paste0(var_name, "_", stat))
+        }
 
         features[, field_names] <- exact_extract(rasters[[var_name]], features, fun=stat_names)
       }
@@ -89,14 +98,16 @@ main <- function(raw_args) {
                     col.names=first_file,
                     append=!first_file)
       } else {
-        write_vars_to_cdf(vars=features[field_names],
+        write_vars_to_cdf(vars=features[names(features) != args$fid],
                           filename=args$output,
                           ids=features[, args$fid],
                           prec="single",
                           append=!first_file)
       }
       first_file <- FALSE
-      info('Wrote', paste(field_names, collapse=", "), 'to', args$output)
+      info('Wrote', paste(Filter(function(f) f != args$fid,
+                                 names(features)),
+                          collapse=", "), 'to', args$output)
     }
   }
 }

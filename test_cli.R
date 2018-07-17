@@ -14,6 +14,7 @@
 # limitations under the License.
 
 require(testthat)
+require(sf) # to write shapefiles of test data
 require(wsim.io)
 
 context("Command-line tools")
@@ -461,6 +462,8 @@ test_that('wsim_flow accumulates flow based on downstream id linkage (basin-to-b
     '--out',     accumulated
   ))
 
+  expect_equal(return_code, 0)
+
   output <- wsim.io::read_vars(accumulated)
 
   expect_equal(output$data$Bt_RO, matrix(c(16, 10, 5, 7), nrow=1), check.attributes=FALSE)
@@ -473,6 +476,8 @@ test_that('wsim_flow accumulates flow based on downstream id linkage (basin-to-b
     '--out',     accumulated,
     '--invert'
   ))
+
+  expect_equal(return_code, 0)
 
   output <- wsim.io::read_vars(accumulated)
 
@@ -507,6 +512,8 @@ test_that('wsim_flow accumulates flow based on flow direction grid (pixel-based)
     '--out',     accumulated
   ))
 
+  expect_equal(return_code, 0)
+
   output <- wsim.io::read_vars(accumulated)
 
   expect_equal(output$data$Bt_RO, rbind(c(16, 10), c(5, 7)), check.attributes=FALSE)
@@ -514,4 +521,74 @@ test_that('wsim_flow accumulates flow based on flow direction grid (pixel-based)
   file.remove(flows)
   file.remove(flowdirs)
   file.remove(accumulated)
+})
+
+test_that('wsim_extract works', {
+  basins <- tempfile(fileext='.json')
+  grid <- tempfile(fileext='.nc')
+  output <- tempfile(fileext='.nc')
+
+  write('{
+    "type": "FeatureCollection",
+    "features": [
+      { "type": "Feature", "properties": { "area_id" : 6 },
+        "geometry": { "type": "Polygon", "coordinates": [ [ [ 0.5, 0.5 ], [ 1.5, 0.5 ], [ 1.5, 1.5 ], [ 0.5, 1.5 ], [ 0.5, 0.5 ] ] ] } },
+      { "type": "Feature", "properties": { "area_id" : 22 },
+        "geometry": { "type": "Polygon", "coordinates": [ [ [ 0.2, 0.5 ], [ 1.5, 0.5 ], [ 1.5, 1.5 ], [ 0.5, 1.5 ], [ 0.2, 0.5 ] ] ] } }
+    ]}', basins)
+
+  write_vars_to_cdf(
+    list(
+      a=matrix(1:9, nrow=3, byrow=TRUE),
+      b=matrix(runif(9), nrow=3)),
+    filename=grid,
+    extent=c(0, 3, 0, 3)
+  )
+
+  return_code <- system2('./wsim_extract.R', args=c(
+    '--boundaries',   basins,
+    '--fid',          'area_id',
+    '--input',        grid,
+    '--stat',         'sum',
+    '--output',       output
+  ))
+
+  expect_equal(return_code, 0)
+
+  results <- read_vars(output)
+
+  expect_equal(results$ids, c(6, 22), check.attributes=FALSE)
+  expect_equal(names(results$data), c('a_sum', 'b_sum'))
+  expect_equal(results$data[['a_sum']][1], 6)
+  expect_equal(dim(results$data[['a_sum']]), c(1, 2))
+
+  # Fails with --keepvarnames and multiple stats
+  return_code <- system2('./wsim_extract.R', args=c(
+    '--boundaries',   basins,
+    '--fid',          'area_id',
+    '--input',        grid,
+    '--stat',         'sum',
+    '--stat',         'mean',
+    '--output',       output,
+    '--keepvarnames'
+  ))
+
+  expect_equal(return_code, 1)
+
+  # OK if we apply the stats to different vars
+  return_code <- system2('./wsim_extract.R', args=c(
+    '--boundaries',   basins,
+    '--fid',          'area_id',
+    '--input',        grid,
+    '--stat',         'sum::a',
+    '--stat',         'mean::b',
+    '--output',       output,
+    '--keepvarnames'
+  ))
+
+  expect_equal(return_code, 0)
+
+  results <- read_vars(output)
+  expect_equal(names(results$data), c('a', 'b'))
+  expect_equal(results$data[['a']][1], 6)
 })
