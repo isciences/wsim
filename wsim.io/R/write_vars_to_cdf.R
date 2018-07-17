@@ -71,7 +71,8 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
   is_spatial <- is.null(ids)
 
   standard_attrs <- list(
-    list(key="Conventions", val="CF-1.6")
+    list(key="Conventions", val="CF-1.6"),
+    list(key="wsim_version", val=wsim_version_string())
   )
 
   if (is.array(vars)) {
@@ -118,6 +119,19 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
       ncdf4::ncdim_def("id", units="", vals=coerce_to_integer(ids), create_dimvar=TRUE)
     )
   }
+
+  nlat <- dim(vars[[1]])[1]
+  nlon <- dim(vars[[1]])[2]
+
+  dlat <- (maxlat - minlat) / nlat
+  dlon <- (maxlon - minlon) / nlon
+
+  # Compute our lat/lon grid (NetCDF uses cell centers, not corners)
+  lats <- seq(maxlat - (dlat/2), minlat + (dlat/2), by=-dlat)
+  lons <- seq(minlon + (dlon/2), maxlon - (dlon/2), by=dlon)
+
+  latdim <- ncdf4::ncdim_def("lat", units="degrees_north", vals=as.double(lats), longname="Latitude", create_dimvar=TRUE)
+  londim <- ncdf4::ncdim_def("lon", units="degrees_east", vals=as.double(lons), longname="Longitude", create_dimvar=TRUE)
 
   # Create all variables, putting in blank strings for the units.  We will
   # overwrite this with the actual units, if they have been passed in
