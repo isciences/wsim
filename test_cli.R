@@ -465,6 +465,19 @@ test_that('wsim_flow accumulates flow based on downstream id linkage (basin-to-b
 
   expect_equal(output$data$Bt_RO, matrix(c(16, 10, 5, 7), nrow=1), check.attributes=FALSE)
 
+  # use same inputs but get downstream flow
+  return_code <- system2('./wsim_flow.R', args=c(
+    '--input',   flows,
+    '--flowdir', downstream,
+    '--varname', 'Bt_RO',
+    '--out',     accumulated,
+    '--invert'
+  ))
+
+  output <- wsim.io::read_vars(accumulated)
+
+  expect_equal(output$data$Bt_RO, matrix(c(0, 1, 1, 4), nrow=1), check.attributes=FALSE)
+
   file.remove(flows)
   file.remove(downstream)
   file.remove(accumulated)
