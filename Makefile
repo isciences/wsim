@@ -12,6 +12,9 @@ html:
 		$(MAKE) -C $${s} $@ || exit 1; \
 	done;
 
+publish-docs:
+	docs/_publish.sh
+
 build-ci:
 	docker build -f Dockerfile.gitlabci -t isciences/wsim-gitlabci:latest .
 
