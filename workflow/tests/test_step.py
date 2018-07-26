@@ -122,9 +122,7 @@ class TestStep(unittest.TestCase):
             ['touch', 'q/tagfile']])
 
         self.assertListEqual(s.get_mkdir_commands(), [
-            ['mkdir', '-p', 'd'],
-            ['mkdir', '-p', 'e'],
-            ['mkdir', '-p', 'q']
+            ['mkdir', '-p', 'd', 'e', 'q'],
         ])
 
     def test_tagged_dependencies(self):

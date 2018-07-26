@@ -14,8 +14,8 @@
 import re
 import unittest
 
-from ..step import Step
-from .gnu_make import write_step
+from wsim_workflow.step import Step
+from wsim_workflow.output.gnu_make import write_step
 
 def unformat(recipe):
     """
@@ -79,9 +79,8 @@ class TestGnuMake(unittest.TestCase):
 
         commands = unformat(write_step(s)).split('\n')[1:]
 
-        self.assertTrue('mkdir -p /src' in commands)
-        self.assertTrue('mkdir -p /tmp/fizz/fuzz' in commands)
-        self.assertEqual(2, len(commands))
+        self.assertTrue('mkdir -p /src /tmp/fizz/fuzz' in commands)
+        self.assertEqual(1, len(commands))
 
     def test_commands_arguments_aligned(self):
         s = Step(targets='outputs/results.nc', dependencies='inputs.nc', commands=[['process.py', '--input', 'inputs.nc', '--output', 'outputs/results.nc', '--compress', '3', '--nohistory']])

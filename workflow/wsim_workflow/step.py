@@ -170,4 +170,9 @@ class Step:
         """
         Get commands necessary to create directories for all targets
         """
-        return [ ['mkdir', '-p', d ] for d in sorted(self.working_directories) if d != '' ]
+        directories_to_create = [d for d in sorted(self.working_directories) if d != '']
+
+        if directories_to_create:
+            return [ ['mkdir', '-p'] + directories_to_create ]
+        else:
+            return []
