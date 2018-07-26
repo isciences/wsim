@@ -52,7 +52,7 @@ RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
 def expand_filename_dates(filename):
     # Short-circuit regex test.
     # This statement improves program runtime by ~50%.
-    if not '[' in filename:
+    if '[' not in filename:
         return [filename]
 
     match = re.search(RE_DATE_RANGE, filename)
@@ -187,14 +187,31 @@ class DefaultWorkspace:
     def root(self):
         return self.outputs
 
-    def make_path(self, dirname, thing, *, yearmon=None, window=None, target=None, member=None, temporary=False):
+    def make_path(self, thing, *, yearmon=None, window=None, target=None, member=None, temporary=False, basis=None, summary=False):
         return os.path.join(self.tempdir if temporary else self.outputs,
-                            dirname,
-                            self.make_filename(thing, yearmon=yearmon, window=window, target=target, member=member))
+                            self.make_dirname(thing, window, basis, summary),
+                            self.make_filename(thing,
+                                               yearmon=yearmon,
+                                               window=window,
+                                               target=target,
+                                               member=member,
+                                               basis=basis,
+                                               summary=summary))
 
     @staticmethod
-    def make_filename(thing, *, yearmon, window=None, target=None, member=None):
-        filename = thing
+    def make_stem(thing, basis, summary):
+        return '_'.join(filter(None, (basis, thing, 'summary' if summary else None)))
+
+    @staticmethod
+    def make_dirname(thing, window, basis, summary):
+        return '_'.join(filter(None, (basis,
+                                      thing,
+                                      'integrated' if window and window > 1 else None,
+                                      'summary' if summary else None)))
+
+    @staticmethod
+    def make_filename(thing, *, yearmon, window=None, target=None, member=None, basis=None, summary=False):
+        filename = DefaultWorkspace.make_stem(thing, basis, summary)
 
         if window:
             filename += '_{window}mo'
@@ -209,70 +226,59 @@ class DefaultWorkspace:
 
         filename += '.nc'
 
-        return filename.format(thing=thing, window=window, yearmon=yearmon, target=target, member=member)
+        return filename.format(thing=thing, window=window, yearmon=yearmon, target=target, member=member, basis=basis)
 
     # Summaries of data from multi-member forecast ensembles
     def composite_summary(self, *, yearmon, window, target=None):
         assert window is not None
-        return self.make_path('composite', 'composite', yearmon=yearmon, window=window, target=target)
+        return self.make_path('composite', yearmon=yearmon, window=window, target=target).replace('composite_integrated', 'composite')
 
     def composite_summary_adjusted(self, *, yearmon, window, target=None):
-        return self.make_path('composite_adjusted', 'composite_adjusted', yearmon=yearmon, window=window, target=target)
+        return self.make_path('composite_adjusted', yearmon=yearmon, window=window, target=target).replace('composite_adjusted_integrated', 'composite_adjusted')
 
     def composite_anomaly(self, *, yearmon, window, target=None):
-        return self.make_path('composite_anom', 'composite_anom', yearmon=yearmon, window=window, target=target)
+        return self.make_path('composite_anom', yearmon=yearmon, window=window, target=target).replace('composite_anom_integrated', 'composite_anom')
 
     def composite_anomaly_return_period(self, *, yearmon, window, target=None, temporary=False):
-        return self.make_path('composite_anom_rp', 'composite_anom_rp', yearmon=yearmon, window=window, target=target, temporary=temporary)
+        return self.make_path('composite_anom_rp', yearmon=yearmon, window=window, target=target, temporary=temporary).replace('composite_anom_rp_integrated', 'composite_anom_rp')
 
     def return_period_summary(self, *, yearmon, window, target):
         assert window is not None
 
-        root = 'rp_summary' if window == 1 else 'rp_integrated_summary'
-
-        return self.make_path(root, 'rp_summary', yearmon=yearmon, window=window, target=target)
+        return self.make_path('rp', yearmon=yearmon, window=window, target=target, summary=True)
 
     def standard_anomaly_summary(self, *, yearmon, window, target):
         assert window is not None
 
-        root = 'anom_summary' if window == 1 else 'anom_integrated_summary'
-
-        return self.make_path(root, 'anom_summary', yearmon=yearmon, window=window, target=target)
+        return self.make_path('anom', yearmon=yearmon, window=window, target=target, summary=True)
 
     def forcing_summary(self, *, yearmon, target):
-        return self.make_path('forcing_summary', 'forcing_summary', yearmon=yearmon, target=target)
+        return self.make_path('forcing', yearmon=yearmon, target=target, summary=True)
 
     def results_summary(self, *, yearmon, window, target=None):
-        root = 'results_summary' if window ==1 else 'results_integrated_summary'
-
-        return self.make_path(root, 'results_summary', yearmon=yearmon, window=window, target=target)
+        return self.make_path('results', yearmon=yearmon, window=window, target=target, summary=True)
 
     # Individual model inputs, outputs, and derivatives
     def state(self, *, yearmon, member=None, target=None):
-        return self.make_path('state', 'state', yearmon=yearmon, member=member, target=target)
+        return self.make_path('state', yearmon=yearmon, member=member, target=target, window=None)
 
     def forcing(self, *, yearmon, member=None, target=None):
-        return self.make_path('forcing', 'forcing', yearmon=yearmon, member=member, target=target)
+        return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=None)
 
-    def results(self, *, yearmon, window, member=None, target=None, temporary=False):
+    def results(self, *, yearmon, window, member=None, target=None, temporary=False, basis=None):
         assert window is not None
 
-        root = 'results' if window == 1 else 'results_integrated'
+        return self.make_path('results', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
 
-        return self.make_path(root, 'results', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary)
-
-    def return_period(self, *, yearmon, window, member=None, target=None, temporary=False):
+    def return_period(self, *, yearmon, window, member=None, target=None, temporary=False, basis=None):
         assert window is not None
 
-        root = 'rp' if window == 1 else 'rp_integrated'
-
-        return self.make_path(root, 'rp', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary)
+        return self.make_path('rp', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
 
     def standard_anomaly(self, *, yearmon, window, member=None, target=None, temporary=False):
         assert window is not None
 
-        root = 'anom' if window == 1 else 'anom_integrated'
-        return self.make_path(root, 'anom', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary)
+        return self.make_path('anom', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary)
 
     # Spinup files
     def initial_state(self):
