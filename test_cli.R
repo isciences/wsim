@@ -591,4 +591,8 @@ test_that('wsim_extract works', {
   results <- read_vars(output)
   expect_equal(names(results$data), c('a', 'b'))
   expect_equal(results$data[['a']][1], 6)
+
+  file.remove(basins)
+  file.remove(grid)
+  file.remove(output)
 })
