@@ -15,7 +15,7 @@ import datetime
 import sys
 
 def creation_string():
-    return 'Generated on {} by {}'.format(datetime.datetime.now(), ' '.join(sys.argv))
+    return 'Generated on {} by {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ' '.join(sys.argv))
 
 def add_line_continuation_characters(command_tokens):
     """
