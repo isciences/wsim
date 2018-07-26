@@ -20,7 +20,7 @@ class TestWorkspacePaths(unittest.TestCase):
     root = '/tmp'
     ws = DefaultWorkspace(root)
 
-    def testState(self):
+    def test_state(self):
         # Observed data
         self.assertEqual(
             join(self.root, 'state', 'state_201612.nc'),
@@ -33,7 +33,7 @@ class TestWorkspacePaths(unittest.TestCase):
             self.ws.state(yearmon='201612', target='201703', member='CFS13')
         )
 
-    def testForcing(self):
+    def test_forcing(self):
         # Observed data
         self.assertEqual(
             join(self.root, 'forcing', 'forcing_201612.nc'),
@@ -46,7 +46,7 @@ class TestWorkspacePaths(unittest.TestCase):
             self.ws.forcing(yearmon='201612', target='201703', member='CFS13')
         )
 
-    def testResults(self):
+    def test_results(self):
         # Observed data
         self.assertEqual(
             join(self.root, 'results', 'results_1mo_201612.nc'),
@@ -70,7 +70,7 @@ class TestWorkspacePaths(unittest.TestCase):
             self.ws.results(yearmon='201612', target='201703', member='CFS13', window=36)
         )
 
-    def testReturnPeriod(self):
+    def test_return_period(self):
         # Observed data
         self.assertEqual(
             join(self.root, 'rp', 'rp_1mo_201612.nc'),
@@ -94,7 +94,7 @@ class TestWorkspacePaths(unittest.TestCase):
             self.ws.return_period(yearmon='201612', target='201703', member='CFS13', window=36)
         )
 
-    def testCompositeSummary(self):
+    def test_composite_summary(self):
 
         # Observed data
         self.assertEqual(
@@ -118,7 +118,7 @@ class TestWorkspacePaths(unittest.TestCase):
             self.ws.composite_summary(yearmon='201612', target='201708', window=6)
         )
 
-    def testReturnPeriodSummary(self):
+    def test_return_period_summary(self):
 
         # Forecast data
         self.assertEqual(
@@ -131,7 +131,7 @@ class TestWorkspacePaths(unittest.TestCase):
             self.ws.return_period_summary(yearmon='201612', target='201708', window=6)
         )
 
-    def testResultsSummary(self):
+    def test_results_summary(self):
 
         # Forecast data
         self.assertEqual(
