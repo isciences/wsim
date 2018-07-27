@@ -60,3 +60,18 @@ test_that('latlon sequences are correct', {
   expect_equal(lats[1], 89.875)
   expect_equal(lons[1], -179.875)
 })
+
+test_that('integer coercion works', {
+  expect_true(is.integer(coerce_to_integer(1L)))
+  expect_true(is.integer(coerce_to_integer(1)))
+})
+
+test_that('integer coercion throws an error with an out-of-range input', {
+  expect_error(coerce_to_integer(.Machine$integer.max + 1),
+               'Values \\(\\d+\\) cannot be coerced')
+})
+
+test_that('integer coercion throws an error with non-integer floats', {
+  expect_error(coerce_to_integer(.Machine$integer.max + 1),
+               'Values \\(\\d+\\) cannot be coerced')
+})

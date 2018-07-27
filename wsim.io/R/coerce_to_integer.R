@@ -16,9 +16,14 @@ coerce_to_integer <- function(vals) {
     return(vals)
   }
 
-  int_vals <- as.integer(vals)
-  if (any(vals != int_vals)) {
-    stop("Values cannot be coerced to integers")
+  suppressWarnings(int_vals <- as.integer(vals))
+  errors <- sum(is.na(int_vals)) - sum(is.na(vals))
+  if (errors > 0) {
+    stop("Values ", "(", errors, ") cannot be coerced to integers (examples: ",
+         paste(head(vals[is.na(int_vals) & !is.na(vals)], 3), collapse=", "), ")")
+  }
+  if (any(int_vals != vals, na.rm=TRUE)) {
+    stop("Values (", sum(int_vals != vals, na.rm=TRUE), ") cannot be coerced to integers.")
   }
 
   return(int_vals)
