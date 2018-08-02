@@ -104,6 +104,7 @@ main <- function(raw_args) {
 
   first_input <- wsim.io::read_vars(inputs[[1]])
   extent <- first_input$extent
+  ids <- first_input$ids
   dims <- dim(first_input$data[[1]])
   var_attrs <- lapply(first_input$data, attributes)
 
@@ -177,7 +178,9 @@ main <- function(raw_args) {
     dimnames(data[[1]])[[3]][slice] <- parsed_inputs[[i]]$filename
 
     data_slice <- wsim.io::read_vars(make_vardef(filename=parsed_inputs[[i]]$filename,
-                                                 vars=vars_to_read))$data
+                                                 vars=vars_to_read),
+                                     expect.extent=extent,
+                                     expect.ids=ids)$data
 
     for (var_name in var_names) {
       data[[var_name]][,,slice] <- data_slice[[var_name]]
@@ -208,7 +211,7 @@ main <- function(raw_args) {
       }
 
       wsim.io::info("Writing to", outfiles[outfile_number])
-      wsim.io::write_vars_to_cdf(integrated, outfiles[outfile_number], extent=extent, attrs=attrs, prec='single', append=TRUE)
+      wsim.io::write_vars_to_cdf(integrated, outfiles[outfile_number], extent=extent, ids=ids, attrs=attrs, prec='single', append=TRUE)
       outfile_number <- outfile_number+1
     }
 
