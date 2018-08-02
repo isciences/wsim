@@ -97,6 +97,7 @@ main <- function(raw_args) {
     filename= args$output,
     extent= inputs$extent,
     ids= inputs$ids,
+    prec= 'single',
     append= TRUE
   )
 
