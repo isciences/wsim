@@ -24,7 +24,7 @@ from wsim_workflow import dates
 from wsim_workflow import spinup
 from wsim_workflow.workflow import generate_steps, find_duplicate_targets, write_makefile, unbuildable_targets
 
-from config_cfs import CFSConfig
+from .config_cfs import CFSConfig
 
 class TestCFSConfig(unittest.TestCase):
     source = '/tmp/source'

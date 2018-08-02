@@ -21,7 +21,7 @@ from wsim_workflow import dates
 from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import isric, gmted, stn30
+from wsim_workflow.data_sources import isric, gmted, stn30, hydrobasins
 from wsim_workflow.step import Step
 
 class CFSStatic(paths.Static):
@@ -32,7 +32,9 @@ class CFSStatic(paths.Static):
         return \
             gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, resolution=0.5) + \
             isric.global_tawc(source_dir=self.source, filename=self.wc().file, resolution=0.5) + \
-            stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5)
+            stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
+            hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
+            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file)
 
     # Static inputs
     def wc(self):
@@ -43,6 +45,12 @@ class CFSStatic(paths.Static):
 
     def elevation(self):
         return paths.Vardef(os.path.join(self.source, 'GMTED2010', 'gmted2010_05deg.tif'), '1')
+
+    def basins(self):
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05.shp'), '1')
+
+    def basin_downstream(self):
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
 
 class NCEP(paths.ObservedForcing):
 
