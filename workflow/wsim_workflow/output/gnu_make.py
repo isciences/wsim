@@ -96,11 +96,12 @@ def write_step(step, keys=None, use_order_only_rules=True):
     buff.write('\n')
 
     # Recipe
-    for command in step.get_mkdir_commands() + step.commands:
-        command = add_line_continuation_characters(command)
-        command = substitute_tokens(command, keys)
+    if step.commands:
+        for command in step.get_mkdir_commands() + step.commands:
+            command = add_line_continuation_characters(command)
+            command = substitute_tokens(command, keys)
 
-        write_command(buff, command, indent='\t')
+            write_command(buff, command, indent='\t')
 
     return buff.getvalue()
 
