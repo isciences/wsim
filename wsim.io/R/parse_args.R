@@ -26,13 +26,11 @@
 #' @export
 parse_args <- function(usage, args=commandArgs(TRUE), types=list()) {
   parsed <- tryCatch(docopt::docopt(usage, args), error=function(e) {
-    write('Error parsing args.', stderr())
-    write(usage, stdout())
-    if (interactive()) {
-      stop()
-    } else {
-      quit(status=1)
+    if (!interactive()) {
+      write(usage, stdout())
     }
+
+    stop('Error parsing args.')
   })
 
   for (arg in names(parsed)) {
