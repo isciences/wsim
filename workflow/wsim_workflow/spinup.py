@@ -17,7 +17,7 @@ from .commands import *
 from .dates import format_yearmon, all_months, get_next_yearmon
 from .paths import read_vars, date_range
 
-from .actions import create_forcing_file, compute_return_periods, composite_anomalies
+from .actions import create_forcing_file, compute_return_periods, composite_anomalies, fit_var
 
 def spinup(config, meta_steps):
     """
@@ -271,7 +271,7 @@ def run_lsm_from_mean_spinup_state(config):
         *tag_steps
     ]
 
-def time_integrate_results(config, window):
+def time_integrate_results(config, window, *, basis=None):
     """
     Integrate all LSM results with the given time window
     """
@@ -279,53 +279,26 @@ def time_integrate_results(config, window):
     yearmons_out = yearmons_in[window-1:]
 
     integrate = wsim_integrate(
-        inputs=read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in)),
-                         *config.lsm_integrated_vars().keys()),
+        inputs=read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
+                         *config.lsm_integrated_vars(basis=basis).keys()),
         window=window,
-        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats().items()],
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats(basis=basis).items()],
         attrs=['integration_period={}'.format(window)],
         output=config.workspace().results(yearmon=date_range(yearmons_out),
-                                          window=window)
+                                          window=window,
+                                          basis=basis)
     )
 
-    tag_name = config.workspace().tag('spinup_{}mo_results'.format(window))
+    tag_name = config.workspace().tag('{}spinup_{}mo_results'.format((basis + '_' if basis else ''), window))
 
     tag_steps = create_tag(name=tag_name, dependencies=integrate.targets)
 
     integrate.replace_targets_with_tag_file(tag_name)
-    integrate.replace_dependencies(config.workspace().tag('spinup_1mo_results'))
+    integrate.replace_dependencies(config.workspace().tag('{}spinup_1mo_results'.format((basis + '_') if basis else '')))
 
     return [
         integrate,
         *tag_steps
-    ]
-
-def fit_var(config, *, param, month, stat=None, window=1):
-    """
-    Compute fits for param in given month over fitting period
-    """
-    yearmons = [t for t in config.result_fit_yearmons()[window-1:] if int(t[-2:]) == month]
-    input_range = date_range(yearmons[0], yearmons[-1], 12)
-
-    if stat:
-        param_to_read = param + '_' + stat
-    else:
-        param_to_read = param
-
-    if param in ('T', 'Pr'):
-        assert window == 1
-
-        infile = config.workspace().forcing(yearmon=input_range)
-    else:
-        infile = config.workspace().results(yearmon=input_range, window=window)
-
-    # Step for fits
-    return [
-        wsim_fit(
-            distribution=config.distribution,
-            inputs=[ read_vars(infile, param_to_read) ],
-            output=config.workspace().fit_obs(var=param, stat=stat, month=month, window=window)
-        )
     ]
 
 def fit_composite_anomalies(config, *, window):

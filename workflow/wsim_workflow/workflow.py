@@ -18,6 +18,7 @@ import os
 from . import dates
 from . import monthly
 from . import spinup
+from . import electric_power
 
 from .step import Step
 
@@ -50,9 +51,11 @@ def generate_steps(config, start, stop, no_spinup, forecasts):
 
     if config.should_run_spinup() and not no_spinup:
         steps += spinup.spinup(config, meta_steps)
+        steps += electric_power.spinup(config, meta_steps)
 
     for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop)))):
         steps += monthly.monthly_observed(config, yearmon, meta_steps)
+        steps += electric_power.monthly_observed(config, yearmon, meta_steps)
 
         if forecasts == 'all' or (forecasts == 'latest' and i == 0):
             steps += monthly.monthly_forecast(config, yearmon, meta_steps)

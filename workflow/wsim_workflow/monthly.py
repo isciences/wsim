@@ -20,7 +20,6 @@ def monthly_observed(config, yearmon, meta_steps):
 
     # Skip if we would already have run this date as part of spinup
     if yearmon not in config.historical_yearmons():
-
         if config.should_run_lsm(yearmon):
             # Prepare the dataset for use (convert from GRIB to netCDF, compute pWetDays, etc.)
             steps += config.observed_data().prep_steps(yearmon=yearmon)
@@ -30,6 +29,8 @@ def monthly_observed(config, yearmon, meta_steps):
 
             # Run the LSM
             steps += run_lsm(config.workspace(), config.static_data(), yearmon=yearmon)
+
+
 
         steps += config.result_postprocess_steps(yearmon=yearmon)
 
