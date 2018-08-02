@@ -43,6 +43,25 @@ write_vars_to_cdf(list(
   extent=extent
 )
 
+test_that("all tools return 1 on error", {
+  tools <- c(
+    'wsim_anom.R',
+    'wsim_composite.R',
+    'wsim_correct.R',
+    'wsim_extract.R',
+    'wsim_fit.R',
+    'wsim_flow.R',
+    'wsim_integrate.R',
+    'wsim_lsm.R',
+    'wsim_merge.R'
+  )
+  
+  for (tool in tools) {
+    return_code <- system2(paste0('./', tool), args=c('--garbage', '--arguments'))
+    expect_equal(return_code, 1)
+  }
+})
+
 test_that("wsim_integrate can process a fixed set of files", {
   output <- paste0(tempfile(), '.nc')
 

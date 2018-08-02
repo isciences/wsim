@@ -218,9 +218,6 @@ main <- function(raw_args) {
   wsim.io::info("Finished writing integrated variables to", outfile)
 }
 
-#if (!interactive()) {
-#  tryCatch(
-options(error=function() traceback(2))
-    main(commandArgs(trailingOnly=TRUE))
-#    , error=wsim.io::die_with_message)
-#}
+tryCatch(
+  main(commandArgs(trailingOnly=TRUE))
+  ,error=wsim.io::die_with_message)
