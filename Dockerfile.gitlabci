@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   enchant \
   g++ \
   gcc \
+  gdal-bin \
   gfortran \
   libc-dev \
   libcurl4-openssl-dev \
