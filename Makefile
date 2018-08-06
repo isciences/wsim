@@ -16,7 +16,7 @@ publish-docs:
 	docs/_publish.sh
 
 build-ci:
-	docker build -f Dockerfile.gitlabci -t isciences/wsim-gitlabci:latest .
+	docker build -t isciences/wsim-gitlabci:latest - < Dockerfile.gitlabci
 
 push-ci:
 	docker push isciences/wsim-gitlabci:latest
