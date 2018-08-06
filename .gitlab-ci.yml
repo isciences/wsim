@@ -38,6 +38,9 @@ release-image:
                 - docker pull $CONTAINER_TEST_IMAGE
                 - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
                 - docker push $CONTAINER_RELEASE_IMAGE
+                - docker tag $CONTAINER_TEST_IMAGE isciences/wsim:${WSIM_VERSION_BASE}.$(docker run --rm -v $(pwd):/git alpine/git rev-list --count HEAD)
+                - docker push isciences/wsim:${WSIM_VERSION_BASE}.$(docker run --rm -v $(pwd):/git alpine/git rev-list --count HEAD)
+
         only:
                 - master
 
