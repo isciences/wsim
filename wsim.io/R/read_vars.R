@@ -186,7 +186,7 @@ check_extent <- function(def, data, extent) {
   }
 
   stop("Unexpected extent of ", def$filename,
-       " (expected [", paste(extent, collapse=", "), "] ",
+       " (expected [", paste(extent, collapse=", "), "]",
        ", got [", paste(data$extent, collapse=", "), "])")
 }
 
@@ -212,7 +212,7 @@ check_dims <- function(def, data, dims) {
   }
 
   stop("Unexpected dimensions of ", def$filename,
-       " (expected [", paste(dims, collapse=", "), "] ",
+       " (expected [", paste(dims, collapse=", "), "]",
        ", got [", paste(dim(data$data[[1]]), collapse=", "), "])")
 }
 
