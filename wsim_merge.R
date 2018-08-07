@@ -36,14 +36,16 @@ main <- function(raw_args) {
 
   for (input in inputs) {
     wsim.io::info('Processing', input)
-
-    v <- wsim.io::read_vars(input)
-
-    if (is.null(combined$extent)) {
+    
+    if (length(combined$data) == 0) {
+      v <- wsim.io::read_vars(input)
       combined$extent <- v$extent
     } else {
-      stopifnot(all(combined$extent == v$extent))
+      v <- wsim.io::read_vars(input,
+                              expect.extent=combined$extent,
+                              expect.dims=dim(combined$data[[1]]))
     }
+    
 
     for (var in names(v$data)) {
       if (var %in% names(combined$data)) {
