@@ -75,12 +75,12 @@ class TestGnuMake(unittest.TestCase):
         self.assertTrue('source.txt' in command_line)
 
     def test_target_directories_created_but_only_once(self):
-        s = Step(targets=['/tmp/fizz/fuzz/ok.txt', '/src/junk.h', '/src/junk.c'], dependencies=[], commands=[])
+        s = Step(targets=['/tmp/fizz/fuzz/ok.txt', '/src/junk.h', '/src/junk.c'], dependencies=[], commands=['do_something'])
 
         commands = unformat(write_step(s)).split('\n')[1:]
 
         self.assertTrue('mkdir -p /src /tmp/fizz/fuzz' in commands)
-        self.assertEqual(1, len(commands))
+        self.assertEqual(2, len(commands))
 
     def test_commands_arguments_aligned(self):
         s = Step(targets='outputs/results.nc', dependencies='inputs.nc', commands=[['process.py', '--input', 'inputs.nc', '--output', 'outputs/results.nc', '--compress', '3', '--nohistory']])
