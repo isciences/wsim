@@ -46,6 +46,12 @@ def spinup(config, meta_steps):
         for month in all_months:
             steps += all_fits.require(actions.fit_var(config, param=param, month=month, basis='basin'))
 
+    # Compute time-integrated fits
+    for window in config.integration_windows():
+        for param in config.lsm_integrated_var_names(basis='basin'):
+            for month in all_months:
+                steps += all_fits.require(actions.fit_var(config, param=param, window=window, month=month, basis='basin'))
+
     return steps
 
 
