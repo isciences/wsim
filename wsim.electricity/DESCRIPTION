@@ -1,0 +1,18 @@
+Package: wsim.electicity
+Title: WSIM functions for electric power assesment
+Version: 0.0.0.9000
+Authors@R: person("ISciences, L.L.C.", email = "dbaston@isciences.com", role = c("aut", "cre", "cph"))
+Description: The wsim.electricity package provides functions for the electric power assessment
+Depends: R (>= 3.4.0)
+License: file LICENSE
+Imports: raster, 
+         Rcpp (>= 0.12.12),
+         abind,
+         lmom,
+         stats,
+         methods
+LinkingTo: Rcpp
+Suggests: testthat, wsim.io
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
