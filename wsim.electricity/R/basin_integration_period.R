@@ -18,6 +18,7 @@
 #' @param expected_monthly_flow typical monthly total blue water, e.g., the location
 #'                              parameter of a fitted distribution
 #' @param available_periods     vector of available integration periods in months              
+#' @export
 basin_integration_period <- function(upstream_capacity, expected_monthly_flow, available_periods) {
   available_periods[findInterval(upstream_capacity / expected_monthly_flow,
                                  c(available_periods, Inf),
