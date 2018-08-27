@@ -19,7 +19,7 @@ images:
 	cd _generated ; \
 	for script in `find ../ -name "*.R"` ; do \
 		echo $${script}; \
-		Rscript $${script}; \
+		Rscript $${script} || exit 1;\
 	done \
 
 # Catch-all target: route all unknown targets to Sphinx using the new
