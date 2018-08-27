@@ -1,4 +1,4 @@
-Package: wsim.electicity
+Package: wsim.electricity
 Title: WSIM functions for electric power assesment
 Version: 0.0.0.9000
 Authors@R: person("ISciences, L.L.C.", email = "dbaston@isciences.com", role = c("aut", "cre", "cph"))
