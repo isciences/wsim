@@ -32,8 +32,20 @@ standard_anomaly <- function(distribution, dist_params, obs, min.sa=-100, max.sa
     stop("No quantile function available for distribution \"", distribution, "\"")
   }
 
-  pmin(pmax(stats::qnorm(quantile_fn(obs,
-                                     abind::adrop(dist_params[,,1, drop=FALSE], drop=3),
-                                     abind::adrop(dist_params[,,2, drop=FALSE], drop=3),
-                                     abind::adrop(dist_params[,,3, drop=FALSE], drop=3))), min.sa), max.sa)
+  if (is.array(dist_params)) {
+    # Observations are a matrix; fit parameters are a 3D array.
+    stopifnot(is.matrix(obs))
+    stopifnot(all(dim(obs) == dim(dist_params)[1:2]))
+
+    quantiles <- quantile_fn(obs,
+                             abind::adrop(dist_params[,,1, drop=FALSE], drop=3),
+                             abind::adrop(dist_params[,,2, drop=FALSE], drop=3),
+                             abind::adrop(dist_params[,,3, drop=FALSE], drop=3))
+  } else {
+    # Observations are a vector; fit parameters are constant.
+    stopifnot(length(dist_params) == 3)
+    quantiles <- quantile_fn(obs, dist_params[1], dist_params[2], dist_params[3])
+  }
+
+  pmin(pmax(stats::qnorm(quantiles), min.sa), max.sa)
 }

@@ -85,32 +85,62 @@ test_that('We return NA if our input observations are un-fittable', {
   expect_true(error_logger_called)
 })
 
-test_that('We can compute the standard anomales for a raster of observations given a RasterStack with the GEV fit parameters', {
+test_that('We can compute a standardized anomaly, given an observation and fit parameters', {
   # Take some GEV parameters
-  # (Source: WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Max_24mo_PE3GEV/Bt_RO_Max_24mo_gev)
-  # Cell 42,59
+  # (Source: WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Max_24mo_PE3GEV/Bt_RO_Max_24mo_gev-*_02')
+  # Cell 59,42
   location <-  7.66e+07
   scale    <-  5.17e+07
   shape    <- -1.18e-01
 
-  gev_params <- abind::abind(list(location= matrix(location),
-                                  scale= matrix(scale),
-                                  shape= matrix(shape)),
-                             along = 3)
-
   # Take an observed value
   # (Source: WSIM_derived_V1.2/Observed/SCI/Bt_RO_Max_24mo/Bt_RO_Max_24mo_trgt198402.img)
-  # Cell 42, 59
-  bt_ro_max_24mo <- matrix(c(81544304), nrow=1, ncol=1)
+  # Cell 59, 42
+  bt_ro_max_24mo <- 81544304
 
   # Expected anomaly value (z-score)
   # (Source: WSIM_derived_V1.2/Observed/anom/Bt_RO_Max_24mo_anom/Bt_RO_Max_24mo_anom_trgt198402.img)
-  # Cell 42,59
+  # Cell 59, 42
   expected_std_anomaly <- -0.246
 
-  std_anomalies <- standard_anomaly('gev', gev_params, bt_ro_max_24mo)
+  std_anomaly <- standard_anomaly('gev', c(location, scale, shape), bt_ro_max_24mo)
 
-  expect_equal(std_anomalies[1,1], expected_std_anomaly, tolerance=1e-3, check.attributes=FALSE)
+  expect_equal(std_anomaly, expected_std_anomaly, tolerance=1e-3, check.attributes=FALSE)
+})
+
+test_that('We can compute standardized anomalies, given a matrix of observations and a 3D array of fit parameters', {
+  # WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Max_24mo_PE3GEV/Bt_RO_Max_24mo_gev-xi_02.img)[59:60,42:44]
+  location <- rbind(
+    c(76619512, 76800640,  144836208),
+    c(69696832, 130211720,  96399960)
+  )
+
+  # WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Max_24mo_PE3GEV/Bt_RO_Max_24mo_gev-alpha_02.img)[59:60,42:44]
+  scale <- rbind(
+    c(51664956, 51632312, 103790888),
+    c(50352400, 90703368,  61651560)
+  )
+
+  # WSIM_derived_V1.2/DIST/Fit_1950_2009/Bt_RO_Max_24mo_PE3GEV/Bt_RO_Max_24mo_gev-kappa_02.img)[59:60,42:44]
+  shape <- rbind(
+    c(0.1177705, -0.1117633, -0.08378604),
+    c(0.2131017,  0.2907265,  0.31255856)
+  )
+
+  # WSIM_derived_V1.2/Observed/SCI/Bt_RO_Max_24mo/Bt_RO_Max_24mo_trgt198402.img[59:60,42:44]
+  obs <- rbind(
+    c(81544304,  90196464, 174569296),
+    c(92091520, 146239712, 123629424)
+  )
+
+  # WSIM_derived_V1.2/Observed/anom/Bt_RO_Max_24mo_anom/Bt_RO_Max_24mo_anom_trgt198402.img[59:60,42:44]
+  expected_std_anomaly <- rbind(
+    c(-0.24636453, -0.09788399, -0.07341547),
+    c( 0.08620062, -0.16551957,  0.09294514)
+  )
+
+  std_anomaly <- standard_anomaly('gev', abind::abind(location, scale, shape, along=3), obs)
+  expect_equal(std_anomaly, expected_std_anomaly, tolerance=1e-2, check.attributes=FALSE)
 })
 
 test_that('We get a comprehensible error message if the distribution passed to stanard_anomaly is invalid', {

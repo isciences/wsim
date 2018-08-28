@@ -30,16 +30,23 @@ double cdf(double x, double location, double scale, double shape);
 // Define a family of functions that computes the quantiles at each location of
 // a matrix.
 template<typename distribution>
-NumericMatrix quantiles(const NumericMatrix & data, const NumericMatrix & location, const NumericMatrix & scale, const NumericMatrix & shape) {
-  int rows = data.nrow();
-  int cols = data.ncol();
+NumericVector quantiles(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
+  size_t n = data.size();
+  NumericVector quantiles = no_init(n);
+  quantiles.attr("dim") = data.attr("dim");
 
-  NumericMatrix quantiles = no_init(rows, cols);
-
-  for (int j = 0; j < cols; j++) {
-    for (int i = 0; i < rows; i++) {
-      quantiles(i, j) = cdf<distribution>(data(i,j), location(i,j), scale(i,j), shape(i,j));
+  if (n == location.size() && n == scale.size() && n == shape.size()) {
+    // One set of distribution parameters for each observation.
+    for (size_t i = 0; i < n; i++) {
+      quantiles[i] = cdf<distribution>(data[i], location[i], scale[i], shape[i]);
     }
+  } else if (location.size() == 1 && scale.size() == 1 && shape.size() == 1) {
+    // Constant distribution parameters with multiple observations.
+    for (size_t i = 0; i < n; i++) {
+      quantiles[i] = cdf<distribution>(data[i], location[0], scale[0], shape[0]);
+    }
+  } else {
+    stop("Unexpected vector lengths.");
   }
 
   return quantiles;
@@ -185,19 +192,19 @@ double wsim_cdfgev(double x, double location, double scale, double shape) {
 //' @param scale    scale parameter from distribution fit
 //' @param shape    shape parameter from distribution fit
 //'
-//' @return a matrix of computed quantiles
+//' @return a vector of computed quantiles
 //' @export
 // [[Rcpp::export]]
-NumericMatrix gev_quantiles(const NumericMatrix & data, const NumericMatrix & location, const NumericMatrix & scale, const NumericMatrix & shape) {
+NumericVector gev_quantiles(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
   return quantiles<gev_tag>(data, location, scale, shape);
 }
 
 //' Compute the quantile of each observation in a matrix using the Pearson Type-III distribution
 //' @inheritParams gev_quantiles
-//' @return a matrix of computed quantiles
+//' @return a vector of computed quantiles
 //' @export
 // [[Rcpp::export]]
-NumericMatrix pe3_quantiles(const NumericMatrix & data, const NumericMatrix & location, const NumericMatrix & scale, const NumericMatrix & shape) {
+NumericVector pe3_quantiles(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
   return quantiles<pe3_tag>(data, location, scale, shape);
 }
 
