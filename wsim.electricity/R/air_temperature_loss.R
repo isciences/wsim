@@ -20,7 +20,7 @@ water2air <- function(Twater) {
   (Twater - 2.5) / 0.76
 }
 
-#' Estimate air temperature from ater temperature
+#' Estimate air temperature from air temperature
 #' 
 #' @param Tair air temperature [degrees C]
 #' @return estimated ater temperature [degrees C]
@@ -29,50 +29,39 @@ air2water <- function(Tair) {
   2.5 + Tair*0.76
 }
 
-eff_loss <- function() {
-  # original implementation has complex logic that seems to result in
-  # this being either 0.005 or 0.007
-  0.005  
-}
-
 #' Temperature loss
 #' 
-#' @param To     air temperature at
+#' @param To     air temperature [degrees C]
 #' @param To_rp  air temperature as a return period (yr). Negative values
 #'               indicate cold anomalies; positive values indicate warm
 #'               anomalies.
-#' @param Tc     optional air temperature at which cold losses begin
+#' @param Tc     optional air temperature [degrees C] at which cold losses begin
 #' @param Tc_rp  return period at which cold losses begin
-#' @param Teff   optional water temperature at which efficiency loss begins
+#' @param Teff   optional water temperature [degrees C] at which efficiency loss begins
 #' @param eff    efficiency loss per degree C above Teff
-#' @param Treg   optional regulatory limit water temperature
-#' @param Tdiff  effluent - influent water temperature
+#' @param Treg   optional regulatory limit water temperature [degrees C]
+#' @param Tdiff  effluent - influent water temperature [degrees C]
 #' @export
-temperature_loss <- function(To, To_rp, Tc=NULL, Tc_rp, Teff=NULL, eff, Treg=NULL, Tdiff) {
+temperature_loss <- function(To, To_rp=NA, Tc=NA, Tc_rp=NA, Teff=NA, eff=0.005, Treg=NA, Tdiff=NA) {
   loss_per_deg <- 1/30   
   
-  # TODO vectorize?
+  cold_loss <- wsim.lsm::coalesce(ifelse(
+    To <= Tc & To_rp < Tc_rp,
+    pmax(0, pmin(1, (Tc - To)*loss_per_deg)),
+    0), 0
+  )
   
-  if (!is.null(Tc) && To <= Tc && To_rp < Tc_rp) {
-    # Affected by cold
-    cold_loss <- pmax(0, pmin(1, (Tc - To)*loss_per_deg))
-  } else {
-    cold_loss <- 0
-  }
+  effluent_temperature_loss <- wsim.lsm::coalesce(ifelse(
+    To >= water2air(Treg - Tdiff),
+    pmax(0, pmin(1, (air2water(To) - (Treg - Tdiff)) / Tdiff)),
+    0), 0
+  )
   
-  if (!is.null(Treg) && To >= water2air(Treg - Tdiff))  {
-    # Affected by effluent temperature regulations
-    effluent_temperature_loss <- pmax(0, pmin(1, (air2water(To) - (Treg - Tdiff)) / Tdiff))
-  } else {
-    effluent_temperature_loss <- 0
-  }
-  
-  if (!is.null(Teff) && To >= water2air(Teff)) {
-    # Efficiency loss
-    efficiency_loss <- pmax(0, pmin(1, eff * (To - water2air(Teff))))
-  } else {
-    efficiency_loss <- 0
-  }
+  efficiency_loss <- wsim.lsm::coalesce(ifelse(
+    To >= water2air(Teff),
+    pmax(0, pmin(1, eff * (To - water2air(Teff)))),
+    0), 0
+  )
   
   pmax(cold_loss, efficiency_loss, effluent_temperature_loss)
 }

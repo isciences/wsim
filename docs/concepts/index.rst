@@ -6,6 +6,7 @@ WSIM Concepts
    
     anomaly_calculations
     composite_indices
+    electric_power
     forecast_bias_correction
     lsm
     spinup

@@ -13,15 +13,25 @@
 
 context('Air temperature loss')
 
+expect_increasing <- function(x) {
+  expect_true(!is.unsorted(x))
+}
+
+expect_decreasing <- function(x) {
+  expect_increasing(rev(x))
+}
+
 test_that('No cold-induced loss when temperature is above cold-loss threshold', {
   expect_equal(temperature_loss(To=8, To_rp=1, Tc=-15, Tc_rp=-30), 0)
 })
 
 test_that('Cold-induced temperature loss increases with decreasing temperatures', {
-  loss1 <- temperature_loss(To=-20, To_rp=-35, Tc=-15, Tc_rp=-30)
-  loss2 <- temperature_loss(To=-25, To_rp=-35, Tc=-15, Tc_rp=-30)
+  water_temps <- -20:-25 
   
-  expect_true(loss1 < loss2)
+  loss <- temperature_loss(To=water_temps, To_rp=-35, Tc=-15, Tc_rp=-30)
+  
+  expect_increasing(loss)
+  expect_equal(length(loss), length(water_temps))
 })
 
 test_that('There are no cold-induced temperature losses if the cold is not unusual', {
@@ -33,8 +43,10 @@ test_that('When water temperature is already above the regulatory limit, the pla
 })
 
 test_that('Above Teff, operating efficiency is reduced', {
-  loss1 <- temperature_loss(To=water2air(21), Teff=20, eff=0.005)
-  loss2 <- temperature_loss(To=water2air(22), Teff=20, eff=0.005)
+  water_temps <- 21:25
   
-  expect_true(loss2 > loss1)
+  loss <- temperature_loss(To=water2air(water_temps), Teff=20, eff=0.005)
+  
+  expect_increasing(loss)
+  expect_equal(length(loss), length(water_temps))
 })
