@@ -19,13 +19,14 @@ suppressMessages(require(Rcpp))
 '
 Bias-correct a forecast file
 
-Usage: wsim_correct --retro=<file>... --obs=<file>... --forecast=<file>... --output=<file> [--append]
+Usage: wsim_correct --retro=<file>... --obs=<file>... --forecast=<file>... --output=<file> [--attr=<attr>]... [--append]
 
 Options:
 --retro <file>    One or more netCDFs containing distribution fit parameters from retrospective forecast data (T in C, Pr in mm/month)
 --obs <file>      One or more netCDFs containing distribution fit parameters from observed data (T in C, Pr in mm/month)
 --forecast <file> One or more raster files containing forecast data to be corrected (T in K, Pr in mm/s)
 --output <file>   A netCDF file of bias-corrected data (T in C, Pr in mm/month)
+--attr <attr>     Optional attribute(s) to write to output netCDF file
 --append          Append output to existing file
 '->usage
 
@@ -47,7 +48,7 @@ main <- function(raw_args) {
   check_extent(obs_fits)
 
   corrected <- list()
-  attrs <- list()
+  attrs <- lapply(args$attr, wsim.io::parse_attr)
 
   for (input in args$forecast) {
     forecast <- wsim.io::read_vars(input)

@@ -46,6 +46,27 @@ test_that("we can write variables and attributes to a netCDF file", {
   file.remove(fname)
 })
 
+test_that("spatial data is written in a way that is comprehensible to GDAL", {
+  fname <- tempfile(fileext='.nc')
+
+  data <- matrix(runif(18*36), nrow=18)
+
+  write_vars_to_cdf(list(data=data),
+                    filename=fname,
+                    extent=c(-180, 180, -90, 90))
+
+  suppressWarnings(info <- rgdal::GDALinfo(fname))
+
+  expect_equal(info["rows"], 18, check.attributes=FALSE)
+  expect_equal(info["columns"], 36, check.attributes=FALSE)
+  expect_equal(info["ll.x"], -180, check.attributes=FALSE)
+  expect_equal(info["ll.y"], -90, check.attributes=FALSE)
+  expect_equal(info["res.x"], 10, check.attributes=FALSE)
+  expect_equal(info["res.y"], 10, check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
 test_that("vars can be written from rasters instead of raw matrices", {
   fname <- tempfile()
   data <- matrix(runif(4), nrow=2)
