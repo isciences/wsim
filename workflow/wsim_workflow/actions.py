@@ -336,7 +336,13 @@ def correct_forecast(data, *, member, target, lead_months):
                 data.fit_obs(month=target_month, var='T'),
                 data.fit_obs(month=target_month, var='Pr')
             ],
-            forecast=data.forecast_raw(member=member, target=target) +  '::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr',
-            output=data.forecast_corrected(member=member, target=target)
+            forecast=data.forecast_raw(member=member, target=target) + '::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr',
+            output=data.forecast_corrected(member=member, target=target),
+            attrs=[
+                "Pr:standard_name=precipitation_amount",
+                "Pr:units=mm",
+                "T:standard_name=surface_temperature",
+                "T:units=degree_Celsius"
+            ]
         )
     ]

@@ -55,7 +55,7 @@ test_that("all tools return 1 on error", {
     'wsim_lsm.R',
     'wsim_merge.R'
   )
-  
+
   for (tool in tools) {
     return_code <- system2(paste0('./', tool), args=c('--garbage', '--arguments'))
     expect_equal(return_code, 1)
@@ -311,6 +311,42 @@ test_that("wsim_merge can copy attributes from an input dataset", {
   expect_equal(attr(results$data$data_b, 'data_attr'), 4)
 
   file.remove(output)
+})
+
+test_that("wsim_merge fails if input datasets are not congruent", {
+  input_1 <- tempfile(fileext='.nc')
+  input_2 <- tempfile(fileext='.nc')
+  output <- tempfile(fileext='.nc')
+
+  data <- matrix(runif(12), nrow=3)
+  extent <- c(0, 1, 0, 1)
+
+  # Different resolution
+  wsim.io::write_vars_to_cdf(list(a=data), extent=extent, filename=input_1)
+  wsim.io::write_vars_to_cdf(list(b=t(data)), extent=extent, filename=input_2)
+
+  return_code <- system2('./wsim_merge.R', args=c(
+    '--input',  input_1,
+    '--input',  input_2,
+    '--output', output
+  ))
+
+  expect_equal(1, return_code)
+
+  # Different extent
+  wsim.io::write_vars_to_cdf(list(a=data), extent=extent,     filename=input_1)
+  wsim.io::write_vars_to_cdf(list(b=data), extent=(1+extent), filename=input_2)
+
+  return_code <- system2('./wsim_merge.R', args=c(
+    '--input',  input_1,
+    '--input',  input_2,
+    '--output', output
+  ))
+
+  expect_equal(1, return_code)
+
+  file.remove(input_1)
+  file.remove(input_2)
 })
 
 test_that("wsim_integrate doesn't propagage nonstandard _FillValue values", {
