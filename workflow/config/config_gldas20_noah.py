@@ -15,7 +15,7 @@ from wsim_workflow.step import Step
 from wsim_workflow import paths
 from wsim_workflow import dates
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import ntsg_drt
+from wsim_workflow.data_sources import ntsg_drt, hydrobasins
 
 import os
 
@@ -31,7 +31,10 @@ class GLDAS20_NoahStatic(paths.Static):
         self.flowdir_raw = os.path.join(self.source, 'NTSG_DRT', 'drt_flow_directions_025deg.asc')
 
     def global_prep_steps(self):
-        return ntsg_drt.global_flow_direction(filename=self.flowdir_raw, resolution=0.25) + self.extend_flowdir()
+        return \
+            ntsg_drt.global_flow_direction(filename=self.flowdir_raw, resolution=0.25) + self.extend_flowdir() + \
+            hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
+            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file)
 
     def extend_flowdir(self):
         return [Step(
@@ -50,6 +53,12 @@ class GLDAS20_NoahStatic(paths.Static):
 
     def flowdir(self):
         return paths.Vardef(os.path.join(self.source, 'NTSG_DRT', 'drt_flow_directions_025deg_gldas.tif'), var='1')
+
+    def basins(self):
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05.shp'), '1')
+
+    def basin_downstream(self):
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
 
 class GLDAS20_NoahConfig(ConfigBase):
 
@@ -87,26 +96,42 @@ class GLDAS20_NoahConfig(ConfigBase):
         return [ 12 ]
 
     @classmethod
-    def forcing_rp_vars(cls):
+    def forcing_rp_vars(cls, basis=None):
         return []
 
     @classmethod
-    def lsm_rp_vars(cls):
-        return [
-            'Bt_RO',
-            'PETmE',
-            'RO_mm',
-            'Ws'
-        ]
+    def lsm_rp_vars(cls, basis=None):
+        if not basis:
+            return [
+                'Bt_RO',
+                'PETmE',
+                'RO_mm',
+                'Ws'
+            ]
+
+        if basis == 'basin':
+            return [
+                'Bt_RO_m3'
+            ]
+
+        assert False
 
     @classmethod
-    def lsm_integrated_vars(cls):
-        return {
-            'Bt_RO'     : [ 'min', 'max', 'sum' ],
-            'PETmE'     : [ 'sum' ],
-            'RO_mm'     : [ 'sum' ],
-            'Ws'        : [ 'ave' ]
-        }
+    def lsm_integrated_vars(cls, basis=None):
+        if not basis:
+            return {
+                'Bt_RO'     : [ 'min', 'max', 'sum' ],
+                'PETmE'     : [ 'sum' ],
+                'RO_mm'     : [ 'sum' ],
+                'Ws'        : [ 'ave' ]
+            }
+
+        if basis == 'basin':
+            return {
+                'Bt_RO_m3' : [ 'sum' ]
+            }
+
+        assert False
 
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
         year, mon =  dates.parse_yearmon(yearmon)
