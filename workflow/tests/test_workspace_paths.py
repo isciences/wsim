@@ -253,10 +253,10 @@ class TestWorkspacePaths(unittest.TestCase):
     def test_fit_obs(self):
         self.assertEqual(
             join(self.root, 'fits', 'E_sum_6mo_month_04.nc'),
-            self.ws.fit_obs('E', 4, 6, 'sum')
+            self.ws.fit_obs(var='E', month=4, window=6, stat='sum')
         )
 
         self.assertEqual(
             join(self.root, 'fits', 'T_1mo_month_04.nc'),
-            self.ws.fit_obs('T', 4, 1)
+            self.ws.fit_obs(var='T', month=4, window=1)
         )

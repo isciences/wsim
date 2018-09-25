@@ -90,6 +90,33 @@ def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
         comment=comment
     )
 
+
+def wsim_extract(*, boundaries, fid, input, output, stats, keepvarnames=False, comment=None):
+    if isinstance(stats, str):
+        stats = [stats]
+
+    cmd = [
+        os.path.join('{BINDIR}', 'wsim_extract.R'),
+        '--boundaries', q(boundaries),
+        '--fid',        fid,
+        '--input',      q(input),
+        '--output',     q(output)
+    ]
+
+    for stat in stats:
+        cmd += ['--stat', stat]
+
+    if keepvarnames:
+        cmd.append('--keepvarnames')
+
+    return Step(
+        targets=output,
+        dependencies=[boundaries, input],
+        commands=[cmd],
+        comment=comment
+    )
+
+
 def wsim_fit(*, distribution, inputs, output, comment=None):
     dependencies = []
     targets = []
@@ -112,6 +139,25 @@ def wsim_fit(*, distribution, inputs, output, comment=None):
         commands=[cmd],
         comment=comment
     )
+
+
+def wsim_flow(*, input, flowdir, varname, output, comment=None):
+    cmd = [
+        os.path.join('{BINDIR}', 'wsim_flow.R'),
+        '--input',   q(input),
+        '--flowdir', q(flowdir),
+        '--varname', varname,
+        '--output',  output
+    ]
+
+    return Step(
+        targets=output,
+        dependencies=[input, flowdir],
+        commands=[cmd],
+        comment=comment
+    )
+
+
 
 def wsim_lsm(*, wc, flowdir, elevation, state, forcing, results, next_state, loop=None, comment=None):
     cmd = [

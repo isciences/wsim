@@ -13,8 +13,8 @@
 
 import itertools
 
-from .paths import read_vars, Vardef
-from .commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm
+from .paths import read_vars, Vardef, date_range
+from .commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm, wsim_extract, wsim_flow, wsim_fit
 from .dates import get_next_yearmon, rolling_window
 
 def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
@@ -39,6 +39,30 @@ def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
                 'Pr:standard_name'
             ]),
             output=workspace.forcing(yearmon=yearmon, target=target, member=member)
+        )
+    ]
+
+def run_b2b(workspace, static, yearmon, target=None, member=None):
+    pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
+    basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis='basin')
+
+    return [
+        wsim_extract(
+            # TODO static.basins().file strips any layer name provided (by file_name::layer_name)
+            # TODO should we allow ::layer_name syntax for shapefiles also?
+            boundaries=static.basins().file,
+            fid="HYBAS_ID",
+            input=read_vars(pixel_results, 'RO_m3'),
+            output=basin_results,
+            stats=['sum'],
+            keepvarnames=True
+        ).merge(
+            wsim_flow(
+                input=read_vars(basin_results, 'RO_m3'),
+                flowdir=static.basin_downstream(),
+                varname='Bt_RO_m3',
+                output=basin_results
+            )
         )
     ]
 
@@ -71,7 +95,7 @@ def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months
     ]
 
 
-def time_integrate(workspace, integrated_stats, *, yearmon, target=None, window=None, member=None, lead_months=None):
+def time_integrate(workspace, integrated_stats, *, yearmon, target=None, window=None, member=None, lead_months=None, basis=None):
     months = rolling_window(target if target else yearmon, window)
 
     if lead_months:
@@ -81,19 +105,19 @@ def time_integrate(workspace, integrated_stats, *, yearmon, target=None, window=
         window_observed = months
         window_forecast = []
 
-    prev_results = [workspace.results(yearmon=x, window=1) for x in window_observed] + \
-                   [workspace.results(yearmon=yearmon, member=member, target=x, window=1) for x in window_forecast]
+    prev_results = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
+                   [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
 
     return [
         wsim_integrate(
             inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev_results],
             stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
             attrs=['integration_period=' + str(window)],
-            output=workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=False)
+            output=workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=False, basis=basis)
         )
     ]
 
-def compute_return_periods(workspace, *, forcing_vars=None, result_vars=None, yearmon, window, target=None, member=None):
+def compute_return_periods(workspace, *, forcing_vars=None, result_vars=None, yearmon, window, target=None, member=None, basis=None):
     if target:
         month = int(target[-2:])
     else:
@@ -104,17 +128,20 @@ def compute_return_periods(workspace, *, forcing_vars=None, result_vars=None, ye
     if result_vars is None:
         result_vars = []
 
-    args = { 'yearmon' : yearmon, 'target' : target, 'window' : window, 'member' : member}
+    args = { 'yearmon' : yearmon, 'target' : target, 'window' : window, 'member' : member, 'basis' : basis }
+
+    if basis:
+        assert not forcing_vars
 
     return [
         wsim_anom(
-            fits=[workspace.fit_obs(var=var, window=window, month=month) for var in forcing_vars + result_vars],
+            fits=[workspace.fit_obs(var=var, window=window, month=month, basis=basis) for var in forcing_vars + result_vars],
             obs=[
                 read_vars(workspace.results(**args), *result_vars) if result_vars else None,
                 read_vars(workspace.forcing(yearmon=yearmon, target=target, member=member), *forcing_vars) if forcing_vars else None
             ],
-            rp=workspace.return_period(**args, temporary=False),
-            sa=workspace.standard_anomaly(**args, temporary=False)
+            rp=workspace.return_period(**args),
+            sa=workspace.standard_anomaly(**args)
         )
     ]
 
@@ -224,6 +251,37 @@ def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantil
             output=outfile
         )
     ]
+
+
+def fit_var(config, *, param, month, stat=None, window=1, basis=None):
+    """
+    Compute fits for param in given month over fitting period
+    """
+    yearmons = [t for t in config.result_fit_yearmons()[window-1:] if int(t[-2:]) == month]
+    input_range = date_range(yearmons[0], yearmons[-1], 12)
+
+    if stat:
+        param_to_read = param + '_' + stat
+    else:
+        param_to_read = param
+
+    if param in ('T', 'Pr'):
+        assert window == 1
+        assert basis is None
+
+        infile = config.workspace().forcing(yearmon=input_range)
+    else:
+        infile = config.workspace().results(yearmon=input_range, window=window, basis=basis)
+
+    # Step for fits
+    return [
+        wsim_fit(
+            distribution=config.distribution,
+            inputs=[ read_vars(infile, param_to_read) ],
+            output=config.workspace().fit_obs(var=param, stat=stat, month=month, window=window, basis=basis)
+        )
+    ]
+
 
 def forcing_summary(workspace, ensemble_members, *, yearmon, target):
     return [

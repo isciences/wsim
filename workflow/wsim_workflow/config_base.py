@@ -119,55 +119,79 @@ class ConfigBase(metaclass=abc.ABCMeta):
         return [ 3, 6, 12, 24, 36, 60 ]
 
     @staticmethod
-    def forcing_rp_vars():
+    def forcing_rp_vars(*, basis=None):
         """
         Provides a list of forcing variables for which return periods should be calculated
         """
-        return [
-            'T',
-            'Pr'
-        ]
+        if not basis:
+            return [
+                'T',
+                'Pr'
+            ]
+
+        if basis == 'basin':
+            return []
+
+        assert False
 
     @staticmethod
-    def lsm_rp_vars():
+    def lsm_rp_vars(*, basis=None):
         """
         Provides a list of LSM output variables for which return periods should be calculated
         """
-        return [
-            'Bt_RO',
-            'PETmE',
-            'PET',
-            'P_net',
-            'RO_mm',
-            'Sa',
-            'Sm',
-            'Ws'
-        ]
+
+        if not basis:
+            return [
+                'Bt_RO',
+                'PETmE',
+                'PET',
+                'P_net',
+                'RO_mm',
+                'Sa',
+                'Sm',
+                'Ws'
+            ]
+
+        if basis == 'basin':
+            return [
+                'Bt_RO_m3'
+            ]
+
+        assert False
 
     @classmethod
-    def lsm_integrated_vars(cls):
+    def lsm_integrated_vars(cls, basis=None):
         """
         Provides a dictionary whose keys are LSM output variables to be time-integrated, and whose
         values are lists of stats to apply to each of those variables (min, max, ave, etc.)
         """
-        return {
-            'Bt_RO'     : [ 'min', 'max', 'sum' ],
-            'E'         : [ 'sum' ],
-            'PETmE'     : [ 'sum' ],
-            'P_net'     : [ 'sum' ],
-            'RO_mm'     : [ 'sum' ],
-            'Ws'        : [ 'ave' ]
-        }
+
+        if not basis:
+            return {
+                'Bt_RO'     : [ 'min', 'max', 'sum' ],
+                'E'         : [ 'sum' ],
+                'PETmE'     : [ 'sum' ],
+                'P_net'     : [ 'sum' ],
+                'RO_mm'     : [ 'sum' ],
+                'Ws'        : [ 'ave' ]
+            }
+
+        if basis == 'basin':
+            return {
+                'Bt_RO_m3' : [ 'sum' ]
+            }
+
+        assert False
 
     @classmethod
-    def lsm_integrated_stats(cls):
+    def lsm_integrated_stats(cls, basis=None):
         """
         Provides a dictionary whose keys are stat names and whose values are a list of variables
         two which that stat should be applied. It can be thought of as the inverse of lsm_integrated_vars()
         """
         integrated_stats = {}
 
-        for var, varstats in cls.lsm_integrated_vars().items():
+        for var, varstats in cls.lsm_integrated_vars(basis=basis).items():
             for stat in varstats:
                 if stat not in integrated_stats:
                     integrated_stats[stat] = []
@@ -177,9 +201,9 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
 
     @classmethod
-    def lsm_integrated_var_names(cls):
+    def lsm_integrated_var_names(cls, basis=None):
         """
         Provides a flat list of time-integrated variable names
         """
-        return [var + '_' + stat for var, stats in cls.lsm_integrated_vars().items() for stat in stats]
+        return [var + '_' + stat for var, stats in cls.lsm_integrated_vars(basis=basis).items() for stat in stats]
 

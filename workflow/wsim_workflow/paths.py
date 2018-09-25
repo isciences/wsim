@@ -275,10 +275,10 @@ class DefaultWorkspace:
 
         return self.make_path('rp', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
 
-    def standard_anomaly(self, *, yearmon, window, member=None, target=None, temporary=False):
+    def standard_anomaly(self, *, yearmon, window, member=None, target=None, temporary=False, basis=None):
         assert window is not None
 
-        return self.make_path('anom', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary)
+        return self.make_path('anom', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
 
     # Spinup files
     def initial_state(self):
@@ -305,8 +305,13 @@ class DefaultWorkspace:
         return os.path.join(self.outputs, 'tags', name)
 
     # Distribution fit files
-    def fit_obs(self, var, month, window, stat=None):
-        filename = '{var}'
+    def fit_obs(self, *, var, month, window, stat=None, basis=None):
+        assert window is not None
+
+        if basis:
+            filename = '{basis}_{var}'
+        else:
+            filename = '{var}'
 
         if stat:
             filename += '_{stat}'
