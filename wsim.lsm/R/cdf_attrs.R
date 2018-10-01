@@ -28,15 +28,15 @@ cdf_attrs <- list(
   ),
   list(
     var="Bt_RO",
-    description="Total Blue Water (mm)",
+    description="Total Blue Water (m3)",
     long_name="Total Blue Water",
-    units="mm"
+    units="m^3"
   ),
   list(
     var="Bt_Runoff",
-    description="Total Blue Water, not accounting for detention (mm)",
+    description="Total Blue Water, not accounting for detention (m3)",
     long_name="Total Blue Water",
-    units="mm"
+    units="m^3"
   ),
   list(
     var="RO_mm",
