@@ -280,7 +280,12 @@ test_that('we can write model results to netCDF', {
 
   iter <- wsim.lsm::run(static, state, forcing)
 
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
   wsim.lsm::write_lsm_values_to_cdf(iter$obs, fname, prec='double')
+
+  wsim.lsm::write_lsm_values_to_cdf(state, fname, prec='double')
+
+  expect_true(TRUE)
+
   file.remove(fname)
 })
