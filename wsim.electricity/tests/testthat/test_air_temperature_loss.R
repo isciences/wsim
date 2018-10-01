@@ -26,27 +26,36 @@ test_that('No cold-induced loss when temperature is above cold-loss threshold', 
 })
 
 test_that('Cold-induced temperature loss increases with decreasing temperatures', {
-  water_temps <- -20:-25 
+  plant_air_temps <- -20:-25 
   
-  loss <- temperature_loss(To=water_temps, To_rp=-35, Tc=-15, Tc_rp=-30)
+  loss <- temperature_loss(To=plant_air_temps, To_rp=-35, Tc=-15, Tc_rp=-30)
   
   expect_increasing(loss)
-  expect_equal(length(loss), length(water_temps))
+  expect_equal(length(loss), length(plant_air_temps))
 })
 
 test_that('There are no cold-induced temperature losses if the cold is not unusual', {
   expect_equal(temperature_loss(To=-100, To_rp=-15, Tc=-15, Tc_rp=-30), 0)  
 })
 
-test_that('When water temperature is already above the regulatory limit, the plant cannot operate (100% loss)', {
-  expect_equal(temperature_loss(To=water2air(32) + 0.001, Treg=32, Tdiff=8), 1)  
+test_that('When basin water temperature is already above the regulatory limit, the plant cannot operate (100% loss)', {
+  expect_equal(temperature_loss(Tbas=water2air(32) + 0.001, Treg=32, Tdiff=8), 1)  
+})
+
+test_that('If the temperature does not rise above the regulatory limit, there is no loss', {
+  expect_equal(temperature_loss(Tbas=water2air(24) - 0.001, Treg=32, Tdiff=8), 0)  
+  expect_equal(temperature_loss(Tbas=water2air(32) - 0.001, Treg=32, Tdiff=0), 0)  
+})
+
+test_that('If the temperature rises above the regulatory limit, production must be scaled back', {
+  temps <- 24:32
+  expect_increasing(temperature_loss(Tbas=temps, Treg=32, Tdiff=8))
 })
 
 test_that('Above Teff, operating efficiency is reduced', {
-  water_temps <- 21:25
-  
-  loss <- temperature_loss(To=water2air(water_temps), Teff=20, eff=0.005)
+  plant_air_temps <- 21:25
+  loss <- temperature_loss(To=plant_air_temps, Teff=20, eff=0.005)
   
   expect_increasing(loss)
-  expect_equal(length(loss), length(water_temps))
+  expect_equal(length(loss), length(plant_air_temps))
 })

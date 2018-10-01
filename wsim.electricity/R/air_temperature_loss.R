@@ -31,10 +31,11 @@ air2water <- function(Tair) {
 
 #' Temperature loss
 #' 
-#' @param To     air temperature [degrees C]
-#' @param To_rp  air temperature as a return period (yr). Negative values
+#' @param To     air temperature at plant [degrees C]
+#' @param To_rp  air temperature at plant as a return period (yr). Negative values
 #'               indicate cold anomalies; positive values indicate warm
 #'               anomalies.
+#' @param Tbas   basin air temperature [degrees C]
 #' @param Tc     optional air temperature [degrees C] at which cold losses begin
 #' @param Tc_rp  return period at which cold losses begin
 #' @param Teff   optional water temperature [degrees C] at which efficiency loss begins
@@ -42,21 +43,32 @@ air2water <- function(Tair) {
 #' @param Treg   optional regulatory limit water temperature [degrees C]
 #' @param Tdiff  effluent - influent water temperature [degrees C]
 #' @export
-temperature_loss <- function(To, To_rp=NA, Tc=NA, Tc_rp=NA, Teff=NA, eff=0.005, Treg=NA, Tdiff=NA) {
-  loss_per_deg <- 1/30   
+temperature_loss <- function(To=NA, To_rp=NA, Tbas=NA, Tc=NA, Tc_rp=NA, Teff=NA, eff=0.005, Treg=NA, Tdiff=NA) {
   
+  # Loss occurs to cold air temperatures at a rate of `loss_per_deg` per
+  # degree below `Tc`, but only if `Tc` has a return period greater than
+  # `Tc_rp`.
+  loss_per_deg <- 1/30   
   cold_loss <- wsim.lsm::coalesce(ifelse(
     To <= Tc & To_rp < Tc_rp,
     pmax(0, pmin(1, (Tc - To)*loss_per_deg)),
     0), 0
   )
   
+  # Plants with once-through cooling may be subject to a regulatory limit
+  # temperature `Treg`. Water enters the plant at a water temperature 
+  # derived from air temperature `Tbas` and increases by `Tdiff` at full
+  # production capacity. If this would cause the effluent water temperature
+  # to be greater than `Teff`, then the plant production must be linearly
+  # scaled back to obtain an effluent temperature of `Teff`.
   effluent_temperature_loss <- wsim.lsm::coalesce(ifelse(
-    To >= water2air(Treg - Tdiff),
-    pmax(0, pmin(1, (air2water(To) - (Treg - Tdiff)) / Tdiff)),
+    Tbas >= water2air(Treg - Tdiff),
+    pmax(0, pmin(1, (air2water(Tbas) - (Treg - Tdiff)) / Tdiff)),
     0), 0
   )
   
+  # Plants incur an efficiency loss at a rate of `eff` for each degree in
+  # air temperature above `Teff`.
   efficiency_loss <- wsim.lsm::coalesce(ifelse(
     To >= water2air(Teff),
     pmax(0, pmin(1, eff * (To - water2air(Teff)))),
