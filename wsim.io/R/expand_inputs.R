@@ -138,6 +138,7 @@ date_range <- function(start, stop, step) {
 #' @param yyyy year in YYYY format
 #' @param n    number of years to add
 #' @return yyyy + n
+#' @export
 add_years <- function(yyyy, n) {
   sprintf("%04d", as.integer(yyyy) + n)
 }
@@ -147,11 +148,17 @@ add_years <- function(yyyy, n) {
 #' @param yyyymm date in YYYYMM format
 #' @param n      number of months to add to date
 #' @return yyyymm + n
+#' @export
 add_months <- function(yyyymm, n) {
   year <-  as.integer(substr(yyyymm, 1, 4))
   month <- as.integer(substr(yyyymm, 5, 6))
 
   month <- month + n
+
+  while(month <= 0) {
+    month <- month + 12
+    year <- year - 1
+  }
 
   while(month > 12) {
     month <- month - 12
@@ -166,6 +173,7 @@ add_months <- function(yyyymm, n) {
 #' @param yyyymmdd date in YYYYMMDD format
 #' @param n        number of days to add to date
 #' @return yyyymmdd + n
+#' @export
 add_days <- function(yyyymmdd, n) {
   strftime(as.Date(yyyymmdd, "%Y%m%d") + n, "%Y%m%d")
 }
