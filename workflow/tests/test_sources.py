@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 import unittest
 
-from wsim_workflow.data_sources import isric, stn30, gmted, ntsg_drt
+from wsim_workflow.data_sources import isric, stn30, gmted, ntsg_drt, aqueduct
 from wsim_workflow.output import gnu_make
 from wsim_workflow.workflow import write_makefile
 
@@ -81,3 +81,11 @@ class TestSources(unittest.TestCase):
 
         self.assertEqual(0, return_code)
 
+
+    @unittest.skip
+    def test_aqueduct_baseline_water_stress(self):
+        steps = aqueduct.baseline_water_stress(source_dir=self.source_dir, filename=self.outfile)
+
+        return_code = execute_steps(steps, self.outfile)
+
+        self.assertEqual(0, return_code)
