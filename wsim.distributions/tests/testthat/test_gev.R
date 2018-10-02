@@ -119,15 +119,3 @@ test_that('We get a comprehensible error message if the distribution passed to s
                                 matrix(0.5)),
                'No quantile function available')
 })
-
-test_that('We can convert an standardized anomaly value into a return period', {
-  # Expected return period
-  # Source: WSIM_derived_V1.2/Observed/Freq/Bt_RO_Max_24mo_freq/Bt_RO_Max_24mo_freq_trgt198402.img
-  # Cell 42, 59
-  expected_return_period <- -2.483
-
-  zscore <- -0.246
-  return_period <- sa2rp(zscore)
-
-  expect_equal(return_period, expected_return_period, tolerance=1e-3)
-})
