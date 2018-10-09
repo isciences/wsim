@@ -6,10 +6,11 @@ RUN apt-get update  && apt-get install -y \
 
 RUN apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
 
-RUN echo "deb http://cran.rstudio.com/bin/linux/debian stretch-cran34/\n" \
+RUN echo "deb http://cran.rstudio.com/bin/linux/debian stretch-cran35/\n" \
   >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+  cmake \
   enchant \
   g++ \
   gcc \
@@ -83,6 +84,20 @@ RUN wget -P /tmp https://bootstrap.pypa.io/get-pip.py && \
       sphinxcontrib.spelling \
       sphinxcontrib.bibtex
 
+# Install exactextract
+RUN wget -P /tmp https://github.com/isciences/exactextract/archive/master.zip && \
+    cd /tmp && \
+    unzip master.zip && \
+    rm master.zip && \
+    cd exactextract-master && \
+    mkdir cmake-build-release && \
+    cd cmake-build-release && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    make exactextract_bin && \
+    make install && \
+    cd /tmp && \
+    rm -rf exactextract-master
+    
 ADD https://s3.us-east-2.amazonaws.com/wsim-regression-data/testdata.tar.gz /
 RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
 
