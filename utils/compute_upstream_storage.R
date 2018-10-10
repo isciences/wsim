@@ -1,0 +1,76 @@
+#!/usr/bin/env Rscript
+
+suppressMessages({
+  library(dplyr)
+  library(sf)
+  library(wsim.io)
+  library(wsim.lsm)           # for accumulate
+  library(wsim.distributions) # to get median flow from distribution
+})
+
+'
+Compute an upstream hydroelectric storage capacity for each basin
+
+Usage: compute_upstream_storage --flow <file> --dams <file> --basins <file> --output <file>
+
+Options:
+--flow <file>     A fitted distribution of annual total blue water
+--dams <file>     A point shapefile of dam locations. Must provide a CAP_MCM field providing
+                  reservoir capacity in millions of cubic meters.
+--basins <file>   A polygon shapefile providing basin boundaries, used to associate
+                  each dam with a basin. Must provide a HYBAS_ID id field and a
+                  NEXT_DOWN field indicating the HYBAS_ID of the downstream basin.
+--output <file>   A netCDF file with a "months_capacity" variable
+'->usage
+
+assign_to_bin <- function(vals, bins) {
+  bins[findInterval(vals, c(bins, Inf), all.inside=TRUE)]
+}
+
+bins <- c(1, 3, 6, 12, 24, 36)
+
+main <- function(raw_args) {
+  args <- parse_args(usage, raw_args)
+
+  if (!can_write(args$output))
+    die_with_message("Cannot open", args$capacity_file, "for writing.")
+
+  dams <- st_read(args$dams)
+  basins <- st_read(args$basins)
+  names(dams) <- tolower(names(dams))
+  names(basins) <- tolower(names(basins))
+
+  fit <- read_vars(args$flow)
+  qua <- wsim.distributions::find_qua(fit$attrs$distribution)
+
+  params <- t(do.call(rbind, fit$data))
+  medians <- apply(params, 1, function(p) if (any(is.na(p))) { p[1] } else { qua(0.5, p) })
+  flow_df <- as.tbl(data.frame(hybas_id=fit$ids, flow_12mo_mcm=medians*1e-6))
+
+  # Remove dams that are used for irrigation, water supply, or fire control, unless they're
+  # explicitly noted as being used for electricity production
+  hydro_dams <- filter(dams, !is.na(use_elec) | (is.na(use_irri) & is.na(use_supp) & is.na(use_fcon)))
+
+  basin_capacity <- basins %>%
+    st_join(hydro_dams, join=st_intersects, left=TRUE, largest=FALSE) %>%
+    st_set_geometry(NULL)	%>%
+    group_by(hybas_id, next_down) %>%
+    summarise(capacity=coalesce(sum(cap_mcm), 0)) %>%
+    ungroup() %>%
+    mutate(capacity_upstream=accumulate(hybas_id, next_down, capacity)) %>%
+    left_join(flow_df) %>%
+    mutate(months_storage=assign_to_bin(capacity_upstream / (flow_12mo_mcm / 12), bins))
+
+  write_table_to_cdf(basin_capacity[, c('hybas_id', 'months_storage')],
+  				   args$output,
+  				   prec=list(months_storage='integer'))
+}
+
+test_args <- list(
+  '--flow',   '/home/dbaston/wsim/jul31/fits/basin_Bt_RO_m3_sum_12mo_month_12.nc',
+  '--dams',   '/mnt/fig/Data_Global/GRanD/GRanD_Version_1_1/GRanD_dams_v1_1.shp',
+  '--basins', '/mnt/fig_rw/WSIM_DEV/source/HydroBASINS/basins_lev05.shp',
+  '--output', '/tmp/capacity.nc'
+)
+
+main(commandArgs(trailingOnly=TRUE))
