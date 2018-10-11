@@ -330,8 +330,9 @@ class DefaultWorkspace:
         return os.path.join(self.outputs, 'tags', name)
 
     # Distribution fit files
-    def fit_obs(self, *, var, month, window, stat=None, basis=None):
+    def fit_obs(self, *, var: str, month: int=None, window: int, stat: str=None, basis: str=None, annual_stat: str=None):
         assert window is not None
+        assert (annual_stat is None) != (month is None)
 
         if basis:
             filename = '{basis}_{var}'
@@ -344,7 +345,13 @@ class DefaultWorkspace:
         if window:
             filename += '_{window}mo'
 
-        filename += '_month_{month:02d}.nc'
+        if annual_stat:
+            filename += '_annual_{annual_stat}'
+
+        if month:
+            filename += '_month_{month:02d}'
+
+        filename += '.nc'
 
         return os.path.join(self.outputs, 'fits', filename.format_map(locals()))
 

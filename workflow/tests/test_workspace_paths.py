@@ -261,6 +261,18 @@ class TestWorkspacePaths(unittest.TestCase):
             self.ws.fit_obs(var='T', month=4, window=1)
         )
 
+        self.assertEqual(
+            join(self.root, 'fits', 'Bt_RO_sum_3mo_annual_min.nc'),
+            self.ws.fit_obs(var='Bt_RO', stat='sum', window=3, annual_stat='min')
+        )
+
+        with self.assertRaises(AssertionError):
+            self.ws.fit_obs(var='Bt_RO', stat='sum', window=3)  # no month, and no annual stat
+
+        with self.assertRaises(AssertionError):
+            # can't have month for an annual stat
+            self.ws.fit_obs(var='Bt_RO', stat='sum', window=3, annual_stat='min', month=4)
+
     def test_results_annual(self):
         self.assertEqual(
             join(self.root, 'basin_results_annual', 'basin_results_1mo_1950.nc'),
