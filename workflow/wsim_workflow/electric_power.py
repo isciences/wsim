@@ -13,12 +13,11 @@
 
 from . import actions
 
-from .commands import create_tag
-from .dates import all_months
+from .commands import wsim_integrate
+from .dates import all_months, format_yearmon
 from .spinup import time_integrate_results
 from .step import Step
-
-from functools import reduce
+from .paths import date_range, read_vars
 
 def spinup(config, meta_steps):
     steps = []
@@ -51,6 +50,27 @@ def spinup(config, meta_steps):
         for param in config.lsm_integrated_var_names(basis='basin'):
             for month in all_months:
                 steps += all_fits.require(actions.fit_var(config, param=param, window=window, month=month, basis='basin'))
+
+    # Compute annual min flows, for subannual intergration periods
+    for window in [1] + config.integration_windows():
+        if window < 12:
+            for year in config.result_fit_years():
+                steps += [
+                    wsim_integrate(stats='min',
+                                   inputs=read_vars(config.workspace().results(
+                                       yearmon=date_range(format_yearmon(year, all_months[0]),
+                                                          format_yearmon(year, all_months[-1])),
+                                       window=window,
+                                       basis='basin'),
+                                       'Bt_RO' if window == 1 else 'Bt_RO_sum'
+                                   ),
+                                   output=config.workspace().results(
+                                       year=year,
+                                       window=window,
+                                       basis='basin'
+                                   ))
+
+                ]
 
     return steps
 
