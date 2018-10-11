@@ -63,12 +63,19 @@ class TestDates(unittest.TestCase):
 
     def test_add_years(self):
         self.assertEqual('2004', add_years('1996', 8))
+        
+        self.assertEqual('2004', add_years('2013', -9))
 
     def test_add_months(self):
         self.assertEqual('200406', add_months('199606', 8*12))
 
+        self.assertEqual('200406', add_months('200507', -13))
+        self.assertEqual('200312', add_months('200401', -1))
+
     def test_add_days(self):
         self.assertEqual('20170225', add_days('20160225', 366))
+
+        self.assertEqual('20000229', add_days('20000301', -1))
 
     def test_date_range(self):
         self.assertListEqual(

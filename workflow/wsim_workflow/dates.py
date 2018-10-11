@@ -130,6 +130,9 @@ def add_months(yyyymm, n):
     while month > 12:
         month -= 12
         year += 1
+    while month <= 0:
+        month += 12
+        year -= 1
 
     return '{:04d}{:02d}'.format(year, month)
 
