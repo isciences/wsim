@@ -260,3 +260,18 @@ class TestWorkspacePaths(unittest.TestCase):
             join(self.root, 'fits', 'T_1mo_month_04.nc'),
             self.ws.fit_obs(var='T', month=4, window=1)
         )
+
+    def test_results_annual(self):
+        self.assertEqual(
+            join(self.root, 'basin_results_annual', 'basin_results_1mo_1950.nc'),
+                 self.ws.results(year=1950, window=1, basis='basin')
+        )
+
+        self.assertEqual(
+            join(self.root, 'results_integrated_annual', 'results_3mo_1950.nc'),
+            self.ws.results(year=1950, window=3)
+        )
+
+        with self.assertRaises(AssertionError):
+            # Can't have an annual summary with a 24-month integration period
+            self.ws.results(year=1950, window=24)

@@ -15,6 +15,7 @@ import os
 import re
 
 from abc import ABCMeta, abstractmethod
+from typing import Union
 
 from . import dates
 
@@ -187,11 +188,22 @@ class DefaultWorkspace:
     def root(self):
         return self.outputs
 
-    def make_path(self, thing, *, yearmon=None, window=None, target=None, member=None, temporary=False, basis=None, summary=False):
+    def make_path(self, thing:str, *,
+                  year:int=None,
+                  yearmon:str=None,
+                  window:int=None,
+                  target:str=None,
+                  member:str=None,
+                  temporary:bool=False,
+                  basis:str=None,
+                  summary:bool=False):
+
+        assert (year is None) != (yearmon is None)
+
         return os.path.join(self.tempdir if temporary else self.outputs,
-                            self.make_dirname(thing, window, basis, summary),
+                            self.make_dirname(thing, window, basis, summary, year is not None),
                             self.make_filename(thing,
-                                               yearmon=yearmon,
+                                               time=yearmon or year,
                                                window=window,
                                                target=target,
                                                member=member,
@@ -203,20 +215,28 @@ class DefaultWorkspace:
         return '_'.join(filter(None, (basis, thing, 'summary' if summary else None)))
 
     @staticmethod
-    def make_dirname(thing, window, basis, summary):
+    def make_dirname(thing, window:int, basis:str, summary:bool, annual:bool):
         return '_'.join(filter(None, (basis,
                                       thing,
                                       'integrated' if window and window > 1 else None,
-                                      'summary' if summary else None)))
+                                      'summary' if summary else None,
+                                      'annual' if annual else None
+                                      )))
 
     @staticmethod
-    def make_filename(thing, *, yearmon, window=None, target=None, member=None, basis=None, summary=False):
+    def make_filename(thing: str, *,
+                      time: Union[int,str]=None,
+                      window: int=None,
+                      target: str=None,
+                      member: str=None,
+                      basis: str=None,
+                      summary: bool=False):
         filename = DefaultWorkspace.make_stem(thing, basis, summary)
 
         if window:
             filename += '_{window}mo'
 
-        filename += '_{yearmon}'
+        filename += '_{time}'
 
         if target:
             filename += '_trgt{target}'
@@ -226,7 +246,7 @@ class DefaultWorkspace:
 
         filename += '.nc'
 
-        return filename.format(thing=thing, window=window, yearmon=yearmon, target=target, member=member, basis=basis)
+        return filename.format(thing=thing, window=window, time=time, target=target, member=member, basis=basis)
 
     # Summaries of data from multi-member forecast ensembles
     def composite_summary(self, *, yearmon, window, target=None):
@@ -265,10 +285,15 @@ class DefaultWorkspace:
     def forcing(self, *, yearmon, member=None, target=None):
         return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=None)
 
-    def results(self, *, yearmon, window, member=None, target=None, temporary=False, basis=None):
+    def results(self, *, year=None, yearmon=None, window, member=None, target=None, temporary=False, basis=None):
         assert window is not None
 
-        return self.make_path('results', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
+        if year:
+            # Check that "annual" summaries are not generated for return periods
+            # greater than one year.
+            assert window < 12
+
+        return self.make_path('results', year=year, yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
 
     def return_period(self, *, yearmon, window, member=None, target=None, temporary=False, basis=None):
         assert window is not None
