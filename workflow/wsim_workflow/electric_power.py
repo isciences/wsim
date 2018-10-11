@@ -13,7 +13,7 @@
 
 from . import actions
 
-from .commands import wsim_integrate
+from .commands import wsim_integrate, wsim_fit
 from .dates import all_months, format_yearmon
 from .spinup import time_integrate_results
 from .step import Step
@@ -55,8 +55,7 @@ def spinup(config, meta_steps):
     for window in [1] + config.integration_windows():
         if window < 12:
             for year in config.result_fit_years():
-                steps += [
-                    wsim_integrate(stats='min',
+                integration_step = wsim_integrate(stats='min',
                                    inputs=read_vars(config.workspace().results(
                                        yearmon=date_range(format_yearmon(year, all_months[0]),
                                                           format_yearmon(year, all_months[-1])),
@@ -68,9 +67,33 @@ def spinup(config, meta_steps):
                                        year=year,
                                        window=window,
                                        basis='basin'
-                                   ))
+                                   )).replace_dependencies(config.workspace().tag('basin_spinup_{}mo_results'.format(window)))
+                steps.append(integration_step)
 
-                ]
+
+    # Compute fits of annual min flows
+    for window in [1] + config.integration_windows():
+        var_to_fit = 'Bt_RO_min' if window == 1 else 'Bt_RO_sum_min'
+
+        if window < 12:
+            steps.append(
+                wsim_fit(
+                    distribution=config.distribution,
+                    inputs=read_vars(config.workspace().results(
+                        year=date_range(config.result_fit_years()[0],
+                                        config.result_fit_years()[-1]),
+                        window=window,
+                        basis='basin'
+                    ), var_to_fit),
+                    output=config.workspace().fit_obs(
+                        var=var_to_fit,
+                        annual=True,
+                        month=0,
+                        window=window,
+                    )
+                )
+            )
+
 
     return steps
 
