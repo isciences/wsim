@@ -154,7 +154,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
         if basis == 'basin':
             return [
-                'Bt_RO_m3'
+                'Bt_RO'
             ]
 
         assert False
@@ -178,7 +178,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
         if basis == 'basin':
             return {
-                'Bt_RO_m3' : [ 'sum' ]
+                'Bt_RO' : [ 'sum' ]
             }
 
         assert False

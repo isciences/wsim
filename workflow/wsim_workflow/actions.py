@@ -60,7 +60,7 @@ def run_b2b(workspace, static, yearmon, target=None, member=None):
             wsim_flow(
                 input=read_vars(basin_results, 'RO_m3'),
                 flowdir=static.basin_downstream(),
-                varname='Bt_RO_m3',
+                varname='Bt_RO',
                 output=basin_results
             )
         )
