@@ -79,7 +79,7 @@ class TestCFSConfig(unittest.TestCase):
             if unbuildable:
                 for step in unbuildable:
                     for t in step.targets:
-                        print("Don't know how to build", t, "(depends on", ",".join(step.dependencies), ")", file=sys.stderr)
+                        print("Don't know how to build", t, "(depends on", ",".join(sorted(step.dependencies)), ")", file=sys.stderr)
                 self.fail('Unbuildable targets found')
 
     def test_complex_rules(self):
