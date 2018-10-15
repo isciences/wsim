@@ -121,6 +121,9 @@ def wsim_fit(*, distribution, inputs, output, comment=None):
     dependencies = []
     targets = []
 
+    if type(inputs) is str:
+        inputs = [inputs]
+
     cmd = [
         os.path.join('{BINDIR}', 'wsim_fit.R'),
         '--distribution', distribution,
@@ -246,6 +249,9 @@ def wsim_correct(*, retro, obs, forecast, output, attrs=None, append=False, comm
 
 def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, attrs=None, comment=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_integrate.R') ]
+
+    if type(stats) is str:
+        stats = [stats]
 
     for stat in stats:
         cmd += ['--stat', stat]
