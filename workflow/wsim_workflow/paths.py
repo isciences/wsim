@@ -329,7 +329,7 @@ class DefaultWorkspace:
     def tag(self, name):
         return os.path.join(self.outputs, 'tags', name)
 
-    # Distribution fit files
+    # Distribution fit files. Must provide either a numeric month, or an annual_stat
     def fit_obs(self, *, var: str, month: int=None, window: int, stat: str=None, basis: str=None, annual_stat: str=None):
         assert window is not None
         assert (annual_stat is None) != (month is None)

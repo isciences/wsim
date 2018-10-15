@@ -86,14 +86,13 @@ def spinup(config, meta_steps):
                         basis='basin'
                     ), var_to_fit),
                     output=config.workspace().fit_obs(
-                        var=var_to_fit,
-                        annual=True,
-                        month=0,
+                        var='Bt_RO',
+                        stat='sum' if window > 1 else None,
                         window=window,
+                        annual_stat='min',
                     )
                 )
             )
-
 
     return steps
 
