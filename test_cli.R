@@ -433,14 +433,16 @@ test_that("wsim_fit errors out if input variables have different names", {
   expect_equal(return_code, 1)
 })
 
-test_that("wsim_fit saves the distribution and input variable name as attributes", {
-  output <- tempfile()
+test_that("wsim_fit saves the distribution, input variable name, and arbitrary arguments as attributes", {
+  output <- tempfile(fileext='.nc')
 
   return_code <- system2('./wsim_fit.R', args=c(
     '--distribution', 'pe3',
     '--input', '/tmp/constant_1.nc',
     '--input', '/tmp/constant_2.nc',
     '--input', '/tmp/constant_3.nc',
+    '--attr',  'integration_window=6',
+    '--attr',  'location:abbrev_name=loc',
     '--output', output
   ))
 
@@ -449,6 +451,9 @@ test_that("wsim_fit saves the distribution and input variable name as attributes
   cdf <- ncdf4::nc_open(output)
   expect_equal('pe3', ncdf4::ncatt_get(cdf, 0, 'distribution')$value)
   expect_equal('data', ncdf4::ncatt_get(cdf, 0, 'variable')$value)
+  
+  expect_equal('6', ncdf4::ncatt_get(cdf, 0, 'integration_window')$value)
+  expect_equal('loc', ncdf4::ncatt_get(cdf, 'location', 'abbrev_name')$value)
 
   ncdf4::nc_close(cdf)
 
