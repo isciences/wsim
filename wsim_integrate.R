@@ -101,6 +101,7 @@ main <- function(raw_args) {
   inputs <- expand_inputs(args$input)
   parsed_stats <- lapply(args$stat, parse_stat)
   parsed_inputs <- lapply(inputs, wsim.io::parse_vardef)
+  output_attrs <- lapply(args$attr, wsim.io::parse_attr)
 
   first_input <- wsim.io::read_vars(inputs[[1]])
   extent <- first_input$extent
@@ -188,7 +189,7 @@ main <- function(raw_args) {
 
     if (i >= window) {
       integrated <- list()
-      attrs <- list()
+      attrs <- output_attrs
 
       for (stat in parsed_stats) {
         for (var_name in var_names) {

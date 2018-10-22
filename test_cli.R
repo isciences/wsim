@@ -161,6 +161,40 @@ test_that("wsim_integrate passes attributes through from its inputs to its outpu
   file.remove(output)
 })
 
+test_that("wsim_integrate can attch arbitrary attributes to outputs", {
+  input1 <- tempfile(fileext='.nc')
+  input2 <- tempfile(fileext='.nc')
+  output <- tempfile(fileext='.nc')
+  
+  for (f in c(input1, input2)) {
+    write_vars_to_cdf(list(data=runif(10)), f, ids=14:23)
+  }
+
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--stat',   'min',
+    '--stat',   'max',
+    '--input',  input1,
+    '--input',  input2,
+    '--output', output,
+    '--attr',   'data_min:window_months=6',
+    '--attr',   'output_type=integrated' 
+  ))
+
+  expect_equal(return_code, 0)
+
+  cdf <- ncdf4::nc_open(output)
+
+  expect_equal(ncdf4::ncatt_get(cdf, 0)$output_type, 'integrated')
+  expect_equal(ncdf4::ncatt_get(cdf, 'data_min')$window_months, '6')
+  expect_null(ncdf4::ncatt_get(cdf, 'data_max')$window_months)
+
+  ncdf4::nc_close(cdf)
+  
+  file.remove(input1)
+  file.remove(input2)
+  file.remove(output)
+})
+
 test_that("wsim_integrate can process a rolling window of files", {
   outputs <- replicate(3, paste0(tempfile(), '.nc'))
 
