@@ -310,7 +310,8 @@ def fit_composite_anomalies(config, *, window):
             inputs=[
                 read_vars(config.workspace().composite_anomaly(yearmon=date_range(fit_yearmons[0], fit_yearmons[-1]), window=window), indicator)
             ],
-            output=config.workspace().fit_composite_anomalies(indicator=indicator, window=window)
+            output=config.workspace().fit_composite_anomalies(indicator=indicator, window=window),
+            window=window
         )
         for indicator in ('surplus', 'deficit')
     ]

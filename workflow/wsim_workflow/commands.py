@@ -117,7 +117,7 @@ def wsim_extract(*, boundaries, fid, input, output, stats, keepvarnames=False, c
     )
 
 
-def wsim_fit(*, distribution, inputs, output, comment=None):
+def wsim_fit(*, distribution, inputs, output, window, comment=None):
     dependencies = []
     targets = []
 
@@ -132,6 +132,9 @@ def wsim_fit(*, distribution, inputs, output, comment=None):
     for i in inputs:
         cmd += ['--input', q(i)]
         dependencies.append(i)
+
+    if window is not None:
+        cmd += ['--attr', 'integration_window_months={}'.format(window)]
 
     cmd += ['--output', output]
     targets.append(output)

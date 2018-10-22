@@ -278,7 +278,8 @@ def fit_var(config, *, param, month, stat=None, window=1, basis=None):
         wsim_fit(
             distribution=config.distribution,
             inputs=[ read_vars(infile, param_to_read) ],
-            output=config.workspace().fit_obs(var=param, stat=stat, month=month, window=window, basis=basis)
+            output=config.workspace().fit_obs(var=param, stat=stat, month=month, window=window, basis=basis),
+            window=window
         )
     ]
 

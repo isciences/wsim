@@ -83,14 +83,15 @@ def spinup(config, meta_steps):
                         year=date_range(config.result_fit_years()[0],
                                         config.result_fit_years()[-1]),
                         window=window,
-                        basis='basin'
+                        basis='basin',
                     ), var_to_fit),
                     output=config.workspace().fit_obs(
                         var='Bt_RO',
                         stat='sum' if window > 1 else None,
                         window=window,
                         annual_stat='min',
-                    )
+                    ),
+                    window=window
                 )
             )
 
