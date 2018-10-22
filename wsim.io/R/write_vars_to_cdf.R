@@ -181,7 +181,15 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
 
   # Write attributes
   for (attr in c(standard_attrs, attrs)) {
-    update_attribute(ncout, attr$var, attr$key, attr$val, attr$prec)
+    if (!is.null(attr$var) && attr$var == '*') {
+      # Global attribute. Apply the attribute to all variables modified
+      # in this function call.
+      for (var in names(vars)) {
+        update_attribute(ncout, var, attr$key, attr$val, attr$prec)
+      }
+    } else {
+      update_attribute(ncout, attr$var, attr$key, attr$val, attr$prec)
+    }
   }
 
   if (is_spatial) {

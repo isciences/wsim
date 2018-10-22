@@ -16,27 +16,35 @@ require(testthat)
 context("Writing netCDF files")
 
 test_that("we can write variables and attributes to a netCDF file", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
   data <- matrix(runif(4), nrow=2)
+  data_2 <- matrix(runif(4), nrow=2)
 
-  write_vars_to_cdf(list(my_data=data),
+  write_vars_to_cdf(list(my_data=data, my_data_2=data_2),
                     fname,
                     xmin=-40,
                     xmax=0,
                     ymin=20,
                     ymax=70,
-                    attrs=list(list(var="my_data", key="station", val="A"),
-                               list(key="yearmon", val="201702")))
+                    attrs=list(list(var="my_data", key="station",     val="A"),
+                               list(var="*",       key="reliability", val="good"),
+                               list(               key="yearmon",     val="201702")))
 
   expect_true(file.exists(fname))
 
   cdf <- ncdf4::nc_open(fname)
 
-  expect_equal(length(cdf$var), 1+1) # include CRS var
+  expect_equal(length(cdf$var), 2+1) # include CRS var
   expect_equal(cdf$var[[1]]$name, "my_data")
+  expect_equal(cdf$var[[2]]$name, "my_data_2")
 
-  expect_equal(ncdf4::ncatt_get(cdf, 0, "yearmon")$value, "201702")
-  expect_equal(ncdf4::ncatt_get(cdf, "my_data", "station")$value, "A")
+  expect_equal(ncdf4::ncatt_get(cdf, varid=0,           attname="yearmon")$value,     "201702")
+
+  expect_equal(ncdf4::ncatt_get(cdf, varid="my_data",   attname="station")$value,     "A")
+  expect_equal(ncdf4::ncatt_get(cdf, varid="my_data",   attname="reliability")$value, "good")
+
+  expect_false(ncdf4::ncatt_get(cdf, varid="my_data_2", attname="station")$hasatt)
+  expect_equal(ncdf4::ncatt_get(cdf, varid="my_data_2", attname="reliability")$value, "good")
 
   # Note that our lat-lon input matrix was written to a lon-lat matrix in the netCDF
   expect_equal(ncdf4::ncvar_get(cdf, "my_data"), t(data))
