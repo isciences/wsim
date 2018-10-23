@@ -383,6 +383,40 @@ test_that("wsim_merge fails if input datasets are not congruent", {
   file.remove(input_2)
 })
 
+test_that("wsim_merge works with ID-based data", {
+  input_1 <- tempfile(fileext='.nc')
+  input_2 <- tempfile(fileext='.nc')
+  output <- tempfile(fileext='.nc')
+
+  ids <- 5:16
+  
+  wsim.io::write_vars_to_cdf(list(a=runif(12)), ids=ids, filename=input_1)
+  wsim.io::write_vars_to_cdf(list(b=runif(12)), ids=ids, filename=input_2)
+
+  return_code <- system2('./wsim_merge.R', args=c(
+    '--input',  input_1,
+    '--input',  input_2,
+    '--output', output
+  ))
+
+  expect_equal(0, return_code)
+
+  # Different extent
+  wsim.io::write_vars_to_cdf(list(a=runif(12)), ids=ids,     filename=input_1)
+  wsim.io::write_vars_to_cdf(list(b=runif(12)), ids=(1+ids), filename=input_2)
+
+  return_code <- system2('./wsim_merge.R', args=c(
+    '--input',  input_1,
+    '--input',  input_2,
+    '--output', output
+  ))
+
+  expect_equal(1, return_code)
+
+  file.remove(input_1)
+  file.remove(input_2)
+})
+
 test_that("wsim_integrate doesn't propagage nonstandard _FillValue values", {
   input <- paste0(tempfile(), '.nc')
   output <- paste0(tempfile(), '.nc')

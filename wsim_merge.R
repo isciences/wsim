@@ -31,6 +31,7 @@ main <- function(raw_args) {
   combined <- list(
     attrs= list(),
     extent= NULL,
+    ids= NULL,
     data= list()
   )
 
@@ -40,12 +41,13 @@ main <- function(raw_args) {
     if (length(combined$data) == 0) {
       v <- wsim.io::read_vars(input)
       combined$extent <- v$extent
+      combined$ids <- v$ids
     } else {
       v <- wsim.io::read_vars(input,
                               expect.extent=combined$extent,
+                              expect.ids=combined$ids,
                               expect.dims=dim(combined$data[[1]]))
     }
-    
 
     for (var in names(v$data)) {
       if (var %in% names(combined$data)) {
@@ -68,6 +70,7 @@ main <- function(raw_args) {
   wsim.io::write_vars_to_cdf(combined$data,
                              args$output,
                              extent=combined$extent,
+                             ids=combined$ids,
                              attrs=attrs)
 }
 
