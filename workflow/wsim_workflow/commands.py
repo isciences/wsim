@@ -21,6 +21,7 @@ from . import attributes as attrs
 def q(txt):
     return '"{}"'.format(txt)
 
+
 def forecast_convert(infile, outfile, comment=None):
     return Step(
         targets=outfile,
@@ -32,6 +33,7 @@ def forecast_convert(infile, outfile, comment=None):
         ],
         comment=comment
     )
+
 
 def extract_from_tar(tarfile, to_extract, dest_dir, comment=None):
     """
@@ -89,6 +91,38 @@ def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
     return Step(
         targets=[rp, sa],
         dependencies=fits + obs,
+        commands=[cmd],
+        comment=comment
+    )
+
+
+def exact_extract(*, boundaries, fid, input, weights=None, output, stats, comment=None):
+    if isinstance(stats, str):
+        stats = [stats]
+
+    cmd = [
+        'exactextract',
+        '-p', boundaries,
+        '-f', fid,
+        '-r', input,
+        '-o', output
+    ]
+
+    if weights:
+        cmd += ['-w', weights]
+
+    for stat in stats:
+        cmd += ['-s', stat]
+
+    import re
+
+    # TODO tidy this up. We need to strip off GDAL stuff
+    input=re.sub('^\w+:', '', input)
+    input=re.sub(':\w+$', '', input)
+
+    return Step(
+        targets=output,
+        dependencies=[input + weights] if weights else input,
         commands=[cmd],
         comment=comment
     )
@@ -275,6 +309,7 @@ def wsim_correct(*, retro, obs, forecast, output, attrs=None, append=False, comm
         comment=comment
     )
 
+
 def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, attrs=None, comment=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_integrate.R') ]
 
@@ -312,6 +347,7 @@ def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, at
         comment=comment
     )
 
+
 def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None, clamp=None, output, comment=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_composite.R') ]
 
@@ -341,11 +377,30 @@ def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None
         comment=comment
     )
 
+
 def move(from_path, to_path):
     return Step(targets=to_path,
                 consumes=from_path,
                 dependencies=from_path,
                 commands=[[ 'mv', q(from_path), q(to_path) ]])
+
+
+def table2nc(input: str, output: str, fid: str, column: str, comment: Union[str,None]=None):
+    cmd = [
+        os.path.join('{BINDIR}', 'utils', 'table2nc.R'),
+        '--input',  input,
+        '--output', output,
+        '--fid',    fid,
+        '--column', column
+    ]
+
+    return Step(
+        targets=output,
+        dependencies=input,
+        commands=[cmd],
+        comment=comment
+    )
+
 
 def create_tag(*, name, dependencies):
     return [Step(targets=dep, dependencies=name) for dep in dependencies]
