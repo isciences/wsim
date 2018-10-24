@@ -29,7 +29,7 @@ from .commands import \
     wsim_lsm, \
     wsim_merge
 
-from .dates import get_next_yearmon, rolling_window
+from .dates import get_next_yearmon, rolling_window, available_yearmon_range
 
 
 def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
@@ -289,8 +289,10 @@ def fit_var(config, *, param, month, stat=None, window=1, basis=None):
     """
     Compute fits for param in given month over fitting period
     """
-    yearmons = [t for t in config.result_fit_yearmons()[window-1:] if int(t[-2:]) == month]
-    input_range = date_range(yearmons[0], yearmons[-1], 12)
+    input_range = available_yearmon_range(window=window,
+                                          month=month,
+                                          start_year=config.result_fit_years()[0],
+                                          end_year=config.result_fit_years()[-1])
 
     if stat:
         param_to_read = param + '_' + stat

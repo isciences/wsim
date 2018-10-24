@@ -106,3 +106,23 @@ class TestDates(unittest.TestCase):
             ['20180221', '20180222', '20180223'],
             expand_date_range('20180221', '20180223', 1)
         )
+
+    def test_next_occurrence_of_month(self):
+        self.assertEqual('201505', next_occurence_of_month('201504', 5))
+        self.assertEqual('201505', next_occurence_of_month('201505', 5))
+        self.assertEqual('201605', next_occurence_of_month('201506', 5))
+
+        with self.assertRaises(Exception):
+            next_occurence_of_month('201504', 13)
+
+    def test_available_date_range(self):
+        self.assertEqual('[201501:201512:1]', available_yearmon_range(window=1, start_year=2015, end_year=2015))
+        self.assertEqual('[201504:201504:12]', available_yearmon_range(window=1, month=4, start_year=2015, end_year=2015))
+
+        self.assertEqual('[201503:201712:1]', available_yearmon_range(window=3, start_year=2015, end_year=2017))
+        self.assertEqual('[201508:201512:1]', available_yearmon_range(window=8, start_year=2015, end_year=2015))
+        self.assertEqual('[201503:201703:12]', available_yearmon_range(window=3, month=3, start_year=2015, end_year=2017))
+        self.assertEqual('[201603:201703:12]', available_yearmon_range(window=6, month=3, start_year=2015, end_year=2017))
+
+        with self.assertRaises(Exception):
+            available_yearmon_range(window=14, start_year=2015, end_year=2015)

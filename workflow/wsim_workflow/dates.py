@@ -14,6 +14,8 @@
 import calendar
 import datetime
 
+from typing import Optional
+
 all_months = range(1, 13)
 
 def parse_yearmon(yearmon):
@@ -175,4 +177,28 @@ def expand_date_range(start, stop, step):
             break
 
     return dates
+
+def next_occurence_of_month(yearmon, month_b):
+    assert 0 < month_b <= 12
+
+    year, month = parse_yearmon(yearmon)
+
+    if month <= month_b:
+        return format_yearmon(year, month_b)
+    else:
+        return format_yearmon(year+1, month_b)
+
+
+def available_yearmon_range(*, window:int, month:Optional[int]=None, start_year:int, end_year:int):
+    assert start_year + (window-1) // 12 <= end_year
+
+    range_str = '[{begin}:{end}:{step}]'
+
+    available_start = add_months(format_yearmon(start_year, 1), window-1)
+
+    start_yearmon = available_start if month is None else next_occurence_of_month(available_start, month)
+
+    return range_str.format(begin=start_yearmon,
+                            end=format_yearmon(end_year, 12 if month is None else month),
+                            step=1 if month is None else 12)
 
