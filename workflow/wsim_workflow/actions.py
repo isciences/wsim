@@ -12,10 +12,25 @@
 # limitations under the License.
 
 import itertools
+import tempfile
+
+from . import attributes as attrs
 
 from .paths import read_vars, Vardef, date_range
-from .commands import wsim_integrate, wsim_merge, wsim_anom, wsim_correct, wsim_composite, wsim_lsm, wsim_extract, wsim_flow, wsim_fit
+from .commands import \
+    exact_extract, \
+    table2nc, \
+    wsim_anom, \
+    wsim_composite, \
+    wsim_correct, \
+    wsim_fit, \
+    wsim_flow, \
+    wsim_integrate, \
+    wsim_lsm, \
+    wsim_merge
+
 from .dates import get_next_yearmon, rolling_window
+
 
 def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
 
@@ -42,20 +57,33 @@ def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
         )
     ]
 
+
 def run_b2b(workspace, static, yearmon, target=None, member=None):
     pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
     basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis='basin')
 
+    temp_csv = tempfile.mktemp(suffix='.csv')
+    temp_nc = tempfile.mktemp(suffix='.nc')
+
     return [
-        wsim_extract(
-            # TODO static.basins().file strips any layer name provided (by file_name::layer_name)
-            # TODO should we allow ::layer_name syntax for shapefiles also?
+        exact_extract(
             boundaries=static.basins().file,
             fid="HYBAS_ID",
-            input=read_vars(pixel_results, 'RO_m3'),
-            output=basin_results,
-            stats=['sum'],
-            keepvarnames=True
+            input='NETCDF:{}:RO_m3'.format(pixel_results),
+            output=temp_csv,
+            stats=['sum']
+        ).merge(
+            table2nc(
+                input=temp_csv,
+                fid="HYBAS_ID",
+                column="sum",
+                output=temp_nc
+            )
+        ).merge(
+            wsim_merge(
+                inputs=Vardef(temp_nc, 'sum').read_as('RO_m3'),
+                output=basin_results
+            )
         ).merge(
             wsim_flow(
                 input=read_vars(basin_results, 'RO_m3'),
@@ -112,10 +140,11 @@ def time_integrate(workspace, integrated_stats, *, yearmon, target=None, window=
         wsim_integrate(
             inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev_results],
             stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
-            attrs=['integration_period=' + str(window)],
+            attrs=[attrs.integration_window(var='*', months=window)],
             output=workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=False, basis=basis)
         )
     ]
+
 
 def compute_return_periods(workspace, *, forcing_vars=None, result_vars=None, yearmon, window, target=None, member=None, basis=None):
     if target:
@@ -209,6 +238,7 @@ def composite_indicators(workspace, *, yearmon, window=None, target=None, quanti
         )
     ]
 
+
 def composite_indicator_return_periods(workspace, *, yearmon, window, target=None):
     return [
         wsim_anom(
@@ -221,6 +251,7 @@ def composite_indicator_return_periods(workspace, *, yearmon, window, target=Non
         )
     ]
 
+
 def composite_indicator_adjusted(workspace, *, yearmon, window, target=None):
     return [
         wsim_composite(
@@ -231,6 +262,7 @@ def composite_indicator_adjusted(workspace, *, yearmon, window, target=None):
             clamp=60
         )
     ]
+
 
 def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantile=None):
     cvars = composite_vars(method='standard_anomaly', window=window, quantile=quantile)
