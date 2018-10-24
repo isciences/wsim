@@ -28,6 +28,7 @@ Usage: table2nc.R --input=<files>... --column=<col_name>... --fid=<column> --out
 
 suppressMessages({
   require(sf)
+  require(readr)
   require(wsim.io)
 })
 
@@ -39,8 +40,12 @@ main <- function(raw_args) {
   for (input_arg in args$input) {
     for (input in expand_inputs(input_arg)) {
       info('Reading attributes from', input)
-      capture.output(feat <- st_read(input)[c(args$fid, args$column)])
-      st_geometry(feat) <- NULL
+      if (endsWith(input, 'csv')) {
+        suppressMessages(feat <- read_csv(input)[c(args$fid, args$column)])
+      } else {
+        capture.output(feat <- st_read(input)[c(args$fid, args$column)])
+        st_geometry(feat) <- NULL
+      }
       if (is.null(features)) {
         features <- feat
       } else {
@@ -48,12 +53,12 @@ main <- function(raw_args) {
       }
     }
   }
-
+  
   names(features) <- tolower(names(features))
 
   write_vars_to_cdf(vars=features[tolower(args$column)],
-                    ids= features[, tolower(args$fid)],
-                    prec='integer',
+                    ids= unname(unlist(features[, tolower(args$fid)])),
+                    #prec='integer',
                     filename= args$output
   )
 
