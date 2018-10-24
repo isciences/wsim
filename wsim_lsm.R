@@ -23,7 +23,7 @@ suppressMessages({
 '
 WSIM Land Surface Model
 
-Usage: wsim_lsm --state <file> (--forcing <file>)... --flowdir <file> --wc <file> --elevation <file> [--loop <n>] --results <file> --next_state <file>
+Usage: wsim_lsm --state <file> (--forcing <file>)... --flowdir <file> --wc <file> --elevation <file> [--loop <n>] [--results <file>] [--next_state <file>]
 
 Options:
 
@@ -34,7 +34,7 @@ Options:
 --wc <file>          file containing soil water holding capacity
 --elevation <file>   file containing elevations
 
---loop <n>         perform n model iterations using the same forcing data [default: 1]
+--loop <n>           perform n model iterations using the same forcing data [default: 1]
 
 Output:
 --results <file>     filename for model results
@@ -70,8 +70,8 @@ main <- function(raw_args) {
 
   loops <- args$loop
 
-  write_all_states <- grepl("%(T|N)", args$next_state)
-  write_all_results <- grepl("%(T|N)", args$results)
+  write_all_states <- !is.null(args$next_state) && grepl("%(T|N)", args$next_state)
+  write_all_results <- !is.null(args$results) && grepl("%(T|N)", args$results)
 
   results <- NULL
   iter_num <- 0
@@ -106,12 +106,12 @@ main <- function(raw_args) {
     }
   }
 
-  if (!write_all_states) {
+  if (!is.null(args$next_state) && !write_all_states) {
     fname <- args$next_state
     wsim.io::info("Writing final state to", fname)
     wsim.lsm::write_lsm_values_to_cdf(state, fname, prec='double')
   }
-  if (!write_all_results) {
+  if (!is.null(args$results) && !write_all_results) {
     fname <- args$results
     wsim.io::info("Writing results to", fname)
     wsim.lsm::write_lsm_values_to_cdf(results, fname, prec='single')

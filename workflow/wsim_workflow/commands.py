@@ -164,8 +164,16 @@ def wsim_flow(*, input, flowdir, varname, output, comment=None):
     )
 
 
-
-def wsim_lsm(*, wc, flowdir, elevation, state, forcing, results, next_state, loop=None, comment=None):
+def wsim_lsm(*,
+             wc: str,
+             flowdir: str,
+             elevation: str,
+             state: str,
+             forcing: str,
+             results: Union[str,None],
+             next_state: Union[str, None],
+             loop: Union[int, None]=None,
+             comment: Union[str, None]=None):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_lsm.R'),
         '--wc',         q(wc),
@@ -179,10 +187,11 @@ def wsim_lsm(*, wc, flowdir, elevation, state, forcing, results, next_state, loo
     for f in forcing:
         cmd += [ '--forcing', q(f) ]
 
-    cmd += [
-        '--results',    q(results),
-        '--next_state', q(next_state)
-    ]
+    if results is not None:
+        cmd += [ '--results',    q(results) ]
+
+    if next_state is not None:
+        cmd += [ '--next_state', q(next_state) ]
 
     if loop:
         cmd += ['--loop', str(loop)]
@@ -194,8 +203,16 @@ def wsim_lsm(*, wc, flowdir, elevation, state, forcing, results, next_state, loo
         comment=comment
     )
 
-def wsim_merge(*, inputs, output, attrs=None, comment=None):
+
+def wsim_merge(*,
+               inputs: Union[str,Iterable],
+               output: str,
+               attrs: Union[Iterable,None]=None,
+               comment: Union[str,None]=None):
     cmd = [ os.path.join('{BINDIR}', 'wsim_merge.R') ]
+
+    if type(inputs) is str:
+        inputs = [inputs]
 
     for arg in inputs:
         cmd += ['--input', q(arg)]

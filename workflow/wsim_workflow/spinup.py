@@ -164,7 +164,7 @@ def run_lsm_with_monthly_norms(config, *, years):
             elevation=config.static_data().elevation(),
             flowdir=config.static_data().flowdir(),
             wc=config.static_data().wc(),
-            results='/dev/null',
+            results=None,
             next_state=config.workspace().final_state_norms(),
             loop=years
         )
@@ -202,7 +202,7 @@ def run_lsm_from_final_norm_state(config):
         elevation=config.static_data().elevation(),
         flowdir=config.static_data().flowdir(),
         wc=config.static_data().wc(),
-        results='/dev/null',
+        results=None,
         next_state=config.workspace().spinup_state_pattern()
     ).replace_targets_with_tag_file(config.workspace().tag('spinup_from_climate_norm_final_state'))
 
