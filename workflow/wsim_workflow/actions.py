@@ -14,9 +14,11 @@
 import itertools
 import tempfile
 
+from typing import Union, Dict, Iterable, List, Sequence
+
 from . import attributes as attrs
 
-from .paths import read_vars, Vardef, date_range
+from .paths import read_vars, Vardef, date_range, DefaultWorkspace
 from .commands import \
     exact_extract, \
     table2nc, \
@@ -123,7 +125,15 @@ def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months
     ]
 
 
-def time_integrate(workspace, integrated_stats, *, yearmon, target=None, window=None, member=None, lead_months=None, basis=None):
+def time_integrate(workspace: DefaultWorkspace,
+                   integrated_stats: Dict[str, List[str]],
+                   *,
+                   yearmon: str,
+                   target: Union[str,None]=None,
+                   window: Union[int,None]=None,
+                   member: Union[str,None]=None,
+                   lead_months: Union[int,None]=None,
+                   basis: Union[str,None]=None):
     months = rolling_window(target if target else yearmon, window)
 
     if lead_months:

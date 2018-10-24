@@ -11,8 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Dict, List, Optional, Iterable
+
 import abc
 from . import dates
+from . import paths
+from .step import Step
 
 class ConfigBase(metaclass=abc.ABCMeta):
 
@@ -35,14 +39,14 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 for month in dates.all_months]
 
     @abc.abstractmethod
-    def result_fit_years(self):
+    def result_fit_years(self) -> Iterable[int]:
         """
         Provides a list of years of data to be considered in fitting distributions
         for computed variables.
         """
         return []
 
-    def result_fit_yearmons(self):
+    def result_fit_yearmons(self) -> List[str]:
         """
         Provides all YYYYMM time steps within the result fitting period
         """
@@ -59,20 +63,20 @@ class ConfigBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def observed_data(self):
+    def observed_data(self) -> paths.ObservedForcing:
         """
         Returns a Forcing instance capable of providing data for a given YYYYMM
         :return:
         """
         pass
 
-    def forecast_data(self):
+    def forecast_data(self) -> paths.ForecastForcing:
         """
         Returns a Forcing instance capable of providing data for a given YYYYMM/forecast target/ensemble member
         :return:
         """
 
-    def global_prep(self):
+    def global_prep(self) -> List[Step]:
         """
         Returns a (possibly empty) list of steps that are included exactly once in the Makefile, regardless
         of which time steps/forecasts/etc. are also present in the Makefile.
@@ -80,31 +84,31 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return []
 
-    def should_run_spinup(self):
+    def should_run_spinup(self) -> bool:
         """
         Indicates whether this configuration requires a spinup phase.
         :return:
         """
         return True
 
-    def should_run_lsm(self, yearmon=None):
+    def should_run_lsm(self, yearmon: Optional[str]=None) -> bool:
         return True
 
-    def result_postprocess_steps(self, yearmon=None, target=None, member=None):
+    def result_postprocess_steps(self, yearmon=None, target=None, member=None) -> List[Step]:
         """
         Provides a list of one or more postprocessing steps to be applied to LSM results
         for a givem YYYYMM/forecast target/ensemble member
         """
         return []
 
-    def forecast_targets(self, yearmon):
+    def forecast_targets(self, yearmon: str) -> List[str]:
         """
         Provides a list of forecast target YYYYMM values for a given YYYYMM, or an empty
         list if the configuration does not contain forecasts.
         """
         return []
 
-    def forecast_ensemble_members(self, yearmon):
+    def forecast_ensemble_members(self, yearmon: str) -> List[str]:
         """
         Provides a list of forecast ensemble members for a given YYYYMM, or
         an empty list if the configuration does not contain forecasts.
@@ -112,14 +116,14 @@ class ConfigBase(metaclass=abc.ABCMeta):
         return []
 
     @staticmethod
-    def integration_windows():
+    def integration_windows() -> List[int]:
         """
         Provides a list of integration windows (in months)
         """
         return [ 3, 6, 12, 24, 36, 60 ]
 
     @staticmethod
-    def forcing_rp_vars(*, basis=None):
+    def forcing_rp_vars(*, basis: Optional[str]=None) -> List[str]:
         """
         Provides a list of forcing variables for which return periods should be calculated
         """
@@ -135,7 +139,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         assert False
 
     @staticmethod
-    def lsm_rp_vars(*, basis=None):
+    def lsm_rp_vars(*, basis: Optional[str]=None) -> List[str]:
         """
         Provides a list of LSM output variables for which return periods should be calculated
         """
@@ -160,7 +164,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         assert False
 
     @classmethod
-    def lsm_integrated_vars(cls, basis=None):
+    def lsm_integrated_vars(cls, basis: Optional[str]=None) -> Dict[str, List[str]]:
         """
         Provides a dictionary whose keys are LSM output variables to be time-integrated, and whose
         values are lists of stats to apply to each of those variables (min, max, ave, etc.)
@@ -184,7 +188,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         assert False
 
     @classmethod
-    def lsm_integrated_stats(cls, basis=None):
+    def lsm_integrated_stats(cls, basis: Optional[str]=None) -> Dict[str, List[str]]:
         """
         Provides a dictionary whose keys are stat names and whose values are a list of variables
         two which that stat should be applied. It can be thought of as the inverse of lsm_integrated_vars()
@@ -201,7 +205,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
 
     @classmethod
-    def lsm_integrated_var_names(cls, basis=None):
+    def lsm_integrated_var_names(cls, basis: Optional[str]=None) -> List[str]:
         """
         Provides a flat list of time-integrated variable names
         """

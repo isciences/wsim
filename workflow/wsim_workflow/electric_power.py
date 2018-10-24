@@ -113,7 +113,7 @@ def monthly_observed(config, yearmon, meta_steps):
     if yearmon not in config.result_fit_yearmons():
         # Do time integration
         for window in config.integration_windows():
-            steps += actions.time_integrate(config.workspace(), { 'sum' : 'Bt_RO' }, yearmon=yearmon, window=window, basis='basin')
+            steps += actions.time_integrate(config.workspace(), config.lsm_integrated_stats(basis='basin'), yearmon=yearmon, window=window, basis='basin')
 
         # Compute return periods
         steps += actions.compute_return_periods(config.workspace(),
