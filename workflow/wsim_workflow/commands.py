@@ -12,8 +12,11 @@
 # limitations under the License.
 
 import os
+from typing import Union, Iterable
 
 from .step import Step
+from . import attributes as attrs
+
 
 def q(txt):
     return '"{}"'.format(txt)
@@ -117,7 +120,12 @@ def wsim_extract(*, boundaries, fid, input, output, stats, keepvarnames=False, c
     )
 
 
-def wsim_fit(*, distribution, inputs, output, window, comment=None):
+def wsim_fit(*,
+             distribution: str,
+             inputs: Union[str,Iterable[str]],
+             output: str,
+             window: int,
+             comment: Union[str,None]=None):
     dependencies = []
     targets = []
 
@@ -134,7 +142,7 @@ def wsim_fit(*, distribution, inputs, output, window, comment=None):
         dependencies.append(i)
 
     if window is not None:
-        cmd += ['--attr', 'integration_window_months={}'.format(window)]
+        cmd += ['--attr', attrs.integration_window(var=None, months=window)]
 
     cmd += ['--output', output]
     targets.append(output)

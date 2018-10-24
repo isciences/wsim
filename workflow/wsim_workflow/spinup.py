@@ -13,6 +13,8 @@
 
 import itertools
 
+from . import attributes as attrs
+
 from .commands import *
 from .dates import format_yearmon, all_months, get_next_yearmon
 from .paths import read_vars, date_range
@@ -283,7 +285,7 @@ def time_integrate_results(config, window, *, basis=None):
                          *config.lsm_integrated_vars(basis=basis).keys()),
         window=window,
         stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats(basis=basis).items()],
-        attrs=['integration_period={}'.format(window)],
+        attrs=[attrs.integration_window(var='*', months=window)],
         output=config.workspace().results(yearmon=date_range(yearmons_out),
                                           window=window,
                                           basis=basis)
