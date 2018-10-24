@@ -63,18 +63,18 @@ def monthly_observed(config, yearmon, meta_steps):
         if yearmon not in config.result_fit_yearmons():
             steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
 
-            # Express composite anomalies in terms of a return period
-            # (relative to historical composite anomalies)
-            steps += composite_indicator_return_periods(config.workspace(), yearmon=yearmon, window=window)
+        # Express composite anomalies in terms of a return period
+        # (relative to historical composite anomalies)
+        steps += composite_indicator_return_periods(config.workspace(), yearmon=yearmon, window=window)
 
-            # Produce an "adjusted" composite based on the return periods
-            # of the composite surface anomaly and composite deficit anomaly
-            adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window)
-            steps += adjusted_indicator_steps
+        # Produce an "adjusted" composite based on the return periods
+        # of the composite surface anomaly and composite deficit anomaly
+        adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window)
+        steps += adjusted_indicator_steps
 
-            meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
-            if window == 1:
-                meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+        meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
+        if window == 1:
+            meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
 
     return steps
 
