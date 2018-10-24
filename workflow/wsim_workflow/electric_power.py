@@ -11,13 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
+from typing import Iterable
+
 from . import actions
 
 from .commands import wsim_integrate, wsim_fit
 from .dates import all_months, format_yearmon, available_yearmon_range
 from .spinup import time_integrate_results
 from .step import Step
-from .paths import date_range, read_vars
+from .paths import date_range, read_vars, DefaultWorkspace, Static, Vardef
+
 
 def spinup(config, meta_steps):
     steps = []
@@ -134,5 +139,71 @@ def monthly_observed(config, yearmon, meta_steps):
                                                     window=window,
                                                     basis='basin')
 
+        # Compute basin-level losses
+        steps += compute_basin_losses(config.workspace(), static=config.static_data(), yearmon=yearmon)
+
     return steps
 
+
+def wsim_basin_losses(*,
+                      basin_windows: str,
+                      basin_stress: str,
+                      bt_ro: Iterable[Vardef],
+                      bt_ro_fits: Iterable[str],
+                      output: str):
+    cmd = [
+        os.path.join('{BINDIR}', 'wsim_basin_losses.R'),
+        '--windows', basin_windows,
+        '--stress',  basin_stress,
+        '--output',  output
+    ]
+
+    for vardef in bt_ro:
+        cmd += ['--bt_ro', "{}".format(vardef)]
+
+    for filename in bt_ro_fits:
+        cmd += ['--bt_ro_fit', filename]
+
+    return cmd
+
+
+def compute_basin_losses(workspace: DefaultWorkspace,
+                         *,
+                         static: Static,
+                         yearmon: str):
+
+    bt_ro = []
+    bt_ro_fits = []
+
+    windows = (1, 3, 6, 12, 24, 36)
+
+    for w in windows:
+        bt_ro.append(Vardef(workspace.results(basis='basin', yearmon=yearmon, window=w),
+                            'Bt_RO' if w == 1 else 'Bt_RO_sum'))
+
+        # For integration periods < 12 months, use the distribution of annual minimum N-month sums.
+        # For integration periods >= 12 months, just use the N-month sum ending in December.
+        bt_ro_fits.append(workspace.fit_obs(basis='basin',
+                                            var='Bt_RO',
+                                            stat='sum' if w != 1 else None,
+                                            window=w,
+                                            annual_stat='min' if w < 12 else None,
+                                            month=12 if w >= 12 else None))
+
+    outfile = 'PLACEHOLDER_BASIN_LOSS'
+
+    return [
+        Step(
+            targets=[outfile],
+            dependencies=[v.file for v in bt_ro] + bt_ro_fits,
+            commands=[
+                wsim_basin_losses(
+                    basin_windows='PLACEHOLDER_BASIN_WINDOWS',
+                    basin_stress='PLACEHOLDER_BASIN_STRESS',
+                    bt_ro=bt_ro,
+                    bt_ro_fits=bt_ro_fits,
+                    output=outfile
+                )
+            ]
+        )
+    ]
