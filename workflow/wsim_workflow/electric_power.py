@@ -14,7 +14,7 @@
 from . import actions
 
 from .commands import wsim_integrate, wsim_fit
-from .dates import all_months, format_yearmon
+from .dates import all_months, format_yearmon, available_yearmon_range
 from .spinup import time_integrate_results
 from .step import Step
 from .paths import date_range, read_vars
@@ -51,14 +51,13 @@ def spinup(config, meta_steps):
             for month in all_months:
                 steps += all_fits.require(actions.fit_var(config, param=param, window=window, month=month, basis='basin'))
 
-    # Compute annual min flows, for subannual intergration periods
+    # Compute annual min flows, for sub-annual integration periods
     for window in [1] + config.integration_windows():
         if window < 12:
             for year in config.result_fit_years():
                 integration_step = wsim_integrate(stats='min',
                                    inputs=read_vars(config.workspace().results(
-                                       yearmon=date_range(format_yearmon(year, all_months[0]),
-                                                          format_yearmon(year, all_months[-1])),
+                                       yearmon=available_yearmon_range(window=window, start_year=year, end_year=year),
                                        window=window,
                                        basis='basin'),
                                        'Bt_RO' if window == 1 else 'Bt_RO_sum'
@@ -76,6 +75,11 @@ def spinup(config, meta_steps):
         var_to_fit = 'Bt_RO_min' if window == 1 else 'Bt_RO_sum_min'
 
         if window < 12:
+            #first_year, last_year = config.result_fit_years()[0, -1]
+
+            #start_date = format_yearmon(first_year, window)
+            #last_date = format_yearmon()
+
             steps.append(
                 wsim_fit(
                     distribution=config.distribution,
@@ -86,6 +90,7 @@ def spinup(config, meta_steps):
                         basis='basin',
                     ), var_to_fit),
                     output=config.workspace().fit_obs(
+                        basis='basin',
                         var='Bt_RO',
                         stat='sum' if window > 1 else None,
                         window=window,
