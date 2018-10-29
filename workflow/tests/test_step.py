@@ -31,7 +31,7 @@ class TestStep(unittest.TestCase):
     def test_filenames_expanded(self):
         s = Step(targets='fit.nc',
                  dependencies='values[2014:2016].nc::Ws',
-                 commands=['fitit'])
+                 commands=[['fitit']])
 
         self.assertSetEqual(
             {'values2014.nc', 'values2015.nc', 'values2016.nc'},

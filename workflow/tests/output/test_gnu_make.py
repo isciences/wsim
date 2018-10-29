@@ -75,7 +75,7 @@ class TestGnuMake(unittest.TestCase):
         self.assertTrue('source.txt' in command_line)
 
     def test_target_directories_created_but_only_once(self):
-        s = Step(targets=['/tmp/fizz/fuzz/ok.txt', '/src/junk.h', '/src/junk.c'], dependencies=[], commands=['do_something'])
+        s = Step(targets=['/tmp/fizz/fuzz/ok.txt', '/src/junk.h', '/src/junk.c'], dependencies=[], commands=[['do_something']])
 
         commands = unformat(write_step(s)).split('\n')[1:]
 
