@@ -15,15 +15,20 @@ import os
 import re
 
 from abc import ABCMeta, abstractmethod
-from typing import Union
+from typing import Union, List, Optional
 
 from . import dates
+
+
+RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
+
 
 def read_vars(*args):
     file = args[0]
     var_list = args[1:]
 
     return file + '::' + ','.join(var_list)
+
 
 def date_range(*args):
     """
@@ -36,7 +41,7 @@ def date_range(*args):
 
     if len(args) == 1 and type(args[0]) is list:
         begin = args[0][0]
-        end   = args[0][-1]
+        end = args[0][-1]
     elif len(args) >= 2:
         begin = args[0]
         end = args[1]
@@ -48,9 +53,8 @@ def date_range(*args):
 
     return '[{}:{}:{}]'.format(begin, end, step)
 
-RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
 
-def expand_filename_dates(filename):
+def expand_filename_dates(filename: str) -> List[str]:
     # Short-circuit regex test.
     # This statement improves program runtime by ~50%.
     if '[' not in filename:
@@ -74,15 +78,21 @@ def expand_filename_dates(filename):
 
 class Vardef:
 
-    def __init__(self, file, var):
+    def __init__(self, file: str, var: Optional[str]):
         self.file = file
         self.var = var
 
-    def read_as(self, new_name):
+    def read_as(self, new_name: str) -> str:
+        assert self.var is not None
+
         return self.file + '::' + self.var + '->' + new_name
 
-    def __str__(self):
-        return self.file + '::' + self.var
+    def __str__(self) -> str:
+        if self.var is None:
+            return self.file
+        else:
+            return self.file + '::' + self.var
+
 
 class ForecastForcing(metaclass=ABCMeta):
 
@@ -122,6 +132,7 @@ class ForecastForcing(metaclass=ABCMeta):
         """
         return []
 
+
 class ObservedForcing(metaclass=ABCMeta):
 
     @abstractmethod
@@ -159,22 +170,45 @@ class ObservedForcing(metaclass=ABCMeta):
         """
         return []
 
+
 class Static(metaclass=ABCMeta):
 
     def __init__(self, source):
         self.source = source
 
-    def global_prep_steps(self):
-        return []
+    def global_prep_steps(self) -> List['Step']:
+        pass
 
-    def wc(self):
-        return None
+    def wc(self) -> Vardef:
+        pass
 
-    def flowdir(self):
-        return None
+    def flowdir(self) -> Vardef:
+        pass
 
-    def elevation(self):
-        return None
+    def elevation(self) -> Vardef:
+        pass
+
+
+class ElectricityStatic(metaclass=ABCMeta):
+
+    def __init__(self, source):
+        self.source = source
+
+    def global_prep_steps(self) -> List['Step']:
+        pass
+
+    def basins(self) -> Vardef:
+        pass
+
+    def basin_downstream(self) -> Vardef:
+        pass
+
+    def water_stress(self) -> Vardef:
+        pass
+
+    def dam_locations(self) -> Vardef:
+        pass
+
 
 class DefaultWorkspace:
 
@@ -188,15 +222,15 @@ class DefaultWorkspace:
     def root(self):
         return self.outputs
 
-    def make_path(self, thing:str, *,
-                  year:int=None,
-                  yearmon:str=None,
-                  window:int=None,
-                  target:str=None,
-                  member:str=None,
-                  temporary:bool=False,
-                  basis:str=None,
-                  summary:bool=False):
+    def make_path(self, thing: str, *,
+                  year: int=None,
+                  yearmon: str=None,
+                  window: int=None,
+                  target: str=None,
+                  member: str=None,
+                  temporary: bool=False,
+                  basis: str=None,
+                  summary: bool=False):
 
         assert (year is None) != (yearmon is None)
 
@@ -215,7 +249,7 @@ class DefaultWorkspace:
         return '_'.join(filter(None, (basis, thing, 'summary' if summary else None)))
 
     @staticmethod
-    def make_dirname(thing, window:int, basis:str, summary:bool, annual:bool):
+    def make_dirname(thing, window: int, basis: str, summary: bool, annual: bool):
         return '_'.join(filter(None, (basis,
                                       thing,
                                       'integrated' if window and window > 1 else None,
@@ -329,8 +363,24 @@ class DefaultWorkspace:
     def tag(self, name):
         return os.path.join(self.outputs, 'tags', name)
 
+    # Electricity assessment misc
+    def basin_water_loss(self, *, yearmon: str) -> str:
+        return os.path.join(self.outputs, 'electricity', 'basin_loss_risk', 'basin_loss_risk_{}.nc'.format(yearmon))
+
+    def basin_upstream_storage(self) -> str:
+        return os.path.join(self.outputs, 'electricity', 'spinup', 'basin_upstream_storage.nc')
+
+    def basin_water_stress(self) -> str:
+        return os.path.join(self.outputs, 'electricity', 'spinup', 'basin_baseline_water_stress.nc')
+
     # Distribution fit files. Must provide either a numeric month, or an annual_stat
-    def fit_obs(self, *, var: str, month: int=None, window: int, stat: str=None, basis: str=None, annual_stat: str=None):
+    def fit_obs(self, *,
+                var: str,
+                month: int=None,
+                window: int,
+                stat: str=None,
+                basis: str=None,
+                annual_stat: str=None) -> str:
         assert window is not None
         assert (annual_stat is None) != (month is None)
 

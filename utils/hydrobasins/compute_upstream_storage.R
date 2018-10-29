@@ -61,16 +61,10 @@ main <- function(raw_args) {
     left_join(flow_df) %>%
     mutate(months_storage=assign_to_bin(capacity_upstream / (flow_12mo_mcm / 12), bins))
 
-  write_table_to_cdf(basin_capacity[, c('hybas_id', 'months_storage')],
-  				   args$output,
-  				   prec=list(months_storage='integer'))
+  write_vars_to_cdf(vars=basin_capacity[, 'months_storage'],
+                    filename=args$output,
+                    ids=basin_capacity$hybas_id,
+      				      prec='integer')
 }
-
-test_args <- list(
-  '--flow',   '/home/dbaston/wsim/jul31/fits/basin_Bt_RO_m3_sum_12mo_month_12.nc',
-  '--dams',   '/mnt/fig/Data_Global/GRanD/GRanD_Version_1_1/GRanD_dams_v1_1.shp',
-  '--basins', '/mnt/fig_rw/WSIM_DEV/source/HydroBASINS/basins_lev05.shp',
-  '--output', '/tmp/capacity.nc'
-)
 
 main(commandArgs(trailingOnly=TRUE))

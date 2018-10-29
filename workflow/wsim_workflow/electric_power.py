@@ -12,19 +12,20 @@
 # limitations under the License.
 
 import os
+import tempfile
 
-from typing import Iterable
+from typing import Iterable, List, Mapping
 
-from . import actions
+from . import actions, commands
 
-from .commands import wsim_integrate, wsim_fit
-from .dates import all_months, format_yearmon, available_yearmon_range
+from .dates import all_months, available_yearmon_range
 from .spinup import time_integrate_results
 from .step import Step
-from .paths import date_range, read_vars, DefaultWorkspace, Static, Vardef
+from .paths import date_range, read_vars, DefaultWorkspace, ElectricityStatic, Vardef
+from .config_base import ConfigBase
 
 
-def spinup(config, meta_steps):
+def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
     all_fits = meta_steps['all_fits']
 
@@ -38,7 +39,8 @@ def spinup(config, meta_steps):
 
     steps.append(Step(
         targets=config.workspace().tag('basin_spinup_1mo_results'),
-        dependencies=[config.workspace().results(yearmon=yearmon, window=1, basis='basin') for yearmon in config.historical_yearmons()]
+        dependencies=[config.workspace().results(yearmon=yearmon, window=1, basis='basin')
+                      for yearmon in config.historical_yearmons()]
     ))
 
     # Time-integrate the variables
@@ -54,24 +56,26 @@ def spinup(config, meta_steps):
     for window in config.integration_windows():
         for param in config.lsm_integrated_var_names(basis='basin'):
             for month in all_months:
-                steps += all_fits.require(actions.fit_var(config, param=param, window=window, month=month, basis='basin'))
+                steps += all_fits.require(
+                    actions.fit_var(config, param=param, window=window, month=month, basis='basin'))
 
     # Compute annual min flows, for sub-annual integration periods
     for window in [1] + config.integration_windows():
         if window < 12:
             for year in config.result_fit_years():
-                integration_step = wsim_integrate(stats='min',
-                                   inputs=read_vars(config.workspace().results(
-                                       yearmon=available_yearmon_range(window=window, start_year=year, end_year=year),
-                                       window=window,
-                                       basis='basin'),
-                                       'Bt_RO' if window == 1 else 'Bt_RO_sum'
-                                   ),
-                                   output=config.workspace().results(
-                                       year=year,
-                                       window=window,
-                                       basis='basin'
-                                   )).replace_dependencies(config.workspace().tag('basin_spinup_{}mo_results'.format(window)))
+                integration_step = commands.wsim_integrate(
+                    stats='min',
+                    inputs=read_vars(config.workspace().results(
+                        yearmon=available_yearmon_range(window=window, start_year=year, end_year=year),
+                        window=window,
+                        basis='basin'),
+                        'Bt_RO' if window == 1 else 'Bt_RO_sum'
+                    ),
+                    output=config.workspace().results(
+                        year=year,
+                        window=window,
+                        basis='basin'
+                    )).replace_dependencies(config.workspace().tag('basin_spinup_{}mo_results'.format(window)))
                 steps.append(integration_step)
 
     # Compute fits of annual min flows
@@ -80,7 +84,7 @@ def spinup(config, meta_steps):
 
         if window < 12:
             steps.append(
-                wsim_fit(
+                commands.wsim_fit(
                     distribution=config.distribution,
                     inputs=read_vars(config.workspace().results(
                         year=date_range(config.result_fit_years()[0],
@@ -99,10 +103,16 @@ def spinup(config, meta_steps):
                 )
             )
 
+    # Compute upstream storage of each basin
+    steps += compute_basin_integration_windows(config.workspace(), config.static_data())
+
+    # Compute baseline water stress for each basin
+    steps += compute_basin_water_stress(config.workspace(), config.static_data())
+
     return steps
 
 
-def monthly_observed(config, yearmon, meta_steps):
+def monthly_observed(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str, Step]) -> List[Step]:
     print('Generating electric power steps for', yearmon, 'observed data')
 
     steps = []
@@ -117,8 +127,11 @@ def monthly_observed(config, yearmon, meta_steps):
     if yearmon not in config.result_fit_yearmons():
         # Do time integration
         for window in config.integration_windows():
-            steps += actions.time_integrate(config.workspace(), config.lsm_integrated_stats(basis='basin'), yearmon=yearmon, window=window, basis='basin')
-
+            steps += actions.time_integrate(config.workspace(),
+                                            config.lsm_integrated_stats(basis='basin'),
+                                            yearmon=yearmon,
+                                            window=window,
+                                            basis='basin')
         # Compute return periods
         steps += actions.compute_return_periods(config.workspace(),
                                                 result_vars=config.lsm_rp_vars(basis='basin'),
@@ -134,7 +147,7 @@ def monthly_observed(config, yearmon, meta_steps):
                                                     basis='basin')
 
         # Compute basin-level losses
-        steps += compute_basin_losses(config.workspace(), static=config.static_data(), yearmon=yearmon)
+        steps += compute_basin_losses(config.workspace(), yearmon=yearmon)
 
     return steps
 
@@ -144,12 +157,12 @@ def wsim_basin_losses(*,
                       basin_stress: str,
                       bt_ro: Iterable[Vardef],
                       bt_ro_fits: Iterable[str],
-                      output: str):
+                      output: str) -> List[str]:
     cmd = [
         os.path.join('{BINDIR}', 'wsim_basin_losses.R'),
         '--windows', '"{}"'.format(basin_windows),
-        '--stress',  '"{}"'.format(basin_stress),
-        '--output',  output
+        '--stress', '"{}"'.format(basin_stress),
+        '--output', output
     ]
 
     for vardef in bt_ro:
@@ -161,11 +174,27 @@ def wsim_basin_losses(*,
     return cmd
 
 
+def compute_basin_integration_windows(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:
+    return [
+        Step(
+            targets=workspace.basin_upstream_storage(),
+            dependencies=[static.basins(), static.dam_locations()],
+            commands=[
+                [
+                    os.path.join('{BINDIR}', 'utils', 'hydrobasins', 'compute_upstream_storage.R'),
+                    '--flow', workspace.fit_obs(var='Bt_RO', month=12, window=12, stat='sum', basis='basin'),
+                    '--dams', static.dam_locations().file,
+                    '--basins', static.basins().file,
+                    '--output', workspace.basin_upstream_storage(),
+                ]
+            ]
+        )
+    ]
+
+
 def compute_basin_losses(workspace: DefaultWorkspace,
                          *,
-                         static: Static,
-                         yearmon: str):
-
+                         yearmon: str) -> List[Step]:
     bt_ro = []
     bt_ro_fits = []
 
@@ -184,20 +213,53 @@ def compute_basin_losses(workspace: DefaultWorkspace,
                                             annual_stat='min' if w < 12 else None,
                                             month=12 if w >= 12 else None))
 
-    outfile = 'PLACEHOLDER_BASIN_LOSS'
+    outfile = workspace.basin_water_loss(yearmon=yearmon)
 
     return [
         Step(
             targets=[outfile],
-            dependencies=[v.file for v in bt_ro] + bt_ro_fits + [static.basin_water_stress().file],
+            dependencies=[v.file for v in bt_ro] + bt_ro_fits +
+                         [workspace.basin_water_stress(), workspace.basin_upstream_storage()],
             commands=[
                 wsim_basin_losses(
-                    basin_windows='PLACEHOLDER_BASIN_WINDOWS',
-                    basin_stress=static.basin_water_stress(),
+                    basin_windows=workspace.basin_upstream_storage(),
+                    basin_stress=workspace.basin_water_stress(),
                     bt_ro=bt_ro,
                     bt_ro_fits=bt_ro_fits,
                     output=outfile
                 )
             ]
+        )
+    ]
+
+
+def compute_basin_water_stress(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:
+    # FIXME this is a bit ugly, because the tempfile names are determined
+    # when the workflow is processed, not when it is executed. While this
+    # could be improved, the issue will go away when exactextract is updated
+    # to output netCDF directly.
+
+    temp_csv = tempfile.mktemp(suffix='.csv')
+    temp_nc = tempfile.mktemp(suffix='.nc')
+
+    return [
+        commands.exact_extract(
+            boundaries=static.basins().file,
+            fid='HYBAS_ID',
+            input=static.water_stress().file,
+            output=temp_csv,
+            stats='mean'
+        ).merge(
+            commands.table2nc(
+                input=temp_csv,
+                fid="HYBAS_ID",
+                column="mean",
+                output=temp_nc
+            )
+        ).merge(
+            commands.wsim_merge(
+                inputs=Vardef(temp_nc, 'mean').read_as('baseline_water_stress'),
+                output=workspace.basin_water_stress()
+            )
         )
     ]

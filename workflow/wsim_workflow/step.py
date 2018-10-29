@@ -17,6 +17,7 @@ import os
 
 from typing import Union, Optional, List, Set
 
+
 def process_filename(txt):
     """
     Strip out variable definitions used by some WSIM tools, and expand
@@ -25,12 +26,14 @@ def process_filename(txt):
     filename = str(txt).split('::')[0]
     return expand_filename_dates(filename)
 
+
 def coerce_to_list(thing):
     if thing is None:
         return []
     if type(thing) is str:
         return [thing]
     return thing
+
 
 ZeroOrMoreStrings = Union[str, List[str], Set[str], None]
 
@@ -40,7 +43,7 @@ class Step:
     def __init__(self, *,
                  targets: ZeroOrMoreStrings=None,
                  dependencies: ZeroOrMoreStrings=None,
-                 commands: Union[List, None]=None,
+                 commands: Optional[List[List[str]]]=None,
                  comment: Optional[str]=None,
                  consumes: ZeroOrMoreStrings=None,
                  working_directories: ZeroOrMoreStrings=None):
@@ -80,6 +83,8 @@ class Step:
                 self.dependencies |= set(process_filename(d))
 
         self.comment = comment
+
+        self.validate()
 
     @classmethod
     def make_empty(cls):
@@ -161,7 +166,7 @@ class Step:
         Returns the step object, to enable use in chaining.
         """
         self.commands.append(['touch', tag_file_name])
-        self.targets = { tag_file_name }
+        self.targets = {tag_file_name}
         self.working_directories.add(os.path.dirname(tag_file_name))
 
         return self
@@ -184,6 +189,33 @@ class Step:
         directories_to_create = [d for d in sorted(self.working_directories) if d != '']
 
         if directories_to_create:
-            return [ ['mkdir', '-p'] + directories_to_create ]
+            return [['mkdir', '-p'] + directories_to_create]
         else:
             return []
+
+    def validate(self):
+        for t in self.targets:
+            if type(t) is not str:
+                raise TypeError("Non-string target: ", t)
+        for d in self.dependencies:
+            if type(d) is not str:
+                raise TypeError("Non-string dependency: ", d)
+        for c in self.commands:
+            if type(c) is not list:
+                raise TypeError("Non-list command: ", c)
+            for token in c:
+                if type(token) is not str:
+                    raise TypeError("Non-string command token: ", str(token))
+
+    def __str__(self) -> str:
+        s = "Targets:\n"
+        for t in sorted(self.targets):
+            s += ' - ' + t + '\n'
+        s += "Dependencies:\n"
+        for d in sorted(self.dependencies):
+            s += ' - ' + d + '\n'
+        s += "Commands:\n"
+        for c in self.commands:
+            s += ' - ' + ' '.join(c) + '\n'
+
+        return s

@@ -25,10 +25,11 @@ from wsim_workflow import dates
 from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import aqueduct, isric, gmted, stn30, hydrobasins
+from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gmted, stn30
 from wsim_workflow.step import Step
 
-class CFSStatic(paths.Static):
+
+class CFSStatic(paths.Static, paths.ElectricityStatic):
     def __init__(self, source):
         super(CFSStatic, self).__init__(source)
 
@@ -38,40 +39,10 @@ class CFSStatic(paths.Static):
             gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, resolution=0.5) + \
             isric.global_tawc(source_dir=self.source, filename=self.wc().file, resolution=0.5) + \
             stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
+            grand.dam_locations(source_dir=self.source) + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
-            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file) + \
-            self.compute_basin_water_stress()
+            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file)
 
-    def compute_basin_water_stress(self) -> List[Step]:
-        # FIXME this is a bit ugly, because the tempfile names are determined
-        # when the workflow is processed, not when it is executed. While this
-        # could be improved, the issue will go away when exactextract is updated
-        # to output netCDF directly.
-
-        temp_csv = tempfile.mktemp(suffix='.csv')
-        temp_nc = tempfile.mktemp(suffix='.nc')
-
-        return [
-            commands.exact_extract(
-                boundaries=self.basins().file,
-                fid='HYBAS_ID',
-                input=self.water_stress().file,
-                output=temp_csv,
-                stats='mean'
-            ).merge(
-                commands.table2nc(
-                    input=temp_csv,
-                    fid="HYBAS_ID",
-                    column="mean",
-                    output=temp_nc
-                )
-            ).merge(
-                commands.wsim_merge(
-                    inputs=paths.Vardef(temp_nc, 'mean').read_as('baseline_water_stress'),
-                    output=self.basin_water_stress().file
-                )
-            )
-        ]
 
     # Static inputs
     def wc(self) -> paths.Vardef:
@@ -84,16 +55,13 @@ class CFSStatic(paths.Static):
         return paths.Vardef(os.path.join(self.source, 'GMTED2010', 'gmted2010_05deg.tif'), '1')
 
     def basins(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05.shp'), '1')
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05.shp'), None)
 
     def basin_downstream(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
 
-    def basin_integration_period(self) -> paths.Vardef:
-        pass
-
-    def basin_water_stress(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_baseline_water_stress.nc'), 'baseline_water_stress')
+    def dam_locations(self) -> paths.Vardef:
+        return paths.Vardef(os.path.join(self.source, 'GRanD', 'GRanD_dams_v1_1.shp'), None)
 
     def water_stress(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'Aqueduct', 'aqueduct_baseline_water_stress.tif'), '1')
@@ -280,6 +248,7 @@ class NCEP(paths.ObservedForcing):
         else:
             return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays', 'wetdays_{yearmon}.nc'.format(yearmon=yearmon)), 'pWetDays')
 
+
 class CFSForecast(paths.ForecastForcing):
 
     def __init__(self, source, derived):
@@ -356,7 +325,7 @@ class CFSForecast(paths.ForecastForcing):
 
         for var in ('T', 'Pr'):
             for month in range(1, 13):
-                fitfile =  self.fit_obs(var=var, month=month)
+                fitfile = self.fit_obs(var=var, month=month)
                 fitdir = os.path.dirname(fitfile)
                 fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
 
@@ -397,6 +366,7 @@ class CFSForecast(paths.ForecastForcing):
             # Convert the forecast data from GRIB to netCDF
             commands.forecast_convert(infile, outfile)
         ]
+
 
 class CFSConfig(ConfigBase):
 
@@ -441,5 +411,6 @@ class CFSConfig(ConfigBase):
 
     def workspace(self):
         return self._workspace
+
 
 config = CFSConfig
