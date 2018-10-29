@@ -16,12 +16,16 @@
 import os
 import re
 
+import tempfile
+
+from typing import List
+
 from wsim_workflow import commands
 from wsim_workflow import dates
 from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import isric, gmted, stn30, hydrobasins
+from wsim_workflow.data_sources import aqueduct, isric, gmted, stn30, hydrobasins
 from wsim_workflow.step import Step
 
 class CFSStatic(paths.Static):
@@ -30,27 +34,70 @@ class CFSStatic(paths.Static):
 
     def global_prep_steps(self):
         return \
+            aqueduct.baseline_water_stress(source_dir=self.source, filename=self.water_stress().file) + \
             gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, resolution=0.5) + \
             isric.global_tawc(source_dir=self.source, filename=self.wc().file, resolution=0.5) + \
             stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
-            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file)
+            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file) + \
+            self.compute_basin_water_stress()
+
+    def compute_basin_water_stress(self) -> List[Step]:
+        # FIXME this is a bit ugly, because the tempfile names are determined
+        # when the workflow is processed, not when it is executed. While this
+        # could be improved, the issue will go away when exactextract is updated
+        # to output netCDF directly.
+
+        temp_csv = tempfile.mktemp(suffix='.csv')
+        temp_nc = tempfile.mktemp(suffix='.nc')
+
+        return [
+            commands.exact_extract(
+                boundaries=self.basins().file,
+                fid='HYBAS_ID',
+                input=self.water_stress().file,
+                output=temp_csv,
+                stats='mean'
+            ).merge(
+                commands.table2nc(
+                    input=temp_csv,
+                    fid="HYBAS_ID",
+                    column="mean",
+                    output=temp_nc
+                )
+            ).merge(
+                commands.wsim_merge(
+                    inputs=paths.Vardef(temp_nc, 'mean').read_as('baseline_water_stress'),
+                    output=self.basin_water_stress().file
+                )
+            )
+        ]
 
     # Static inputs
-    def wc(self):
+    def wc(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'ISRIC', 'wise_05deg_v1_tawc.tif'), '1')
 
-    def flowdir(self):
+    def flowdir(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'STN_30', 'g_network.asc'), '1')
 
-    def elevation(self):
+    def elevation(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'GMTED2010', 'gmted2010_05deg.tif'), '1')
 
-    def basins(self):
+    def basins(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05.shp'), '1')
 
-    def basin_downstream(self):
+    def basin_downstream(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
+
+    def basin_integration_period(self) -> paths.Vardef:
+        pass
+
+    def basin_water_stress(self) -> paths.Vardef:
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_baseline_water_stress.nc'), 'baseline_water_stress')
+
+    def water_stress(self) -> paths.Vardef:
+        return paths.Vardef(os.path.join(self.source, 'Aqueduct', 'aqueduct_baseline_water_stress.tif'), '1')
+
 
 class NCEP(paths.ObservedForcing):
 

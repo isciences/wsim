@@ -15,6 +15,8 @@ from .paths import expand_filename_dates
 
 import os
 
+from typing import Union, Optional, List, Set
+
 def process_filename(txt):
     """
     Strip out variable definitions used by some WSIM tools, and expand
@@ -30,9 +32,18 @@ def coerce_to_list(thing):
         return [thing]
     return thing
 
+ZeroOrMoreStrings = Union[str, List[str], Set[str], None]
+
+
 class Step:
 
-    def __init__(self, *, targets=None, dependencies=None, commands=None, comment=None, consumes=None, working_directories=None):
+    def __init__(self, *,
+                 targets: ZeroOrMoreStrings=None,
+                 dependencies: ZeroOrMoreStrings=None,
+                 commands: Union[List, None]=None,
+                 comment: Optional[str]=None,
+                 consumes: ZeroOrMoreStrings=None,
+                 working_directories: ZeroOrMoreStrings=None):
         """
         Initialize a workflow step
 
@@ -83,7 +94,7 @@ class Step:
         """
         return Step(targets=[meta_step_name], dependencies=dependencies, commands=None)
 
-    def merge(self, *others):
+    def merge(self, *others) -> "Step":
         """
         Merge another step into this one, returning a combined step.
         Commands for the other step will be sequenced after commands

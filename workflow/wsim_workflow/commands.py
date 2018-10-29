@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import os
-from typing import Union, Iterable
+from typing import Union, Iterable, Optional, List
 
 from .step import Step
 from . import attributes as attrs
@@ -96,9 +96,20 @@ def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
     )
 
 
-def exact_extract(*, boundaries, fid, input, weights=None, output, stats, comment=None):
+def exact_extract(*,
+                  boundaries: str,
+                  fid: str,
+                  input: str,
+                  output: str,
+                  weights: Union[str, List[str], None]=None,
+                  stats: Union[str, List[str]],
+                  comment: Optional[str]=None):
+
     if isinstance(stats, str):
         stats = [stats]
+
+    if isinstance(weights, str):
+        weights = [weights]
 
     cmd = [
         'exactextract',
@@ -122,7 +133,7 @@ def exact_extract(*, boundaries, fid, input, weights=None, output, stats, commen
 
     return Step(
         targets=output,
-        dependencies=[input + weights] if weights else input,
+        dependencies=([input] + weights) if weights else input,
         commands=[cmd],
         comment=comment
     )

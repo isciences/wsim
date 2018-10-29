@@ -14,15 +14,17 @@
 import os
 import os.path
 
+from typing import List
+
 from ..step import Step
 
-def baseline_water_stress(source_dir, filename):
+
+def baseline_water_stress(source_dir: str, filename: str) -> List[Step]:
     url = 'https://data.wri.org/Aqueduct/web/aqueduct_global_maps_21_shp.zip'
     dirname = os.path.join(source_dir, 'Aqueduct')
 
     zip_path = os.path.join(dirname, url.split('/')[-1])
     aqueduct_shp = os.path.join(dirname, 'aqueduct_global_dl_20150409.shp')
-    aqueduct_tif = os.path.join(dirname, filename)
 
     nodata = "-3.4028234663852886e+38"
 
@@ -50,7 +52,7 @@ def baseline_water_stress(source_dir, filename):
             ]
         ),
         Step(
-            targets=aqueduct_tif,
+            targets=filename,
             dependencies=aqueduct_shp,
             commands=[
                 ['gdal_rasterize',
@@ -65,7 +67,7 @@ def baseline_water_stress(source_dir, filename):
                  '-dialect', 'sqlite',           # needed for two-argument min and max functions
                  '-co',      '"COMPRESS=deflate"',
                  aqueduct_shp,
-                 aqueduct_tif]
+                 filename]
             ]
         )
     ]

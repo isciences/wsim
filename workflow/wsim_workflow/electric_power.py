@@ -74,17 +74,11 @@ def spinup(config, meta_steps):
                                    )).replace_dependencies(config.workspace().tag('basin_spinup_{}mo_results'.format(window)))
                 steps.append(integration_step)
 
-
     # Compute fits of annual min flows
     for window in [1] + config.integration_windows():
         var_to_fit = 'Bt_RO_min' if window == 1 else 'Bt_RO_sum_min'
 
         if window < 12:
-            #first_year, last_year = config.result_fit_years()[0, -1]
-
-            #start_date = format_yearmon(first_year, window)
-            #last_date = format_yearmon()
-
             steps.append(
                 wsim_fit(
                     distribution=config.distribution,
@@ -153,8 +147,8 @@ def wsim_basin_losses(*,
                       output: str):
     cmd = [
         os.path.join('{BINDIR}', 'wsim_basin_losses.R'),
-        '--windows', basin_windows,
-        '--stress',  basin_stress,
+        '--windows', '"{}"'.format(basin_windows),
+        '--stress',  '"{}"'.format(basin_stress),
         '--output',  output
     ]
 
@@ -195,11 +189,11 @@ def compute_basin_losses(workspace: DefaultWorkspace,
     return [
         Step(
             targets=[outfile],
-            dependencies=[v.file for v in bt_ro] + bt_ro_fits,
+            dependencies=[v.file for v in bt_ro] + bt_ro_fits + [static.basin_water_stress().file],
             commands=[
                 wsim_basin_losses(
                     basin_windows='PLACEHOLDER_BASIN_WINDOWS',
-                    basin_stress='PLACEHOLDER_BASIN_STRESS',
+                    basin_stress=static.basin_water_stress(),
                     bt_ro=bt_ro,
                     bt_ro_fits=bt_ro_fits,
                     output=outfile
