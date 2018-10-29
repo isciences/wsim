@@ -14,11 +14,11 @@
 import itertools
 import tempfile
 
-from typing import Union, Dict, Iterable, List, Sequence
+from typing import Dict, List, Optional
 
 from . import attributes as attrs
 
-from .paths import read_vars, Vardef, date_range, DefaultWorkspace
+from .paths import read_vars, Vardef, DefaultWorkspace
 from .commands import \
     exact_extract, \
     table2nc, \
@@ -129,11 +129,11 @@ def time_integrate(workspace: DefaultWorkspace,
                    integrated_stats: Dict[str, List[str]],
                    *,
                    yearmon: str,
-                   target: Union[str,None]=None,
-                   window: Union[int,None]=None,
-                   member: Union[str,None]=None,
-                   lead_months: Union[int,None]=None,
-                   basis: Union[str,None]=None):
+                   target: Optional[str]=None,
+                   window: Optional[int]=None,
+                   member: Optional[str]=None,
+                   lead_months: Optional[int]=None,
+                   basis: Optional[str]=None):
     months = rolling_window(target if target else yearmon, window)
 
     if lead_months:
@@ -144,19 +144,32 @@ def time_integrate(workspace: DefaultWorkspace,
         window_forecast = []
 
     prev_results = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
-                   [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
+                   [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis)
+                    for x in window_forecast]
 
     return [
         wsim_integrate(
             inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev_results],
             stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
             attrs=[attrs.integration_window(var='*', months=window)],
-            output=workspace.results(yearmon=yearmon, window=window, target=target, member=member, temporary=False, basis=basis)
+            output=workspace.results(yearmon=yearmon,
+                                     window=window,
+                                     target=target,
+                                     member=member,
+                                     temporary=False,
+                                     basis=basis)
         )
     ]
 
 
-def compute_return_periods(workspace, *, forcing_vars=None, result_vars=None, yearmon, window, target=None, member=None, basis=None):
+def compute_return_periods(workspace, *,
+                           forcing_vars=None,
+                           result_vars=None,
+                           yearmon,
+                           window,
+                           target=None,
+                           member=None,
+                           basis=None):
     if target:
         month = int(target[-2:])
     else:
@@ -167,17 +180,22 @@ def compute_return_periods(workspace, *, forcing_vars=None, result_vars=None, ye
     if result_vars is None:
         result_vars = []
 
-    args = { 'yearmon' : yearmon, 'target' : target, 'window' : window, 'member' : member, 'basis' : basis }
+    args = {'yearmon': yearmon, 'target': target, 'window': window, 'member': member, 'basis': basis}
 
     if basis:
         assert not forcing_vars
 
     return [
         wsim_anom(
-            fits=[workspace.fit_obs(var=var, window=window, month=month, basis=basis) for var in forcing_vars + result_vars],
+            fits=[workspace.fit_obs(var=var,
+                                    window=window,
+                                    month=month,
+                                    basis=basis) for var in forcing_vars + result_vars],
             obs=[
-                read_vars(workspace.results(**args), *result_vars) if result_vars else None,
-                read_vars(workspace.forcing(yearmon=yearmon, target=target, member=member), *forcing_vars) if forcing_vars else None
+                read_vars(workspace.results(**args), *result_vars)
+                if result_vars else None,
+                read_vars(workspace.forcing(yearmon=yearmon, target=target, member=member), *forcing_vars)
+                if forcing_vars else None
             ],
             rp=workspace.return_period(**args),
             sa=workspace.standard_anomaly(**args)
@@ -194,34 +212,35 @@ def composite_vars(*, method, window, quantile):
         rp_or_sa = 'sa'
 
     if window == 1:
-        deficit=[
+        deficit = [
             'PETmE_{rp_or_sa}{quantile}@fill0@negate->Neg_PETmE',
             'Ws_{rp_or_sa}{quantile}->Ws',
             'Bt_RO_{rp_or_sa}{quantile}->Bt_RO'
         ]
-        surplus=[
+        surplus = [
             'RO_mm_{rp_or_sa}{quantile}->RO_mm',
             'Bt_RO_{rp_or_sa}{quantile}->Bt_RO'
         ]
-        mask='Ws_{rp_or_sa}{quantile}'
+        mask = 'Ws_{rp_or_sa}{quantile}'
     else:
-        deficit=[
+        deficit = [
             'PETmE_sum_{rp_or_sa}{quantile}@fill0@negate->Neg_PETmE',
             'Ws_ave_{rp_or_sa}{quantile}->Ws',
             'Bt_RO_sum_{rp_or_sa}{quantile}->Bt_RO'
         ]
-        surplus=[
+        surplus = [
             'RO_mm_sum_{rp_or_sa}{quantile}->RO_mm',
             'Bt_RO_sum_{rp_or_sa}{quantile}->Bt_RO'
         ]
-        mask='Ws_ave_{rp_or_sa}{quantile}'
+        mask = 'Ws_ave_{rp_or_sa}{quantile}'
 
-    fmt = lambda x : x.format(quantile=quantile_text, rp_or_sa=rp_or_sa)
+    def fmt(x):
+        return x.format(quantile=quantile_text, rp_or_sa=rp_or_sa)
 
     return {
-        'deficit' : [fmt(d) for d in deficit],
-        'surplus' : [fmt(s) for s in surplus],
-        'mask'    : fmt(mask)
+        'deficit': [fmt(d) for d in deficit],
+        'surplus': [fmt(s) for s in surplus],
+        'mask': fmt(mask)
     }
 
 
@@ -256,7 +275,8 @@ def composite_indicator_return_periods(workspace, *, yearmon, window, target=Non
                 workspace.fit_composite_anomalies(window=window, indicator='surplus'),
                 workspace.fit_composite_anomalies(window=window, indicator='deficit')
             ],
-            obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target), 'surplus', 'deficit'),
+            obs=read_vars(workspace.composite_anomaly(yearmon=yearmon, window=window, target=target),
+                          'surplus', 'deficit'),
             rp=workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target, temporary=False)
         )
     ]
@@ -265,8 +285,10 @@ def composite_indicator_return_periods(workspace, *, yearmon, window, target=Non
 def composite_indicator_adjusted(workspace, *, yearmon, window, target=None):
     return [
         wsim_composite(
-            surplus=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target), 'surplus_rp').read_as('surplus')],
-            deficit=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target), 'deficit_rp').read_as('deficit')],
+            surplus=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target),
+                            'surplus_rp').read_as('surplus')],
+            deficit=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target),
+                            'deficit_rp').read_as('deficit')],
             both_threshold=3,
             output=workspace.composite_summary_adjusted(yearmon=yearmon, window=window, target=target),
             clamp=60
@@ -288,7 +310,7 @@ def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantil
         wsim_composite(
             surplus=[infile + '::' + var for var in cvars['surplus']],
             deficit=[infile + '::' + var for var in cvars['deficit']],
-            both_threshold=0.4307273, # corresponds with rp of 3
+            both_threshold=0.4307273,  # corresponds with rp of 3
             mask=infile + '::' + cvars['mask'],
             output=outfile
         )
@@ -321,7 +343,7 @@ def fit_var(config, *, param, month, stat=None, window=1, basis=None):
     return [
         wsim_fit(
             distribution=config.distribution,
-            inputs=[ read_vars(infile, param_to_read) ],
+            inputs=read_vars(infile, param_to_read),
             output=config.workspace().fit_obs(var=param, stat=stat, month=month, window=window, basis=basis),
             window=window
         )
@@ -341,7 +363,8 @@ def forcing_summary(workspace, ensemble_members, *, yearmon, target):
 def result_summary(workspace, ensemble_members, *, yearmon, target, window=None):
     return [
         wsim_integrate(
-            inputs=[workspace.results(yearmon=yearmon, window=window, target=target, member=member) for member in ensemble_members],
+            inputs=[workspace.results(yearmon=yearmon, window=window, target=target, member=member)
+                    for member in ensemble_members],
             stats=['q25', 'q50', 'q75'],
             output=workspace.results_summary(yearmon=yearmon, window=window, target=target)
         )
@@ -351,7 +374,8 @@ def result_summary(workspace, ensemble_members, *, yearmon, target, window=None)
 def return_period_summary(workspace, ensemble_members, *, yearmon, target, window=None):
     return [
         wsim_integrate(
-            inputs=[workspace.return_period(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members],
+            inputs=[workspace.return_period(yearmon=yearmon, target=target, window=window, member=member)
+                    for member in ensemble_members],
             stats=['q25', 'q50', 'q75'],
             output=workspace.return_period_summary(yearmon=yearmon, window=window, target=target)
         )
@@ -361,7 +385,8 @@ def return_period_summary(workspace, ensemble_members, *, yearmon, target, windo
 def standard_anomaly_summary(workspace, ensemble_members, *, yearmon, target, window=None):
     return [
         wsim_integrate(
-            inputs=[workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member) for member in ensemble_members],
+            inputs=[workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member)
+                    for member in ensemble_members],
             stats=['q25', 'q50', 'q75'],
             output=workspace.standard_anomaly_summary(yearmon=yearmon, window=window, target=target)
         )
