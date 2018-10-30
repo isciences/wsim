@@ -60,7 +60,7 @@ class TestCFSConfig(unittest.TestCase):
         yearmon_within_historical = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=4)
 
         for yearmon in (yearmon_within_historical, yearmon_after_historical):
-            steps = generate_steps(config, yearmon, yearmon, False, 'latest')
+            steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='latest', run_electric_power=True)
 
             print('Number of steps:', len([step for step in steps if step.commands]))
 
@@ -88,7 +88,7 @@ class TestCFSConfig(unittest.TestCase):
 
         yearmon = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=1)
 
-        steps = generate_steps(config, yearmon, yearmon, False, 'latest')
+        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='latest', run_electric_power=True)
 
         targets_threshold = 2
         dependencies_threshold = 100
@@ -105,13 +105,13 @@ class TestCFSConfig(unittest.TestCase):
         config = CFSConfig(self.source, self.derived)
 
         # Shouldn't get duplicate steps within fit period
-        self.fail_on_duplicate_targets(generate_steps(config, '196404', '196404', False, 'latest'))
+        self.fail_on_duplicate_targets(generate_steps(config, start='196404', stop='196404', no_spinup=False, forecasts='latest', run_electric_power=True))
 
         # Or after fit period, but still within historical period
-        self.fail_on_duplicate_targets(generate_steps(config, '201504', '201504', False, 'latest'))
+        self.fail_on_duplicate_targets(generate_steps(config, start='201504', stop='201504', no_spinup=False, forecasts='latest', run_electric_power=True))
 
         # Or after historical period
-        self.fail_on_duplicate_targets(generate_steps(config, '201801', '201801', False, 'latest'))
+        self.fail_on_duplicate_targets(generate_steps(config, start='201801', stop='201801', no_spinup=False, forecasts='latest', run_electric_power=True))
 
     def test_var_fitting_years(self):
         # Check that, when fitting time-integrated variables, we correctly truncate the historical range to
@@ -139,7 +139,7 @@ class TestCFSConfig(unittest.TestCase):
 
         expected_filename = config.workspace().composite_summary_adjusted(yearmon=yearmon, window=1)
 
-        steps = generate_steps(config, yearmon, yearmon, False, 'latest')
+        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='latest', run_electric_power=True)
 
         for step in steps:
             if expected_filename in step.targets:
@@ -154,7 +154,7 @@ class TestCFSConfig(unittest.TestCase):
 
         bindir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
 
-        steps = generate_steps(config, '201701', '201701', False, 'latest')
+        steps = generate_steps(config, start='201701', stop='201701', no_spinup=False, forecasts='latest', run_electric_power=True)
 
         filename = tempfile.mkstemp()[-1]
 

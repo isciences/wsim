@@ -41,7 +41,8 @@ class TestGLDAS20_NoahConfig(unittest.TestCase):
 
         yearmon = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=4)
 
-        steps = generate_steps(config, yearmon, yearmon, False, 'latest')
+        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='latest',
+                               run_electric_power=False)
 
         # The GLDAS20_Noah config doesn't include steps for fetching the data, so we need
         # to remove dependencies on these files for the purpose of checking buildable
@@ -61,7 +62,7 @@ class TestGLDAS20_NoahConfig(unittest.TestCase):
         config = GLDAS20_NoahConfig(self.source, self.derived)
 
         # Shouldn't get duplicate steps within fit period
-        self.fail_on_duplicate_targets(generate_steps(config, '196404', '196404', False, 'latest'))
+        self.fail_on_duplicate_targets(generate_steps(config, start='196404', stop='196404', no_spinup=False, forecasts='latest', run_electric_power=False))
 
         # Or after fit period, but still within historical period
-        self.fail_on_duplicate_targets(generate_steps(config, '201004', '201004', False, 'latest'))
+        self.fail_on_duplicate_targets(generate_steps(config, start='201004', stop='201004', no_spinup=False, forecasts='latest', run_electric_power=False))

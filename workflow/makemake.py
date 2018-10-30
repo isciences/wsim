@@ -89,7 +89,12 @@ def main(raw_args):
 
     config = load_config(args.config, args.source, args.workspace)
 
-    steps = workflow.generate_steps(config, args.start, args.stop, args.nospinup, args.forecasts)
+    steps = workflow.generate_steps(config,
+                                    start=args.start,
+                                    stop=args.stop,
+                                    no_spinup=args.nospinup,
+                                    forecasts=args.forecasts,
+                                    run_electric_power=True)
 
     duplicate_targets = workflow.find_duplicate_targets(steps)
     if duplicate_targets:

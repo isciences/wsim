@@ -15,12 +15,16 @@
 
 import os
 
+from typing import List
+
 from . import dates
 from . import monthly
 from . import spinup
 from . import electric_power
 
+from .config_base import ConfigBase
 from .step import Step
+
 
 def find_duplicate_targets(steps):
     targets = set()
@@ -34,7 +38,13 @@ def find_duplicate_targets(steps):
 
     return sorted(list(duplicates))
 
-def generate_steps(config, start, stop, no_spinup, forecasts):
+
+def generate_steps(config: ConfigBase, *,
+                   start: str,
+                   stop: str,
+                   no_spinup: bool,
+                   forecasts: str,
+                   run_electric_power: bool) -> List[Step]:
     steps = []
 
     steps += config.global_prep()
@@ -51,11 +61,13 @@ def generate_steps(config, start, stop, no_spinup, forecasts):
 
     if config.should_run_spinup() and not no_spinup:
         steps += spinup.spinup(config, meta_steps)
-        steps += electric_power.spinup(config, meta_steps)
+        if run_electric_power:
+            steps += electric_power.spinup(config, meta_steps)
 
     for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop)))):
         steps += monthly.monthly_observed(config, yearmon, meta_steps)
-        steps += electric_power.monthly_observed(config, yearmon, meta_steps)
+        if run_electric_power:
+            steps += electric_power.monthly_observed(config, yearmon, meta_steps)
 
         if forecasts == 'all' or (forecasts == 'latest' and i == 0):
             steps += monthly.monthly_forecast(config, yearmon, meta_steps)
