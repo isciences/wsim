@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-context('WSIM electricity assessment')
+context('Basin integration period')
 
 bins <- c(1, 3, 6, 12, 24, 36) 
 

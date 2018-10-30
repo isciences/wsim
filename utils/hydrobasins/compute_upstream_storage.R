@@ -3,6 +3,7 @@
 suppressMessages({
   library(dplyr)
   library(sf)
+  library(wsim.electricity)
   library(wsim.io)
   library(wsim.lsm)           # for accumulate
   library(wsim.distributions) # to get median flow from distribution
@@ -23,10 +24,6 @@ Options:
 --output <file>   A netCDF file with a "months_capacity" variable
 '->usage
 
-assign_to_bin <- function(vals, bins) {
-  bins[findInterval(vals, c(bins, Inf), all.inside=TRUE)]
-}
-
 bins <- c(1, 3, 6, 12, 24, 36)
 
 main <- function(raw_args) {
@@ -45,25 +42,30 @@ main <- function(raw_args) {
 
   params <- t(do.call(rbind, fit$data))
   medians <- apply(params, 1, function(p) if (any(is.na(p))) { p[1] } else { qua(0.5, p) })
-  flow_df <- as.tbl(data.frame(hybas_id=fit$ids, flow_12mo_mcm=medians*1e-6))
+  flow_df <- as.tbl(data.frame(basin_id=fit$ids, flow_12mo=medians))
 
   # Remove dams that are used for irrigation, water supply, or fire control, unless they're
   # explicitly noted as being used for electricity production
   hydro_dams <- filter(dams, !is.na(use_elec) | (is.na(use_irri) & is.na(use_supp) & is.na(use_fcon)))
+  
+  basin_capacity <- wsim.electricity::basin_upstream_capacity(
+    select(basins, basin_id=hybas_id, downstream_id=next_down),
+    select(hydro_dams, capacity=cap_mcm))
+  
+  basin_months_storage <- left_join(flow_df, basin_capacity, by='basin_id') %>%
+    mutate(months_storage=(capacity+capacity_upstream)*1e6/flow_12mo)
+  
+  basin_integration_periods <- basin_capacity %>%
+    full_join(flow_df, by='basin_id') %>%
+    mutate(months_storage=wsim.electricity::basin_integration_period(
+      (capacity + capacity_upstream)*1e6, # basin + upstream capacity as [m^3]
+      flow_12mo/12,
+      bins)) %>%
+    select(basin_id, months_storage)
 
-  basin_capacity <- basins %>%
-    st_join(hydro_dams, join=st_intersects, left=TRUE, largest=FALSE) %>%
-    st_set_geometry(NULL)	%>%
-    group_by(hybas_id, next_down) %>%
-    summarise(capacity=coalesce(sum(cap_mcm), 0)) %>%
-    ungroup() %>%
-    mutate(capacity_upstream=accumulate(hybas_id, next_down, capacity)) %>%
-    left_join(flow_df) %>%
-    mutate(months_storage=assign_to_bin(capacity_upstream / (flow_12mo_mcm / 12), bins))
-
-  write_vars_to_cdf(vars=basin_capacity[, 'months_storage'],
+  write_vars_to_cdf(vars=basin_integration_periods[, 'months_storage'],
                     filename=args$output,
-                    ids=basin_capacity$hybas_id,
+                    ids=basin_capacity$basin_id,
       				      prec='integer')
 }
 

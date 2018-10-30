@@ -13,11 +13,15 @@
 
 #' Select an integration period for a basin
 #' 
-#' @param upstream_capacity     upstream storage capacity available for electric
-#'                              power generation
-#' @param expected_monthly_flow typical monthly total blue water, e.g., the location
-#'                              parameter of a fitted distribution
-#' @param available_periods     vector of available integration periods in months              
+#' @param cumulative_capacity   storage capacity available for electric power 
+#'                              generation (capacity from reservoirs in a basin,
+#'                              plus all upstream basins)
+#' @param expected_monthly_flow median monthly total blue water
+#' @param available_periods     vector of available integration periods in months
+#'                              flows will be assigned to bins as follows:
+#                               1:      flow < 3
+#                               3: 3 <= flow < 6
+#                               6: 6 <= flow
 #' @export
 basin_integration_period <- function(upstream_capacity, expected_monthly_flow, available_periods) {
   available_periods[findInterval(upstream_capacity / expected_monthly_flow,
