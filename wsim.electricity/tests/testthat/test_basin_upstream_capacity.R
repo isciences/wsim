@@ -23,14 +23,15 @@ make_box <- function(xmin, ymin, xmax, ymax) {
 }
 
 ## 1--- 2 --- 3
-##  \-- 4 
+##  \-- 4 --- 5
 test_that('correct capacity determined', {
-  basins <- sf::st_sf(basin_id=c(1,2,3,4),
-                      downstream_id=c(0,1,2,1),
+  basins <- sf::st_sf(basin_id=c(1,2,3,4,5),
+                      downstream_id=c(0,1,2,1,4),
                       geom=sf::st_sfc(make_box(1, 1, 2, 2),
                                       make_box(2, 1, 3, 2),
                                       make_box(3, 1, 4, 2),
-                                      make_box(1, 0, 2, 1)))
+                                      make_box(1, 0, 2, 1),
+                                      make_box(2, 0, 3, 1)))
   
   dams <- sf::st_sf(capacity=c(7, 11, 13, 17, 21),
                     geom=sf::st_sfc(sf::st_point(c(1.5, 1.5)),  # in basin 1
@@ -42,9 +43,10 @@ test_that('correct capacity determined', {
                                                                 # assign to lowest-id basin
   
   capacities <- basin_upstream_capacity(basins, dams) 
+  expect_equal(basins$basin_id, capacities$basin_id)
   
   expect_equal(sum(capacities$capacity), sum(dams$capacity))
   
-  expect_equal(capacities$capacity, c(7+21, 0, 11+13, 17))
-  expect_equal(capacities$capacity_upstream, c(24+17, 24, 0, 0))
+  expect_equal(capacities$capacity, c(7+21, 0, 11+13, 17, 0))
+  expect_equal(capacities$capacity_upstream, c(24+17, 24, 0, 0, 0))
 })

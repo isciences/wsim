@@ -15,8 +15,14 @@ context('Basin integration period')
 
 bins <- c(1, 3, 6, 12, 24, 36) 
 
-test_that('when there is no upstream storage, we use a 1-month integration period', {
+test_that('when there is no (or undefined) upstream storage, we use a 1-month integration period', {
   expect_equal(basin_integration_period(0, 100, bins), 1)  
+  expect_equal(basin_integration_period(NA, 100, bins), 1)  
+})
+
+test_that('when there is no (or undefined) flow, we default to the shortest integration period', {
+  expect_equal(basin_integration_period(100, 0, bins), 1)
+  expect_equal(basin_integration_period(100, NA, bins), 1)
 })
 
 test_that('when there is less than 1 month of upstream storage, we use a 1-month integration period', {

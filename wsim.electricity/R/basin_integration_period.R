@@ -24,7 +24,7 @@
 #                               6: 6 <= flow
 #' @export
 basin_integration_period <- function(upstream_capacity, expected_monthly_flow, available_periods) {
-  available_periods[findInterval(upstream_capacity / expected_monthly_flow,
-                                 c(available_periods, Inf),
-                                 all.inside=TRUE)]
+  ifelse(is.na(expected_monthly_flow) | is.na(upstream_capacity) | expected_monthly_flow <= 0,
+         available_periods[1], 
+         wsim.io::assign_to_bin(upstream_capacity / expected_monthly_flow, available_periods))
 }

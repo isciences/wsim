@@ -53,13 +53,13 @@ main <- function(raw_args) {
     select(hydro_dams, capacity=cap_mcm))
   
   basin_months_storage <- left_join(flow_df, basin_capacity, by='basin_id') %>%
-    mutate(months_storage=(capacity+capacity_upstream)*1e6/flow_12mo)
+    mutate(months_storage=ifelse(is.na(flow_12mo) | flow_12mo <= 0, 0, (capacity+capacity_upstream)*1e6/flow_12mo))
   
   basin_integration_periods <- basin_capacity %>%
     full_join(flow_df, by='basin_id') %>%
     mutate(months_storage=wsim.electricity::basin_integration_period(
       (capacity + capacity_upstream)*1e6, # basin + upstream capacity as [m^3]
-      flow_12mo/12,
+      coalesce(flow_12mo/12, 0),
       bins)) %>%
     select(basin_id, months_storage)
 
