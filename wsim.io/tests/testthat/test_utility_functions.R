@@ -75,3 +75,13 @@ test_that('integer coercion throws an error with non-integer floats', {
   expect_error(coerce_to_integer(.Machine$integer.max + 1),
                'Values \\(\\d+\\) cannot be coerced')
 })
+
+test_that('bin assignment works as expected', {
+  expect_equal(assign_to_bin(vals=c(0.5, 1, 1.5, 2, 3, 4),
+                             bins=c(1, 2, 3)),
+               c(1, 1, 1, 2, 3, 3))
+
+  expect_equal(assign_to_bin(vals=c(0.5, 1, 1.5, 2, 3, 4),
+                             bins=c(2, 1, 3)),
+               c(1, 1, 1, 2, 3, 3))
+})
