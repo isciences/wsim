@@ -16,8 +16,6 @@
 import os
 import re
 
-import tempfile
-
 from typing import List
 
 from wsim_workflow import commands
@@ -108,7 +106,7 @@ class NCEP(paths.ObservedForcing):
             )
         ]
 
-    def compute_wetday_ltmeans(self, start_year, stop_year):
+    def compute_wetday_ltmeans(self, start_year: int, stop_year: int) -> List[Step]:
         """
         Steps to compute long-term means in wetdays that can be used
         for months where daily precipitation data is not available

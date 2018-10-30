@@ -26,7 +26,7 @@ from .config_base import ConfigBase
 from .step import Step
 
 
-def find_duplicate_targets(steps):
+def find_duplicate_targets(steps: List[Step]) -> List[Step]:
     targets = set()
     duplicates = set()
 
@@ -49,7 +49,7 @@ def generate_steps(config: ConfigBase, *,
 
     steps += config.global_prep()
 
-    meta_steps = { name : Step.create_meta(name) for name in (
+    meta_steps = {name: Step.create_meta(name) for name in (
         'all_fits',
         'all_composites',
         'all_monthly_composites',
@@ -77,7 +77,7 @@ def generate_steps(config: ConfigBase, *,
     return steps
 
 
-def write_makefile(module, filename, steps, bindir):
+def write_makefile(module, filename: str, steps: List[Step], bindir: str) -> None:
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, 'w') as outfile:
@@ -87,13 +87,13 @@ def write_makefile(module, filename, steps, bindir):
         # Reverse the steps so that spinup stuff is at the end. This is just to improve readability
         # if the user wants to manually inspect the Makefile
         for step in reversed(steps):
-            outfile.write(module.write_step(step, {'BINDIR' : bindir}))
+            outfile.write(module.write_step(step, {'BINDIR': bindir}))
             outfile.write('\n')
 
         print("Done")
 
 
-def unbuildable_targets(steps):
+def unbuildable_targets(steps) -> List[Step]:
     """
     Walk the dependency tree of a number of steps and make sure that all steps are buildable
     (i.e., the step either has known dependencies or depends on a step that, in turn, has no
