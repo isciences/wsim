@@ -106,7 +106,7 @@ class ForecastForcing(metaclass=ABCMeta):
     @abstractmethod
     def temp_monthly(self, *, yearmon, target, member):
         """
-        Return a Vardef for the average monthly temparature
+        Return a Vardef for the average monthly temperature
         """
         pass
 
