@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Union
+from typing import Optional
 
 
-def integration_window(*, var: Union[str,None], months: int):
+def integration_window(*, var: Optional[str], months: int) -> str:
     return '{}integration_window_months={}'.format('' if var is None else var + ':',
                                                    months)

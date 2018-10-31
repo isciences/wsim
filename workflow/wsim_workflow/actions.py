@@ -14,11 +14,11 @@
 import itertools
 import tempfile
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from . import attributes as attrs
 
-from .paths import read_vars, Vardef, DefaultWorkspace
+from .paths import read_vars, Vardef, DefaultWorkspace, ObservedForcing, ForecastForcing, ElectricityStatic, Static
 from .commands import \
     exact_extract, \
     table2nc, \
@@ -30,11 +30,18 @@ from .commands import \
     wsim_integrate, \
     wsim_lsm, \
     wsim_merge
+from .config_base import ConfigBase
 
 from .dates import get_next_yearmon, rolling_window, available_yearmon_range
+from .step import Step
 
 
-def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
+def create_forcing_file(workspace: DefaultWorkspace,
+                        data: Union[ObservedForcing, ForecastForcing],
+                        *,
+                        yearmon: str,
+                        target: Optional[str]=None,
+                        member: Optional[str]=None) -> List[Step]:
 
     precip = data.precip_monthly(yearmon=yearmon, target=target, member=member)
     temp = data.temp_monthly(yearmon=yearmon, target=target, member=member)
@@ -47,20 +54,24 @@ def create_forcing_file(workspace, data, *, yearmon, target=None, member=None):
                 temp.read_as('T'),
                 wetdays.read_as('pWetDays')
             ],
-            attrs=filter(None, [
+            attrs=list(filter(None, [
                 ('target=' + target) if target else None,
                 ('member=' + member) if member else None,
                 'T:units',
                 'T:standard_name',
                 'Pr:units',
                 'Pr:standard_name'
-            ]),
+            ])),
             output=workspace.forcing(yearmon=yearmon, target=target, member=member)
         )
     ]
 
 
-def run_b2b(workspace, static, yearmon, target=None, member=None):
+def run_b2b(workspace: DefaultWorkspace,
+            static: ElectricityStatic,
+            yearmon: str,
+            target: Optional[str]=None,
+            member: Optional[str]=None) -> List[Step]:
     pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
     basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis='basin')
 
@@ -97,7 +108,12 @@ def run_b2b(workspace, static, yearmon, target=None, member=None):
     ]
 
 
-def run_lsm(workspace, static, *, yearmon, target=None, member=None, lead_months=0):
+def run_lsm(workspace: DefaultWorkspace, static: Static, *,
+            yearmon: str,
+            target: Optional[str]=None,
+            member: Optional[str]=None,
+            lead_months: int=0) -> List[Step]:
+
     if member:
         if lead_months > 1:
             current_state = workspace.state(yearmon=yearmon, target=target, member=member)
@@ -162,14 +178,14 @@ def time_integrate(workspace: DefaultWorkspace,
     ]
 
 
-def compute_return_periods(workspace, *,
-                           forcing_vars=None,
-                           result_vars=None,
-                           yearmon,
-                           window,
-                           target=None,
-                           member=None,
-                           basis=None):
+def compute_return_periods(workspace: DefaultWorkspace, *,
+                           forcing_vars: Optional[List[str]]=None,
+                           result_vars: Optional[List[str]]=None,
+                           yearmon: str,
+                           window: int,
+                           target: Optional[str]=None,
+                           member: Optional[str]=None,
+                           basis: Optional[str]=None) -> List[Step]:
     if target:
         month = int(target[-2:])
     else:
@@ -203,7 +219,7 @@ def compute_return_periods(workspace, *,
     ]
 
 
-def composite_vars(*, method, window, quantile):
+def composite_vars(*, method: str, window: int, quantile: Optional[int]) -> Dict[str, Union[str, List[str]]]:
     quantile_text = '_q{}'.format(quantile) if quantile else ''
 
     if method == 'return_period':
@@ -244,7 +260,12 @@ def composite_vars(*, method, window, quantile):
     }
 
 
-def composite_indicators(workspace, *, yearmon, window=None, target=None, quantile=None):
+def composite_indicators(workspace: DefaultWorkspace,
+                         *,
+                         yearmon: str,
+                         window: Optional[int]=None,
+                         target: Optional[str]=None,
+                         quantile: Optional[int]=None) -> List[Step]:
     # If we're working with a forecast, we should have also have the desired
     # quantile of the ensemble members
     assert (quantile is None) == (target is None)
@@ -268,7 +289,11 @@ def composite_indicators(workspace, *, yearmon, window=None, target=None, quanti
     ]
 
 
-def composite_indicator_return_periods(workspace, *, yearmon, window, target=None):
+def composite_indicator_return_periods(workspace: DefaultWorkspace,
+                                       *,
+                                       yearmon: str,
+                                       window: int,
+                                       target: Optional[str]=None) -> List[Step]:
     return [
         wsim_anom(
             fits=[
@@ -282,7 +307,11 @@ def composite_indicator_return_periods(workspace, *, yearmon, window, target=Non
     ]
 
 
-def composite_indicator_adjusted(workspace, *, yearmon, window, target=None):
+def composite_indicator_adjusted(workspace: DefaultWorkspace,
+                                 *,
+                                 yearmon: str,
+                                 window: int,
+                                 target: Optional[str]=None) -> List[Step]:
     return [
         wsim_composite(
             surplus=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target),
@@ -296,7 +325,12 @@ def composite_indicator_adjusted(workspace, *, yearmon, window, target=None):
     ]
 
 
-def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantile=None):
+def composite_anomalies(workspace: DefaultWorkspace,
+                        *,
+                        yearmon: str,
+                        window: Optional[int]=None,
+                        target: Optional[str]=None,
+                        quantile: Optional[int]=None) -> List[Step]:
     cvars = composite_vars(method='standard_anomaly', window=window, quantile=quantile)
 
     if target:
@@ -317,7 +351,13 @@ def composite_anomalies(workspace, *, yearmon, window=None, target=None, quantil
     ]
 
 
-def fit_var(config, *, param, month, stat=None, window=1, basis=None):
+def fit_var(config: ConfigBase,
+            *,
+            param: str,
+            month: int,
+            stat: Optional[str]=None,
+            window: int=1,
+            basis: Optional[str]=None) -> List[Step]:
     """
     Compute fits for param in given month over fitting period
     """
@@ -350,7 +390,8 @@ def fit_var(config, *, param, month, stat=None, window=1, basis=None):
     ]
 
 
-def forcing_summary(workspace, ensemble_members, *, yearmon, target):
+def forcing_summary(workspace: DefaultWorkspace, ensemble_members: List[str], *, yearmon: str, target: str) \
+        -> List[Step]:
     return [
         wsim_integrate(
             inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member) for member in ensemble_members],
@@ -360,7 +401,12 @@ def forcing_summary(workspace, ensemble_members, *, yearmon, target):
     ]
 
 
-def result_summary(workspace, ensemble_members, *, yearmon, target, window=None):
+def result_summary(workspace: DefaultWorkspace,
+                   ensemble_members: List[str],
+                   *,
+                   yearmon: str,
+                   target: str,
+                   window: Optional[int]=None) -> List[Step]:
     return [
         wsim_integrate(
             inputs=[workspace.results(yearmon=yearmon, window=window, target=target, member=member)
@@ -371,7 +417,12 @@ def result_summary(workspace, ensemble_members, *, yearmon, target, window=None)
     ]
 
 
-def return_period_summary(workspace, ensemble_members, *, yearmon, target, window=None):
+def return_period_summary(workspace: DefaultWorkspace,
+                          ensemble_members: List[str],
+                          *,
+                          yearmon: str,
+                          target: str,
+                          window: Optional[int]=None) -> List[Step]:
     return [
         wsim_integrate(
             inputs=[workspace.return_period(yearmon=yearmon, target=target, window=window, member=member)
@@ -382,7 +433,12 @@ def return_period_summary(workspace, ensemble_members, *, yearmon, target, windo
     ]
 
 
-def standard_anomaly_summary(workspace, ensemble_members, *, yearmon, target, window=None):
+def standard_anomaly_summary(workspace: DefaultWorkspace,
+                             ensemble_members: List[str],
+                             *,
+                             yearmon: str,
+                             target: str,
+                             window: Optional[int]=None) -> List[Step]:
     return [
         wsim_integrate(
             inputs=[workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member)
@@ -393,7 +449,7 @@ def standard_anomaly_summary(workspace, ensemble_members, *, yearmon, target, wi
     ]
 
 
-def correct_forecast(data, *, member, target, lead_months):
+def correct_forecast(data: DefaultWorkspace, *, member: str, target: str, lead_months: int) -> List[Step]:
     target_month = int(target[-2:])
 
     return [

@@ -14,15 +14,16 @@
 import os
 from typing import Union, Iterable, Optional, List
 
+from .paths import Vardef
 from .step import Step
-from . import attributes as attrs
+from . import attributes
 
 
-def q(txt):
+def q(txt: str) -> str:
     return '"{}"'.format(txt)
 
 
-def forecast_convert(infile, outfile, comment=None):
+def forecast_convert(infile: str, outfile: str, comment: Optional[str]=None) -> Step:
     return Step(
         targets=outfile,
         dependencies=infile,
@@ -35,12 +36,13 @@ def forecast_convert(infile, outfile, comment=None):
     )
 
 
-def extract_from_tar(tarfile, to_extract, dest_dir, comment=None):
+def extract_from_tar(tarfile: str, to_extract: str, dest_dir: str, comment: Optional[str]=None) -> Step:
     """
     Returns a step to extract a single file from a tarfile and place it in a specified directory
     :param tarfile: path to tarfile
     :param to_extract: path of item within tarfile
     :param dest_dir: path to which item should be extracted (path within tarfile will be stripped)
+    :param comment: optional comment to include in Makefile
     :return: command
     """
     trim_dirs = to_extract.count(os.sep)
@@ -48,14 +50,14 @@ def extract_from_tar(tarfile, to_extract, dest_dir, comment=None):
     return Step(
         targets=os.path.join(dest_dir, os.path.basename(to_extract)),
         dependencies=tarfile,
-        commands= [
+        commands=[
             [
                 'tar',
                 'xzf',
                 tarfile,
-                '--no-same-owner', # prevent permission errors when extracting as root (such as within a Docker container)
-                                   # to CIFS; explanation at the following URL:
-                                   # https://www.krenger.ch/blog/linux-tar-cannot-change-ownership-to-permission-denied/
+                '--no-same-owner',  # prevent permission errors when extracting as root (such as within a
+                                    # Docker container) to CIFS; explanation at the following URL:
+                                    # https://www.krenger.ch/blog/linux-tar-cannot-change-ownership-to-permission-denied/
                 '--strip-components', str(trim_dirs),
                 '--directory', dest_dir,
                 to_extract
@@ -64,7 +66,13 @@ def extract_from_tar(tarfile, to_extract, dest_dir, comment=None):
         comment=comment
     )
 
-def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
+
+def wsim_anom(*,
+              fits: Union[str, List[str]],
+              obs: Union[str, List[str]],
+              rp: Optional[str]=None,
+              sa: Optional[str]=None,
+              comment: Optional[str]=None) -> Step:
     if type(fits) is str:
         fits = [fits]
 
@@ -78,10 +86,10 @@ def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
     ]
 
     for f in fits:
-        cmd += [ '--fits', q(f) ]
+        cmd += ['--fits', q(f)]
 
     for o in obs:
-         cmd += [ '--obs',  q(o) ]
+        cmd += ['--obs',  q(o)]
 
     if rp:
         cmd += ['--rp', q(rp)]
@@ -96,6 +104,7 @@ def wsim_anom(*, fits, obs, rp=None, sa=None, comment=None):
     )
 
 
+# noinspection PyShadowingBuiltins
 def exact_extract(*,
                   boundaries: str,
                   fid: str,
@@ -128,8 +137,8 @@ def exact_extract(*,
     import re
 
     # TODO tidy this up. We need to strip off GDAL stuff
-    input=re.sub('^\w+:', '', input)
-    input=re.sub(':\w+$', '', input)
+    input = re.sub('^\w+:', '', input)
+    input = re.sub(':\w+$', '', input)
 
     return Step(
         targets=output,
@@ -139,7 +148,15 @@ def exact_extract(*,
     )
 
 
-def wsim_extract(*, boundaries, fid, input, output, stats, keepvarnames=False, comment=None):
+# noinspection PyShadowingBuiltins
+def wsim_extract(*,
+                 boundaries: str,
+                 fid: str,
+                 input: str,
+                 output: str,
+                 stats: Union[str, List[str]],
+                 keepvarnames: bool=False,
+                 comment: Optional[str]=None) -> Step:
     if isinstance(stats, str):
         stats = [stats]
 
@@ -167,10 +184,10 @@ def wsim_extract(*, boundaries, fid, input, output, stats, keepvarnames=False, c
 
 def wsim_fit(*,
              distribution: str,
-             inputs: Union[str,Iterable[str]],
+             inputs: Union[str, Iterable[str]],
              output: str,
              window: int,
-             comment: Union[str,None]=None):
+             comment: Union[str, None]=None):
     dependencies = []
     targets = []
 
@@ -187,7 +204,7 @@ def wsim_fit(*,
         dependencies.append(i)
 
     if window is not None:
-        cmd += ['--attr', attrs.integration_window(var=None, months=window)]
+        cmd += ['--attr', attributes.integration_window(var=None, months=window)]
 
     cmd += ['--output', output]
     targets.append(output)
@@ -200,7 +217,13 @@ def wsim_fit(*,
     )
 
 
-def wsim_flow(*, input, flowdir, varname, output, comment=None):
+# noinspection PyShadowingBuiltins
+def wsim_flow(*,
+              input: Union[str, Vardef],
+              flowdir: Union[str, Vardef],
+              varname: str,
+              output: str,
+              comment: Optional[str]=None) -> Step:
     cmd = [
         os.path.join('{BINDIR}', 'wsim_flow.R'),
         '--input',   q(input),
@@ -218,15 +241,15 @@ def wsim_flow(*, input, flowdir, varname, output, comment=None):
 
 
 def wsim_lsm(*,
-             wc: str,
-             flowdir: str,
-             elevation: str,
+             wc: Union[str, Vardef],
+             flowdir: Union[str, Vardef],
+             elevation: Union[str, Vardef],
              state: str,
-             forcing: str,
-             results: Union[str,None],
-             next_state: Union[str, None],
-             loop: Union[int, None]=None,
-             comment: Union[str, None]=None):
+             forcing: Union[str, List[str]],
+             results: Optional[str],
+             next_state: Optional[str],
+             loop: Optional[int]=None,
+             comment: Optional[str]=None) -> Step:
     cmd = [
         os.path.join('{BINDIR}', 'wsim_lsm.R'),
         '--wc',         q(wc),
@@ -238,13 +261,13 @@ def wsim_lsm(*,
         forcing = [forcing]
 
     for f in forcing:
-        cmd += [ '--forcing', q(f) ]
+        cmd += ['--forcing', q(f)]
 
     if results is not None:
-        cmd += [ '--results',    q(results) ]
+        cmd += ['--results',    q(results)]
 
     if next_state is not None:
-        cmd += [ '--next_state', q(next_state) ]
+        cmd += ['--next_state', q(next_state)]
 
     if loop:
         cmd += ['--loop', str(loop)]
@@ -258,11 +281,11 @@ def wsim_lsm(*,
 
 
 def wsim_merge(*,
-               inputs: Union[str,Iterable],
+               inputs: Union[str, List[str]],
                output: str,
-               attrs: Union[Iterable,None]=None,
-               comment: Union[str,None]=None):
-    cmd = [ os.path.join('{BINDIR}', 'wsim_merge.R') ]
+               attrs: Optional[List[str]]=None,
+               comment: Optional[str]=None) -> Step:
+    cmd = [os.path.join('{BINDIR}', 'wsim_merge.R')]
 
     if type(inputs) is str:
         inputs = [inputs]
@@ -284,7 +307,14 @@ def wsim_merge(*,
     )
 
 
-def wsim_correct(*, retro, obs, forecast, output, attrs=None, append=False, comment=None):
+def wsim_correct(*,
+                 retro: Union[str, List[str]],
+                 obs: Union[str, List[str]],
+                 forecast: str,
+                 output: str,
+                 attrs: Optional[List[str]]=None,
+                 append: bool=False,
+                 comment: Optional[str]=None) -> Step:
     if type(retro) is str:
         retro = [retro]
 
@@ -296,10 +326,10 @@ def wsim_correct(*, retro, obs, forecast, output, attrs=None, append=False, comm
     ]
 
     for fit in retro:
-        cmd += [ '--retro', q(fit) ]
+        cmd += ['--retro', q(fit)]
 
     for fit in obs:
-        cmd += [ '--obs', q(fit) ]
+        cmd += ['--obs', q(fit)]
 
     cmd += [
         '--forecast', q(forecast),
@@ -321,8 +351,15 @@ def wsim_correct(*, retro, obs, forecast, output, attrs=None, append=False, comm
     )
 
 
-def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, attrs=None, comment=None):
-    cmd = [ os.path.join('{BINDIR}', 'wsim_integrate.R') ]
+def wsim_integrate(*,
+                   stats: Union[str, List[str]],
+                   inputs: Union[str, List[str]],
+                   output: str,
+                   window: Optional[int]=None,
+                   keepvarnames: bool=False,
+                   attrs: Optional[List[str]]=None,
+                   comment: Optional[str]=None) -> Step:
+    cmd = [os.path.join('{BINDIR}', 'wsim_integrate.R')]
 
     if type(stats) is str:
         stats = [stats]
@@ -359,8 +396,15 @@ def wsim_integrate(*, stats, inputs, output, window=None, keepvarnames=False, at
     )
 
 
-def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None, clamp=None, output, comment=None):
-    cmd = [ os.path.join('{BINDIR}', 'wsim_composite.R') ]
+def wsim_composite(*,
+                   surplus: Optional[List[str]]=None,
+                   deficit: Optional[List[str]]=None,
+                   both_threshold: Optional[Union[int, float]]=None,
+                   mask: Optional[str]=None,
+                   clamp: Optional[int]=None,
+                   output: str,
+                   comment: Optional[str]=None) -> Step:
+    cmd = [os.path.join('{BINDIR}', 'wsim_composite.R')]
 
     if surplus:
         for var in surplus:
@@ -389,14 +433,15 @@ def wsim_composite(*, surplus=None, deficit=None, both_threshold=None, mask=None
     )
 
 
-def move(from_path, to_path):
+def move(from_path: str, to_path: str) -> Step:
     return Step(targets=to_path,
                 consumes=from_path,
                 dependencies=from_path,
-                commands=[[ 'mv', q(from_path), q(to_path) ]])
+                commands=[['mv', q(from_path), q(to_path)]])
 
 
-def table2nc(input: str, output: str, fid: str, column: str, comment: Union[str,None]=None):
+# noinspection PyShadowingBuiltins
+def table2nc(input: str, output: str, fid: str, column: str, comment: Optional[str]=None) -> Step:
     cmd = [
         os.path.join('{BINDIR}', 'utils', 'table2nc.R'),
         '--input',  input,
@@ -415,4 +460,3 @@ def table2nc(input: str, output: str, fid: str, column: str, comment: Union[str,
 
 def create_tag(*, name, dependencies):
     return [Step(targets=dep, dependencies=name) for dep in dependencies]
-

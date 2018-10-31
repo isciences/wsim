@@ -14,25 +14,26 @@
 import calendar
 import datetime
 
-from typing import Optional
+from typing import Generator, List, Optional, Tuple, Union
 
 all_months = range(1, 13)
 
-def parse_yearmon(yearmon):
+
+def parse_yearmon(yearmon: str) -> Tuple[int, int]:
     """
     Parse a YYYYMM string and return a (year, month) integer tuple
     """
     return int(yearmon[:4]), int(yearmon[4:])
 
 
-def format_yearmon(year, month):
+def format_yearmon(year: int, month: int) -> str:
     """
     Format a year and month as YYYYMM
     """
     return '{:04d}{:02d}'.format(year, month)
 
 
-def get_yearmons(start, stop):
+def get_yearmons(start: str, stop: str) -> Generator[str]:
     """
     Generate all YYYYMM strings between "start" and "stop"
     """
@@ -50,14 +51,14 @@ def get_yearmons(start, stop):
         yield start
 
 
-def get_last_day_of_month(yearmon):
+def get_last_day_of_month(yearmon: str) -> int:
     """
     Get integer last day or month for YYYYMM
     """
     return calendar.monthrange(*parse_yearmon(yearmon))[1]
 
 
-def get_previous_yearmon(yearmon):
+def get_previous_yearmon(yearmon: str) -> str:
     """
     Get previous YYYYMM to input
     """
@@ -71,7 +72,7 @@ def get_previous_yearmon(yearmon):
     return format_yearmon(year, month)
 
 
-def get_next_yearmon(yearmon):
+def get_next_yearmon(yearmon: str) -> str:
     """
     Get next YYYYMM to input
     """
@@ -85,7 +86,7 @@ def get_next_yearmon(yearmon):
     return format_yearmon(year, month)
 
 
-def get_next_yearmons(yearmon, n):
+def get_next_yearmons(yearmon: str, n: int) -> List[str]:
     """
     Get next n YYYYMMs after input
     """
@@ -97,7 +98,7 @@ def get_next_yearmons(yearmon, n):
     return targets
 
 
-def rolling_window(yearmon, n):
+def rolling_window(yearmon: str, n: int) -> List[str]:
     """
     Return n months ending with (and including) input
     """
@@ -108,19 +109,22 @@ def rolling_window(yearmon, n):
 
     return window
 
-def days_in_month(yearmon):
+
+def days_in_month(yearmon: str) -> List[str]:
     """
     Return YYYYMMDD strings for each day in input YYYYMM
     """
     return [yearmon + '{:02d}'.format(day + 1) for day in range(calendar.monthrange(*parse_yearmon(yearmon))[1])]
 
-def add_years(yyyy, n):
+
+def add_years(yyyy: Union[str, int], n: int) -> str:
     """
     Add n years to YYYY
     """
     return '{:04d}'.format(int(yyyy) + n)
 
-def add_months(yyyymm, n):
+
+def add_months(yyyymm: str, n: int) -> str:
     """
     Add n months to YYYYMM
     """
@@ -138,7 +142,8 @@ def add_months(yyyymm, n):
 
     return '{:04d}{:02d}'.format(year, month)
 
-def add_days(yyyymmdd, n):
+
+def add_days(yyyymmdd: str, n: int) -> str:
     """
     Add n days to YYYYMMDD
     """
@@ -150,7 +155,8 @@ def add_days(yyyymmdd, n):
 
     return date.strftime('%Y%m%d')
 
-def expand_date_range(start, stop, step):
+
+def expand_date_range(start: str, stop: str, step: int) -> List[str]:
     """
     Return all dates in the list >= start and <= stop, separated by step.
     Inputs may be YYYY, YYYYMM, or YYYYMMDD strings
@@ -170,15 +176,16 @@ def expand_date_range(start, stop, step):
         raise ValueError("Unknown date format")
 
     while True:
-        next = increment_date(dates[-1], step)
-        if next <= stop:
-            dates.append(next)
+        nxt = increment_date(dates[-1], step)
+        if nxt <= stop:
+            dates.append(nxt)
         else:
             break
 
     return dates
 
-def next_occurence_of_month(yearmon, month_b):
+
+def next_occurence_of_month(yearmon: str, month_b: int) -> str:
     assert 0 < month_b <= 12
 
     year, month = parse_yearmon(yearmon)
@@ -189,7 +196,7 @@ def next_occurence_of_month(yearmon, month_b):
         return format_yearmon(year+1, month_b)
 
 
-def available_yearmon_range(*, window:int, month:Optional[int]=None, start_year:int, end_year:int):
+def available_yearmon_range(*, window: int, month: Optional[int]=None, start_year: int, end_year: int) -> str:
     assert start_year + (window-1) // 12 <= end_year
 
     range_str = '[{begin}:{end}:{step}]'
@@ -201,4 +208,3 @@ def available_yearmon_range(*, window:int, month:Optional[int]=None, start_year:
     return range_str.format(begin=start_yearmon,
                             end=format_yearmon(end_year, 12 if month is None else month),
                             step=1 if month is None else 12)
-

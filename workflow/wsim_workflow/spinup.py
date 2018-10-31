@@ -15,11 +15,13 @@ import itertools
 
 from . import attributes as attrs
 
+from .config_base import ConfigBase as Config
 from .commands import *
 from .dates import format_yearmon, all_months, get_next_yearmon
 from .paths import read_vars, date_range
 
 from .actions import create_forcing_file, compute_return_periods, composite_anomalies, fit_var
+
 
 def spinup(config, meta_steps):
     """
@@ -92,6 +94,7 @@ def spinup(config, meta_steps):
 
     return steps
 
+
 def generate_garbage_state(config):
     """
     Generate a "garbage" initial state with detention variables set to zero
@@ -116,7 +119,8 @@ def generate_garbage_state(config):
         )
     ]
 
-def compute_climate_norms(config):
+
+def compute_climate_norms(config: Config) -> List[Step]:
     """
     Read forcing data for the full historical range and generate a set of
     twelve "monthly norm" forcing files.
@@ -128,19 +132,22 @@ def compute_climate_norms(config):
 
         steps.append(
             wsim_integrate(
-                inputs=[config.observed_data().precip_monthly(yearmon=yearmon).read_as('Pr') for yearmon in historical_yearmons],
+                inputs=[config.observed_data().precip_monthly(yearmon=yearmon).read_as('Pr')
+                        for yearmon in historical_yearmons],
                 stats=['ave'],
                 keepvarnames=True,
                 output=config.workspace().climate_norm_forcing(month=month, temporary=True)
             ).merge(
             wsim_integrate(
-                inputs=[config.observed_data().temp_monthly(yearmon=yearmon).read_as('T') for yearmon in historical_yearmons],
+                inputs=[config.observed_data().temp_monthly(yearmon=yearmon).read_as('T')
+                        for yearmon in historical_yearmons],
                 stats=['ave'],
                 keepvarnames=True,
                 output=config.workspace().climate_norm_forcing(month=month, temporary=True)
             )).merge(
             wsim_integrate(
-                inputs=[config.observed_data().p_wetdays(yearmon=yearmon).read_as('pWetDays') for yearmon in historical_yearmons],
+                inputs=[config.observed_data().p_wetdays(yearmon=yearmon).read_as('pWetDays')
+                        for yearmon in historical_yearmons],
                 stats=['ave'],
                 keepvarnames=True,
                 output=config.workspace().climate_norm_forcing(month=month, temporary=True)
@@ -153,7 +160,8 @@ def compute_climate_norms(config):
 
     return steps
 
-def run_lsm_with_monthly_norms(config, *, years):
+
+def run_lsm_with_monthly_norms(config: Config, *, years: int) -> List[Step]:
     """
     Run the LSM from the garbage initial state using monthly norm forcing
     for 100 years, discarding the results generated in the process.
@@ -172,7 +180,8 @@ def run_lsm_with_monthly_norms(config, *, years):
         )
     ]
 
-def run_lsm_from_final_norm_state(config):
+
+def run_lsm_from_final_norm_state(config: Config) -> List[Step]:
     """
     Run the LSM over the entire historical period, and retain the state files
     for each iteration. Discard the results.
@@ -180,7 +189,7 @@ def run_lsm_from_final_norm_state(config):
 
     # Set the yearmon in final state from climate norms run to be the first
     # forcing date in our historical record
-    initial_yearmon=config.historical_yearmons()[0]
+    initial_yearmon = config.historical_yearmons()[0]
 
     make_initial_state = Step(
         targets=config.workspace().spinup_state(yearmon=initial_yearmon),
@@ -213,7 +222,8 @@ def run_lsm_from_final_norm_state(config):
         run_lsm
     ]
 
-def mean_spinup_state(config, month, years):
+
+def mean_spinup_state(config: Config, month: int, years: Iterable[int]) -> List[Step]:
     """
     Average the values from spinup states for "month" over "years"
     """
@@ -228,13 +238,15 @@ def mean_spinup_state(config, month, years):
         ).replace_dependencies(config.workspace().tag('spinup_from_climate_norm_final_state'))
     ]
 
-def run_lsm_from_mean_spinup_state(config):
+
+def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
     """
     Run the model for the entire historical period, retaining results and states
     """
     first_timestep = config.historical_yearmons()[0]
     first_month = int(first_timestep[4:])
-    postprocess_steps = list(itertools.chain(*[config.result_postprocess_steps(yearmon=yearmon) for yearmon in config.historical_yearmons()]))
+    postprocess_steps = list(itertools.chain(*[config.result_postprocess_steps(yearmon=yearmon)
+                                               for yearmon in config.historical_yearmons()]))
 
     make_initial_state = Step(
         comment="Create initial state file",
@@ -263,8 +275,10 @@ def run_lsm_from_mean_spinup_state(config):
     ).merge(*itertools.chain(*postprocess_steps))
 
     tag_steps = create_tag(name=config.workspace().tag('spinup_1mo_results'),
-                           dependencies=[config.workspace().results(window=1, yearmon=y) for y in config.historical_yearmons()] + \
-                                        [config.workspace().state(yearmon=get_next_yearmon(y)) for y in config.historical_yearmons()])
+                           dependencies=[config.workspace().results(window=1, yearmon=y)
+                                         for y in config.historical_yearmons()] +
+                                        [config.workspace().state(yearmon=get_next_yearmon(y))
+                                         for y in config.historical_yearmons()])
     run_lsm.replace_targets_with_tag_file(config.workspace().tag('spinup_1mo_results'))
 
     return [
@@ -273,7 +287,8 @@ def run_lsm_from_mean_spinup_state(config):
         *tag_steps
     ]
 
-def time_integrate_results(config, window, *, basis=None):
+
+def time_integrate_results(config: Config, window: int, *, basis: Optional[str]=None) -> List[Step]:
     """
     Integrate all LSM results with the given time window
     """
@@ -296,21 +311,25 @@ def time_integrate_results(config, window, *, basis=None):
     tag_steps = create_tag(name=tag_name, dependencies=integrate.targets)
 
     integrate.replace_targets_with_tag_file(tag_name)
-    integrate.replace_dependencies(config.workspace().tag('{}spinup_1mo_results'.format((basis + '_') if basis else '')))
+    integrate.replace_dependencies(
+        config.workspace().tag('{}spinup_1mo_results'.format((basis + '_') if basis else '')))
 
     return [
         integrate,
         *tag_steps
     ]
 
-def fit_composite_anomalies(config, *, window):
+
+def fit_composite_anomalies(config: Config, *, window: int) -> List[Step]:
     fit_yearmons = config.result_fit_yearmons()[window-1:]
 
     return [
         wsim_fit(
             distribution=config.distribution,
             inputs=[
-                read_vars(config.workspace().composite_anomaly(yearmon=date_range(fit_yearmons[0], fit_yearmons[-1]), window=window), indicator)
+                read_vars(config.workspace().composite_anomaly(yearmon=date_range(fit_yearmons[0], fit_yearmons[-1]),
+                                                               window=window),
+                          indicator)
             ],
             output=config.workspace().fit_composite_anomalies(indicator=indicator, window=window),
             window=window

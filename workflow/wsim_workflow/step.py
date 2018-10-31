@@ -15,10 +15,10 @@ from .paths import expand_filename_dates
 
 import os
 
-from typing import Union, Optional, List, Set
+from typing import Union, Optional, List, Iterable, Set
 
 
-def process_filename(txt):
+def process_filename(txt: str) -> List[str]:
     """
     Strip out variable definitions used by some WSIM tools, and expand
     date ranges present in the filename
@@ -27,7 +27,7 @@ def process_filename(txt):
     return expand_filename_dates(filename)
 
 
-def coerce_to_list(thing):
+def coerce_to_list(thing) -> List:
     if thing is None:
         return []
     if type(thing) is str:
@@ -91,7 +91,7 @@ class Step:
         return Step()
 
     @classmethod
-    def create_meta(cls, meta_step_name, dependencies=None):
+    def create_meta(cls, meta_step_name: str, dependencies: Optional[List[str]]=None):
         """
         Utility method to create a step with no commands, used only
         as a convenient way to refer to many related steps at once
@@ -99,7 +99,7 @@ class Step:
         """
         return Step(targets=[meta_step_name], dependencies=dependencies, commands=None)
 
-    def merge(self, *others) -> "Step":
+    def merge(self, *others: "Step") -> "Step":
         """
         Merge another step into this one, returning a combined step.
         Commands for the other step will be sequenced after commands
@@ -138,7 +138,7 @@ class Step:
             working_directories=combined_working_directories
         )
 
-    def require(self, *others):
+    def require(self, *others) -> Iterable["Step"]:
         """
         Add targets of other steps to this step's dependencies
         Useful in creating meta-steps such as "all_composites"
@@ -156,7 +156,7 @@ class Step:
 
         return others
 
-    def replace_targets_with_tag_file(self, tag_file_name):
+    def replace_targets_with_tag_file(self, tag_file_name: str) -> "Step":
         """
         Replace a long list of targets with a single tag file. This is
         useful when Make struggles with a large number of targets, and
@@ -171,7 +171,7 @@ class Step:
 
         return self
 
-    def replace_dependencies(self, *deps):
+    def replace_dependencies(self, *deps) -> "Step":
         """
         Replace a long list of dependencies with a tag file. This can
         be used to consume the output of a step that produces a tag file.
@@ -182,7 +182,7 @@ class Step:
 
         return self
 
-    def get_mkdir_commands(self):
+    def get_mkdir_commands(self) -> List[List[str]]:
         """
         Get commands necessary to create directories for all targets
         """
@@ -193,7 +193,7 @@ class Step:
         else:
             return []
 
-    def validate(self):
+    def validate(self) -> None:
         for t in self.targets:
             if type(t) is not str:
                 raise TypeError("Non-string target: ", t)

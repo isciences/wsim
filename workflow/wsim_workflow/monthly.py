@@ -11,9 +11,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .actions import *
+from typing import Dict, List
 
-def monthly_observed(config, yearmon, meta_steps):
+from .actions import \
+    composite_anomalies, \
+    composite_indicator_adjusted, \
+    composite_indicator_return_periods, \
+    composite_indicators, \
+    compute_return_periods, \
+    correct_forecast, \
+    create_forcing_file,\
+    forcing_summary, \
+    result_summary, \
+    return_period_summary, \
+    run_lsm,\
+    standard_anomaly_summary, \
+    time_integrate
+from .config_base import ConfigBase as Config
+from .step import Step
+
+
+def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) -> List[Step]:
     print('Generating steps for', yearmon, 'observed data')
 
     steps = []
@@ -29,8 +47,6 @@ def monthly_observed(config, yearmon, meta_steps):
 
             # Run the LSM
             steps += run_lsm(config.workspace(), config.static_data(), yearmon=yearmon)
-
-
 
         steps += config.result_postprocess_steps(yearmon=yearmon)
 
@@ -78,7 +94,8 @@ def monthly_observed(config, yearmon, meta_steps):
 
     return steps
 
-def monthly_forecast(config, yearmon, meta_steps):
+
+def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) -> List[Step]:
     steps = []
 
     for i, target in enumerate(config.forecast_targets(yearmon)):
@@ -90,45 +107,64 @@ def monthly_forecast(config, yearmon, meta_steps):
                 steps += config.forecast_data().prep_steps(yearmon=yearmon, target=target, member=member)
 
                 # Bias-correct the forecast
-                steps += correct_forecast(config.forecast_data(), member=member, target=target, lead_months=lead_months)
+                steps += correct_forecast(config.forecast_data(),
+                                          member=member, target=target, lead_months=lead_months)
 
                 # Assemble forcing inputs for forecast
-                steps += create_forcing_file(config.workspace(), config.forecast_data(), yearmon=yearmon, target=target, member=member)
+                steps += create_forcing_file(config.workspace(), config.forecast_data(),
+                                             yearmon=yearmon, target=target, member=member)
 
                 # Run LSM with forecast data
-                steps += run_lsm(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member, lead_months=lead_months)
+                steps += run_lsm(config.workspace(), config.static_data(),
+                                 yearmon=yearmon, target=target, member=member, lead_months=lead_months)
 
             steps += config.result_postprocess_steps(yearmon=yearmon, target=target, member=member)
 
             for window in config.integration_windows():
                 # Time integrate the results
-                steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), window=window, yearmon=yearmon, target=target, member=member, lead_months=lead_months)
+                steps += time_integrate(config.workspace(), config.lsm_integrated_stats(),
+                                        window=window, yearmon=yearmon, target=target,
+                                        member=member, lead_months=lead_months)
 
             # Compute return periods
-            steps += compute_return_periods(config.workspace(), result_vars=config.lsm_rp_vars(), forcing_vars=config.forcing_rp_vars(), yearmon=yearmon, window=1, target=target, member=member)
+            steps += compute_return_periods(config.workspace(), result_vars=config.lsm_rp_vars(),
+                                            forcing_vars=config.forcing_rp_vars(), yearmon=yearmon,
+                                            window=1, target=target, member=member)
             for window in config.integration_windows():
-                steps += compute_return_periods(config.workspace(), result_vars=config.lsm_integrated_var_names(), yearmon=yearmon, window=window, target=target, member=member)
+                steps += compute_return_periods(config.workspace(), result_vars=config.lsm_integrated_var_names(),
+                                                yearmon=yearmon, window=window, target=target, member=member)
 
-        steps += meta_steps['forcing_summaries'].require(forcing_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target))
+        steps += meta_steps['forcing_summaries'].require(forcing_summary(config.workspace(),
+                                                                         config.forecast_ensemble_members(yearmon),
+                                                                         yearmon=yearmon,
+                                                                         target=target))
 
         for window in [1] + config.integration_windows():
             # Summarize forecast ensemble
-            steps += meta_steps['results_summaries'].require(result_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window))
-            steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
-            steps += standard_anomaly_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, window=window)
+            steps += meta_steps['results_summaries'].require(
+                result_summary(config.workspace(), config.forecast_ensemble_members(yearmon),
+                               yearmon=yearmon, target=target, window=window))
+            steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon),
+                                           yearmon=yearmon, target=target, window=window)
+            steps += standard_anomaly_summary(config.workspace(), config.forecast_ensemble_members(yearmon),
+                                              yearmon=yearmon, target=target, window=window)
 
             # Generate composite indicators from summarized ensemble data
-            steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
+            steps += composite_anomalies(config.workspace(),
+                                         window=window, yearmon=yearmon, target=target, quantile=50)
 
-            composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon, target=target, quantile=50)
+            composite_indicator_steps = composite_indicators(config.workspace(),
+                                                             window=window, yearmon=yearmon, target=target, quantile=50)
             steps += composite_indicator_steps
 
             meta_steps['all_composites'].require(composite_indicator_steps)
             if window == 1:
                 meta_steps['all_monthly_composites'].require(composite_indicator_steps)
 
-            steps += composite_indicator_return_periods(config.workspace(), yearmon=yearmon, window=window, target=target)
-            adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window, target=target)
+            steps += composite_indicator_return_periods(config.workspace(),
+                                                        yearmon=yearmon, window=window, target=target)
+            adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(),
+                                                                    yearmon=yearmon, window=window, target=target)
             steps += adjusted_indicator_steps
 
             meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
