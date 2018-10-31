@@ -77,6 +77,55 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
   file.remove(fname)
 })
 
+test_that("we can read attributes and variables from a non-spatial netCDF file into a data frame", {
+  fname <- tempfile(fileext='.nc')
+
+  write_vars_to_cdf(list(var_a=runif(4), var_b=runif(4)),
+                    fname,
+                    ids=2:5,
+                    attrs=list(list(var="var_a", key="station", val="A"),
+                               list(var="var_b", key="station", val="B"),
+                               list(key="yearmon", val="201702")))
+
+  v <- read_vars(fname, as.data.frame=TRUE)
+
+  expect_equal(v$id, 2:5, check.attributes=FALSE)
+
+  # No extent for non-spatial data
+  expect_null(attr(v, 'extent'))
+
+  # IDs not copied in as an attribute either
+  expect_null(attr(v, 'ids'))
+
+  # Global attributes preserved
+  expect_equal(attr(v, 'yearmon'), '201702')
+
+  # Variable attributes are accessible as attrs of their columns
+  expect_equal(attr(v$var_a, 'station'), 'A')
+  expect_equal(attr(v$var_b, 'station'), 'B')
+
+  file.remove(fname)
+})
+
+test_that("we get an error trying to read a spatial netCDF file into a data frame", {
+  fname <- tempfile(fileext='.nc')
+  data <- matrix(runif(4), nrow=2)
+
+  write_vars_to_cdf(list(my_data=data),
+                    fname,
+                    xmin=-40,
+                    xmax=0,
+                    ymin=20,
+                    ymax=70,
+                    attrs=list(list(var="my_data", key="station", val="a"),
+                               list(key="yearmon", val="201702")))
+
+  expect_error(v <- read_vars(fname, as.data.frame=TRUE),
+               'Only ID-based data can be converted to a data frame')
+
+  file.remove(fname)
+})
+
 test_that("we can check for expected IDs when loading a non-spatial netCDF", {
   fname <- tempfile(fileext='.nc')
   data <- runif(10)

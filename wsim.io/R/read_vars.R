@@ -41,6 +41,8 @@
 #'                      signifies that all values after the origin cell
 #'                      should be read. If \code{count} is specified, then
 #'                      \code{origin} must also be specified.
+#' @param as.data.frame If \code{TRUE}, \code{read_vars} will return a
+#'                      data frame
 #'
 #' @return A list having the following structure:
 #' \describe{
@@ -53,11 +55,14 @@
 #'             for the variables will be attached as attributes of the
 #'             matrix.}
 #' \item{extent}{the extent of the lat/lon coordinates for the data,
-#'               in the order xmin, xmax, ymin, ymax}
+#'               in the order xmin, xmax, ymin, ymax. Will be null if
+#'               the data is not gridded}
+#' \item{ids}{a vector of integer ids for the data. Will be null if
+#'            the data is gridded}
 #' }
 #'
 #' @export
-read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL) {
+read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL, as.data.frame=FALSE) {
   stopifnot(
     (is.character(vardef) && length(vardef) == 1)
     || is.wsim.io.vardef(vardef))
@@ -68,12 +73,21 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
     stop('File ', def$filename, ' does not exist.')
   }
 
+  if (isTRUE(as.data.frame) && !endsWith(def$filename, '.nc')) {
+    # Data frame output only supported for netCDF
+    stop('Only non-spatial data in netCDF files can be read to a data frame.')
+  }
+
   if(endsWith(def$filename, '.nc')) {
     loaded <- read_vars_from_cdf(vardef, offset=offset, count=count)
     check_nvars(def, loaded, expect.nvars)
     check_extent(def, loaded, expect.extent)
     check_ids(def, loaded, expect.ids)
     check_dims(def, loaded, expect.dims)
+
+    if (as.data.frame)
+      return(to_data_frame(loaded))
+
     return(loaded)
   }
 
@@ -224,4 +238,29 @@ is_ncep_daily_precip <- function(fname) {
   grepl(
     '^PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.\\d{8}([.]?RT)?([.]gz)?$',
     basename(fname))
+}
+
+to_data_frame <- function(dataset) {
+  if (is.null(dataset$ids))
+    stop("Only ID-based data can be converted to a data frame")
+
+  df <- data.frame(c(list(id=dataset$ids),
+                      lapply(dataset$data, as.vector)))
+
+  # Copy global attributes over to data frame
+  for (attrname in names(dataset$attrs)) {
+    if (!(attrname %in% c('ids', 'class', 'names')))
+      attr(df, attrname) <- dataset$attrs[[attrname]]
+  }
+
+  # Copy variable attributes over to data frame
+  for (varname in names(dataset$data)) {
+    for (attrname in names(attributes(dataset$data[[varname]]))) {
+      if (!(attrname %in% c('dim'))) {
+        attr(df[[varname]], attrname) <- attr(dataset$data[[varname]], attrname)
+      }
+    }
+  }
+
+  return(df)
 }
