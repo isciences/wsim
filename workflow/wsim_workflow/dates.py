@@ -33,7 +33,7 @@ def format_yearmon(year: int, month: int) -> str:
     return '{:04d}{:02d}'.format(year, month)
 
 
-def get_yearmons(start: str, stop: str) -> Generator[str]:
+def get_yearmons(start: str, stop: str) -> Generator[str, None, None]:
     """
     Generate all YYYYMM strings between "start" and "stop"
     """
