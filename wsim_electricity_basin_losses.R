@@ -14,6 +14,7 @@
 # limitations under the License.
 
 suppressMessages({
+  require(dplyr)
   require(Rcpp)
 })
 
@@ -32,97 +33,97 @@ Options:
 --output <file>     Output loss risk by basin
 '->usage
 
-# example
-# --bt_ro "/home/dbaston/wsim/jul31/basin_results/basin_results_1mo_201801.nc" --bt_ro "/home/dbaston/wsim/jul31/basin_results_integrated/basin_results_*mo_201801.nc"
-# --bt_ro_fit "/home/dbaston/wsim/jul31/fits/basin_Bt_RO_*mo_month_04.nc"
+# Read fits from several files and return a list
+# whose keys are integration periods in months
+# and whose values are data frames for fit parameters
+read_fits <- function(vardefs, expected_ids) {
+  fits <- list()
+  for (vardef in vardefs) {
+    df <- wsim.io::read_vars(vardef, expect.ids=expected_ids, as.data.frame=TRUE)
+    window <- attr(df, 'integration_window_months')
+    df$window <- as.integer(window)
+    fits[[as.character(window)]] <- df
+  }
+  
+  do.call(function(...) rbind(..., make.row.names=FALSE), fits)
+}
 
-
-# TODO need a "window" variable on results and fits
-
-#' Validate that total blue water values and distributions
-#' have been provided for all required integration windows.
-#' 
-#' @param required_windows vector of required integration
-#'                         windows [months]
-#' @param bt_ro            a list of Bt_RO datasets having 
-#'                         defined 'integration_window_months' attribute
-#' @param bt_ro_fit        a list of fit datasets having a
-#'                         defined 'window' attribute
-validate_inputs <- function(required_windows, bt_ro, fits) {
-  for (w in required_windows) {
-    if (w != 1) {
-      # integration window not included in 1-mo files
-      if(!any(sapply(bt_ro, function(data) {
-        w2 <- attr(data$data[[1]], 'integration_window_months')
-        !is.null(w2) && w == w2 }))) {
-        warning(sprintf('Could not find total blue water for integration window of %d months', w))
-      }
-    }
-    
-    if(!any(sapply(fits, function(data) {
-      w2 <- data$attrs$integration_window_months
-      !is.null(w2) && w == w2 }))) {
-      warning(sprintf('Could not find total blue water fit for integration window of %d months', w))
-    }
-  }    
+# Read total blue water from several files and 
+# return a list whose keys are integration periods
+# in months and whose values are data frames for 
+# fit parameters
+read_obs <- function(vardefs, expected_ids) {
+  obs <- list()  
+  
+  for (vardef in vardefs) {
+    df <- wsim.io::read_vars(vardef, expect.ids=expected_ids, as.data.frame=TRUE)
+    names(df) <- c('id', 'flow')
+    window <- attr(df[, -1], 'integration_window_months')
+    if (is.null(window))
+      window <- 1
+    df$window <- as.integer(window)
+    obs[[as.character(window)]] <- df
+  }
+  
+  do.call(function(...) rbind(..., make.row.names=FALSE), obs)
 }
 
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
   
-  basin_windows <- wsim.io::read_vars(args$window, expect.nvars=1)
-  basin_ids <- basin_windows$ids
-  basin_bws <- wsim.io::read_vars(args$stress, expect.nvars=1, expect.ids=basin_ids)$data[[1]] 
-   
-  bt_ro_fits <- lapply(wsim.io::expand_inputs(args$bt_ro_fit), function(vardef)
-    wsim.io::read_vars(vardef, expect.ids=basin_ids))
-  bt_ro <- lapply(wsim.io::expand_inputs(args$bt_ro), function(vardef)
-    wsim.io::read_vars(vardef, expect.nvars=1, expect.ids=basin_ids))
+  basin_windows <- wsim.io::read_vars(args$window, expect.nvars=1, as.data.frame=TRUE)
+  basin_ids <- basin_windows$id
+  basin_bws <- wsim.io::read_vars(args$stress, expect.nvars=1, expect.ids=basin_ids, as.data.frame=TRUE)
   
-  required_windows <- sort(unique(as.vector(basin_windows$data[[1]])))
-  validate_inputs(required_windows, bt_ro, bt_ro_fits)
+  bt_ro_fits <- read_fits(wsim.io::expand_inputs(args$bt_ro_fit), basin_ids) 
+  bt_ro <- read_obs(wsim.io::expand_inputs(args$bt_ro), basin_ids) 
   
+  required_windows <- sort(unique(basin_windows$months_storage))
   for (w in required_windows) {
-    # TODO implement.
-    # Compute correct return period for each basin, given the 
-    # integration period that should be used. Yes, this data
-    # already exists somewhere, but it seems cleaner to calculate
-    # it here than to require yet another input argument.
-    bt_ro_rp <- NULL
+    if (!(w %in% bt_ro$window))
+      stop("No blue water data found for integration window of ", w, " months.")
     
-    # Compute this using distribution for given integration window
-    bt_ro_median <- NULL
+    if (!(w %in% bt_ro_fits$window))
+      stop("No blue water fits found for integration window of ", w, " months.")
   }
   
-  # TODO merge everything into a data frame with
-  # id | window | bt_ro | bt_ro_rp | bt_ro_location | bt_ro_scale | bt_ro_shape | bt_ro_median | bws
-    
-  basins$water_cooled_loss <- wsim.electricity::water_cooled_loss(basins$bt_ro_rp, basins$bws)
-  basins$hydropower_loss   <- wsim.electricity::hydropower_loss(basins$bt_ro, basins$bt_ro_median, 0.6)
+  quaxxx <- wsim.distributions::find_qua(attr(bt_ro_fits, 'distribution'))
+  cdfxxx <- wsim.distributions::find_cdf(attr(bt_ro_fits, 'distribution'))
   
-  # write output netCDF
-  # id | water_cooled_loss | hydropower_loss |
+  cdf_vectorized <- Vectorize(function(val, loc, scale, shape) {
+    if(is.na(loc) || is.na(scale) || is.na(shape))
+      loc
+    else
+      cdfxxx(val, c(loc, scale, shape))
+  })
+  
+  med_vectorized <- Vectorize(function(loc, scale, shp) {
+    if(is.na(loc) || is.na(scale) || is.na(shp))
+      loc
+    else
+      quaxxx(0.5, c(loc, scale, shp))
+  })
+  
+  # TODO get rid of dplyr noise about attribute mismatch
+  basins <- select(basin_windows, id, window=months_storage) %>%
+    inner_join(basin_bws, by='id') %>%
+    left_join(bt_ro, by=c('id', 'window')) %>%
+    left_join(bt_ro_fits, by=c('id', 'window')) %>%
+    mutate(flow_quantile=cdf_vectorized(flow, location, scale, shape),
+           flow_rp=wsim.distributions::quantile2rp(flow_quantile),
+           flow_median=med_vectorized(location, scale, shape))
+    
+  basins$water_cooled_loss <- wsim.electricity::water_cooled_loss(
+    basins$flow_rp,
+    wsim.electricity::water_cooled_loss_onset(basins$baseline_water_stress),
+    wsim.electricity::water_cooled_loss_onset(basins$baseline_water_stress) + 30)
+    
+  basins$hydropower_loss <- wsim.electricity::hydropower_loss(basins$flow, basins$flow_median, 0.6)
+  
+  wsim.io::write_vars_to_cdf(vars=basins[, c('water_cooled_loss', 'hydropower_loss')],
+                             filename=args$output,
+                             ids=basins$id,
+                             prec='single')
 }
 
-test_args <- 
-  list(
-    "--windows","/home/dbaston/wsim/oct22/electricity/spinup/basin_upstream_storage.nc" ,
-    "--stress","/home/dbaston/wsim/oct22/electricity/spinup/basin_baseline_water_stress.nc" ,
-    "--output","/home/dbaston/wsim/oct22/electricity/basin_loss_risk/basin_loss_risk_201801.nc" ,
-    "--bt_ro","/home/dbaston/wsim/oct22/basin_results/basin_results_1mo_201801.nc::Bt_RO" ,
-    "--bt_ro","/home/dbaston/wsim/oct22/basin_results_integrated/basin_results_3mo_201801.nc::Bt_RO_sum" ,
-    "--bt_ro","/home/dbaston/wsim/oct22/basin_results_integrated/basin_results_6mo_201801.nc::Bt_RO_sum" ,
-    "--bt_ro","/home/dbaston/wsim/oct22/basin_results_integrated/basin_results_12mo_201801.nc::Bt_RO_sum" ,
-    "--bt_ro","/home/dbaston/wsim/oct22/basin_results_integrated/basin_results_24mo_201801.nc::Bt_RO_sum" ,
-    "--bt_ro","/home/dbaston/wsim/oct22/basin_results_integrated/basin_results_36mo_201801.nc::Bt_RO_sum" ,
-    "--bt_ro_fit","/home/dbaston/wsim/oct22/fits/basin_Bt_RO_1mo_annual_min.nc" ,
-    "--bt_ro_fit","/home/dbaston/wsim/oct22/fits/basin_Bt_RO_sum_3mo_annual_min.nc" ,
-    "--bt_ro_fit","/home/dbaston/wsim/oct22/fits/basin_Bt_RO_sum_6mo_annual_min.nc" ,
-    "--bt_ro_fit","/home/dbaston/wsim/oct22/fits/basin_Bt_RO_sum_12mo_month_12.nc" ,
-    "--bt_ro_fit","/home/dbaston/wsim/oct22/fits/basin_Bt_RO_sum_24mo_month_12.nc" ,
-    "--bt_ro_fit","/home/dbaston/wsim/oct22/fits/basin_Bt_RO_sum_36mo_month_12.nc" 
-  )
-
-
-
-
+tryCatch(main(commandArgs(TRUE)), error=wsim.io::die_with_message)
