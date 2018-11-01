@@ -212,14 +212,14 @@ class ElectricityStatic(metaclass=ABCMeta):
 
 class DefaultWorkspace:
 
-    def __init__(self, outputs, tempdir=None):
+    def __init__(self, outputs: str, tempdir: Optional[str]=None):
         self.outputs = outputs
         if tempdir:
             self.tempdir = tempdir
         else:
             self.tempdir = os.path.join(self.outputs, '.tmp')
 
-    def root(self):
+    def root(self) -> str:
         return self.outputs
 
     def make_path(self, thing: str, *,
@@ -230,7 +230,7 @@ class DefaultWorkspace:
                   member: str=None,
                   temporary: bool=False,
                   basis: str=None,
-                  summary: bool=False):
+                  summary: bool=False) -> str:
 
         assert (year is None) != (yearmon is None)
 
@@ -245,11 +245,11 @@ class DefaultWorkspace:
                                                summary=summary))
 
     @staticmethod
-    def make_stem(thing, basis, summary):
+    def make_stem(thing: str, basis: Optional[str], summary: Optional[bool]) -> str:
         return '_'.join(filter(None, (basis, thing, 'summary' if summary else None)))
 
     @staticmethod
-    def make_dirname(thing, window: int, basis: str, summary: bool, annual: bool):
+    def make_dirname(thing, window: int, basis: str, summary: bool, annual: bool) -> str:
         return '_'.join(filter(None, (basis,
                                       thing,
                                       'integrated' if window and window > 1 else None,
@@ -259,12 +259,12 @@ class DefaultWorkspace:
 
     @staticmethod
     def make_filename(thing: str, *,
-                      time: Union[int,str]=None,
+                      time: Union[int, str]=None,
                       window: int=None,
                       target: str=None,
                       member: str=None,
                       basis: str=None,
-                      summary: bool=False):
+                      summary: bool=False) -> str:
         filename = DefaultWorkspace.make_stem(thing, basis, summary)
 
         if window:
@@ -283,43 +283,69 @@ class DefaultWorkspace:
         return filename.format(thing=thing, window=window, time=time, target=target, member=member, basis=basis)
 
     # Summaries of data from multi-member forecast ensembles
-    def composite_summary(self, *, yearmon, window, target=None):
+    def composite_summary(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         assert window is not None
-        return self.make_path('composite', yearmon=yearmon, window=window, target=target).replace('composite_integrated', 'composite')
+        return self.make_path('composite',
+                              yearmon=yearmon,
+                              window=window,
+                              target=target).replace('composite_integrated', 'composite')
 
-    def composite_summary_adjusted(self, *, yearmon, window, target=None):
-        return self.make_path('composite_adjusted', yearmon=yearmon, window=window, target=target).replace('composite_adjusted_integrated', 'composite_adjusted')
+    def composite_summary_adjusted(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
+        return self.make_path('composite_adjusted',
+                              yearmon=yearmon,
+                              window=window,
+                              target=target).replace('composite_adjusted_integrated', 'composite_adjusted')
 
-    def composite_anomaly(self, *, yearmon, window, target=None):
-        return self.make_path('composite_anom', yearmon=yearmon, window=window, target=target).replace('composite_anom_integrated', 'composite_anom')
+    def composite_anomaly(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
+        return self.make_path('composite_anom',
+                              yearmon=yearmon,
+                              window=window,
+                              target=target).replace('composite_anom_integrated',
+                                                     'composite_anom')
 
-    def composite_anomaly_return_period(self, *, yearmon, window, target=None, temporary=False):
-        return self.make_path('composite_anom_rp', yearmon=yearmon, window=window, target=target, temporary=temporary).replace('composite_anom_rp_integrated', 'composite_anom_rp')
+    def composite_anomaly_return_period(self, *,
+                                        yearmon: str,
+                                        window: int,
+                                        target: Optional[str]=None,
+                                        temporary: bool=False) -> str:
+        return self.make_path('composite_anom_rp',
+                              yearmon=yearmon,
+                              window=window,
+                              target=target,
+                              temporary=temporary).replace('composite_anom_rp_integrated', 'composite_anom_rp')
 
-    def return_period_summary(self, *, yearmon, window, target):
+    def return_period_summary(self, *, yearmon: str, window: int, target: str) -> str:
         assert window is not None
 
         return self.make_path('rp', yearmon=yearmon, window=window, target=target, summary=True)
 
-    def standard_anomaly_summary(self, *, yearmon, window, target):
+    def standard_anomaly_summary(self, *, yearmon: str, window: int, target: str) -> str:
         assert window is not None
 
         return self.make_path('anom', yearmon=yearmon, window=window, target=target, summary=True)
 
-    def forcing_summary(self, *, yearmon, target):
+    def forcing_summary(self, *, yearmon: str, target: str) -> str:
         return self.make_path('forcing', yearmon=yearmon, target=target, summary=True)
 
-    def results_summary(self, *, yearmon, window, target=None):
+    def results_summary(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('results', yearmon=yearmon, window=window, target=target, summary=True)
 
     # Individual model inputs, outputs, and derivatives
-    def state(self, *, yearmon, member=None, target=None):
+    def state(self, *, yearmon: str, member: Optional[str]=None, target: Optional[str]=None) -> str:
         return self.make_path('state', yearmon=yearmon, member=member, target=target, window=None)
 
-    def forcing(self, *, yearmon, member=None, target=None):
+    def forcing(self, *, yearmon: str, member: Optional[str]=None, target: Optional[str]=None) -> str:
         return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=None)
 
-    def results(self, *, year=None, yearmon=None, window, member=None, target=None, temporary=False, basis=None):
+    def results(self, *,
+                year: Optional[int]=None,
+                yearmon: Optional[str]=None,
+                window: int,
+                member: Optional[str]=None,
+                target: Optional[str]=None,
+                temporary: bool=False,
+                basis: Optional[str]=None) -> str:
+
         assert window is not None
 
         if year:
@@ -327,37 +353,70 @@ class DefaultWorkspace:
             # greater than one year.
             assert window < 12
 
-        return self.make_path('results', year=year, yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
+        return self.make_path('results',
+                              year=year,
+                              yearmon=yearmon,
+                              window=window,
+                              member=member,
+                              target=target,
+                              temporary=temporary,
+                              basis=basis)
 
-    def return_period(self, *, yearmon, window, member=None, target=None, temporary=False, basis=None):
+    def return_period(self, *,
+                      yearmon: str,
+                      window: int,
+                      member: Optional[str]=None,
+                      target: Optional[str]=None,
+                      temporary: bool=False,
+                      basis: Optional[str]=None) -> str:
+
         assert window is not None
 
-        return self.make_path('rp', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
+        return self.make_path('rp',
+                              yearmon=yearmon,
+                              window=window,
+                              member=member,
+                              target=target,
+                              temporary=temporary,
+                              basis=basis)
 
-    def standard_anomaly(self, *, yearmon, window, member=None, target=None, temporary=False, basis=None):
+    def standard_anomaly(self, *,
+                         yearmon: str,
+                         window: int,
+                         member: Optional[str]=None,
+                         target: Optional[str]=None,
+                         temporary: bool=False,
+                         basis: Optional[str]=None) -> str:
+
         assert window is not None
 
-        return self.make_path('anom', yearmon=yearmon, window=window, member=member, target=target, temporary=temporary, basis=basis)
+        return self.make_path('anom',
+                              yearmon=yearmon,
+                              window=window,
+                              member=member,
+                              target=target,
+                              temporary=temporary,
+                              basis=basis)
 
     # Spinup files
-    def initial_state(self):
+    def initial_state(self) -> str:
         return os.path.join(self.outputs, 'spinup', 'initial_state.nc')
 
-    def climate_norm_forcing(self, *, month, temporary=False):
+    def climate_norm_forcing(self, *, month: int, temporary: bool=False) -> str:
         return os.path.join(self.tempdir if temporary else self.outputs,
                             'spinup',
                             'climate_norm_forcing_{month:02d}.nc'.format(month=month))
 
-    def final_state_norms(self):
+    def final_state_norms(self) -> str:
         return os.path.join(self.outputs, 'spinup', 'final_state_norms.nc')
 
-    def spinup_state(self, yearmon=None):
+    def spinup_state(self, yearmon: str) -> str:
         return os.path.join(self.outputs, 'spinup', 'spinup_state_{yearmon}.nc'.format(yearmon=yearmon))
 
-    def spinup_state_pattern(self):
+    def spinup_state_pattern(self) -> str:
         return self.spinup_state(yearmon='%T')
 
-    def spinup_mean_state(self, *, month):
+    def spinup_mean_state(self, *, month: int) -> str:
         return os.path.join(self.outputs, 'spinup', 'spinup_mean_state_month_{month:02d}.nc'.format(month=month))
 
     def tag(self, name):
@@ -405,8 +464,10 @@ class DefaultWorkspace:
 
         return os.path.join(self.outputs, 'fits', filename.format_map(locals()))
 
-    def fit_composite_anomalies(self, *, indicator, window):
-        return os.path.join(self.outputs, 'fits', 'composite_anom_{indicator}_{window}mo.nc'.format(window=window,
-                                                                                                    indicator=indicator))
+    def fit_composite_anomalies(self, *, indicator: str, window: int) -> str:
+        return os.path.join(self.outputs,
+                            'fits',
+                            'composite_anom_{indicator}_{window}mo.nc'.format(window=window,
+                                                                              indicator=indicator))
 
 
