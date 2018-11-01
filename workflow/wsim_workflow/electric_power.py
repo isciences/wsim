@@ -31,9 +31,9 @@ def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
 
     b2b_steps = []
     for yearmon in config.historical_yearmons():
-        b2b_steps += actions.run_b2b(workspace=config.workspace(),
-                                     static=config.static_data(),
-                                     yearmon=yearmon)
+        b2b_steps += actions.compute_basin_results(workspace=config.workspace(),
+                                                   static=config.static_data(),
+                                                   yearmon=yearmon)
 
     steps += b2b_steps
 
@@ -120,9 +120,9 @@ def monthly_observed(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str,
     # Skip if we would already have run this date as part of spinup
     if yearmon not in config.historical_yearmons():
         if config.should_run_lsm(yearmon):
-            steps += actions.run_b2b(workspace=config.workspace(),
-                                     static=config.static_data(),
-                                     yearmon=yearmon)
+            steps += actions.compute_basin_results(workspace=config.workspace(),
+                                                   static=config.static_data(),
+                                                   yearmon=yearmon)
 
     if yearmon not in config.result_fit_yearmons():
         # Do time integration

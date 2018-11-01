@@ -67,34 +67,56 @@ def create_forcing_file(workspace: DefaultWorkspace,
     ]
 
 
-def run_b2b(workspace: DefaultWorkspace,
-            static: ElectricityStatic,
-            yearmon: str,
-            target: Optional[str]=None,
-            member: Optional[str]=None) -> List[Step]:
+def compute_basin_results(workspace: DefaultWorkspace,
+                          static: ElectricityStatic,
+                          yearmon: str,
+                          target: Optional[str]=None,
+                          member: Optional[str]=None) -> List[Step]:
+    pixel_forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
     pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
     basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis='basin')
 
-    temp_csv = tempfile.mktemp(suffix='.csv')
-    temp_nc = tempfile.mktemp(suffix='.nc')
+    temp_csv_t = tempfile.mktemp(suffix='.csv')
+    temp_nc_t = tempfile.mktemp(suffix='.nc')
+    temp_csv_btro = tempfile.mktemp(suffix='.csv')
+    temp_nc_btro = tempfile.mktemp(suffix='.nc')
 
     return [
         exact_extract(
             boundaries=static.basins().file,
             fid="HYBAS_ID",
             input='NETCDF:{}:RO_m3'.format(pixel_results),
-            output=temp_csv,
+            output=temp_csv_btro,
             stats=['sum']
         ).merge(
+            exact_extract(
+                boundaries=static.basins().file,
+                fid="HYBAS_ID",
+                input='NETCDF:{}:T'.format(pixel_forcing),
+                weights='NETCDF:{}:Bt_RO'.format(pixel_results),
+                output=temp_csv_t,
+                stats='weighted mean'
+            )
+        ).merge(
             table2nc(
-                input=temp_csv,
+                input=temp_csv_btro,
                 fid="HYBAS_ID",
                 column="sum",
-                output=temp_nc
+                output=temp_nc_btro
+            )
+        ).merge(
+            table2nc(
+                input=temp_csv_t,
+                fid="HYBAS_ID",
+                column="weighted_mean",
+                output=temp_nc_t
             )
         ).merge(
             wsim_merge(
-                inputs=Vardef(temp_nc, 'sum').read_as('RO_m3'),
+                inputs=[
+                    Vardef(temp_nc_btro, 'sum').read_as('RO_m3'),
+                    Vardef(temp_nc_t, 'weighted_mean').read_as('T_Bt_RO')
+                ],
                 output=basin_results
             )
         ).merge(

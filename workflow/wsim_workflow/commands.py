@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import os
+import re
 from typing import Union, Iterable, Optional, List
 
 from .paths import Vardef
@@ -19,8 +20,16 @@ from .step import Step
 from . import attributes
 
 
+
 def q(txt: str) -> str:
     return '"{}"'.format(txt)
+
+
+GDAL_DATASET_RE = re.compile('^(?P<driver>\w+:)?(?P<filename>[^:]+)(?P<dataset>:\w+)?$')
+
+
+def gdaldataset2filename(dataset: str) -> str:
+    return re.search(GDAL_DATASET_RE, dataset).group('filename')
 
 
 def forecast_convert(infile: str, outfile: str, comment: Optional[str]=None) -> Step:
@@ -119,30 +128,27 @@ def exact_extract(*,
 
     if isinstance(weights, str):
         weights = [weights]
+    elif weights is None:
+        weights = []
 
     cmd = [
         'exactextract',
-        '-p', boundaries,
-        '-f', fid,
-        '-r', input,
-        '-o', output
+        '-p', q(boundaries),
+        '-f', q(fid),
+        '-r', q(input),
+        '-o', q(output)
     ]
 
     if weights:
-        cmd += ['-w', weights]
+        for w in weights:
+            cmd += ['-w', q(w)]
 
     for stat in stats:
-        cmd += ['-s', stat]
-
-    import re
-
-    # TODO tidy this up. We need to strip off GDAL stuff
-    input = re.sub('^\w+:', '', input)
-    input = re.sub(':\w+$', '', input)
+        cmd += ['-s', q(stat)]
 
     return Step(
         targets=output,
-        dependencies=([input] + weights) if weights else input,
+        dependencies=[gdaldataset2filename(ds) for ds in weights + [input]],
         commands=[cmd],
         comment=comment
     )
