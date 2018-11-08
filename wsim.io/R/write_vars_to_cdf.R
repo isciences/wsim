@@ -14,6 +14,7 @@
 #' Default NODATA values for various data types
 default_netcdf_nodata <- list(
   byte= -127,
+  char= NULL,
   integer= -9999,
   single=-3.4028234663852886e+38,
   float= -3.4028234663852886e+38,
@@ -82,10 +83,18 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
 
   # Return the data precision for variable named var
   var_prec <- function(var) {
+    if (mode(vars[[var]]) == 'logical')
+      return('byte') # ncdf4 library does not support bool type
+
+    if (mode(vars[[var]]) == 'character')
+      return('char') # ncdf4 library does not support string type
+
+    # return default floating-point type, as specified by arg
     if (is.character(prec)) {
       return(prec)
     }
 
+    # return var-specific floating-point type, as specified by arg
     if (is.list(prec)) {
       return(prec[[var]])
     }
@@ -93,9 +102,9 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
 
   # Return a fill value to use for the variable named var
   var_fill <- function(var) {
-    fill <- default_netcdf_nodata[[var_prec(var)]]
-    stopifnot(!is.null(fill))
-    return(fill)
+    stopifnot(var_prec(var) %in% names(default_netcdf_nodata))
+
+    default_netcdf_nodata[[var_prec(var)]]
   }
 
   if (is_spatial) {
@@ -149,19 +158,15 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
                                     vals=1:max(nchar(vars[[param]]), na.rm=TRUE),
                                     create_dimvar=FALSE)
       vardims <- list(nchar_dim, dims[[1]])
-      varmissval <- NULL
-      varprec <- "char"
     } else {
       vardims <- dims
-      varmissval <- var_fill(param)
-      varprec <- var_prec(param)
     }
 
     ncdf4::ncvar_def(name=param,
                      units="",
                      dim=vardims,
-                     missval=varmissval,
-                     prec=varprec,
+                     missval=var_fill(param),
+                     prec=var_prec(param),
                      compression=1)
   })
 
