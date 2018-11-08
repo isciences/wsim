@@ -288,7 +288,7 @@ test_that('we can write text attributes', {
 
   ids <- 3:6
   temp <- runif(4)
-  loc <- c('Upstairs', 'Downstairs', 'Garage', 'Outside')
+  loc <- c('Upstairs', 'Downstairs', NA, 'Outside')
 
   write_vars_to_cdf(list(temp=temp, loc=loc),
                     fname,
@@ -312,5 +312,4 @@ test_that('text attributes are not supported for spatial data', {
                       extent=c(0, 0, 1, 1)),
     "only supported for non-spatial"
   )
-
 })

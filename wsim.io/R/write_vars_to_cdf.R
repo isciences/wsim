@@ -140,7 +140,10 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
         stop("Character data only supported for non-spatial datasets.")
       }
 
-      nchar_dim <- ncdf4::ncdim_def(paste0(param, "_nchar"), units="", vals=1:max(nchar(vars[[param]])), create_dimvar=FALSE)
+      nchar_dim <- ncdf4::ncdim_def(paste0(param, "_nchar"),
+                                    units="",
+                                    vals=1:max(nchar(vars[[param]]), na.rm=TRUE),
+                                    create_dimvar=FALSE)
       vardims <- list(nchar_dim, dims[[1]])
       varmissval <- NULL
       varprec <- "char"
