@@ -245,7 +245,8 @@ to_data_frame <- function(dataset) {
     stop("Only ID-based data can be converted to a data frame")
 
   df <- data.frame(c(list(id=dataset$ids),
-                      lapply(dataset$data, as.vector)))
+                      lapply(dataset$data, as.vector)),
+                   stringsAsFactors=FALSE)
 
   # Copy global attributes over to data frame
   for (attrname in names(dataset$attrs)) {

@@ -76,7 +76,7 @@ test_that("spatial data is written in a way that is comprehensible to GDAL", {
 })
 
 test_that("vars can be written from rasters instead of raw matrices", {
-  fname <- tempfile()
+  fname <- tempfile(fileext=".nc")
   data <- matrix(runif(4), nrow=2)
   rast <- raster::raster(data, xmn=-20, xmx=-10, ymn=30, ymx=70)
 
@@ -105,7 +105,7 @@ test_that("vars can be written from rasters instead of raw matrices", {
 })
 
 test_that("crs is implicitly written as a dimensionless variable with no data", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
 
   data <- list(my_data= matrix(runif(9), nrow=3))
   write_vars_to_cdf(data, fname, extent=c(-180, 180, -90, 90))
@@ -122,7 +122,7 @@ test_that("crs is implicitly written as a dimensionless variable with no data", 
 })
 
 test_that("existing files can be appended to", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
 
   data1 <- list(
     temperature= matrix(runif(9), nrow=3)
@@ -143,7 +143,7 @@ test_that("existing files can be appended to", {
 })
 
 test_that("we cannot append if dimensions are not the same", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
 
   write_vars_to_cdf(list(data=matrix(runif(9), nrow=3)), fname, extent=c(0, 1, 0, 1))
 
@@ -161,7 +161,7 @@ test_that("we cannot append if dimensions are not the same", {
 })
 
 test_that("numeric precision can be specified on a per-variable basis", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
   fname <- '/tmp/kansas.nc'
 
   data <- list(
@@ -211,7 +211,7 @@ test_that('write_vars_to_cdf provides useful errors if extent is not correctly s
 })
 
 test_that("we can write non-spatial variables and attributes to a netCDF file", {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
   data <- runif(4)
 
   write_vars_to_cdf(list(my_data=data),
@@ -257,7 +257,7 @@ test_that('numeric ids must be integers or integer-coercible', {
 })
 
 test_that('we can use text-based ids', {
-  fname <- tempfile()
+  fname <- tempfile(fileext='.nc')
   data <- runif(4)
   ids <- sprintf('Station #%d', 1:length(data))
 
@@ -283,3 +283,34 @@ test_that('we can use text-based ids', {
   file.remove(fname)
 })
 
+test_that('we can write text attributes', {
+  fname <- tempfile(fileext='.nc')
+
+  ids <- 3:6
+  temp <- runif(4)
+  loc <- c('Upstairs', 'Downstairs', 'Garage', 'Outside')
+
+  write_vars_to_cdf(list(temp=temp, loc=loc),
+                    fname,
+                    ids=ids)
+
+  expect_true(file.exists(fname))
+
+  file.remove(fname)
+})
+
+test_that('text attributes are not supported for spatial data', {
+  fname <- tempfile(fileext='.nc')
+
+  temp <- matrix(runif(4), nrow=2)
+  loc <- rbind(c('Upstairs', 'Downstairs'),
+               c('Garage',   'Outside'))
+
+  expect_error(
+    write_vars_to_cdf(list(temp=temp, loc=loc),
+                      fname,
+                      extent=c(0, 0, 1, 1)),
+    "only supported for non-spatial"
+  )
+
+})

@@ -80,7 +80,11 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
 test_that("we can read attributes and variables from a non-spatial netCDF file into a data frame", {
   fname <- tempfile(fileext='.nc')
 
-  write_vars_to_cdf(list(var_a=runif(4), var_b=runif(4)),
+  var_a <- runif(4)
+  var_b <- runif(4)
+  var_c <- c('A', 'B', 'C', 'XX')
+
+  write_vars_to_cdf(list(var_a=var_a, var_b=var_b, var_c=var_c),
                     fname,
                     ids=2:5,
                     attrs=list(list(var="var_a", key="station", val="A"),
@@ -88,6 +92,12 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
                                list(key="yearmon", val="201702")))
 
   v <- read_vars(fname, as.data.frame=TRUE)
+
+  expect_equal(names(v), c('id', 'var_a', 'var_b', 'var_c'), check.attributes=FALSE)
+  expect_equal(v$id, 2:5, check.attributes=FALSE)
+  expect_equal(v$var_a, var_a, check.attributes=FALSE)
+  expect_equal(v$var_b, var_b, check.attributes=FALSE)
+  expect_equal(v$var_c, var_c, check.attributes=FALSE)
 
   expect_equal(v$id, 2:5, check.attributes=FALSE)
 
