@@ -313,3 +313,14 @@ test_that('text attributes are not supported for spatial data', {
     "only supported for non-spatial"
   )
 })
+
+test_that('we get an error when writing undefined IDs', {
+  fname <- tempfile(fileext='.nc')
+
+  expect_error(
+    write_vars_to_cdf(list(data=runif(4)),
+                      fname,
+                      ids=c(1,2,NA,3)),
+    "IDs must be defined"
+  )
+})

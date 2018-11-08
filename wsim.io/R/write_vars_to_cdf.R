@@ -116,6 +116,10 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
       list(var="lat", key="standard_name", val="latitude")
     ))
   } else {
+    if (any(is.na(ids))) {
+      stop('All IDs must be defined.')
+    }
+
     if (character_ids) {
       # The R ncdf4 library does not support proper netCDF 4 strings. So we do it the
       # old-school way, with fixed-length character arrays. Data written in this
