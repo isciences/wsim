@@ -239,7 +239,7 @@ test_that("we can write non-spatial variables and attributes to a netCDF file", 
   file.remove(fname)
 })
 
-test_that('ids must be integers or integer-coercible', {
+test_that('numeric ids must be integers or integer-coercible', {
   fname <- tempfile(fileext='.nc')
 
   data <- runif(4)
@@ -252,6 +252,33 @@ test_that('ids must be integers or integer-coercible', {
   write_vars_to_cdf(list(my_data=data),
                     fname,
                     ids=c(3.0, 4.0, 5.0, 6.0))
+
+  file.remove(fname)
+})
+
+test_that('we can use text-based ids', {
+  fname <- tempfile()
+  data <- runif(4)
+  ids <- sprintf('Station #%d', 1:length(data))
+
+  write_vars_to_cdf(list(my_data=data),
+                    fname,
+                    ids=ids)
+
+  expect_true(file.exists(fname))
+
+  cdf <- ncdf4::nc_open(fname)
+
+  # one variable
+  expect_equal(length(cdf$var), 1)
+  expect_equal(cdf$var[[1]]$name, "my_data")
+
+  # one dimension
+  expect_equal(length(cdf$var[[1]]$dim), 1)
+  expect_equal(cdf$var[[1]]$dim[[1]]$name, 'id')
+
+  # ids are correct
+  expect_equal(ids, ncdf4::ncvar_get(cdf, "id"), check.attributes=FALSE)
 
   file.remove(fname)
 })

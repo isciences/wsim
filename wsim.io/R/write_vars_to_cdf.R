@@ -69,6 +69,7 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
   history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
   is_spatial <- is.null(ids)
+  character_ids <- !is_spatial && mode(ids) == 'character'
 
   standard_attrs <- list(
     list(key="Conventions", val="CF-1.6"),
@@ -115,9 +116,19 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
       list(var="lat", key="standard_name", val="latitude")
     ))
   } else {
-    dims <- list(
-      ncdf4::ncdim_def("id", units="", vals=coerce_to_integer(ids), create_dimvar=TRUE)
-    )
+    if (character_ids) {
+      # The R ncdf4 library does not support proper netCDF 4 strings. So we do it the
+      # old-school way, with fixed-length character arrays. Data written in this
+      # way seems to be interpreted correctly by software such as QGIS.
+      dims <- list(
+        ncdf4::ncdim_def("id", units="", vals=1:length(ids), create_dimvar=FALSE)
+      )
+    } else {
+      # Assume that our IDs are integers, and error out if they're not.
+      dims <- list(
+        ncdf4::ncdim_def("id", units="", vals=coerce_to_integer(ids), create_dimvar=TRUE)
+      )
+    }
   }
 
   # Create all variables, putting in blank strings for the units.  We will
@@ -137,6 +148,12 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
   if (is_spatial) {
     # Add a CRS var
     ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
+  }
+
+  if (character_ids) {
+    # Have to manually create dimension variable
+    id_nchar_dim <- ncdf4::ncdim_def("id_nchar", units="", vals=1:max(nchar(ids)), create_dimvar=FALSE)
+    ncvars$id <- ncdf4::ncvar_def(name="id", units="", dim=list(id_nchar_dim, dims[[1]]), missval=NULL, prec='char')
   }
 
   # Does the file already exist?
@@ -172,6 +189,10 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
       list(key="date_created", val=datestring),
       list(key="history", val=history_entry)
     ))
+  }
+
+  if (character_ids) {
+    ncdf4::ncvar_put(ncout, ncvars$id, ids)
   }
 
   # Write data to vars

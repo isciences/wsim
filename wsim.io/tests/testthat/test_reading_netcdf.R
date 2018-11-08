@@ -126,6 +126,19 @@ test_that("we get an error trying to read a spatial netCDF file into a data fram
   file.remove(fname)
 })
 
+test_that("we can read text IDs", {
+  fname <- tempfile(fileext='.nc')
+  data <- runif(10)
+
+  ids <- sapply(1:length(data), function(.) paste0(sample(LETTERS, 1 + 10*runif(1)), collapse=""))
+
+  write_vars_to_cdf(list(data=data), fname, ids=ids)
+
+  d <- read_vars_from_cdf(fname)
+
+  expect_equal(ids, d$ids, check.attributes=FALSE)
+})
+
 test_that("we can check for expected IDs when loading a non-spatial netCDF", {
   fname <- tempfile(fileext='.nc')
   data <- runif(10)
