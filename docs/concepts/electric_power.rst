@@ -1,6 +1,20 @@
 Electric Power Assessment
 #########################
 
+Thermoelectric temp loss
+
+.. math::
+
+   abc
+
+.. figure:: /_generated/thermoelectric_loss_risk.svg
+   :align: center
+
+Start of onset is determined by baseline water stress
+
+.. figure:: /_generated/thermoelectric_loss_onset.svg
+   :align: center
+
 Hydropower loss risk is estimated by the following equation:
 
 
