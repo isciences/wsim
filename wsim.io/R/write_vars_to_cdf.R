@@ -129,6 +129,13 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
       stop('All IDs must be defined.')
     }
 
+    for (varname in names(vars)) {
+      if (length(vars[[varname]]) != length(ids)) {
+        stop(sprintf("Variable %s has %d values but we have %d ids.",
+                     varname, length(vars[[varname]]), length(ids)))
+      }
+    }
+
     if (character_ids) {
       # The R ncdf4 library does not support proper netCDF 4 strings. So we do it the
       # old-school way, with fixed-length character arrays. Data written in this

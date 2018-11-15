@@ -160,6 +160,24 @@ test_that("we cannot append if dimensions are not the same", {
   file.remove(fname)
 })
 
+test_that("we cannot write if variable and id dimensions do not match", {
+  fname <- tempfile(fileext='.nc')
+
+  n <- 25000 # this is high, but for some reason ncdf4 generates its own
+             # error for low N. For high N, it generates no error but goes
+             # on to segfault.
+  data <- data.frame(id=sapply(1:n, function(i) paste0(sample(LETTERS, 8), collapse='')),
+                     v1=runif(n),
+                     v2=runif(n),
+                     stringsAsFactors=FALSE)
+
+  expect_error(
+    write_vars_to_cdf(data[-1, -1], fname, ids=data$id),
+    "Variable .* has .* values but we have .*"
+  )
+})
+
+
 test_that("numeric precision can be specified on a per-variable basis", {
   fname <- tempfile(fileext='.nc')
   fname <- '/tmp/kansas.nc'
