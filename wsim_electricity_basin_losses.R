@@ -112,14 +112,14 @@ main <- function(raw_args) {
     mutate(flow_quantile=cdf_vectorized(flow, location, scale, shape),
            flow_rp=wsim.distributions::quantile2rp(flow_quantile),
            flow_median=med_vectorized(location, scale, shape))
-    
+
   basins$water_cooled_loss <- wsim.electricity::water_cooled_loss(
-    basins$flow_rp,
+    -basins$flow_rp,
     wsim.electricity::water_cooled_loss_onset(basins$baseline_water_stress),
     wsim.electricity::water_cooled_loss_onset(basins$baseline_water_stress) + 30)
-    
-  basins$hydropower_loss <- wsim.electricity::hydropower_loss(basins$flow, basins$flow_median, 0.6)
   
+  basins$hydropower_loss <- wsim.electricity::hydropower_loss(basins$flow, basins$flow_median, 0.6)
+
   wsim.io::write_vars_to_cdf(vars=basins[, c('water_cooled_loss', 'hydropower_loss')],
                              filename=args$output,
                              ids=basins$id,
