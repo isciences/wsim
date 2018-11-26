@@ -15,12 +15,16 @@ from ..step import Step
 
 import os
 
+from typing import List
+
 subdir = 'HydroBASINS'
 
-def basins_for_region(reg, level):
+
+def basins_for_region(reg: str, level: int) -> str:
     return 'hybas_lake_{}_lev{:02d}_v1c.shp'.format(reg, level)
 
-def basins(source_dir, filename, level):
+
+def basins(source_dir: str, filename: str, level: int) -> List[Step]:
     dirname = os.path.join(source_dir, subdir)
 
     collapse_command = [

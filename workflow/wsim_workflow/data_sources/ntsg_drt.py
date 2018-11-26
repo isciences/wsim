@@ -12,8 +12,10 @@
 # limitations under the License.
 
 from ..step import Step
+from typing import List
 
-def global_flow_direction(filename, resolution):
+
+def global_flow_direction(filename: str, resolution: float) -> List[Step]:
     if resolution == 2:
         res_txt = '2'
     elif resolution == 1:
@@ -28,7 +30,7 @@ def global_flow_direction(filename, resolution):
         res_txt = '10th'
     elif resolution == 1.0/12:
         res_txt = '12th'
-    elif resolution ==  1.0/16:
+    elif resolution == 1.0/16:
         res_txt = '16th'
     else:
         raise ValueError('The DRT flow direction dataset is not available in {}-degree resolution.')
@@ -41,7 +43,7 @@ def global_flow_direction(filename, resolution):
             targets=filename,
             dependencies=[],
             commands=[
-                [ 'wget', '-O', filename, url ]
+                ['wget', '-O', filename, url]
             ]
         )
     ]

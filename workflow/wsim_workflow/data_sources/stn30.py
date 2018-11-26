@@ -13,9 +13,12 @@
 
 import os
 
+from typing import List
+
 from ..step import Step
 
-def global_flow_direction(source_dir, filename, resolution):
+
+def global_flow_direction(source_dir: str, filename: str, resolution: float) -> List[Step]:
     if resolution != 0.5:
         raise ValueError('Only half-degree resolution is provided by STN-30')
 
@@ -30,7 +33,7 @@ def global_flow_direction(source_dir, filename, resolution):
             targets=zip_path,
             dependencies=[],
             commands=[
-                [ 'wget', '--directory-prefix', dirname, url ]
+                ['wget', '--directory-prefix', dirname, url]
             ]
         ),
 
@@ -39,9 +42,9 @@ def global_flow_direction(source_dir, filename, resolution):
             targets=filename,
             dependencies=zip_path,
             commands=[
-                [ 'unzip', '-j', zip_path, 'global_30_minute_potential_network_v601_asc/g_network.asc', '-d', dirname ],
-                [ 'mv', extracted_filename, filename ] if extracted_filename != filename else None,
-                [ 'touch', filename ] # Make extracted date modified > archive date modified
+                ['unzip', '-j', zip_path, 'global_30_minute_potential_network_v601_asc/g_network.asc', '-d', dirname],
+                ['mv', extracted_filename, filename ] if extracted_filename != filename else None,
+                ['touch', filename ]  # Make extracted date modified > archive date modified
             ]
         )
     ]

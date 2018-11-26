@@ -13,13 +13,16 @@
 
 import os
 
+from typing import List
+
 from ..step import Step
 
-def global_tawc(*, source_dir, filename, resolution):
+
+def global_tawc(*, source_dir: str, filename: str, resolution: float) -> List[Step]:
     dirname = os.path.join(source_dir, 'ISRIC')
     url = 'ftp://ftp.isric.org/wise/wise_30sec_v1.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
-    raw_file = os.path.join(dirname, 'HW30s_FULL.txt') # there are others, but might as well avoid a multi-target rule
+    raw_file = os.path.join(dirname, 'HW30s_FULL.txt')  # there are others, but might as well avoid a multi-target rule
     full_res_file = os.path.join(dirname, 'wise_30sec_v1_tawc.tif')
 
     return [
@@ -49,7 +52,7 @@ def global_tawc(*, source_dir, filename, resolution):
                     'wise_30sec_v1/Interchangeable_format/wise_30sec_v1.tif',
                     'wise_30sec_v1/Interchangeable_format/wise_30sec_v1.tsv'
                 ],
-                [ 'touch', raw_file ]
+                ['touch', raw_file]
             ]
         ),
 
@@ -84,4 +87,3 @@ def global_tawc(*, source_dir, filename, resolution):
             ]
         )
     ]
-

@@ -12,11 +12,12 @@
 # limitations under the License.
 
 import os
+from typing import List
 
 from ..step import Step
 
 
-def power_plant_database(source_dir):
+def power_plant_database(source_dir: str) -> List[Step]:
     dirname = os.path.join(source_dir, 'GPPD')
     url = 'https://raw.githubusercontent.com/wri/global-power-plant-database/master/output_database/global_power_plant_database.csv'
     file_path = os.path.join(dirname, url.split('/')[-1])

@@ -12,10 +12,12 @@
 # limitations under the License.
 
 import os
+from typing import List
 
 from ..step import Step
 
-def global_elevation(source_dir, filename, resolution):
+
+def global_elevation(source_dir: str, filename: str, resolution: float) -> List[Step]:
     dirname = os.path.join(source_dir, 'GMTED2010')
     url = 'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
