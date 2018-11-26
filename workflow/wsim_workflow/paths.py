@@ -212,6 +212,12 @@ class ElectricityStatic(metaclass=ABCMeta):
     def power_plants(self) -> Vardef:
         pass
 
+    def countries(self) -> Vardef:
+        pass
+
+    def provinces(self) -> Vardef:
+        pass
+
 
 class DefaultWorkspace:
 

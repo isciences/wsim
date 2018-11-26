@@ -23,7 +23,7 @@ from wsim_workflow import dates
 from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gmted, gppd, stn30, natural_earth
+from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gadm, gmted, gppd, stn30, natural_earth
 from wsim_workflow.step import Step
 
 
@@ -37,10 +37,11 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
             gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, resolution=0.5) + \
             isric.global_tawc(source_dir=self.source, filename=self.wc().file, resolution=0.5) + \
             stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
+            gadm.admin_boundaries(source_dir=self.source) + \
             gppd.power_plant_database(source_dir=self.source) + \
             grand.dam_locations(source_dir=self.source) + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
-            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file) + \
+            hydrobasins.downstream_ids(source_dir=self.source, basins_file=self.basins().file, ids_file=self.basin_downstream().file) + \
             natural_earth.natural_earth(source_dir=self.source, layer='coastline', resolution=10)
 
     # Static inputs
@@ -72,6 +73,18 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
         return paths.Vardef(
             os.path.join(self.source, 'Natural_Earth', natural_earth.ne_filename(layer='coastline', resolution=10)),
             None)
+
+    def countries(self) -> paths.Vardef:
+        return paths.Vardef(
+            os.path.join(self.source, 'GADM', 'gadm36_levels.gpkg'),
+            'level0'
+        )
+
+    def provinces(self) -> paths.Vardef:
+        return paths.Vardef(
+            os.path.join(self.source, 'GADM', 'gadm36_levels.gpkg'),
+            'level1'
+        )
 
 
 class NCEP(paths.ObservedForcing):
@@ -124,8 +137,8 @@ class NCEP(paths.ObservedForcing):
 
         wetday_ltmean_years = range(start_year, stop_year + 1)
         for month in range(1, 13):
-            input_vardefs=[self.p_wetdays(yearmon=dates.format_yearmon(year, month)) for year in wetday_ltmean_years]
-            ltmean_file=self.p_wetdays(yearmon=dates.format_yearmon(start_year - 1, month)).file,
+            input_vardefs = [self.p_wetdays(yearmon=dates.format_yearmon(year, month)) for year in wetday_ltmean_years]
+            ltmean_file = self.p_wetdays(yearmon=dates.format_yearmon(start_year - 1, month)).file,
 
             steps.append(
                 commands.wsim_integrate(
@@ -251,9 +264,17 @@ class NCEP(paths.ObservedForcing):
         month = int(yearmon[4:])
 
         if year < 1979:
-            return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays_ltmean', 'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)), 'pWetDays')
+            return paths.Vardef(os.path.join(self.source,
+                                             'NCEP',
+                                             'wetdays_ltmean',
+                                             'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)),
+                                'pWetDays')
         else:
-            return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays', 'wetdays_{yearmon}.nc'.format(yearmon=yearmon)), 'pWetDays')
+            return paths.Vardef(os.path.join(self.source,
+                                             'NCEP',
+                                             'wetdays',
+                                             'wetdays_{yearmon}.nc'.format(yearmon=yearmon)),
+                                'pWetDays')
 
 
 class CFSForecast(paths.ForecastForcing):
@@ -271,7 +292,11 @@ class CFSForecast(paths.ForecastForcing):
     def p_wetdays(self, *, yearmon=None, target, member=None):
         month = int(target[4:])
 
-        return paths.Vardef(os.path.join(self.source, 'NCEP', 'wetdays_ltmean', 'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)), 'pWetDays')
+        return paths.Vardef(os.path.join(self.source,
+                                         'NCEP',
+                                         'wetdays_ltmean',
+                                         'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)),
+                            'pWetDays')
 
     def fit_obs(self, *, var, month):
         return os.path.join(self.source,
@@ -284,8 +309,8 @@ class CFSForecast(paths.ForecastForcing):
                             'NCEP_CFSv2',
                             'hindcast_fits',
                             'retro_{var}_month_{target_month:02d}_lead_{lead_months:d}.nc'.format(var=var,
-                                                                                                  target_month=target_month,
-                                                                                                  lead_months=lead_months))
+                                                                                                  target_month=target_month,  # noqa
+                                                                                                  lead_months=lead_months))   # noqa
 
     def forecast_raw(self, *, target, member):
         return os.path.join(self.source,
@@ -341,7 +366,7 @@ class CFSForecast(paths.ForecastForcing):
                 )
 
                 for lead in range(1, 10):
-                    fitfile =  self.fit_retro(var=var, target_month=month, lead_months=lead)
+                    fitfile = self.fit_retro(var=var, target_month=month, lead_months=lead)
                     fitdir = os.path.dirname(fitfile)
                     fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
 
@@ -352,8 +377,8 @@ class CFSForecast(paths.ForecastForcing):
         return steps
 
     def prep_steps(self, *, yearmon=None, target, member):
-        outfile=self.forecast_raw(member=member, target=target)
-        infile=self.forecast_grib(member=member, target=target)
+        outfile = self.forecast_raw(member=member, target=target)
+        infile = self.forecast_grib(member=member, target=target)
 
         return [
             # Download the GRIB, if needed
@@ -390,10 +415,10 @@ class CFSConfig(ConfigBase):
             self._forecast.global_prep_steps()
 
     def historical_years(self):
-        return range(1948, 2018) # 1948-2017
+        return range(1948, 2018)  # 1948-2017
 
     def result_fit_years(self):
-        return range(1950, 2010) # 1950-2009
+        return range(1950, 2010)  # 1950-2009
 
     def forecast_ensemble_members(self, yearmon):
         # Build an ensemble of 28 forecasts by taking the four

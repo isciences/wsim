@@ -1,0 +1,42 @@
+# Copyright (c) 2018 ISciences, LLC.
+# All rights reserved.
+#
+# WSIM is licensed under the Apache License, Version 2.0 (the "License").
+# You may not use this file except in compliance with the License. You may
+# obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+from typing import List
+
+from ..step import Step
+
+
+def admin_boundaries(source_dir: str) -> List[Step]:
+    dirname = os.path.join(source_dir, 'GADM')
+    url = 'https://biogeo.ucdavis.edu/data/gadm3.6/gadm36_levels_gpkg.zip'
+    zip_path = os.path.join(dirname, url.split('/')[-1])
+    gpkg_path = os.path.join(dirname, 'gadm36_levels.gpkg')
+
+    return [
+        Step(
+            targets=zip_path,
+            dependencies=[],
+            commands=[
+                ['wget', '--directory-prefix', dirname, url]
+            ]
+        ),
+
+        Step(
+            targets=gpkg_path,
+            dependencies=zip_path,
+            commands=[
+                ['unzip', '-D', '-d', dirname, zip_path],
+            ]
+        )
+    ]
