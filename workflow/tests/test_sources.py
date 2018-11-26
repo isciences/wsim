@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 import unittest
 
-from wsim_workflow.data_sources import isric, stn30, gmted, gppd, ntsg_drt, aqueduct
+from wsim_workflow.data_sources import isric, stn30, gmted, gppd, natural_earth, ntsg_drt, aqueduct
 from wsim_workflow.output import gnu_make
 from wsim_workflow.workflow import write_makefile
 
@@ -94,10 +94,26 @@ class TestSources(unittest.TestCase):
     def test_gppd(self):
         steps = gppd.power_plant_database(source_dir=self.source_dir)
 
-        [fname] = steps[0].targets
+        [fname] = steps[-1].targets
 
         return_code = execute_steps(steps, fname)
 
         self.assertEqual(0, return_code)
 
         os.remove(fname)
+
+    @unittest.skip
+    def test_natural_earth(self):
+        with self.assertRaises(ValueError):
+            natural_earth.natural_earth(source_dir=self.source_dir, layer='cookies', resolution=10)
+
+        with self.assertRaises(ValueError):
+            natural_earth.natural_earth(source_dir=self.source_dir, layer='coastline', resolution=20)
+
+        steps = natural_earth.natural_earth(source_dir=self.source_dir, layer='coastline', resolution=110)
+
+        [fname] = steps[-1].targets
+
+        return_code = execute_steps(steps, fname)
+
+        self.assertEqual(0, return_code)

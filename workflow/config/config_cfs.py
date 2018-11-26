@@ -23,7 +23,7 @@ from wsim_workflow import dates
 from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gmted, gppd, stn30
+from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gmted, gppd, stn30, natural_earth
 from wsim_workflow.step import Step
 
 
@@ -40,7 +40,8 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
             gppd.power_plant_database(source_dir=self.source) + \
             grand.dam_locations(source_dir=self.source) + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
-            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file)
+            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file) + \
+            natural_earth.natural_earth(source_dir=self.source, layer='coastline', resolution=10)
 
     # Static inputs
     def wc(self) -> paths.Vardef:
@@ -66,6 +67,11 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
 
     def power_plants(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'GPPD', 'global_power_plant_database.csv'), None)
+
+    def coastline(self) -> paths.Vardef:
+        return paths.Vardef(
+            os.path.join(self.source, 'Natural_Earth', natural_earth.ne_filename(layer='coastline', resolution=10)),
+            None)
 
 
 class NCEP(paths.ObservedForcing):
