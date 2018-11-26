@@ -19,7 +19,7 @@ from ..step import Step
 
 def power_plant_database(source_dir: str) -> List[Step]:
     dirname = os.path.join(source_dir, 'GPPD')
-    url = 'https://raw.githubusercontent.com/wri/global-power-plant-database/master/output_database/global_power_plant_database.csv'
+    url = 'https://raw.githubusercontent.com/wri/global-power-plant-database/master/output_database/global_power_plant_database.csv'  # noqa
     file_path = os.path.join(dirname, url.split('/')[-1])
 
     return [

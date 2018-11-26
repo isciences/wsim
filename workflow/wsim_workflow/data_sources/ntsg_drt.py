@@ -35,7 +35,7 @@ def global_flow_direction(filename: str, resolution: float) -> List[Step]:
     else:
         raise ValueError('The DRT flow direction dataset is not available in {}-degree resolution.')
 
-    url = 'http://files.ntsg.umt.edu/data/DRT/upscaled_global_hydrography/by_HydroSHEDS_Hydro1k/flow_direction/DRT_{}_FDR_globe.asc'.format(res_txt)
+    url = 'http://files.ntsg.umt.edu/data/DRT/upscaled_global_hydrography/by_HydroSHEDS_Hydro1k/flow_direction/DRT_{}_FDR_globe.asc'.format(res_txt)  # noqa
 
     return [
         # Download flow grid
@@ -47,5 +47,3 @@ def global_flow_direction(filename: str, resolution: float) -> List[Step]:
             ]
         )
     ]
-
-

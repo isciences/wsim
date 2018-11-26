@@ -51,8 +51,8 @@ def basins(source_dir: str, filename: str, level: int) -> List[Step]:
     ]
 
 
-def downstream_ids(source_dir, basins, ids_file):
-    basin_path = os.path.join(source_dir, subdir, basins)
+def downstream_ids(source_dir: str, basins_file: str, ids_file: str) -> List[Step]:
+    basin_path = os.path.join(source_dir, subdir, basins_file)
     ids_path = os.path.join(source_dir, subdir, ids_file)
 
     return [
@@ -70,5 +70,3 @@ def downstream_ids(source_dir, basins, ids_file):
             ]
         )
     ]
-
-

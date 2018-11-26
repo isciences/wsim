@@ -29,7 +29,7 @@ def global_elevation(source_dir: str, filename: str, resolution: float) -> List[
             targets=zip_path,
             dependencies=[],
             commands=[
-                [ 'wget', '--directory-prefix', dirname, url ]
+                ['wget', '--directory-prefix', dirname, url]
             ]
         ),
 
@@ -38,8 +38,7 @@ def global_elevation(source_dir: str, filename: str, resolution: float) -> List[
             targets=raw_file,
             dependencies=zip_path,
             commands=[
-                [ 'unzip', '-d', dirname, zip_path ],
-                [ 'touch', raw_file ]
+                ['unzip', '-d', dirname, '-D', zip_path],
             ]
         ),
 
