@@ -20,11 +20,13 @@ from wsim_workflow.workflow import unbuildable_targets
 
 from config_gldas20_noah import GLDAS20_NoahConfig
 
+
 def strip_existing_dependencies(step):
     step.dependencies = [dep for dep in step.dependencies if not os.path.exists(dep)]
 
-class TestGLDAS20_NoahConfig(unittest.TestCase):
-    source = os.path.expanduser('~/wsim/source/GLDAS20') # Can only run some tests if the inputs actually exist
+
+class TestGLDAS20NoahConfig(unittest.TestCase):
+    source = os.path.expanduser('~/wsim/source/GLDAS20')  # Can only run some tests if the inputs actually exist
     derived = '/tmp/derived'
 
     def fail_on_duplicate_targets(self, steps):
@@ -55,14 +57,25 @@ class TestGLDAS20_NoahConfig(unittest.TestCase):
         if unbuildable:
             for step in unbuildable:
                 for t in step.targets:
-                    print("Don't know how to build", t, "(depends on", ",".join(step.dependencies), ")", file=sys.stderr)
+                    print("Don't know how to build", t,
+                          "(depends on", ",".join(step.dependencies), ")", file=sys.stderr)
                 self.fail('Unbuildable targets found')
 
     def test_no_duplicate_targets(self):
         config = GLDAS20_NoahConfig(self.source, self.derived)
 
         # Shouldn't get duplicate steps within fit period
-        self.fail_on_duplicate_targets(generate_steps(config, start='196404', stop='196404', no_spinup=False, forecasts='latest', run_electric_power=False))
+        self.fail_on_duplicate_targets(generate_steps(config,
+                                                      start='196404',
+                                                      stop='196404',
+                                                      no_spinup=False,
+                                                      forecasts='latest',
+                                                      run_electric_power=False))
 
         # Or after fit period, but still within historical period
-        self.fail_on_duplicate_targets(generate_steps(config, start='201004', stop='201004', no_spinup=False, forecasts='latest', run_electric_power=False))
+        self.fail_on_duplicate_targets(generate_steps(config,
+                                                      start='201004',
+                                                      stop='201004',
+                                                      no_spinup=False,
+                                                      forecasts='latest',
+                                                      run_electric_power=False))

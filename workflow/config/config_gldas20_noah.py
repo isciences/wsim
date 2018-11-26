@@ -34,7 +34,7 @@ class GLDAS20_NoahStatic(paths.Static):
         return \
             ntsg_drt.global_flow_direction(filename=self.flowdir_raw, resolution=0.25) + self.extend_flowdir() + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
-            hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file)
+            hydrobasins.downstream_ids(source_dir=self.source, basins_file=self.basins().file, ids_file=self.basin_downstream().file)
 
     def extend_flowdir(self):
         return [Step(
