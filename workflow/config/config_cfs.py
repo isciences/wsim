@@ -23,7 +23,7 @@ from wsim_workflow import dates
 from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gmted, stn30
+from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gmted, gppd, stn30
 from wsim_workflow.step import Step
 
 
@@ -37,10 +37,10 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
             gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, resolution=0.5) + \
             isric.global_tawc(source_dir=self.source, filename=self.wc().file, resolution=0.5) + \
             stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
+            gppd.power_plant_database(source_dir=self.source) + \
             grand.dam_locations(source_dir=self.source) + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
             hydrobasins.downstream_ids(source_dir=self.source, basins=self.basins().file, ids_file=self.basin_downstream().file)
-
 
     # Static inputs
     def wc(self) -> paths.Vardef:
@@ -63,6 +63,9 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
 
     def water_stress(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'Aqueduct', 'aqueduct_baseline_water_stress.tif'), '1')
+
+    def power_plants(self) -> paths.Vardef:
+        return paths.Vardef(os.path.join(self.source, 'GPPD', 'global_power_plant_database.csv'), None)
 
 
 class NCEP(paths.ObservedForcing):

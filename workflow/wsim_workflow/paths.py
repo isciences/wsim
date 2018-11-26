@@ -209,6 +209,9 @@ class ElectricityStatic(metaclass=ABCMeta):
     def dam_locations(self) -> Vardef:
         pass
 
+    def power_plants(self) -> Vardef:
+        pass
+
 
 class DefaultWorkspace:
 

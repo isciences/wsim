@@ -17,9 +17,10 @@ import subprocess
 import tempfile
 import unittest
 
-from wsim_workflow.data_sources import isric, stn30, gmted, ntsg_drt, aqueduct
+from wsim_workflow.data_sources import isric, stn30, gmted, gppd, ntsg_drt, aqueduct
 from wsim_workflow.output import gnu_make
 from wsim_workflow.workflow import write_makefile
+
 
 def execute_steps(steps, target):
     makefile = tempfile.mkstemp()[-1]
@@ -30,6 +31,7 @@ def execute_steps(steps, target):
 
     os.remove(makefile)
     return return_code
+
 
 class TestSources(unittest.TestCase):
 
@@ -72,7 +74,6 @@ class TestSources(unittest.TestCase):
 
         self.assertEqual(0, return_code)
 
-
     @unittest.skip
     def test_ntsg_drt(self):
         steps = ntsg_drt.global_flow_direction(filename=self.outfile, resolution=0.25)
@@ -81,7 +82,6 @@ class TestSources(unittest.TestCase):
 
         self.assertEqual(0, return_code)
 
-
     @unittest.skip
     def test_aqueduct_baseline_water_stress(self):
         steps = aqueduct.baseline_water_stress(source_dir=self.source_dir, filename=self.outfile)
@@ -89,3 +89,15 @@ class TestSources(unittest.TestCase):
         return_code = execute_steps(steps, self.outfile)
 
         self.assertEqual(0, return_code)
+
+    @unittest.skip
+    def test_gppd(self):
+        steps = gppd.power_plant_database(source_dir=self.source_dir)
+
+        [fname] = steps[0].targets
+
+        return_code = execute_steps(steps, fname)
+
+        self.assertEqual(0, return_code)
+
+        os.remove(fname)
