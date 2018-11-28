@@ -14,7 +14,7 @@
 import os
 import tempfile
 
-from typing import Iterable, List, Mapping
+from typing import Iterable, List, Mapping, Union, Optional
 
 from . import actions, commands
 
@@ -109,6 +109,9 @@ def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     # Compute baseline water stress for each basin
     steps += compute_basin_water_stress(config.workspace(), config.static_data())
 
+    # Prepare power-plant data
+    steps += prepare_power_plants(config.workspace(), config.static_data())
+
     return steps
 
 
@@ -150,6 +153,47 @@ def monthly_observed(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str,
         steps += compute_basin_losses(config.workspace(), yearmon=yearmon)
 
     return steps
+
+
+def prepare_power_plants(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:
+    return [
+        Step(
+            targets=[workspace.power_plants()],
+            dependencies=[
+                static.power_plants(),
+                static.countries().file,
+                static.provinces().file,
+                static.basins().file
+            ],
+            commands=[
+                append_boundaries(
+                    points=static.power_plants().file,
+                    boundaries=[
+                        static.countries().file + '::NAME_0->country',  # TODO push varname back into static data somehow?
+                        static.provinces().file + '::NAME_1->province',
+                        static.basins().file + '::HYBAS_ID->basin_id'
+                    ],
+                    output=workspace.power_plants()
+                )
+            ]
+        )
+    ]
+
+
+def append_boundaries(*, points: str, boundaries: Union[str, List[str]], output: str) -> List[str]:
+    if type(boundaries) is str:
+        boundaries = [boundaries]
+
+    cmd = [
+        os.path.join('{BINDIR}', 'utils', 'global_power_plant_database', 'append_boundaries.R'),
+        '--points', points,
+        '--output', output
+    ]
+
+    for b in boundaries:
+        cmd += ['--boundaries', '"{}"'.format(b)]
+
+    return cmd
 
 
 def wsim_basin_losses(*,

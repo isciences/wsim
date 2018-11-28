@@ -19,9 +19,9 @@ from ..step import Step
 
 def admin_boundaries(source_dir: str) -> List[Step]:
     dirname = os.path.join(source_dir, 'GADM')
-    url = 'https://biogeo.ucdavis.edu/data/gadm3.6/gadm36_levels_gpkg.zip'
+    url = 'https://biogeo.ucdavis.edu/data/gadm3.6/gadm36_gpkg.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
-    gpkg_path = os.path.join(dirname, 'gadm36_levels.gpkg')
+    gpkg_path = os.path.join(dirname, 'gadm36.gpkg')
 
     return [
         Step(

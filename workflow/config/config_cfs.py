@@ -67,27 +67,13 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
         return paths.Vardef(os.path.join(self.source, 'Aqueduct', 'aqueduct_baseline_water_stress.tif'), '1')
 
     def power_plants(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GPPD', 'global_power_plant_database.csv'), None)
-
-    def once_through_cooled(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GPPD', 'gppd_once_through_cooled.csv'), None)
-
-    def coastline(self) -> paths.Vardef:
-        return paths.Vardef(
-            os.path.join(self.source, 'Natural_Earth', natural_earth.ne_filename(layer='coastline', resolution=10)),
-            None)
+        return paths.Vardef(os.path.join(self.source, 'GPPD', 'gppd_inferred_cooling.nc'), None)
 
     def countries(self) -> paths.Vardef:
-        return paths.Vardef(
-            os.path.join(self.source, 'GADM', 'gadm36_levels.gpkg'),
-            'level0'
-        )
+        return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36.gpkg'), None)
 
     def provinces(self) -> paths.Vardef:
-        return paths.Vardef(
-            os.path.join(self.source, 'GADM', 'gadm36_levels.gpkg'),
-            'level1'
-        )
+        return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36.gpkg'), None)
 
 
 class NCEP(paths.ObservedForcing):

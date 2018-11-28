@@ -441,6 +441,9 @@ class DefaultWorkspace:
     def basin_water_stress(self) -> str:
         return os.path.join(self.outputs, 'electricity', 'spinup', 'basin_baseline_water_stress.nc')
 
+    def power_plants(self) -> str:
+        return os.path.join(self.outputs, 'electricity', 'spinup', 'power_plants.nc')
+
     # Distribution fit files. Must provide either a numeric month, or an annual_stat
     def fit_obs(self, *,
                 var: str,

@@ -18,6 +18,7 @@ from . import dates
 from . import paths
 from .step import Step
 
+
 class ConfigBase(metaclass=abc.ABCMeta):
 
     distribution = "gev"
@@ -120,7 +121,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         Provides a list of integration windows (in months)
         """
-        return [ 3, 6, 12, 24, 36, 60 ]
+        return [3, 6, 12, 24, 36, 60]
 
     @staticmethod
     def forcing_rp_vars(*, basis: Optional[str]=None) -> List[str]:
@@ -172,17 +173,17 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
         if not basis:
             return {
-                'Bt_RO'     : [ 'min', 'max', 'sum' ],
-                'E'         : [ 'sum' ],
-                'PETmE'     : [ 'sum' ],
-                'P_net'     : [ 'sum' ],
-                'RO_mm'     : [ 'sum' ],
-                'Ws'        : [ 'ave' ]
+                'Bt_RO': ['min', 'max', 'sum'],
+                'E': ['sum'],
+                'PETmE': ['sum'],
+                'P_net': ['sum'],
+                'RO_mm': ['sum'],
+                'Ws': ['ave']
             }
 
         if basis == 'basin':
             return {
-                'Bt_RO' : [ 'sum' ]
+                'Bt_RO': ['sum']
             }
 
         assert False
@@ -203,11 +204,9 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
         return integrated_stats
 
-
     @classmethod
     def lsm_integrated_var_names(cls, basis: Optional[str]=None) -> List[str]:
         """
         Provides a flat list of time-integrated variable names
         """
         return [var + '_' + stat for var, stats in cls.lsm_integrated_vars(basis=basis).items() for stat in stats]
-
