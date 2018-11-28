@@ -69,6 +69,9 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
     def power_plants(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'GPPD', 'global_power_plant_database.csv'), None)
 
+    def once_through_cooled(self) -> paths.Vardef:
+        return paths.Vardef(os.path.join(self.source, 'GPPD', 'gppd_once_through_cooled.csv'), None)
+
     def coastline(self) -> paths.Vardef:
         return paths.Vardef(
             os.path.join(self.source, 'Natural_Earth', natural_earth.ne_filename(layer='coastline', resolution=10)),
