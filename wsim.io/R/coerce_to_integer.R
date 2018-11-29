@@ -28,3 +28,18 @@ coerce_to_integer <- function(vals) {
 
   return(int_vals)
 }
+
+#' Test if values can be stored as integers without loss
+#'
+#' @param val a vector of values to test
+#' @return \code{TRUE} if \code{vals} can be cast to integers without loss
+#' @export
+can_coerce_to_integer <- function(vals) {
+  if (is.integer(vals)) {
+    return(TRUE)
+  }
+
+  suppressWarnings(int_vals <- as.integer(vals))
+  return(all(is.na(int_vals) == is.na(vals)) &&
+         all(int_vals == vals, na.rm=TRUE))
+}

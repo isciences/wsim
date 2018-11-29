@@ -64,15 +64,25 @@ test_that('latlon sequences are correct', {
 test_that('integer coercion works', {
   expect_true(is.integer(coerce_to_integer(1L)))
   expect_true(is.integer(coerce_to_integer(1)))
+
+  expect_true(can_coerce_to_integer(1L))
+  expect_true(can_coerce_to_integer(1))
+  expect_true(can_coerce_to_integer(0))
+  expect_true(can_coerce_to_integer(-1))
+  expect_true(can_coerce_to_integer(-17.0))
 })
 
 test_that('integer coercion throws an error with an out-of-range input', {
+  expect_false(can_coerce_to_integer(.Machine$integer.max + 1))
+
   expect_error(coerce_to_integer(.Machine$integer.max + 1),
                'Values \\(\\d+\\) cannot be coerced')
 })
 
 test_that('integer coercion throws an error with non-integer floats', {
-  expect_error(coerce_to_integer(.Machine$integer.max + 1),
+  expect_false(can_coerce_to_integer(sqrt(2)))
+
+  expect_error(coerce_to_integer(sqrt(2)),
                'Values \\(\\d+\\) cannot be coerced')
 })
 
