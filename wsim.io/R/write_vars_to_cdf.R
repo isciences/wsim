@@ -52,8 +52,10 @@ default_netcdf_nodata <- list(
 #'               in which case the same precision will be used for
 #'               all variables, or a list whose names correspond to
 #'               the names of \code{vars}, specifying a precision for
-#'               each variable. Acceptable precision descriptions
-#'               include:
+#'               each variable. If \code{vars} is \code{NULL}, or a
+#'               variable is not specified in a list, a default precision
+#'               will be selected depending on the values.
+#'               Acceptable precision descriptions include:
 #'               \itemize{
 #'               \item byte
 #'               \item integer
@@ -65,7 +67,7 @@ default_netcdf_nodata <- list(
 #'               file, if present.
 #'
 #'@export
-write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec="double", append=FALSE) {
+write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec=NULL, append=FALSE) {
   datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
   history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
@@ -83,21 +85,28 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
 
   # Return the data precision for variable named var
   var_prec <- function(var) {
-    if (mode(vars[[var]]) == 'logical')
+    if (is.character(prec)) {
+      return(prec)
+    }
+
+    # return var-specific floating-point type, as specified by arg
+    if (is.list(prec) && !is.null(prec[[var]])) {
+      return(prec[[var]])
+    }
+
+    # Guess precision
+    if (mode(vars[[var]]) == 'logical' || all(vars[[var]] %in% c(0,1)))
       return('byte') # ncdf4 library does not support bool type
 
     if (mode(vars[[var]]) == 'character')
       return('char') # ncdf4 library does not support string type
 
     # return default floating-point type, as specified by arg
-    if (is.character(prec)) {
-      return(prec)
+    if (can_coerce_to_integer(vars[[var]])) {
+      return('integer')
     }
 
-    # return var-specific floating-point type, as specified by arg
-    if (is.list(prec)) {
-      return(prec[[var]])
-    }
+    return('double')
   }
 
   # Return a fill value to use for the variable named var

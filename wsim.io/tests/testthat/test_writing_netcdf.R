@@ -204,6 +204,32 @@ test_that("numeric precision can be specified on a per-variable basis", {
   file.remove(fname)
 })
 
+test_that("data types will be inferred if they are not specified", {
+  fname <- tempfile(fileext='.nc')
+
+  data <- list(
+    double_var= runif(10),
+    float_var= runif(10),
+    int_var= 1:10,
+    logical_var= runif(10) < 0.5,
+    string_var= sapply(1:10, function(i) paste(sample(letters, 4), collapse=''))
+  )
+
+  write_vars_to_cdf(data, fname, ids=1:10, prec=list(float_var='single'))
+
+  v <- ncdf4::nc_open(fname)
+  var_prec <- lapply(v$var, function(var) var$prec)
+
+  expect_equal(var_prec$double_var, 'double')
+  expect_equal(var_prec$float_var, 'float')
+  expect_equal(var_prec$int_var, 'int')
+  expect_equal(var_prec$logical_var, 'byte')
+  expect_equal(var_prec$string_var, 'char')
+
+
+  file.remove(fname)
+})
+
 test_that('write_vars_to_cdf provides useful errors if extent is not correctly specified', {
   fname <- tempfile(fileext='.nc')
 
