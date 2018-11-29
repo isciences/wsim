@@ -50,7 +50,7 @@ geod_buffer <- function(pts, rad, segs_per_quad=32) {
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args, types=list(seawater_distance="numeric"))
   plants <- read.csv(args$plants, stringsAsFactors=FALSE) %>%
-    st_as_sf(coords=c('longitude', 'latitude'), crs=4326)
+    st_as_sf(coords=c('longitude', 'latitude'), crs=4326, remove=FALSE)
   once_through_ids <- read.table(args$once_through, stringsAsFactors=FALSE)[, 1]
 
   wsim.io::info(sprintf("Creating %dm buffer around power plant locations.", args$seawater_distance))
@@ -78,18 +78,18 @@ main <- function(raw_args) {
 
   # set default cooling types
   plants_out <- plants %>%
-    select(gppd_idnr, capacity_mw, fuel1) %>%
+    select(gppd_idnr, capacity_mw, fuel1, latitude, longitude) %>%
     inner_join(plants_near_coast, by='gppd_idnr') %>%
     transmute(
       gppd_idnr,
       capacity_mw,
       fuel=fuel1,
+      longitude,
+      latitude,
       water_cooled= fuel1 %in% c('Coal', 'Nuclear', 'Waste', 'Biomass', 'Cogeneration', 'Petcoke'),
       once_through= gppd_idnr %in% once_through_ids,
       seawater_cooled= water_cooled & near_coast
     ) %>%
-    cbind(st_coordinates(.)) %>%
-    rename(longitude=X, latitude=Y) %>%
     st_set_geometry(NULL)
 
   wsim.io::info("Writing plants to", args$output)
