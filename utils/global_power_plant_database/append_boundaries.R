@@ -55,14 +55,16 @@ pip <- function(points, point_id_field, polys, poly_field_in, poly_field_out, fn
 }
 
 main <- function(raw_args) {
+  options(warn=2)
+
   args <- wsim.io::parse_args(usage, raw_args)
   points <- wsim.io::read_vars(args$points, as.data.frame=TRUE) %>%
     st_as_sf(coords=c('longitude', 'latitude'), crs=4326, remove=FALSE)
 
   # TODO check that args$output is writable
   # TODO suppress sf noise throughout file (st_read and st_intersects)
-
-  for (dataset in args$boundaries) {
+  fname_prev <- NULL
+  for (dataset in sort(args$boundaries)) {
     split_1 <- strsplit(dataset, '::', fixed=TRUE)[[1]]
     fname <- split_1[1]
     rest <- split_1[2]
@@ -76,11 +78,17 @@ main <- function(raw_args) {
       var_out <- rest
     }
 
-    wsim.io::info("Reading", fname)
-    polys <- st_read(fname, stringsAsFactors=FALSE)
-    pip_result <- pip(points, 'id', polys, var_in, var_out)
+    if (is.null(fname_prev) || fname != fname_prev) {
+      wsim.io::info("Reading", fname)
+      # Avoid reading same boundaries multiple times when we want
+      # to append multiple fields.
+      polys <- st_read(fname, stringsAsFactors=FALSE)
+    }
 
+    pip_result <- pip(points, 'id', polys, var_in, var_out)
     points <- left_join(points, pip_result, by='id')
+
+    fname_prev <- fname
   }
 
   points <- st_set_geometry(points, NULL)
