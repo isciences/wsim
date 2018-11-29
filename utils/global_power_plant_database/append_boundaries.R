@@ -57,7 +57,7 @@ pip <- function(points, point_id_field, polys, poly_field_in, poly_field_out, fn
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
   points <- wsim.io::read_vars(args$points, as.data.frame=TRUE) %>%
-    st_as_sf(coords=c('longitude', 'latitude'), crs=4326)
+    st_as_sf(coords=c('longitude', 'latitude'), crs=4326, remove=FALSE)
 
   # TODO check that args$output is writable
   # TODO suppress sf noise throughout file (st_read and st_intersects)
