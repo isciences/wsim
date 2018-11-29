@@ -78,7 +78,7 @@ main <- function(raw_args) {
 
   # set default cooling types
   plants_out <- plants %>%
-    select(gppd_idnr, capacity_mw, fuel1, latitude, longitude) %>%
+    select(gppd_idnr, capacity_mw, fuel1, latitude, longitude, estimated_generation_gwh) %>%
     inner_join(plants_near_coast, by='gppd_idnr') %>%
     transmute(
       gppd_idnr,
@@ -88,7 +88,8 @@ main <- function(raw_args) {
       latitude,
       water_cooled= fuel1 %in% c('Coal', 'Nuclear', 'Waste', 'Biomass', 'Cogeneration', 'Petcoke'),
       once_through= gppd_idnr %in% once_through_ids,
-      seawater_cooled= water_cooled & near_coast
+      seawater_cooled= water_cooled & near_coast,
+      capacity_factor= estimated_generation_gwh*1000/24/365.25
     ) %>%
     st_set_geometry(NULL)
 
@@ -98,6 +99,7 @@ main <- function(raw_args) {
                              ids=plants_out[, 1],
                              prec=list(basin_id='integer',
                                        capacity_mw='single',
+                                       capacity_factor='single',
                                        longitude='single',
                                        latitude='single'))
 }
