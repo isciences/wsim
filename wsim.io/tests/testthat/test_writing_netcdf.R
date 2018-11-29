@@ -180,7 +180,6 @@ test_that("we cannot write if variable and id dimensions do not match", {
 
 test_that("numeric precision can be specified on a per-variable basis", {
   fname <- tempfile(fileext='.nc')
-  fname <- '/tmp/kansas.nc'
 
   data <- list(
     my_data= 10*matrix(runif(9), nrow=3),
