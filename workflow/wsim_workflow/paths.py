@@ -239,11 +239,20 @@ class DefaultWorkspace:
                   member: str=None,
                   temporary: bool=False,
                   basis: str=None,
-                  summary: bool=False) -> str:
+                  summary: bool=False,
+                  sector: Optional[str]=None) -> str:
 
         assert (year is None) != (yearmon is None)
 
-        return os.path.join(self.tempdir if temporary else self.outputs,
+        if temporary:
+            root = self.tempdir
+        else:
+            root = self.outputs
+
+        if sector:
+            root = os.path.join(root, sector)
+
+        return os.path.join(root,
                             self.make_dirname(thing, window, basis, summary, year is not None),
                             self.make_filename(thing,
                                                time=yearmon or year,
@@ -443,6 +452,9 @@ class DefaultWorkspace:
 
     def power_plants(self) -> str:
         return os.path.join(self.outputs, 'electricity', 'spinup', 'power_plants.nc')
+
+    def electric_loss_risk(self, *, yearmon: str, target: Optional[str], member: Optional[str], basis: str):
+        return self.make_path('loss_risk', sector='electricity', yearmon=yearmon, window=1, target=target, member=member, basis=basis)
 
     # Distribution fit files. Must provide either a numeric month, or an annual_stat
     def fit_obs(self, *,

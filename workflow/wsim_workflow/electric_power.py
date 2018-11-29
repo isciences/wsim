@@ -152,6 +152,9 @@ def monthly_observed(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str,
         # Compute basin-level losses
         steps += compute_basin_losses(config.workspace(), yearmon=yearmon)
 
+        # Compute plant-level losses
+        steps += compute_plant_losses(config.workspace(), yearmon=yearmon)
+
     return steps
 
 
@@ -216,6 +219,58 @@ def wsim_basin_losses(*,
         cmd += ['--bt_ro_fit', filename]
 
     return cmd
+
+
+def wsim_plant_losses(*,
+                      plants: str,
+                      basin_losses: str,
+                      basin_temp: Union[str, Vardef],
+                      temperature: Union[str, Vardef],
+                      temperature_rp: Union[str, Vardef],
+                      output: str) -> List[str]:
+    return [
+        os.path.join('{BINDIR}', 'wsim_electricity_plant_losses.R'),
+        '--plants', plants,
+        '--basin_losses',   '"{}"'.format(basin_losses),
+        '--basin_temp',     '"{}"'.format(basin_temp),
+        '--temperature',    '"{}"'.format(temperature),
+        '--temperature_rp', '"{}"'.format(temperature_rp),
+        '--output',         '"{}"'.format(output)
+    ]
+
+
+def compute_plant_losses(workspace: DefaultWorkspace,
+                         *,
+                         yearmon: str,
+                         target: Optional[str]=None,
+                         member: Optional[str]=None) -> List[Step]:
+    return [
+        Step(
+            targets=workspace.electric_loss_risk(yearmon=yearmon, target=target, member=member, basis='plant'),
+            dependencies=[
+                workspace.power_plants(),
+                workspace.basin_water_loss(yearmon=yearmon),
+                workspace.results(yearmon=yearmon, window=1, basis='basin', target=target, member=member),
+                workspace.forcing(yearmon=yearmon),
+                workspace.return_period(yearmon=yearmon, window=1)
+            ],
+            commands=[
+                wsim_plant_losses(plants=workspace.power_plants(),
+                                  basin_losses=workspace.basin_water_loss(yearmon=yearmon),
+                                  basin_temp=Vardef(
+                                      workspace.results(yearmon=yearmon, window=1, basis='basin', target=target, member=member),
+                                      'T_Bt_RO'),
+                                  temperature=Vardef(
+                                      workspace.forcing(yearmon=yearmon, target=target, member=member),
+                                      'T'),
+                                  temperature_rp=Vardef(
+                                      workspace.return_period(yearmon=yearmon, window=1, target=target, member=member),
+                                      'T_rp'
+                                  ),
+                                  output=workspace.electric_loss_risk(yearmon=yearmon, target=target, member=member, basis='plant'))
+            ]
+        )
+    ]
 
 
 def compute_basin_integration_windows(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:
