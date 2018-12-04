@@ -43,6 +43,12 @@ Options:
 #'           one polygon
 #' @return a data frame with \code{point_id_field} and \code{poly_field_out} as columns
 pip <- function(points, point_id_field, polys, poly_field_in, poly_field_out, fn=first) {
+  # TODO get rid of sf warnings from st_cast
+  wsim.io::info('Disaggregating polygons')
+  options(warn=0)
+  polys <- st_cast(polys, 'POLYGON')
+  options(warn=2)
+  wsim.io::info('Performing point-in-polygon tests')
   z <- select(polys, !!rlang::sym(poly_field_in)) %>%
     st_join(select(points, !!point_id_field), join=st_intersects, left=FALSE) %>%
     st_set_geometry(NULL) %>%
