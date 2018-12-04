@@ -44,17 +44,17 @@ main <- function(raw_args) {
   medians <- apply(params, 1, function(p) if (any(is.na(p))) { p[1] } else { qua(0.5, p) })
   flow_df <- as.tbl(data.frame(basin_id=fit$ids, flow_12mo=medians))
 
-  # Remove dams that are used for irrigation, water supply, or fire control, unless they're
+  # Remove dams that are used for irrigation, water supply, or flood control, unless they're
   # explicitly noted as being used for electricity production
   hydro_dams <- filter(dams, !is.na(use_elec) | (is.na(use_irri) & is.na(use_supp) & is.na(use_fcon)))
-  
+
   basin_capacity <- wsim.electricity::basin_upstream_capacity(
     select(basins, basin_id=hybas_id, downstream_id=next_down),
     select(hydro_dams, capacity=cap_mcm))
-  
+
   basin_months_storage <- left_join(flow_df, basin_capacity, by='basin_id') %>%
     mutate(months_storage=ifelse(is.na(flow_12mo) | flow_12mo <= 0, 0, (capacity+capacity_upstream)*1e6/flow_12mo))
-  
+
   basin_integration_periods <- basin_capacity %>%
     full_join(flow_df, by='basin_id') %>%
     mutate(months_storage=wsim.electricity::basin_integration_period(
