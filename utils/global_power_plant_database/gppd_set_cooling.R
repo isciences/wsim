@@ -53,6 +53,33 @@ main <- function(raw_args) {
     st_as_sf(coords=c('longitude', 'latitude'), crs=4326, remove=FALSE)
   once_through_ids <- read.table(args$once_through, stringsAsFactors=FALSE)[, 1]
 
+  wsim.io::info("Computing default capacity factors for each fuel type.")
+  plant_capacity_factors <- plants %>%
+    st_set_geometry(NULL) %>%
+    mutate(generation_gwh= coalesce(generation_gwh_2017,
+                                    generation_gwh_2016,
+                                    generation_gwh_2015,
+                                    generation_gwh_2014,
+                                    generation_gwh_2013,
+                                    estimated_generation_gwh),
+           generation_mw= generation_gwh*1000/24/365.25,
+           capacity_factor= pmin(1.0, generation_mw / capacity_mw)) %>%
+    select(gppd_idnr, fuel=fuel1, capacity_factor)
+
+  fuel_capacity_factors <- plant_capacity_factors %>%
+    filter(capacity_factor > 0) %>%
+    group_by(fuel) %>%
+    summarize(mean_capacity_factor= mean(capacity_factor))
+
+  plant_capacity_factors_adjusted <- plant_capacity_factors %>%
+    inner_join(fuel_capacity_factors, by='fuel') %>%
+    mutate(capacity_factor_adj= ifelse(is.na(capacity_factor) | capacity_factor <= 0,
+                                       mean_capacity_factor,
+                                       capacity_factor)) %>%
+    select(gppd_idnr, capacity_factor=capacity_factor_adj)
+  rm(plant_capacity_factors)
+  rm(fuel_capacity_factors)
+
   wsim.io::info(sprintf("Creating %dm buffer around power plant locations.", args$seawater_distance))
   plants_buff <- plants %>%
     select(gppd_idnr) %>%
@@ -78,25 +105,20 @@ main <- function(raw_args) {
 
   # set default cooling types
   plants_out <- plants %>%
-    mutate(generation= coalesce(generation_gwh_2017,
-                                generation_gwh_2016,
-                                generation_gwh_2014,
-                                generation_gwh_2013,
-                                estimated_generation_gwh)) %>%
-    select(gppd_idnr, capacity_mw, fuel1, latitude, longitude, generation) %>%
+    filter(fuel1 != 'Storage') %>%
+    select(gppd_idnr, capacity_mw, fuel1, latitude, longitude) %>%
     inner_join(plants_near_coast, by='gppd_idnr') %>%
+    inner_join(plant_capacity_factors_adjusted, by='gppd_idnr') %>%
     transmute(
       gppd_idnr,
       capacity_mw,
+      generation_mw= capacity_factor*capacity_mw,
       fuel=fuel1,
       longitude,
       latitude,
       water_cooled= fuel1 %in% c('Coal', 'Nuclear', 'Waste', 'Biomass', 'Cogeneration', 'Petcoke'),
       once_through= gppd_idnr %in% once_through_ids,
-      seawater_cooled= water_cooled & near_coast,
-      capacity_factor= min(1.0, generation*1000/24/365.25 / capacity_mw) # clamp to 0-1; when generation values are very
-                                                                         # inaccuracy, capacity factors may be in the low
-                                                                         # hundreds for certain fuel types/countries.
+      seawater_cooled= water_cooled & near_coast
     ) %>%
     st_set_geometry(NULL)
 
