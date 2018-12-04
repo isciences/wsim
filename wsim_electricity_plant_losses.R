@@ -89,9 +89,7 @@ main <- function(raw_args) {
                                            Tc_rp= -30, # TODO check against report
                                            Treg= ifelse(once_through, 32, NA),
                                            Tdiff= 8),
-      loss_risk= pmin(1, coalesce(loss_hydro, 0) +
-                         coalesce(loss_water_cooled, 0) +
-                         loss_temperature) # TODO make sure these should be additive
+      loss_risk= pmax(coalesce(loss_hydro, 0), coalesce(loss_water_cooled, 0), loss_temperature)
     )
 
   # TODO get rid of unwanted columns
