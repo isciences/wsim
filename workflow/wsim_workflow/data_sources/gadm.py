@@ -12,18 +12,25 @@
 # limitations under the License.
 
 import os
+import tempfile
 from typing import List
 
+from ..commands import move
 from ..step import Step
 
 
-def admin_boundaries(source_dir: str) -> List[Step]:
-    dirname = os.path.join(source_dir, 'GADM')
-    url = 'https://biogeo.ucdavis.edu/data/gadm3.6/gadm36_gpkg.zip'
-    zip_path = os.path.join(dirname, url.split('/')[-1])
-    gpkg_path = os.path.join(dirname, 'gadm36.gpkg')
+def admin_boundaries(source_dir: str, levels: List[int]) -> List[Step]:
+    for level in levels:
+        assert 0 <= level <= 5
 
-    return [
+    dirname = os.path.join(source_dir, 'GADM')
+    url = 'https://biogeo.ucdavis.edu/data/gadm3.6/gadm36_levels_shp.zip'
+    zip_path = os.path.join(dirname, url.split('/')[-1])
+
+    # ogr2ogr seems to have trouble writing from one gpkg to another on the same
+    # cifs share. Work around this by writing to a local temp folder and then
+    # moving.
+    steps = [
         Step(
             targets=zip_path,
             dependencies=[],
@@ -31,12 +38,32 @@ def admin_boundaries(source_dir: str) -> List[Step]:
                 ['wget', '--directory-prefix', dirname, url]
             ]
         ),
-
-        Step(
-            targets=gpkg_path,
-            dependencies=zip_path,
-            commands=[
-                ['unzip', '-D', '-d', dirname, zip_path],
-            ]
-        )
     ]
+
+    # Read each layer and write to its own GeoPackage. Although we could just download
+    # GeoPackages from GADM, it's better to create our own so that ogr2ogr will add
+    # a numeric FID column for us. And writing as a shapefile takes forever, because
+    # ogr2ogr has to switch from OGR to ESRI ring rules.
+    for level in levels:
+        temp_gpkg = tempfile.mktemp(suffix='.gpkg')
+        gpkg_path = os.path.join(dirname, 'gadm36_level_{}.gpkg'.format(level))
+
+        steps += [
+            Step(
+                targets=temp_gpkg,
+                dependencies=zip_path,
+                commands=[
+                    [
+                        'ogr2ogr',
+                        temp_gpkg,
+                        '-nlt', 'PROMOTE_TO_MULTI',
+                        '/vsizip/{}'.format(zip_path),
+                        '-sql', '"SELECT fid AS GID, * FROM gadm36_{}"'.format(level)  # input layer name
+                    ]
+                ]
+            ),
+
+            move(from_path=temp_gpkg, to_path=gpkg_path)
+        ]
+
+    return steps

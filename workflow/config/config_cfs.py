@@ -37,7 +37,7 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
             gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, resolution=0.5) + \
             isric.global_tawc(source_dir=self.source, filename=self.wc().file, resolution=0.5) + \
             stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
-            gadm.admin_boundaries(source_dir=self.source) + \
+            gadm.admin_boundaries(source_dir=self.source, levels=[0,1]) + \
             gppd.power_plant_database(source_dir=self.source) + \
             grand.dam_locations(source_dir=self.source) + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
@@ -70,10 +70,10 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
         return paths.Vardef(os.path.join(self.source, 'GPPD', 'gppd_inferred_cooling.nc'), None)
 
     def countries(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36.gpkg'), None)
+        return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36_level_0.gpkg'), None)
 
     def provinces(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36.gpkg'), None)
+        return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36_level_1.gpkg'), None)
 
 
 class NCEP(paths.ObservedForcing):

@@ -172,8 +172,8 @@ def prepare_power_plants(workspace: DefaultWorkspace, static: ElectricityStatic)
                 append_boundaries(
                     points=static.power_plants().file,
                     boundaries=[
-                        static.countries().file + '::NAME_0->country',  # TODO push varname back into static data somehow?
-                        static.provinces().file + '::NAME_1->province',
+                        static.countries().file + '::GID->country_id',  # TODO push varname back into static data somehow?
+                        static.provinces().file + '::GID->province_id',
                         static.basins().file + '::HYBAS_ID->basin_id'
                     ],
                     output=workspace.power_plants()
