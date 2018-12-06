@@ -19,9 +19,20 @@ test_that('When flow is equal to or greater than expected flows, there is no los
 })
 
 test_that('Loss increases as flow decreases from expected', {
-  losses <- hydropower_loss(30:0, 30, 0.6)
+  losses <- hydropower_loss(30:0, rep.int(30, 31), 0.6)
   
   expect_equal(sum(losses == 1), 1) # only have total loss for zero flow
   expect_true(all(losses >= 0) && all(losses <= 1))
   expect_equal(losses, sort(losses))
+})
+
+test_that('Numerical edge cases are handled', {
+  expect_equal(1, hydropower_loss(0, 100, 0.6))
+  expect_equal(0, hydropower_loss(Inf, 100, 0.6))
+  expect_equal(0, hydropower_loss(0, 0, 0.6))
+  expect_equal(0, hydropower_loss(1, 0, 0.6))
+  
+  expect_identical(NA_real_, hydropower_loss(NA, 100, 0.6))
+  expect_identical(NA_real_, hydropower_loss(NA_real_, 100, 0.6))
+  expect_identical(NA_real_, hydropower_loss(NaN, 100, 0.6))
 })

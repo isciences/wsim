@@ -17,7 +17,11 @@
 #' @param expected   blue water (e.g., location parameter of fitted distribution)
 #' @export
 hydropower_loss <- function(blue_water, blue_water_expected, exponent) {
-  pct <- (blue_water / blue_water_expected) ^ exponent
+  stopifnot(length(blue_water) == length(blue_water_expected)) 
   
-  1 - pmax(pmin(pct, 1.0), 0.0)
+  ifelse(is.nan(blue_water),
+         NA_real_,
+         ifelse(blue_water_expected > 0,
+                1 - pmax(pmin((blue_water / blue_water_expected) ^ exponent, 1.0), 0.0), 
+                0))
 }

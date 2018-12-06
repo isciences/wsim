@@ -31,5 +31,10 @@ water_cooled_loss_onset <- function(baseline_water_stress) {
   bins  <- c(0,  0.1, 0.2, 0.4, 0.8, 1.0)
   onset <- c(30,  25,  20,  15,  10,  10)
   
-  approxfun(bins, onset)(baseline_water_stress)
+  interpolator <- approxfun(bins, onset)
+  ifelse(is.na(baseline_water_stress),
+         max(onset),
+         ifelse(baseline_water_stress > max(bins),
+                min(onset),
+                interpolator(baseline_water_stress)))
 }

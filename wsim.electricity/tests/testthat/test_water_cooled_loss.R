@@ -13,12 +13,15 @@
 
 context('Water-cooled plant loss')
 
-test_that('When there is no water stress, onset is 30 years', {
+test_that('When there is no (or undefined) water stress, onset is 30 years', {
   expect_equal(water_cooled_loss_onset(0), 30)
+  expect_equal(water_cooled_loss_onset(NA_real_), 30)
+  expect_equal(water_cooled_loss_onset(NaN), 30)
 })
 
 test_that('When there is maximum water stress, onset is 10 years', {
   expect_equal(water_cooled_loss_onset(1), 10)
+  expect_equal(water_cooled_loss_onset(Inf), 10)
 })
 
 test_that('Onset return period is linearly interpolated between water stress values', {
@@ -26,13 +29,17 @@ test_that('Onset return period is linearly interpolated between water stress val
 })
 
 test_that('At or below the onset return period, there is no loss', {
-  expect_equal(water_cooled_loss(10, 10, 100), 0)  
-  expect_equal(water_cooled_loss(5,  10, 100), 0)  
+  expect_equal(water_cooled_loss(10,   10, 100), 0)  
+  expect_equal(water_cooled_loss(5,    10, 100), 0)  
+  expect_equal(water_cooled_loss(0,    10, 100), 0)  
+  expect_equal(water_cooled_loss(-5,   10, 100), 0)  
+  expect_equal(water_cooled_loss(-Inf, 10, 100), 0)  
 })
 
 test_that('At or above the maximum return period, there is complete loss', {
-  expect_equal(water_cooled_loss(40, 10, 40), 1.0)  
-  expect_equal(water_cooled_loss(45, 10, 40), 1.0)  
+  expect_equal(water_cooled_loss(40,  10, 40), 1.0)  
+  expect_equal(water_cooled_loss(45,  10, 40), 1.0)  
+  expect_equal(water_cooled_loss(Inf, 10, 40), 1.0)  
 })
 
 test_that('Loss increases between the onset and the maximum return periods', {
@@ -42,3 +49,4 @@ test_that('Loss increases between the onset and the maximum return periods', {
   expect_true(all(losses <= 1))
   expect_equal(losses, sort(losses))
 })
+
