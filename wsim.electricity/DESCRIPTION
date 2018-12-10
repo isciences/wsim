@@ -8,9 +8,12 @@ License: file LICENSE
 Imports: raster, 
          Rcpp (>= 0.12.12),
          abind,
+         dplyr,
          lmom,
-         stats,
-         methods
+         methods,
+         rlang,
+         sf,
+         stats
 LinkingTo: Rcpp
 Suggests: testthat, wsim.io
 Encoding: UTF-8

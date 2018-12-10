@@ -149,11 +149,15 @@ def monthly_observed(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str,
                                                     window=window,
                                                     basis='basin')
 
-        # Compute basin-level losses
-        steps += compute_basin_losses(config.workspace(), yearmon=yearmon)
+        # Compute basin loss factors
+        steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon)
 
         # Compute plant-level losses
         steps += compute_plant_losses(config.workspace(), yearmon=yearmon)
+
+        # Compute aggregated losses
+        for basis in ('basin', 'province', 'country'):
+            steps += compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
 
     return steps
 
@@ -172,7 +176,7 @@ def prepare_power_plants(workspace: DefaultWorkspace, static: ElectricityStatic)
                 append_boundaries(
                     points=static.power_plants().file,
                     boundaries=[
-                        static.countries().file + '::GID->country_id',  # TODO push varname back into static data somehow?
+                        static.countries().file + '::GID->country_id',  # noqa TODO push varname back into static data somehow?
                         static.provinces().file + '::GID->province_id',
                         static.basins().file + '::HYBAS_ID->basin_id'
                     ],
@@ -260,7 +264,11 @@ def compute_plant_losses(workspace: DefaultWorkspace,
                                                          'water_cooled_loss',
                                                          'hydropower_loss'),
                                   basin_temp=Vardef(
-                                      workspace.results(yearmon=yearmon, window=1, basis='basin', target=target, member=member),
+                                      workspace.results(yearmon=yearmon,
+                                                        window=1,
+                                                        basis='basin',
+                                                        target=target,
+                                                        member=member),
                                       'T_Bt_RO'),
                                   temperature=Vardef(
                                       workspace.forcing(yearmon=yearmon, target=target, member=member),
@@ -269,7 +277,10 @@ def compute_plant_losses(workspace: DefaultWorkspace,
                                       workspace.return_period(yearmon=yearmon, window=1, target=target, member=member),
                                       'T_rp'
                                   ),
-                                  output=workspace.electric_loss_risk(yearmon=yearmon, target=target, member=member, basis='plant'))
+                                  output=workspace.electric_loss_risk(yearmon=yearmon,
+                                                                      target=target,
+                                                                      member=member,
+                                                                      basis='plant'))
             ]
         )
     ]
@@ -293,9 +304,9 @@ def compute_basin_integration_windows(workspace: DefaultWorkspace, static: Elect
     ]
 
 
-def compute_basin_losses(workspace: DefaultWorkspace,
-                         *,
-                         yearmon: str) -> List[Step]:
+def compute_basin_loss_factors(workspace: DefaultWorkspace,
+                               *,
+                               yearmon: str) -> List[Step]:
     bt_ro = []
     bt_ro_fits = []
 
@@ -364,3 +375,47 @@ def compute_basin_water_stress(workspace: DefaultWorkspace, static: ElectricityS
             )
         )
     ]
+
+
+def wsim_aggregate_losses(*,
+                          plants: str,
+                          plant_losses: Vardef,
+                          basis: str,
+                          output: str) -> List[str]:
+    return [
+        os.path.join('{BINDIR}', 'wsim_electricity_aggregate_losses.R'),
+        '--plants',        plants,
+        '--plant_losses',  '"{}"'.format(plant_losses),
+        '--basis',         basis,
+        '--output',        '"{}"'.format(output)
+    ]
+
+
+def compute_aggregated_losses(workspace: DefaultWorkspace,
+                              *,
+                              yearmon: str,
+                              target: Optional[str]=None,
+                              member: Optional[str]=None,
+                              basis: str
+                              ) -> List[Step]:
+
+    plants = workspace.power_plants()
+    plant_losses = Vardef(workspace.electric_loss_risk(yearmon=yearmon,
+                                                       target=target,
+                                                       member=member,
+                                                       basis='plant'), 'loss_risk')
+    aggregated_losses = workspace.electric_loss_risk(yearmon=yearmon,
+                                                     target=target,
+                                                     member=member,
+                                                     basis=basis)
+
+    return [Step(
+        targets=aggregated_losses,
+        dependencies=[plants, plant_losses],
+        commands=[
+            wsim_aggregate_losses(plants=plants,
+                                  plant_losses=plant_losses,
+                                  basis=basis,
+                                  output=aggregated_losses)
+        ]
+    )]
