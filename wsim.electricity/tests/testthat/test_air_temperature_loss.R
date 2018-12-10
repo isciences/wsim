@@ -52,10 +52,16 @@ test_that('If the temperature rises above the regulatory limit, production must 
   expect_increasing(temperature_loss(Tbas=temps, Treg=32, Tdiff=8))
 })
 
+test_that('At or below Teff, there is no efficiency reduction', {
+  expect_equal(0, temperature_loss(To=20, Teff=20, eff=0.005))
+  expect_equal(0, temperature_loss(To=19, Teff=20, eff=0.005))
+})
+
 test_that('Above Teff, operating efficiency is reduced', {
   plant_air_temps <- 21:25
   loss <- temperature_loss(To=plant_air_temps, Teff=20, eff=0.005)
   
   expect_increasing(loss)
   expect_equal(length(loss), length(plant_air_temps))
+  expect(all(loss > 0))
 })

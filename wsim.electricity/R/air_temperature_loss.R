@@ -38,7 +38,7 @@ air2water <- function(Tair) {
 #' @param Tbas   basin air temperature [degrees C]
 #' @param Tc     optional air temperature [degrees C] at which cold losses begin
 #' @param Tc_rp  return period at which cold losses begin
-#' @param Teff   optional water temperature [degrees C] at which efficiency loss begins
+#' @param Teff   optional air temperature [degrees C] at which efficiency loss begins
 #' @param eff    efficiency loss per degree C above Teff
 #' @param Treg   optional regulatory limit water temperature [degrees C]
 #' @param Tdiff  effluent - influent water temperature [degrees C]
@@ -69,11 +69,9 @@ temperature_loss <- function(To=NA, To_rp=NA, Tbas=NA, Tc=NA, Tc_rp=NA, Teff=NA,
   
   # Plants incur an efficiency loss at a rate of `eff` for each degree in
   # air temperature above `Teff`.
-  efficiency_loss <- wsim.lsm::coalesce(ifelse(
-    To >= water2air(Teff),
-    pmax(0, pmin(1, eff * (To - water2air(Teff)))),
-    0), 0
-  )
+  efficiency_loss <- wsim.lsm::coalesce(
+    pmax(0, pmin(1, eff * (To - Teff))),
+    0)
   
   pmax(cold_loss, efficiency_loss, effluent_temperature_loss)
 }
