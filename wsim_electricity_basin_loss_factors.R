@@ -44,17 +44,17 @@ read_fits <- function(vardefs, expected_ids) {
     df$window <- as.integer(window)
     fits[[as.character(window)]] <- df
   }
-  
+
   do.call(function(...) rbind(..., make.row.names=FALSE), fits)
 }
 
-# Read total blue water from several files and 
+# Read total blue water from several files and
 # return a list whose keys are integration periods
-# in months and whose values are data frames for 
+# in months and whose values are data frames for
 # fit parameters
 read_obs <- function(vardefs, expected_ids) {
-  obs <- list()  
-  
+  obs <- list()
+
   for (vardef in vardefs) {
     df <- wsim.io::read_vars(vardef, expect.ids=expected_ids, as.data.frame=TRUE)
     names(df) <- c('id', 'flow')
@@ -64,46 +64,53 @@ read_obs <- function(vardefs, expected_ids) {
     df$window <- as.integer(window)
     obs[[as.character(window)]] <- df
   }
-  
+
   do.call(function(...) rbind(..., make.row.names=FALSE), obs)
 }
 
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
-  
+
   basin_windows <- wsim.io::read_vars(args$window, expect.nvars=1, as.data.frame=TRUE)
   basin_ids <- basin_windows$id
   basin_bws <- wsim.io::read_vars(args$stress, expect.nvars=1, expect.ids=basin_ids, as.data.frame=TRUE)
-  
-  bt_ro_fits <- read_fits(wsim.io::expand_inputs(args$bt_ro_fit), basin_ids) 
-  bt_ro <- read_obs(wsim.io::expand_inputs(args$bt_ro), basin_ids) 
-  
+
+  bt_ro_fits <- read_fits(wsim.io::expand_inputs(args$bt_ro_fit), basin_ids)
+  bt_ro <- read_obs(wsim.io::expand_inputs(args$bt_ro), basin_ids)
+
   required_windows <- sort(unique(basin_windows$months_storage))
   for (w in required_windows) {
     if (!(w %in% bt_ro$window))
       stop("No blue water data found for integration window of ", w, " months.")
-    
+
     if (!(w %in% bt_ro_fits$window))
       stop("No blue water fits found for integration window of ", w, " months.")
   }
-  
+
   quaxxx <- wsim.distributions::find_qua(attr(bt_ro_fits, 'distribution'))
   cdfxxx <- wsim.distributions::find_cdf(attr(bt_ro_fits, 'distribution'))
-  
+
   cdf_vectorized <- Vectorize(function(val, loc, scale, shape) {
     if(is.na(loc) || is.na(scale) || is.na(shape))
       loc
     else
       cdfxxx(val, c(loc, scale, shape))
   })
-  
+
   med_vectorized <- Vectorize(function(loc, scale, shp) {
     if(is.na(loc) || is.na(scale) || is.na(shp))
       loc
     else
       quaxxx(0.5, c(loc, scale, shp))
   })
-  
+
+  loc_vectorized <- Vectorize(function(loc, scale, shp) {
+    if(is.na(loc) || is.na(scale) || is.na(shp))
+      loc
+    else
+      quaxxx(0.368, c(loc, scale, shp))
+  })
+
   # TODO get rid of dplyr noise about attribute mismatch
   basins <- select(basin_windows, id, window=months_storage) %>%
     inner_join(basin_bws, by='id') %>%
@@ -111,19 +118,20 @@ main <- function(raw_args) {
     left_join(bt_ro_fits, by=c('id', 'window')) %>%
     mutate(flow_quantile=cdf_vectorized(flow, location, scale, shape),
            flow_rp=wsim.distributions::quantile2rp(flow_quantile),
-           flow_median=med_vectorized(location, scale, shape))
+           flow_median=med_vectorized(location, scale, shape),
+           flow_loc=loc_vectorized(location, scale, shape))
 
   basins$water_cooled_loss <- wsim.electricity::water_cooled_loss(
     -basins$flow_rp,
     wsim.electricity::water_cooled_loss_onset(basins$baseline_water_stress),
     wsim.electricity::water_cooled_loss_onset(basins$baseline_water_stress) + 30)
-  
-  basins$hydropower_loss <- wsim.electricity::hydropower_loss(basins$flow, basins$flow_median, 0.6)
 
-  wsim.io::write_vars_to_cdf(vars=basins[, c('water_cooled_loss', 'hydropower_loss')],
+  basins$hydropower_loss <- wsim.electricity::hydropower_loss(basins$flow, basins$flow_median, 0.6)
+  basins$hydropower_loss_old <- wsim.electricity::hydropower_loss(basins$flow, basins$flow_loc, 0.6)
+
+  wsim.io::write_vars_to_cdf(vars=basins[, c('flow_quantile', 'flow_rp', 'water_cooled_loss', 'hydropower_loss', 'hydropower_loss_old')],
                              filename=args$output,
-                             ids=basins$id,
-                             prec='single')
+                             ids=basins$id)
 }
 
 tryCatch(main(commandArgs(TRUE)), error=wsim.io::die_with_message)

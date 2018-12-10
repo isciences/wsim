@@ -23,7 +23,7 @@ from . import dates
 RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
 
 
-def read_vars(*args):
+def read_vars(*args) -> str:
     file = args[0]
     var_list = args[1:]
 
@@ -441,8 +441,8 @@ class DefaultWorkspace:
         return os.path.join(self.outputs, 'tags', name)
 
     # Electricity assessment misc
-    def basin_water_loss(self, *, yearmon: str) -> str:
-        return os.path.join(self.outputs, 'electricity', 'basin_loss_risk', 'basin_loss_risk_{}.nc'.format(yearmon))
+    def basin_loss_factors(self, *, yearmon: str) -> str:
+        return os.path.join(self.outputs, 'electricity', 'basin_loss_factors', 'basin_loss_factors_{}.nc'.format(yearmon))
 
     def basin_upstream_storage(self) -> str:
         return os.path.join(self.outputs, 'electricity', 'spinup', 'basin_upstream_storage.nc')

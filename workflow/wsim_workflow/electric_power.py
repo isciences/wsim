@@ -206,7 +206,7 @@ def wsim_basin_losses(*,
                       bt_ro_fits: Iterable[str],
                       output: str) -> List[str]:
     cmd = [
-        os.path.join('{BINDIR}', 'wsim_basin_losses.R'),
+        os.path.join('{BINDIR}', 'wsim_electricity_basin_loss_factors.R'),
         '--windows', '"{}"'.format(basin_windows),
         '--stress', '"{}"'.format(basin_stress),
         '--output', output
@@ -249,14 +249,16 @@ def compute_plant_losses(workspace: DefaultWorkspace,
             targets=workspace.electric_loss_risk(yearmon=yearmon, target=target, member=member, basis='plant'),
             dependencies=[
                 workspace.power_plants(),
-                workspace.basin_water_loss(yearmon=yearmon),
+                workspace.basin_loss_factors(yearmon=yearmon),
                 workspace.results(yearmon=yearmon, window=1, basis='basin', target=target, member=member),
                 workspace.forcing(yearmon=yearmon),
                 workspace.return_period(yearmon=yearmon, window=1)
             ],
             commands=[
                 wsim_plant_losses(plants=workspace.power_plants(),
-                                  basin_losses=workspace.basin_water_loss(yearmon=yearmon),
+                                  basin_losses=read_vars(workspace.basin_loss_factors(yearmon=yearmon),
+                                                         'water_cooled_loss',
+                                                         'hydropower_loss'),
                                   basin_temp=Vardef(
                                       workspace.results(yearmon=yearmon, window=1, basis='basin', target=target, member=member),
                                       'T_Bt_RO'),
@@ -312,7 +314,7 @@ def compute_basin_losses(workspace: DefaultWorkspace,
                                             annual_stat='min' if w < 12 else None,
                                             month=12 if w >= 12 else None))
 
-    outfile = workspace.basin_water_loss(yearmon=yearmon)
+    outfile = workspace.basin_loss_factors(yearmon=yearmon)
 
     return [
         Step(
