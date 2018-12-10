@@ -84,11 +84,12 @@ main <- function(raw_args) {
       loss_water_cooled= water_cooled*basin_water_cooled_loss,
       loss_temperature= wsim.electricity::temperature_loss(To= plant_temp,
                                            To_rp= plant_temp_rp,
-                                           Tbas= coalesce(basin_temp, plant_temp_rp), # fallback to plant temp
-                                           Tc= -15, # TODO check against report
-                                           Tc_rp= -30, # TODO check against report
-                                           Treg= ifelse(once_through, 32, NA),
-                                           Tdiff= 8),
+                                           Tbas=  coalesce(basin_temp, plant_temp_rp), # fallback to plant temp
+                                           Tc=    -15,
+                                           Tc_rp= -30,
+                                           Teff=   20,
+                                           Treg=   ifelse(once_through, 32, NA),
+                                           Tdiff=  8),
       loss_risk= pmax(coalesce(loss_hydro, 0), coalesce(loss_water_cooled, 0), loss_temperature)
     )
 
