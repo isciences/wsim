@@ -18,7 +18,7 @@ from typing import Iterable, List, Mapping, Union, Optional
 
 from . import actions, commands
 
-from .dates import all_months, available_yearmon_range
+from .dates import all_months, available_yearmon_range, parse_yearmon
 from .spinup import time_integrate_results
 from .step import Step
 from .paths import date_range, read_vars, DefaultWorkspace, ElectricityStatic, Vardef
@@ -207,7 +207,8 @@ def wsim_basin_losses(*,
                       basin_windows: str,
                       basin_stress: str,
                       bt_ro: Iterable[Vardef],
-                      bt_ro_fits: Iterable[str],
+                      bt_ro_min_fits: List[str],
+                      bt_ro_fits: List[str],
                       output: str) -> List[str]:
     cmd = [
         os.path.join('{BINDIR}', 'wsim_electricity_basin_loss_factors.R'),
@@ -221,6 +222,9 @@ def wsim_basin_losses(*,
 
     for filename in bt_ro_fits:
         cmd += ['--bt_ro_fit', filename]
+
+    for filename in bt_ro_min_fits:
+        cmd += ['--bt_ro_min_fit', filename]
 
     return cmd
 
@@ -309,8 +313,10 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
                                yearmon: str) -> List[Step]:
     bt_ro = []
     bt_ro_fits = []
+    bt_ro_min_fits = []
 
     windows = (1, 3, 6, 12, 24, 36)
+    year, month = parse_yearmon(yearmon)
 
     for w in windows:
         bt_ro.append(Vardef(workspace.results(basis='basin', yearmon=yearmon, window=w),
@@ -318,12 +324,18 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
 
         # For integration periods < 12 months, use the distribution of annual minimum N-month sums.
         # For integration periods >= 12 months, just use the N-month sum ending in December.
-        bt_ro_fits.append(workspace.fit_obs(basis='basin',
+        bt_ro_min_fits.append(workspace.fit_obs(basis='basin',
                                             var='Bt_RO',
                                             stat='sum' if w != 1 else None,
                                             window=w,
                                             annual_stat='min' if w < 12 else None,
                                             month=12 if w >= 12 else None))
+
+        bt_ro_fits.append(workspace.fit_obs(basis='basin',
+                                            var='Bt_RO',
+                                            stat='sum' if w != 1 else None,
+                                            window=w,
+                                            month=month))
 
     outfile = workspace.basin_loss_factors(yearmon=yearmon)
 
@@ -337,6 +349,7 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
                     basin_windows=workspace.basin_upstream_storage(),
                     basin_stress=workspace.basin_water_stress(),
                     bt_ro=bt_ro,
+                    bt_ro_min_fits=bt_ro_min_fits,
                     bt_ro_fits=bt_ro_fits,
                     output=outfile
                 )
