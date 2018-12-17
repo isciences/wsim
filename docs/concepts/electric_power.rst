@@ -15,6 +15,26 @@ The following types of losses are considered by WSIM:
 
 Losses are calculated for individual power plants and then aggregated to provinces, countries, and hydrologic basins for reporting.
 
+Power Plant Data
+^^^^^^^^^^^^^^^^
+
+The electric power assessment requires a database of power plants with the following information:
+
+* Plant location
+* Fuel type
+* Generation capacity
+* Actual generation (where absent, this can be estimated from default factors per fuel type.)
+* Cooling type. In particular, the electric power assessment must know whether a given thermoelectic plant is water-cooled, whether the source of that water is seawater is freshwater, and whether a once-through cooling system is used.
+
+The required power plant information, with the exception of the cooling type, is available from the open-source `Global Power Plant Database <https://github.com/wri/global-power-plant-database>`_ (GPPD).
+Cooling type information can be appended to GPPD by linking against the commercial World Electric Power Plant database.
+When this information is not available, WSIM makes the following assumptions:
+
+* A plant is water-cooled if its declared fuel type is biomass, cogeneration, coal, nuclear, or waste.
+* A plant uses seawater as the source of its cooling if it is within 3 km of the ocean.
+* A plant uses once-through cooling if is is located within 1 km of a plant having the same fuel type in a dataset of once-through cooled plants provided by Raptis and Pfister :cite:`Raptis:2016`.
+
+
 Calculating Hydrologic Anomalies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -180,3 +200,17 @@ Computed temperature-based losses are shown in :numref:`air_temperature_loss_gra
    :name: air_temperature_loss_graph
    :align: center
 
+Spatial Aggregation
+^^^^^^^^^^^^^^^^^^^
+
+The calculations described above are used to estimate generation losses for each plant in a power plant database.
+The coordinates of each power plant are used to assign it to a hydrologic basin, province, and country.
+A "reserve capacity" is calculated for each boundary, consisting of unused generation (capacity - actual generation) for plants that are not affected by hydrologic anomalies.
+
+The electric power assessment then computes the following summary statistics for each basin, province, and country:
+
+* Gross loss in megawatts, and percentage of total generation.
+* Net loss (gross loss - available reserve generation) in megawatts and as a percentage of total generation.
+* Nuclear plant loss in megawatts, and as a percentage of total nuclear generation.
+* Hydroelectric plant loss in megawatts, and as a percentage of total hydroelectric generation.
+* Reseve capacity utilization (percent).
