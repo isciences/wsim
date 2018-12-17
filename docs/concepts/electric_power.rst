@@ -18,8 +18,9 @@ Losses are calculated for individual power plants and then aggregated to provinc
 Calculating Hydrologic Anomalies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The electric power assessment uses total blue water, calculated at the level of hydrologic basins, as an indicator of water quantity.
-Runoff for each basin is computed from the pixel-based land surface model outputs using `exactextract <https://github.com/isciences/exactextract>`_.
+Hydrologic anomalies for the electric power assessment are evaluated at the level of hydrologic basins rather than map pixels.
+Total blue water is used as the indicator of water quantity in each basin.
+Runoff for each basin is computed from the pixel-based land surface model outputs using `exactextract <https://github.com/isciences/exactextract>`_, which considers the portion of each pixel that covers a basin.
 Total blue water is calculated for each basin by accumulating each basin's runoff into the downstream basin to which it is linked by an ID reference.
 Total blue water values are time-integrated by summing total blue water over multiple months.
 A statistical distribution is fit for each basin and time-integration period, which can then be used to calculate the return period associated with an individual total blue water value.
@@ -28,23 +29,24 @@ A relevant time-integration period is determined for each basin by considering t
 When water is available in reservoirs in and upstream of a basin, the impact of short-term water deficits may be reduced by releasing stored water.
 On the other hand, after a long period of water deficits, downstream availability may continue to be low while the storage capacity is replenished.
 Cumulative upstream storage capacity is computed for each basin using the Global Reservoir and Dam (GRanD) database :cite:`Lehner:2011`.
+Not all reservoirs provide storage that is available to downstream electric power generation, so reservoirs used for irrigation, flood control, and water supply are excluded from the upstream storage calculation unless they are explicitly coded as used for electric power generation.
 
-Not all reservoirs provide storage that is available to downstream electric power generation.
-Reservoirs used for irrigation, flood control, and water supply are excluded from the upstream storage calculation unless they are explicitly coded as used for electric power generation.
-For each basin, cumulative upstream storage is the capacity of all available reservoirs in any upstream basin, plus the capacity of any available reservoirs in the basin of interest.
-Cumulative upstream storage is converted to months of storage by dividing the total storage capacity by median annual total blue water and multiplying by 12.
+Cumulative upstream storage is calculated for each basin as the capacity of all available reservoirs in any upstream basin, plus the capacity of any available reservoirs in the basin of interest.
+This storage volume is converted to months of storage by dividing the total storage capacity by the median annual total blue water sum and multiplying by 12.
+A basin's cumulative upstream storage capacity determines the time period over which total blue water is evaluated when computing return periods within that basin, as shown in the table below.
 
-A basin's cumulative upstream storage capacity determines the time period over which total blue water is evaluated when computing return periods within that basin.
-For a basin with ≤ 1 month of storage capacity, the total blue water return period for a given month is based on the distribution of annual minimum total blue water.
-For a basin with 3 or 6 months of storage capacity, the return period is based on the distribution of annual minimum 3-month or 6-month sums of total blue water.
-For basins with 12, 24, or 36 months of storage capacity, return periods are based on the distributions of 12-, 24-, and 36-month sums of total blue water for time periods ending in the month of December.
++--------------------------------+----------------+---------------+----------------+------------------+------------------+---------------+
+|Months of Storage Available     | :math:`[0, 3)` | :math:`[3,6)` | :math:`[6,12)` | :math:`[12, 24)` | :math:`[24, 36)` | :math:`[36, )`| 
++--------------------------------+----------------+---------------+----------------+------------------+------------------+---------------+
+|Time integration period (months)| 1              |             3 |               6|                12|                24|             36|
++--------------------------------+----------------+---------------+----------------+------------------+------------------+---------------+
 
-The algorithms applied to hydroelectric and thermoelectric (water-cooled) power plants are described below.
+The generation loss calculations applied to hydroelectric and water-cooled power plants are described below.
 
 Hydroelectric Generation Losses from Hydrologic Anomalies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Hydropower loss risk is taken to be directly related to total blue water (:math:`\mathrm{Bt}`) expressed as a proportion of the median total blue water sum for the period ending in the current month (the number of months included in the sum is determined using the procedure described above.):
+Hydropower loss risk is taken to be directly related to total blue water (:math:`\mathrm{Bt}`) expressed as a proportion of the median total blue water sum for the period ending in the current month:
 
 .. math::
 
@@ -72,11 +74,13 @@ Water-Cooled Generation Losses from Hydrologic Anomalies
 Water-cooled power plants are designed to handle some degree of hydrologic anomalies.
 Intake pipes, for example, are set deep enough in the source body of water so that moderate fluctuations in water level do not expose the intakes and thus reduce the quantity of water that can be extracted.
 For example, if seasonal low water typically occurs in the summer, then low water anomalies in January may not be of consequence if flows remain above summer levels.
-Because of this expectation of variability, return periods used in estimating losses from thermoelectric plants are computed by comparing total blue water to the distribution of annual minimum total blue water, rather than the distribution of total blue water for the month being evaluated.
+Because of this expectation of variability, return periods used in estimating losses for water-cooled plants are computed by comparing total blue water to the distribution of annual minimum total blue water, rather than the distribution of total blue water for the month being evaluated:
 
-When hydrologic anomalies pose a risk to water-cooled power generation, it is expected that loss of electrical generating capacity will more severe in basins experiencing water stress.
-The basic form of the loss risk model used for water-cooled plants includes this feature.
-The mathematical form of the algorithm is:
+* For a basin with ≤ 1 month of storage capacity, the total blue water return period for a given month is based on the distribution of annual minimum total blue water.
+* For a basin with 3 or 6 months of storage capacity, the return period is based on the distribution of annual minimum 3-month or 6-month sums of total blue water.
+* For basins with 12, 24, or 36 months of storage capacity, return periods are based on the distributions of 12-, 24-, and 36-month sums of total blue water for time periods ending in the month of December.
+
+The fraction of generation that is lost is calculated using the following equation:
 
 .. math::
 
@@ -134,12 +138,12 @@ The temperature loss function uses three WSIM outputs as inputs:
 |:math:`T_{Bt}`|Average air temperature in basin, weighted by total blue water          |
 +--------------+------------------------------------------------------------------------+
 
-Due to the lack of globally consistent temporal water temperature data, the mean parameters of a set of linear models by Segura et al. (2015) are used to compute water temperature :math:`T_w` from air temperature :math:`T_a`:
+Due to the lack of globally consistent temporal water temperature data, the mean parameters of a set of linear models by Segura et al. :cite:`Segura:2015` are used to compute water temperature :math:`T_w` from air temperature :math:`T_a`:
 
 .. math::
    T_w = 2.5 + 0.76T_a
 
-Temperature is assumed to equilibrate such that upstream water temperature can be ignored at the monthly time scape used for the electricity assessment.
+Temperature is assumed to equilibrate such that upstream water temperature can be ignored at the monthly time scale used for the electricity assessment.
 
 The temperature loss function depends on several parameters:
 
