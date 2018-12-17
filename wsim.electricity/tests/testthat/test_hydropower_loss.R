@@ -36,3 +36,11 @@ test_that('Numerical edge cases are handled', {
   expect_identical(NA_real_, hydropower_loss(NA_real_, 100, 0.6))
   expect_identical(NA_real_, hydropower_loss(NaN, 100, 0.6))
 })
+
+test_that('Hydropower loss is vectorized in an expected way', {
+  expect_equal(
+    c(hydropower_loss(1, 50, 0.6),
+      hydropower_loss(2, 50, 0.6)),
+    hydropower_loss(1:2, 50, 0.6)
+  )
+})
