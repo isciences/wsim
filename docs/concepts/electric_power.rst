@@ -169,7 +169,8 @@ The loss function is defined as follows:
    \frac{T-\left(T_{reg} - T_{diff}\right)}{T_{reg}-T_{diff}} & T > \left(T_{reg}-T_{diff}\right)
    \end{cases}
 
-:refnum:`air_temperature_loss_graph` shows computed losses 
+
+Computed temperature-based losses are shown in :numref:`air_temperature_loss_graph` for a hypothetical plant that uses once-through cooling (solid line) and non-once-through cooling (dotted line).
 
 .. figure:: /_generated/air_temperature_loss.svg
    :name: air_temperature_loss_graph
