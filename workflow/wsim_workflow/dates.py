@@ -208,3 +208,15 @@ def available_yearmon_range(*, window: int, month: Optional[int]=None, start_yea
     return range_str.format(begin=start_yearmon,
                             end=format_yearmon(end_year, 12 if month is None else month),
                             step=1 if month is None else 12)
+
+
+def get_lead_months(yearmon: str, target: str) -> int:
+    assert target >= yearmon
+
+    # dumb implementation, can improve later
+    lead = 0
+    while yearmon < target:
+        yearmon = add_months(yearmon, 1)
+        lead += 1
+
+    return lead

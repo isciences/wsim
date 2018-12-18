@@ -44,7 +44,7 @@ Total blue water is used as the indicator of water quantity in each basin.
 Runoff for each basin is computed from the pixel-based land surface model outputs using `exactextract <https://github.com/isciences/exactextract>`_, which considers the portion of each pixel that covers a basin.
 Total blue water is calculated for each basin by accumulating each basin's runoff into the downstream basin to which it is linked by an ID reference.
 Total blue water values are time-integrated by summing total blue water over time-integration periods of 3, 6, 12, 24, and 36 months.
-A statistical distribution is fit for each basin and time-integration period, which can then be used to calculate the :doc:`return period <anomaly_calculations>` associated with an individual total blue water value.
+A statistical distribution is fit for each basin and time-integration period, which can then be used to calculate the :doc:`return period <anomaly_calculations>` associated with an individual total blue water value and integration period.
 
 The availability of storage reservoirs in a basin impacts the time scale over which hydrologic anomalies have an effect.
 In basins with little storage capacity, electric power generation may be affected by month-to-month changes in hydrologic conditions.

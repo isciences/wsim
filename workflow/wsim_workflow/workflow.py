@@ -66,11 +66,15 @@ def generate_steps(config: ConfigBase, *,
 
     for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop)))):
         steps += monthly.monthly_observed(config, yearmon, meta_steps)
+
         if run_electric_power:
             steps += electric_power.monthly_observed(config, yearmon, meta_steps)
 
         if forecasts == 'all' or (forecasts == 'latest' and i == 0):
             steps += monthly.monthly_forecast(config, yearmon, meta_steps)
+
+            if run_electric_power:
+                steps += electric_power.monthly_forecast(config, yearmon, meta_steps)
 
     steps += meta_steps.values()
 

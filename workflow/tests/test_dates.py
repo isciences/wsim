@@ -126,3 +126,10 @@ class TestDates(unittest.TestCase):
 
         with self.assertRaises(Exception):
             available_yearmon_range(window=14, start_year=2015, end_year=2015)
+
+    def test_lead_months(self):
+        self.assertEqual(0, get_lead_months('201812', '201812'))
+        self.assertEqual(2, get_lead_months('201812', '201902'))
+
+        with self.assertRaises(Exception):
+            get_lead_months('201901', '201812')

@@ -28,6 +28,7 @@ from .actions import \
     standard_anomaly_summary, \
     time_integrate
 from .config_base import ConfigBase as Config
+from .dates import get_lead_months
 from .step import Step
 
 
@@ -98,8 +99,8 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) -> List[Step]:
     steps = []
 
-    for i, target in enumerate(config.forecast_targets(yearmon)):
-        lead_months = i+1
+    for target in config.forecast_targets(yearmon):
+        lead_months = get_lead_months(yearmon, target)
         print('Generating steps for', yearmon, 'forecast target', lead_months)
         for member in config.forecast_ensemble_members(yearmon):
             if config.should_run_lsm(yearmon):
@@ -124,7 +125,7 @@ def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
                 # Time integrate the results
                 steps += time_integrate(config.workspace(), config.lsm_integrated_stats(),
                                         window=window, yearmon=yearmon, target=target,
-                                        member=member, lead_months=lead_months)
+                                        member=member)
 
             # Compute return periods
             steps += compute_return_periods(config.workspace(), result_vars=config.lsm_rp_vars(),

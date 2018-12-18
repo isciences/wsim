@@ -32,7 +32,7 @@ from .commands import \
     wsim_merge
 from .config_base import ConfigBase
 
-from .dates import get_next_yearmon, rolling_window, available_yearmon_range
+from .dates import get_next_yearmon, get_lead_months, rolling_window, available_yearmon_range
 from .step import Step
 
 
@@ -170,11 +170,12 @@ def time_integrate(workspace: DefaultWorkspace,
                    target: Optional[str]=None,
                    window: Optional[int]=None,
                    member: Optional[str]=None,
-                   lead_months: Optional[int]=None,
                    basis: Optional[str]=None):
     months = rolling_window(target if target else yearmon, window)
 
-    if lead_months:
+    lead_months = get_lead_months(yearmon, target) if target else 0
+
+    if lead_months > 0:
         window_observed = months[:-lead_months]
         window_forecast = months[-lead_months:]
     else:
@@ -481,8 +482,8 @@ def correct_forecast(data: DefaultWorkspace, *, member: str, target: str, lead_m
                 data.fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
             ],
             obs=[
-                data.fit_obs(month=target_month, var='T'),
-                data.fit_obs(month=target_month, var='Pr')
+                data.fit_obs(month=target_month, var='T', window=1),
+                data.fit_obs(month=target_month, var='Pr', window=1)
             ],
             forecast=data.forecast_raw(member=member, target=target) + '::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr',
             output=data.forecast_corrected(member=member, target=target),

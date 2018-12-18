@@ -441,8 +441,8 @@ class DefaultWorkspace:
         return os.path.join(self.outputs, 'tags', name)
 
     # Electricity assessment misc
-    def basin_loss_factors(self, *, yearmon: str) -> str:
-        return os.path.join(self.outputs, 'electricity', 'basin_loss_factors', 'basin_loss_factors_{}.nc'.format(yearmon))
+    def basin_loss_factors(self, *, yearmon: str, target: Optional[str], member: Optional[str]) -> str:
+        return self.make_path('loss_factors', sector='electricity', yearmon=yearmon, window=1, target=target, member=member, basis='basin')
 
     def basin_upstream_storage(self) -> str:
         return os.path.join(self.outputs, 'electricity', 'spinup', 'basin_upstream_storage.nc')
