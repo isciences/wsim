@@ -101,7 +101,7 @@ def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
     for target in config.forecast_targets(yearmon):
         lead_months = get_lead_months(yearmon, target)
-        print('Generating steps for', yearmon, 'forecast target', lead_months)
+        print('Generating steps for', yearmon, 'forecast target', target)
         for member in config.forecast_ensemble_members(yearmon):
             if config.should_run_lsm(yearmon):
                 # Prepare the dataset for use (convert from GRIB to netCDF, etc.)

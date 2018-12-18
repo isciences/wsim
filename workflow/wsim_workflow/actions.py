@@ -482,8 +482,8 @@ def correct_forecast(data: DefaultWorkspace, *, member: str, target: str, lead_m
                 data.fit_retro(target_month=target_month, lead_months=lead_months, var='Pr'),
             ],
             obs=[
-                data.fit_obs(month=target_month, var='T', window=1),
-                data.fit_obs(month=target_month, var='Pr', window=1)
+                data.fit_obs(month=target_month, var='T'),
+                data.fit_obs(month=target_month, var='Pr')
             ],
             forecast=data.forecast_raw(member=member, target=target) + '::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr',
             output=data.forecast_corrected(member=member, target=target),

@@ -24,6 +24,8 @@ from .step import Step
 from .paths import date_range, read_vars, DefaultWorkspace, ElectricityStatic, Vardef
 from .config_base import ConfigBase
 
+AGGREGATION_POLYGONS = ('basin', 'province', 'country')
+
 
 def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
@@ -156,7 +158,7 @@ def monthly_observed(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str,
         steps += compute_plant_losses(config.workspace(), yearmon=yearmon)
 
         # Compute aggregated losses
-        for basis in ('basin', 'province', 'country'):
+        for basis in AGGREGATION_POLYGONS:
             steps += compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
 
     return steps
@@ -186,10 +188,40 @@ def monthly_forecast(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str,
             steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon, target=target, member=member)
             steps += compute_plant_losses(config.workspace(), yearmon=yearmon, target=target, member=member)
 
-            for basis in ('basin', 'province', 'country'):
+            for basis in AGGREGATION_POLYGONS:
                 steps += compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis, target=target, member=member)
 
+        for basis in AGGREGATION_POLYGONS:
+            steps += compute_loss_summary(config.workspace(),
+                                          ensemble_members=config.forecast_ensemble_members(yearmon),
+                                          yearmon=yearmon,
+                                          target=target,
+                                          basis=basis)
+
     return steps
+
+
+def compute_loss_summary(workspace: DefaultWorkspace,
+                         ensemble_members: List[str], *,
+                         yearmon: str,
+                         target: str,
+                         basis: str) -> List[Step]:
+
+    loss_vars = ('gross_loss_mw',  'net_loss_mw',  'hydro_loss_mw',  'nuclear_loss_mw',
+                 'gross_loss_pct', 'net_loss_pct', 'hydro_loss_pct', 'nuclear_loss_pct',
+                 'reserve_utilization_pct')
+
+    return [
+        commands.wsim_integrate(
+            inputs=[workspace.electric_loss_risk(
+                yearmon=yearmon,
+                target=target,
+                member=member,
+            basis=basis) for member in ensemble_members],
+            stats=['q{}::{}'.format(q, ','.join(loss_vars)) for q in (25, 50, 75)],
+            output=workspace.electric_loss_risk(yearmon=yearmon, target=target, basis=basis, summary=True)
+        ),
+    ]
 
 
 def prepare_power_plants(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:

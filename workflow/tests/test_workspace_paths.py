@@ -224,13 +224,13 @@ class TestWorkspacePaths(unittest.TestCase):
 
     def test_standard_anomaly(self):
         self.assertEqual(
-            join(self.root, 'anom', 'anom_1mo_201612_trgt201708.nc'),
-            self.ws.standard_anomaly(yearmon='201612', target='201708', window=1)
+            join(self.root, 'anom', 'anom_1mo_201612_trgt201708_fcstXYZ.nc'),
+            self.ws.standard_anomaly(yearmon='201612', target='201708', member='XYZ', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'anom_integrated', 'anom_13mo_201612_trgt201708.nc'),
-            self.ws.standard_anomaly(yearmon='201612', target='201708', window=13)
+            join(self.root, 'anom_integrated', 'anom_13mo_201612_trgt201708_fcstXYZ.nc'),
+            self.ws.standard_anomaly(yearmon='201612', target='201708', member='XYZ', window=13)
         )
 
     def test_standard_anomaly_summary(self):
@@ -287,3 +287,13 @@ class TestWorkspacePaths(unittest.TestCase):
         with self.assertRaises(AssertionError):
             # Can't have an annual summary with a 24-month integration period
             self.ws.results(year=1950, window=24)
+
+    def test_nonsensical_requests_caught(self):
+        # Forecast data must have either a member or be summary
+        with self.assertRaises(AssertionError):
+            self.ws.make_path('results', yearmon='201801', target='201804')
+
+        # Can't summarize when member is specified
+        with self.assertRaises(AssertionError):
+            self.ws.make_path('results', yearmon='201801', target='201804', member='abc', summary=True)
+

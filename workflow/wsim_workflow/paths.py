@@ -244,6 +244,12 @@ class DefaultWorkspace:
 
         assert (year is None) != (yearmon is None)
 
+        if target:
+            assert (summary and member is None) or (not summary and member is not None)
+        else:
+            assert not summary
+            assert member is None
+
         if temporary:
             root = self.tempdir
         else:
@@ -306,20 +312,24 @@ class DefaultWorkspace:
         return self.make_path('composite',
                               yearmon=yearmon,
                               window=window,
-                              target=target).replace('composite_integrated', 'composite')
+                              summary=target is not None,
+                              target=target).replace('composite_integrated', 'composite').replace('_summary', '')
 
     def composite_summary_adjusted(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('composite_adjusted',
                               yearmon=yearmon,
+                              summary=target is not None,
                               window=window,
-                              target=target).replace('composite_adjusted_integrated', 'composite_adjusted')
+                              target=target).replace('composite_adjusted_integrated', 'composite_adjusted').replace('_summary', '')
+
 
     def composite_anomaly(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('composite_anom',
                               yearmon=yearmon,
+                              summary=target is not None,
                               window=window,
                               target=target).replace('composite_anom_integrated',
-                                                     'composite_anom')
+                                                     'composite_anom').replace('_summary', '')
 
     def composite_anomaly_return_period(self, *,
                                         yearmon: str,
@@ -330,7 +340,8 @@ class DefaultWorkspace:
                               yearmon=yearmon,
                               window=window,
                               target=target,
-                              temporary=temporary).replace('composite_anom_rp_integrated', 'composite_anom_rp')
+                              summary=target is not None,
+                              temporary=temporary).replace('composite_anom_rp_integrated', 'composite_anom_rp').replace('_summary', '')
 
     def return_period_summary(self, *, yearmon: str, window: int, target: str) -> str:
         assert window is not None
@@ -453,8 +464,8 @@ class DefaultWorkspace:
     def power_plants(self) -> str:
         return os.path.join(self.outputs, 'electricity', 'spinup', 'power_plants.nc')
 
-    def electric_loss_risk(self, *, yearmon: str, target: Optional[str], member: Optional[str], basis: str):
-        return self.make_path('loss_risk', sector='electricity', yearmon=yearmon, window=1, target=target, member=member, basis=basis)
+    def electric_loss_risk(self, *, yearmon: str, target: Optional[str]=None, member: Optional[str]=None, basis: str, summary: bool=False):
+        return self.make_path('loss_risk', sector='electricity', yearmon=yearmon, window=1, target=target, member=member, basis=basis, summary=summary)
 
     # Distribution fit files. Must provide either a numeric month, or an annual_stat
     def fit_obs(self, *,
