@@ -117,7 +117,7 @@ def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     return steps
 
 
-def monthly_observed(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str, Step]) -> List[Step]:
+def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, Step]) -> List[Step]:
     print('Generating electric power steps for', yearmon, 'observed data')
 
     steps = []
@@ -159,12 +159,14 @@ def monthly_observed(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str,
 
         # Compute aggregated losses
         for basis in AGGREGATION_POLYGONS:
-            steps += compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
+            steps += meta_steps['electric_power_assessment'].require(
+                compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
+            )
 
     return steps
 
 
-def monthly_forecast(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str, Step]) -> List[Step]:
+def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
     for target in config.forecast_targets(yearmon):
@@ -192,11 +194,12 @@ def monthly_forecast(config: ConfigBase, yearmon: str, _meta_steps: Mapping[str,
                 steps += compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis, target=target, member=member)
 
         for basis in AGGREGATION_POLYGONS:
-            steps += compute_loss_summary(config.workspace(),
-                                          ensemble_members=config.forecast_ensemble_members(yearmon),
-                                          yearmon=yearmon,
-                                          target=target,
-                                          basis=basis)
+            steps += meta_steps['electric_power_assessment'].require(
+                compute_loss_summary(config.workspace(),
+                                     ensemble_members=config.forecast_ensemble_members(yearmon),
+                                     yearmon=yearmon,
+                                     target=target,
+                                     basis=basis))
 
     return steps
 
