@@ -26,13 +26,14 @@ The electric power assessment requires a database of power plants with the follo
 * Actual generation (where absent, this can be estimated from default factors per fuel type.)
 * Cooling type. In particular, the electric power assessment must know whether a given thermoelectic plant is water-cooled, whether the source of that water is seawater is freshwater, and whether a once-through cooling system is used.
 
-The required power plant information, with the exception of the cooling type, is available from the open-source `Global Power Plant Database <https://github.com/wri/global-power-plant-database>`_ (GPPD).
-Cooling type information can be appended to GPPD by linking against the commercial World Electric Power Plant database.
+Power plant locations, fuel types, and capacities are available from the open-source `Global Power Plant Database <https://github.com/wri/global-power-plant-database>`_ (GPPD). In some cases, estimated generation is also avilable in GPPD.
+Cooling type and generation information can be appended to GPPD by linking against the commercial World Electric Power Plant database.
 When this information is not available, WSIM makes the following assumptions:
 
 * A plant is water-cooled if its declared fuel type is biomass, cogeneration, coal, nuclear, or waste.
 * A plant uses seawater as the source of its cooling if it is within 3 km of the ocean.
 * A plant uses once-through cooling if is is located within 1 km of a plant having the same fuel type in a dataset of once-through cooled plants provided by Raptis and Pfister :cite:`Raptis:2016`.
+* Generation can be estimated based on capacity, using average capacity factors per fuel type from the `EW3 database of U.S. Power Plants <https://www.ucsusa.org/clean-energy/energy-water-use/ucs-power-plant-database>`_.
 
 
 Calculating Hydrologic Anomalies
@@ -42,12 +43,15 @@ Hydrologic anomalies for the electric power assessment are evaluated at the leve
 Total blue water is used as the indicator of water quantity in each basin.
 Runoff for each basin is computed from the pixel-based land surface model outputs using `exactextract <https://github.com/isciences/exactextract>`_, which considers the portion of each pixel that covers a basin.
 Total blue water is calculated for each basin by accumulating each basin's runoff into the downstream basin to which it is linked by an ID reference.
-Total blue water values are time-integrated by summing total blue water over multiple months.
-A statistical distribution is fit for each basin and time-integration period, which can then be used to calculate the return period associated with an individual total blue water value.
+Total blue water values are time-integrated by summing total blue water over time-integration periods of 3, 6, 12, 24, and 36 months.
+A statistical distribution is fit for each basin and time-integration period, which can then be used to calculate the :doc:`return period <anomaly_calculations>` associated with an individual total blue water value.
 
-A relevant time-integration period is determined for each basin by considering the effect of water storage.
-When water is available in reservoirs in and upstream of a basin, the impact of short-term water deficits may be reduced by releasing stored water.
-On the other hand, after a long period of water deficits, downstream availability may continue to be low while the storage capacity is replenished.
+The availability of storage reservoirs in a basin impacts the time scale over which hydrologic anomalies have an effect.
+In basins with little storage capacity, electric power generation may be affected by month-to-month changes in hydrologic conditions.
+In basins with significant storage capacity, the impact of short-term water deficits may be reduced by releasing stored water, and long-term water deficits may impact generation even after they have ended, while reservoir storage is replenished.
+In these basins, the effect of storage is taken into account by the use of a longer time-integration period for hydrologic anomaly calculation.
+
+To account for the effect of upstream storage, a time-integration period for each basin is selected to correspond to the number of months of typical flow that can be stored in reservoirs.
 Cumulative upstream storage capacity is computed for each basin using the Global Reservoir and Dam (GRanD) database :cite:`Lehner:2011`.
 Not all reservoirs provide storage that is available to downstream electric power generation, so reservoirs used for irrigation, flood control, and water supply are excluded from the upstream storage calculation unless they are explicitly coded as used for electric power generation.
 
