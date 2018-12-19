@@ -17,5 +17,5 @@
 #' @return standardized anomalies
 #' @export
 rp2sa <- function(rp) {
-  sign(rp) * qnorm(1 - 1/abs(rp))
+  sign(rp) * stats::qnorm(1 - 1/abs(rp))
 }
