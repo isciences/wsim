@@ -20,7 +20,7 @@ coerce_to_integer <- function(vals) {
   errors <- sum(is.na(int_vals)) - sum(is.na(vals))
   if (errors > 0) {
     stop("Values ", "(", errors, ") cannot be coerced to integers (examples: ",
-         paste(head(vals[is.na(int_vals) & !is.na(vals)], 3), collapse=", "), ")")
+         paste(utils::head(vals[is.na(int_vals) & !is.na(vals)], 3), collapse=", "), ")")
   }
   if (any(int_vals != vals, na.rm=TRUE)) {
     stop("Values (", sum(int_vals != vals, na.rm=TRUE), ") cannot be coerced to integers.")
@@ -31,7 +31,7 @@ coerce_to_integer <- function(vals) {
 
 #' Test if values can be stored as integers without loss
 #'
-#' @param val a vector of values to test
+#' @param vals a vector of values to test
 #' @return \code{TRUE} if \code{vals} can be cast to integers without loss
 #' @export
 can_coerce_to_integer <- function(vals) {

@@ -33,6 +33,7 @@ default_netcdf_nodata <- list(
 #'             dimension.
 #' @param filename Name of output file
 #' @param extent vector of (xmin, xmax, ymin, ymax)
+#' @param ids  vector of integer or character IDs
 #' @param xmin lowest longitude value (left side of cell)
 #' @param xmax highest longitude value (right side of cell)
 #' @param ymin lowest latitude value (bottom of cell)
@@ -288,6 +289,8 @@ check_coordinate_variables <- function(ncout, ...) {
 
 #' Update an attribute in ncout
 #'
+#' @param ncout file handle for netCDF in which attributes should be
+#'              updated
 #' @param var the name of the variable to which the attribute
 #'            is associated (or \code{NULL} for a global attribute)
 #' @param key the name of the attribute
@@ -315,8 +318,8 @@ update_attribute <- function(ncout, var, key, val, prec) {
 
 #' Write CRS attributes for WGS84
 #'
-#' @param ncout    netCDF open for writing
-#' @param varnames list of variable names to which CRS should be associated
+#' @param ncout     netCDF open for writing
+#' @param var_names list of variable names to which CRS should be associated
 write_wgs84_crs_attributes <- function(ncout, var_names) {
   ncdf4::ncatt_put(ncout, "crs", "grid_mapping_name", "latitude_longitude")
   ncdf4::ncatt_put(ncout, "crs", "longitude_of_prime_meridian", 0.0)

@@ -12,6 +12,7 @@
 # limitations under the License.
 
 #' Strip trailing newline characters from text
+#' @param text text to strip
 strip <- function(text) {
   gsub('[\r\n]*$', '', text)
 }
