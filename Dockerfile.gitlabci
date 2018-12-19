@@ -1,13 +1,15 @@
 FROM debian:stretch
 
 RUN apt-get update  && apt-get install -y \
+  apt-transport-https \
+  apt-utils \
+  ca-certificates \
   gnupg \
+  software-properties-common \
   && rm -rf /var/lib/apt/lists*
 
-RUN apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
-
-RUN echo "deb http://cran.rstudio.com/bin/linux/debian stretch-cran35/\n" \
-  >> /etc/apt/sources.list
+RUN apt-key adv --no-tty --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
+RUN add-apt-repository "deb http://cran.rstudio.com/bin/linux/debian stretch-cran35/"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   cmake \
@@ -48,6 +50,7 @@ RUN Rscript -e 'install.packages(c( \
   "lmom", \
   "lubridate", \
   "ncdf4", \
+  "pkgdown", \
   "raster", \
   "readr", \
   "rgdal", \
@@ -55,10 +58,6 @@ RUN Rscript -e 'install.packages(c( \
   "sf", \
   "testthat" \
 ), dependencies = NA, repos="http://cran.rstudio.com", Ncpus=4)'
-RUN Rscript -e 'for (pkg in c( \
-      "hadley/pkgdown", \
-      "isciences/exactextractr")) \
-      devtools::install_github(pkg, Ncpus=4)'
 
 # Add wgrib2 for converting CFS forecast data
 # We need to compile it ourselves because the packaged version
