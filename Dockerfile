@@ -15,7 +15,6 @@ COPY wsim.io /wsim/wsim.io
 WORKDIR /wsim/wsim.io
 RUN sed -i 's/Version:.*/Version: '"$WSIM_VERSION"'/' DESCRIPTION
 RUN echo ".WSIM_VERSION <- '$WSIM_VERSION'\n.WSIM_GIT_COMMIT <- '$GIT_COMMIT'" > R/version.R
-
 RUN make install
 
 COPY wsim.lsm /wsim/wsim.lsm
