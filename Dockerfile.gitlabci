@@ -40,8 +40,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   wget \
   && rm -rf /var/lib/apt/lists*
 
-RUN Rscript -e 'install.packages(c( \
+# Install packages in a loop (rather than providing a vector) so that 
+# we can enforce a specific order. Some packages were failing to install
+# because testthat.so could not be found.
+RUN Rscript -e 'for (package in c( \
   "Rcpp", \
+  "testthat", \
   "abind", \
   "devtools", \
   "docopt", \
@@ -55,9 +59,8 @@ RUN Rscript -e 'install.packages(c( \
   "readr", \
   "rgdal", \
   "roxygen2", \
-  "sf", \
-  "testthat" \
-), dependencies = NA, repos="http://cran.rstudio.com", Ncpus=4)'
+  "sf" \
+)) tryCatch(install.packages(package, dependencies = NA, repos="http://cran.rstudio.com", Ncpus=parallel::detectCores()), warning=function() quit(status=1))'
 
 # Add wgrib2 for converting CFS forecast data
 # We need to compile it ourselves because the packaged version
