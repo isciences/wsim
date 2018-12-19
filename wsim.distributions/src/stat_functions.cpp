@@ -31,18 +31,18 @@ double cdf(double x, double location, double scale, double shape);
 // a matrix.
 template<typename distribution>
 NumericVector quantiles(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
-  size_t n = data.size();
+  auto n = data.size();
   NumericVector quantiles = no_init(n);
   quantiles.attr("dim") = data.attr("dim");
 
   if (n == location.size() && n == scale.size() && n == shape.size()) {
     // One set of distribution parameters for each observation.
-    for (size_t i = 0; i < n; i++) {
+    for (decltype(n) i = 0; i < n; i++) {
       quantiles[i] = cdf<distribution>(data[i], location[i], scale[i], shape[i]);
     }
   } else if (location.size() == 1 && scale.size() == 1 && shape.size() == 1) {
     // Constant distribution parameters with multiple observations.
-    for (size_t i = 0; i < n; i++) {
+    for (decltype(n) i = 0; i < n; i++) {
       quantiles[i] = cdf<distribution>(data[i], location[0], scale[0], shape[0]);
     }
   } else {
