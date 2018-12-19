@@ -20,6 +20,8 @@
 #'               \item{\code{wsim.lsm.state}}
 #'               }
 #' @param fname Output filename
+#' @param prec optional variable-specific precision settings, as
+#'             described in \link{write_vars_to_cdf}
 #'
 #' @export
 write_lsm_values_to_cdf <- function(values, fname, prec) {
