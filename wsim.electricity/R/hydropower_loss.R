@@ -13,8 +13,10 @@
 
 #' Estimate hydropowerloss based on blue water
 #'
-#' @param blue_water observed blue water
-#' @param expected   blue water (e.g., location parameter of fitted distribution)
+#' @param blue_water          observed blue water
+#' @param blue_water_expected expected value of blue water distribution
+#' @param exponent            loss function exponent
+#' @return lost fraction of expected hydropower generation
 #' @export
 hydropower_loss <- function(blue_water, blue_water_expected, exponent) {
   stopifnot(length(blue_water_expected) %in% c(1, length(blue_water)))

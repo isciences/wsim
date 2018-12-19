@@ -15,7 +15,7 @@
 #' 
 #' @param x    total blue water return period
 #' @param xc   return period at which loss risk begins to occur
-#' @param xmax return period associated with 100% loss risk
+#' @param xmax return period associated with complete loss risk
 #' @export
 water_cooled_loss <- function(x, xc, xmax) {
   A <- exp(log(101) / (xmax - xc))
@@ -24,14 +24,14 @@ water_cooled_loss <- function(x, xc, xmax) {
 
 #' Estimate onset of water-cooled loss
 #' 
-#' @param baseline_water_stress
+#' @param baseline_water_stress baseline water stress
 #' @return return period at which losses begin
 #' @export
 water_cooled_loss_onset <- function(baseline_water_stress) {
   bins  <- c(0,  0.1, 0.2, 0.4, 0.8, 1.0)
   onset <- c(30,  25,  20,  15,  10,  10)
   
-  interpolator <- approxfun(bins, onset)
+  interpolator <- stats::approxfun(bins, onset)
   ifelse(is.na(baseline_water_stress),
          max(onset),
          ifelse(baseline_water_stress > max(bins),

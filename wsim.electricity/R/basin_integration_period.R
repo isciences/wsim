@@ -13,18 +13,16 @@
 
 #' Select an integration period for a basin
 #' 
-#' @param cumulative_capacity   storage capacity available for electric power 
-#'                              generation (capacity from reservoirs in a basin,
-#'                              plus all upstream basins)
-#' @param expected_monthly_flow median monthly total blue water
-#' @param available_periods     vector of available integration periods in months
-#'                              flows will be assigned to bins as follows:
-#                               1:      flow < 3
-#                               3: 3 <= flow < 6
-#                               6: 6 <= flow
+#' @param upstream_capacity     upstream storage capacity available for electric
+#'                              power generation
+#' @param expected_monthly_flow typical monthly total blue water, e.g., the location
+#'                              parameter of a fitted distribution
+#' @param available_periods     vector of available integration periods in months              
 #' @export
 basin_integration_period <- function(upstream_capacity, expected_monthly_flow, available_periods) {
-  ifelse(is.na(expected_monthly_flow) | is.na(upstream_capacity) | expected_monthly_flow <= 0,
-         available_periods[1], 
-         wsim.io::assign_to_bin(upstream_capacity / expected_monthly_flow, available_periods))
+  ifelse(is.na(upstream_capacity) | is.na(expected_monthly_flow) | expected_monthly_flow == 0,
+         available_periods[1],
+         available_periods[findInterval(upstream_capacity / expected_monthly_flow,
+                                        c(available_periods, Inf),
+                                        all.inside=TRUE)])
 }
