@@ -10,7 +10,7 @@ check: NAMESPACE
 	Rscript -e "results <- devtools::check(); stopifnot(length(results[['errors']]) == 0)"
 
 install: NAMESPACE
-	Rscript -e "devtools::document(); devtools::install()"
+	Rscript -e "pkgbuild::compile_dll(); devtools::document(); devtools::install()"
 
 html: NAMESPACE
-	Rscript -e "devtools::document(); pkgdown::build_site()"
+	Rscript -e "pkgbuild::compile_dll(); devtools::document(); pkgdown::build_site()"
