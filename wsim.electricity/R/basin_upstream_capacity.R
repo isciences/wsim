@@ -5,7 +5,7 @@
 #'               basin id (\code{downstream_id})
 #' @param dams   a \code{sf} with a field for
 #'               capacity (\code{capacity})
-#' @param return a data frame with fields \code{hybas_id}
+#' @return       a data frame with fields \code{hybas_id}
 #'               and \code{months_storage}
 #' @export
 basin_upstream_capacity <- function(basins, dams) {

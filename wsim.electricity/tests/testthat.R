@@ -1,5 +1,4 @@
 library(testthat)
-library(Rcpp)
-library(wsim.distributions)
+library(wsim.electricity)
 
-test_check("wsim.distributions")
+test_check("wsim.electricity")
