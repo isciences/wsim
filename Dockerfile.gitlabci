@@ -104,3 +104,5 @@ ADD https://s3.us-east-2.amazonaws.com/wsim-regression-data/testdata.tar.gz /
 RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
 
 ENV WSIM_TEST_DATA /wsim_testdata
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
