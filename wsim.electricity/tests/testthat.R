@@ -1,3 +1,4 @@
+library(Rcpp)
 library(testthat)
 library(wsim.electricity)
 
