@@ -121,4 +121,4 @@ RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
 
 ENV WSIM_TEST_DATA /wsim_testdata
 
-
+ENV GDAL_DATA=/usr/share/gdal/2.1
