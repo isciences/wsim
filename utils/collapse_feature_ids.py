@@ -81,8 +81,10 @@ def main(raw_args):
     id_map = {0: 0}
 
     ids = []
+    inputs = get_file_list(args.input)
     meta = None
-    for f in get_file_list(args.input):
+
+    for f in inputs:
         logging.info('Collecting IDs from ' + f)
         with fiona.open(f) as data:
             # Store metadata for constructing output. Assume it's consistent across inputs.
