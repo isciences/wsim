@@ -21,6 +21,11 @@ from . import dates
 
 
 RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
+RE_GDAL_DATASET = re.compile('^(?P<driver>\w+:)?(?P<filename>[^:]+)(?P<dataset>:\w+)?$')
+
+
+def gdaldataset2filename(dataset: str) -> str:
+    return re.search(RE_GDAL_DATASET, dataset).group('filename')
 
 
 def read_vars(*args) -> str:

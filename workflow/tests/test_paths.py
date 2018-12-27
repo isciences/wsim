@@ -48,4 +48,6 @@ class TestPaths(unittest.TestCase):
             expand_filename_dates('hurricane_[1938:1944:2].nc')
         )
 
-
+    def test_gdal_dataset2filename(self):
+        self.assertEqual(gdaldataset2filename("NC:outputs.nc:precip"), "outputs.nc")
+        self.assertEqual(gdaldataset2filename("inputs.shp"), "inputs.shp")

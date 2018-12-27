@@ -12,24 +12,15 @@
 # limitations under the License.
 
 import os
-import re
 from typing import Union, Iterable, Optional, List
 
-from .paths import Vardef
+from .paths import Vardef, gdaldataset2filename
 from .step import Step
 from . import attributes
 
 
-
 def q(txt: str) -> str:
     return '"{}"'.format(txt)
-
-
-GDAL_DATASET_RE = re.compile('^(?P<driver>\w+:)?(?P<filename>[^:]+)(?P<dataset>:\w+)?$')
-
-
-def gdaldataset2filename(dataset: str) -> str:
-    return re.search(GDAL_DATASET_RE, dataset).group('filename')
 
 
 def forecast_convert(infile: str, outfile: str, comment: Optional[str]=None) -> Step:
@@ -148,7 +139,7 @@ def exact_extract(*,
 
     return Step(
         targets=output,
-        dependencies=[gdaldataset2filename(ds) for ds in weights + [input]],
+        dependencies=[gdaldataset2filename(ds) for ds in weights + [input] + [boundaries]],
         commands=[cmd],
         comment=comment
     )
