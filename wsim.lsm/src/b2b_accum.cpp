@@ -156,6 +156,8 @@ static NumericVector accumulate_impl(const IntegerVector & basin_ids, const Inte
                      case AccumulationType::FLOW_OUT:
                        return basins.at(id).flow_out;
                    }
+
+		   stop("Unknown accumulation type.");
                  });
 
   return results;

@@ -104,3 +104,18 @@ ADD https://s3.us-east-2.amazonaws.com/wsim-regression-data/testdata.tar.gz /
 RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
 
 ENV WSIM_TEST_DATA /wsim_testdata
+
+
+# Set locale to C.UTF-8. This avoids R CMD check failures with a locale error
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
+# Remove non-portable compiler flags from Debian's R config. The non-portable flags
+# cause R CMD check to fail.
+RUN sed -i 's/^CFLAGS =.*/CFLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXXFLAGS =.*/CXXFLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXX98FLAGS =.*/CXX98FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXX11FLAGS =.*/CXX11FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXX14FLAGS =.*/CXX14FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXX17FLAGS =.*/CXX17FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf
+
