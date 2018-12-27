@@ -14,6 +14,7 @@
 from ..step import Step
 
 import os
+import sys
 
 from typing import List
 
@@ -33,7 +34,12 @@ def basins(source_dir: str, filename: str, level: int) -> List[Step]:
     ]
 
     for region in ('af', 'ar', 'as', 'au', 'eu', 'gr', 'na', 'sa', 'si'):
-        collapse_command += ['--input', os.path.join(dirname, basins_for_region(region, level))]
+        input_file = os.path.join(dirname, basins_for_region(region, level))
+        if not os.path.exists(input_file):
+            print("HydroBASINS file", input_file, "not found.", file=sys.stderr)
+            print("HydroBASINS distribution policies prevent automatic downloading of this file.", file=sys.stderr)
+            print("It must be manually downloaded from hydrosheds.org and extracted to", dirname, file=sys.stderr)
+        collapse_command += ['--input', input_file]
 
     for field in ('HYBAS_ID', 'NEXT_DOWN', 'NEXT_SINK', 'MAIN_BAS'):
         collapse_command += ['--remap', field]
@@ -48,6 +54,7 @@ def basins(source_dir: str, filename: str, level: int) -> List[Step]:
                 collapse_command
             ]
         )
+
     ]
 
 
