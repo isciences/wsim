@@ -40,6 +40,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   wget \
   && rm -rf /var/lib/apt/lists*
 
+# Make GDAL work
+ENV GDAL_DATA=/usr/share/gdal/2.1
+
 # Set locale to C.UTF-8. This avoids R CMD check failures with a locale error
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
@@ -66,6 +69,7 @@ RUN Rscript -e 'for (package in c( \
   "docopt", \
   "dplyr", \
   "futile.logger", \
+  "geosphere", \
   "lmom", \
   "lubridate", \
   "lwgeom", \
@@ -120,5 +124,3 @@ ADD https://s3.us-east-2.amazonaws.com/wsim-regression-data/testdata.tar.gz /
 RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
 
 ENV WSIM_TEST_DATA /wsim_testdata
-
-ENV GDAL_DATA=/usr/share/gdal/2.1
