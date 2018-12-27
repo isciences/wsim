@@ -413,7 +413,7 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
     return [
         Step(
             targets=[outfile],
-            dependencies=[v.file for v in bt_ro] + bt_ro_fits +
+            dependencies=[v.file for v in bt_ro] + bt_ro_fits + bt_ro_min_fits +
                          [workspace.basin_water_stress(), workspace.basin_upstream_storage()],
             commands=[
                 wsim_basin_losses(
