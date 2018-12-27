@@ -358,14 +358,16 @@ def compute_plant_losses(workspace: DefaultWorkspace,
 
 
 def compute_basin_integration_windows(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:
+    annual_flow_fit =  workspace.fit_obs(var='Bt_RO', month=12, window=12, stat='sum', basis='basin')
+
     return [
         Step(
             targets=workspace.basin_upstream_storage(),
-            dependencies=[static.basins(), static.dam_locations()],
+            dependencies=[static.basins(), static.dam_locations(), annual_flow_fit],
             commands=[
                 [
                     os.path.join('{BINDIR}', 'utils', 'hydrobasins', 'compute_upstream_storage.R'),
-                    '--flow', workspace.fit_obs(var='Bt_RO', month=12, window=12, stat='sum', basis='basin'),
+                    '--flow', annual_flow_fit,
                     '--dams', static.dam_locations().file,
                     '--basins', static.basins().file,
                     '--output', workspace.basin_upstream_storage(),
