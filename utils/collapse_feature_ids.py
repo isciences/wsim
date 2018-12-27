@@ -26,6 +26,8 @@ import fiona
 import glob
 import logging
 
+from typing import List
+
 logging.basicConfig(level=logging.INFO,
                     format=__file__ + ' [%(levelname)s]: %(asctime)s %(message)s',
                     datefmt="%Y-%m-%d %H:%M:%S")
@@ -54,38 +56,54 @@ def parse_args(args):
     return parsed
 
 
+def get_file_list(patterns: List[str]) -> List[str]:
+    errors = False
+    inputs = []
+
+    for pattern in patterns:
+        globbed = glob.glob(pattern)
+        if not globbed:
+            logging.error("No input files found for %s.", pattern)
+            errors=True
+        else:
+            inputs += globbed
+
+    if errors:
+        logging.error("Failed to load inputs.")
+        sys.exit(1)
+
+    return inputs
+
+
 def main(raw_args):
     args = parse_args(raw_args)
 
     id_map = {0: 0}
 
-    inputs = [f for pattern in args.input for f in glob.glob(pattern)]
-
     ids = []
-    with fiona.drivers():
-        meta = None
+    meta = None
+    for f in get_file_list(args.input):
+        logging.info('Collecting IDs from ' + f)
+        with fiona.open(f) as data:
+            # Store metadata for constructing output. Assume it's consistent across inputs.
+            if not meta:
+                meta = data.meta
+            ids += [feature['properties'][args.remap[0]] for feature in data]
+
+    for mapped_id, original_id in enumerate(ids, start=1):
+        id_map[original_id] = mapped_id
+
+    logging.info('Collected {} ids.'.format(len(id_map)))
+
+    with fiona.open(args.output, 'w', **meta) as out:
         for f in inputs:
-            logging.info('Collecting IDs from ' + f)
+            logging.info('Writing features from {} to {}'.format(f, args.output))
             with fiona.open(f) as data:
-                # Store metadata for constructing output. Assume it's consistent across inputs.
-                if not meta:
-                    meta = data.meta
-                ids += [feature['properties'][args.remap[0]] for feature in data]
+                for feature in data:
+                    for field_name in args.remap:
+                        feature['properties'][field_name] = id_map[feature['properties'][field_name]]
 
-        for mapped_id, original_id in enumerate(ids, start=1):
-            id_map[original_id] = mapped_id
-
-        logging.info('Collected {} ids.'.format(len(id_map)))
-
-        with fiona.open(args.output, 'w', **meta) as out:
-            for f in inputs:
-                logging.info('Writing features from {} to {}'.format(f, args.output))
-                with fiona.open(f) as data:
-                    for feature in data:
-                        for field_name in args.remap:
-                            feature['properties'][field_name] = id_map[feature['properties'][field_name]]
-
-                        out.write(feature)
+                    out.write(feature)
 
     logging.info('Done.')
 
