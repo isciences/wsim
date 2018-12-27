@@ -64,7 +64,7 @@ main <- function(raw_args) {
                                     estimated_generation_gwh),
            generation_mw= generation_gwh*1000/24/365.25,
            capacity_factor= pmin(1.0, generation_mw / capacity_mw)) %>%
-    select(gppd_idnr, fuel=fuel1, capacity_factor)
+    select(gppd_idnr, fuel=primary_fuel, capacity_factor)
 
   fuel_capacity_factors <- plant_capacity_factors %>%
     filter(capacity_factor > 0) %>%
@@ -105,18 +105,18 @@ main <- function(raw_args) {
 
   # set default cooling types
   plants_out <- plants %>%
-    filter(fuel1 != 'Storage') %>%
-    select(gppd_idnr, capacity_mw, fuel1, latitude, longitude) %>%
+    filter(primary_fuel != 'Storage') %>%
+    select(gppd_idnr, capacity_mw, primary_fuel, latitude, longitude) %>%
     inner_join(plants_near_coast, by='gppd_idnr') %>%
     inner_join(plant_capacity_factors_adjusted, by='gppd_idnr') %>%
     transmute(
       gppd_idnr,
       capacity_mw,
       generation_mw= capacity_factor*capacity_mw,
-      fuel=fuel1,
+      fuel=primary_fuel,
       longitude,
       latitude,
-      water_cooled= fuel1 %in% c('Coal', 'Nuclear', 'Waste', 'Biomass', 'Cogeneration', 'Petcoke'),
+      water_cooled= primary_fuel %in% c('Coal', 'Nuclear', 'Waste', 'Biomass', 'Cogeneration', 'Petcoke'),
       once_through= gppd_idnr %in% once_through_ids,
       seawater_cooled= water_cooled & near_coast
     ) %>%
