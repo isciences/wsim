@@ -40,6 +40,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   wget \
   && rm -rf /var/lib/apt/lists*
 
+# Set locale to C.UTF-8. This avoids R CMD check failures with a locale error
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
+# Remove non-portable compiler flags from Debian's R config. The non-portable flags
+# cause R CMD check to fail.
+RUN sed -i 's/^CFLAGS =.*/CFLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXXFLAGS =.*/CXXFLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXX98FLAGS =.*/CXX98FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXX11FLAGS =.*/CXX11FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXX14FLAGS =.*/CXX14FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
+    sed -i 's/^CXX17FLAGS =.*/CXX17FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf
+
+RUN echo "MAKEFLAGS = -j" >> /etc/R/Makeconf
+
 # Install packages in a loop (rather than providing a vector) so that 
 # we can enforce a specific order. Some packages were failing to install
 # because testthat.so could not be found.
@@ -53,6 +68,7 @@ RUN Rscript -e 'for (package in c( \
   "futile.logger", \
   "lmom", \
   "lubridate", \
+  "lwgeom", \
   "ncdf4", \
   "pkgdown", \
   "raster", \
@@ -105,17 +121,4 @@ RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
 
 ENV WSIM_TEST_DATA /wsim_testdata
 
-
-# Set locale to C.UTF-8. This avoids R CMD check failures with a locale error
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-
-# Remove non-portable compiler flags from Debian's R config. The non-portable flags
-# cause R CMD check to fail.
-RUN sed -i 's/^CFLAGS =.*/CFLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
-    sed -i 's/^CXXFLAGS =.*/CXXFLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
-    sed -i 's/^CXX98FLAGS =.*/CXX98FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
-    sed -i 's/^CXX11FLAGS =.*/CXX11FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
-    sed -i 's/^CXX14FLAGS =.*/CXX14FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf && \
-    sed -i 's/^CXX17FLAGS =.*/CXX17FLAGS= -O2 -g -Wall -pedantic/' /etc/R/Makeconf
 
