@@ -72,23 +72,24 @@ test_that('Summary produces correct_results', {
   
   expect_warning(
     # Make sure dplyr attribute mismatch warning is suppressed
-    datsum <- summarize_losses(dat, loss, 'province_id')
+    datsum <- summarize_losses(dat, loss, 'province_id', 3)
   , regexp=NA)
   
   # TODO reserve capacity should take temperature losses into account
   expect_equal(as.list(datsum[1, ]),
                list(province_id=1,
                     capacity_tot_mw= 100+70+300+20,
-                    generation_tot_mw= 40+50+220+5,
                     capacity_reserve_mw= 0+0+0+(20-5),
-                    gross_loss_mw= 0.5*40 + 0.4*50 + 0.05*220 + 0.2*5,
-                    net_loss_mw= (0.5*40 + 0.4*50 + 0.05*220 + 0.2*5) - (20 - 5),
-                    hydro_loss_mw= 40*0.5 + 0.4*50,
-                    nuclear_loss_mw= 220*0.05,
+                    generation_tot_mwh= 3*(40+50+220+5),
+                    gross_loss_mwh= 3*(0.5*40 + 0.4*50 + 0.05*220 + 0.2*5),
+                    net_loss_mwh= 3*((0.5*40 + 0.4*50 + 0.05*220 + 0.2*5) - (20 - 5)),
+                    hydro_loss_mwh= 3*(40*0.5 + 0.4*50),
+                    nuclear_loss_mwh= 3*(220*0.05),
                     gross_loss_pct= (0.5*40 + 0.4*50 + 0.05*220 + 0.2*5) / (40 + 50 + 220 + 5),
                     net_loss_pct= ((0.5*40 + 0.4*50 + 0.05*220 + 0.2*5) - (20 - 5)) / (40+50+220+5),
                     hydro_loss_pct= (40*0.5 + 0.4*50)/(40 + 50),
                     nuclear_loss_pct= 220*0.05/220,
+                    reserve_utilization_mwh= 3*(0+0+0+20-5),
                     reserve_utilization_pct= 1
                ))
   
@@ -96,16 +97,17 @@ test_that('Summary produces correct_results', {
                 list(
                     province_id= 2,
                     capacity_tot_mw= 30+40,
-                    generation_tot_mw= 20+20,
                     capacity_reserve_mw= 0+0,
-                    gross_loss_mw= 20*0.4 + 20*0.2,
-                    net_loss_mw= 20*0.4 + 20.*0.2 - 0,
-                    hydro_loss_mw= 20*0.4,
-                    nuclear_loss_mw= 0,
+                    generation_tot_mwh= 3*(20+20),
+                    gross_loss_mwh= 3*(20*0.4 + 20*0.2),
+                    net_loss_mwh= 3*(20*0.4 + 20.*0.2 - 0),
+                    hydro_loss_mwh= 3*(20*0.4),
+                    nuclear_loss_mwh= 0,
                     gross_loss_pct= (20*0.4 + 20*0.2)/(20 + 20),
                     net_loss_pct= (20*0.4 + 20*0.2 - 0)/(20 + 20),
                     hydro_loss_pct= 20*0.4 / 20,
                     nuclear_loss_pct= NA_real_,
+                    reserve_utilization_mwh= 0,
                     reserve_utilization_pct= NA_real_
                ))
   
@@ -113,17 +115,17 @@ test_that('Summary produces correct_results', {
                 list(
                     province_id= 3,
                     capacity_tot_mw= 5,
-                    generation_tot_mw= 2,
                     capacity_reserve_mw= 0,
-                    gross_loss_mw= 2*0,
-                    net_loss_mw= 2*0,
-                    hydro_loss_mw= 0,
-                    nuclear_loss_mw= 0,
+                    generation_tot_mwh= 3*2,
+                    gross_loss_mwh= 3*2*0,
+                    net_loss_mwh= 3*2*0,
+                    hydro_loss_mwh= 0,
+                    nuclear_loss_mwh= 0,
                     gross_loss_pct= 0,
                     net_loss_pct= 0,
                     hydro_loss_pct= NA_real_,
                     nuclear_loss_pct= NA_real_,
+                    reserve_utilization_mwh= 0,
                     reserve_utilization_pct= NA_real_
                ))
-  
 })

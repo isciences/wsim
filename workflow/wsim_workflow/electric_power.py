@@ -465,12 +465,14 @@ def wsim_aggregate_losses(*,
                           plants: str,
                           plant_losses: Vardef,
                           basis: str,
+                          yearmon: str,
                           output: str) -> List[str]:
     return [
         os.path.join('{BINDIR}', 'wsim_electricity_aggregate_losses.R'),
         '--plants',        plants,
         '--plant_losses',  '"{}"'.format(plant_losses),
         '--basis',         basis,
+        '--yearmon',       yearmon,
         '--output',        '"{}"'.format(output)
     ]
 
@@ -500,6 +502,7 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
             wsim_aggregate_losses(plants=plants,
                                   plant_losses=plant_losses,
                                   basis=basis,
-                                  output=aggregated_losses)
+                                  output=aggregated_losses,
+                                  yearmon=target if target else yearmon)
         ]
     )]

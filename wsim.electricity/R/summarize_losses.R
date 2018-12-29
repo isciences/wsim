@@ -18,7 +18,7 @@
 #' @param aggfield field over which to aggregate
 #' @return data frame with aggregated risks
 #' @export
-summarize_losses <- function(plants, loss, aggfield) {
+summarize_losses <- function(plants, loss, aggfield, hours_in_period) {
   plants <-  dplyr::mutate(
     plants,
     reserve_capacity_mw= calculate_reserve_capacity(fuel=fuel,
@@ -38,20 +38,22 @@ summarize_losses <- function(plants, loss, aggfield) {
   dplyr::summarize(
     plants,
     capacity_tot_mw= sum(capacity_mw),
-    generation_tot_mw= sum(generation_mw),
     capacity_reserve_mw= sum(reserve_capacity_mw),
     
-    gross_loss_mw= sum(generation_mw*loss_risk),
-    net_loss_mw= pmax(0, gross_loss_mw - capacity_reserve_mw),
-    hydro_loss_mw= sum(ifelse(fuel=='Hydro', generation_mw*loss_risk, 0)),
-    nuclear_loss_mw= sum(ifelse(fuel=='Nuclear', generation_mw*loss_risk, 0)),
+    generation_tot_mwh= sum(generation_mw)*hours_in_period,
     
-    gross_loss_pct= gross_loss_mw / generation_tot_mw,
-    net_loss_pct= net_loss_mw / generation_tot_mw,
-    hydro_loss_pct= hydro_loss_mw / dplyr::na_if(sum(ifelse(fuel=='Hydro', generation_mw, 0)), 0),
-    nuclear_loss_pct= nuclear_loss_mw / dplyr::na_if(sum(ifelse(fuel=='Nuclear', generation_mw, 0)), 0),
+    gross_loss_mwh= sum(generation_mw*loss_risk)*hours_in_period,
+    net_loss_mwh= pmax(0, gross_loss_mwh/hours_in_period - capacity_reserve_mw)*hours_in_period,
+    hydro_loss_mwh= sum(ifelse(fuel=='Hydro', generation_mw*loss_risk, 0))*hours_in_period,
+    nuclear_loss_mwh= sum(ifelse(fuel=='Nuclear', generation_mw*loss_risk, 0))*hours_in_period,
     
-    reserve_utilization_pct= sum(gross_loss_mw - net_loss_mw) / dplyr::na_if(sum(reserve_capacity_mw), 0)
+    gross_loss_pct= gross_loss_mwh / generation_tot_mwh,
+    net_loss_pct= net_loss_mwh / generation_tot_mwh,
+    hydro_loss_pct= hydro_loss_mwh / dplyr::na_if(sum(ifelse(fuel=='Hydro', generation_mw, 0))*hours_in_period, 0),
+    nuclear_loss_pct= nuclear_loss_mwh / dplyr::na_if(sum(ifelse(fuel=='Nuclear', generation_mw, 0))*hours_in_period, 0),
+    
+    reserve_utilization_mwh= sum(gross_loss_mwh - net_loss_mwh),
+    reserve_utilization_pct= sum(gross_loss_mwh - net_loss_mwh) / dplyr::na_if(sum(reserve_capacity_mw)*hours_in_period, 0)
   )
 }
 
@@ -61,3 +63,6 @@ calculate_reserve_capacity <- function(fuel, water_cooled, seawater_cooled, capa
          capacity_mw - generation_mw)
 }
 
+hours_in_month <- function(yyyymm) {
+  24*wsim.lsm::days_in_yyyymm(yyyymm)
+}

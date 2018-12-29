@@ -18,12 +18,13 @@ wsim.io::logging_init('wsim_electricity_aggregate_losses')
 '
 Aggregate plant-level losses to boundaries
 
-Usage: wsim_electricity_aggregate_losses --plants=<file> --plant_losses=<file> --basis=<basis> --output=<file>
+Usage: wsim_electricity_aggregate_losses --plants=<file> --plant_losses=<file> --basis=<basis> --yearmon=<yearmon> --output=<file>
 
 Options:
 --plants <file>            Table of power plants
 --plant_losses <file>      Table of predicted losses for each plant
 --basis <basis>            Basis on which to aggregate losses (basin, province, country)
+--yearmon <yearmon>        Year and month of predicted losess (YYYYMM)
 --output <file>            Output netCDF with aggregated loss data
 '->usage
 
@@ -35,7 +36,7 @@ main <- function(raw_args) {
   
   id_field <- sprintf('%s_id', args$basis)
   
-  aggregated <- wsim.electricity::summarize_losses(plants, losses, id_field)
+  aggregated <- wsim.electricity::summarize_losses(plants, losses, id_field, 24*wsim.lsm::days_in_yyyymm(args$yyyymm))
   
   wsim.io::write_vars_to_cdf(aggregated[, -1],
                              args$output,
