@@ -367,3 +367,22 @@ test_that('we get an error when writing undefined IDs', {
     "IDs must be defined"
   )
 })
+
+test_that('factors are converted to text when writing to netCDF', {
+  fname <- tempfile(fileext='.nc')
+
+  data <- rbind(
+    data.frame(id=1, capacity=5, fuel="Hydro"),
+    data.frame(id=2, capacity=7, fuel="Coal")
+  )
+
+  write_vars_to_cdf(data[, -1], fname, ids=data[, 1])
+
+  cdf <- ncdf4::nc_open(fname)
+
+  expect_equal(as.character(data$fuel),
+               ncdf4::ncvar_get(cdf, 'fuel'),
+               check.attributes=FALSE)
+
+  file.remove(fname)
+})

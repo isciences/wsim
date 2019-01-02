@@ -84,6 +84,12 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
     vars <- cube_to_matrices(vars)
   }
 
+  for (varname in names(vars)) {
+    if(class(vars[[varname]]) == 'factor') {
+      vars[[varname]] <- as.character(vars[[varname]])
+    }
+  }
+
   # Return the data precision for variable named var
   var_prec <- function(var) {
     if (is.character(prec)) {
