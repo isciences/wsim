@@ -213,8 +213,8 @@ A "reserve capacity" is calculated for each boundary, consisting of unused gener
 
 The electric power assessment then computes the following summary statistics for each basin, province, and country:
 
-* Gross loss in megawatts, and percentage of total generation.
-* Net loss (gross loss - available reserve generation) in megawatts and as a percentage of total generation.
-* Nuclear plant loss in megawatts, and as a percentage of total nuclear generation.
-* Hydroelectric plant loss in megawatts, and as a percentage of total hydroelectric generation.
+* Gross loss in megawatt-hours, and percentage of total generation.
+* Net loss (gross loss - available reserve generation) in megawatt-hours and as a percentage of total generation.
+* Nuclear plant loss in megawatt-hours, and as a percentage of total nuclear generation.
+* Hydroelectric plant loss in megawatt-hours, and as a percentage of total hydroelectric generation.
 * Reseve capacity utilization (percent).
