@@ -36,7 +36,7 @@ main <- function(raw_args) {
   
   id_field <- sprintf('%s_id', args$basis)
   
-  aggregated <- wsim.electricity::summarize_losses(plants, losses, id_field, 24*wsim.lsm::days_in_yyyymm(args$yyyymm))
+  aggregated <- wsim.electricity::summarize_losses(plants, losses, id_field, 24*wsim.lsm::days_in_yyyymm(args$yearmon))
   
   wsim.io::write_vars_to_cdf(aggregated[, -1],
                              args$output,
