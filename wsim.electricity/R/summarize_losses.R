@@ -16,6 +16,7 @@
 #' @param plants data frame of plants
 #' @param loss   data frame of losses
 #' @param aggfield field over which to aggregate
+#' @param hours_in_period number of hours, to convert power (MW) to energy (MW-h)
 #' @return data frame with aggregated risks
 #' @export
 summarize_losses <- function(plants, loss, aggfield, hours_in_period) {
