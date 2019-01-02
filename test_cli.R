@@ -653,6 +653,57 @@ test_that('wsim_flow accumulates flow based on flow direction grid (pixel-based)
   file.remove(accumulated)
 })
 
+test_that('wsim_electricity_plant_losses.R functionality works', {
+  basin_loss_factors <- tempfile(fileext='.nc')
+  basin_temp <- tempfile(fileext='.nc')
+  plants <- tempfile(fileext='.nc')
+  temperature <- tempfile(fileext='.nc')
+  temperature_rp <- tempfile(fileext='.nc')
+  output <- tempfile(fileext='.nc')
+  
+  test_plants <- rbind(
+    data.frame(id=1, basin_id=4, longitude=-10, latitude=40, fuel="Hydro", water_cooled=FALSE, seawater_cooled=FALSE, once_through=FALSE),
+    data.frame(id=3, basin_id=4, longitude=-20, latitude=30, fuel="Coal",  water_cooled=TRUE,  seawater_cooled=FALSE, once_through=TRUE)
+  )
+  wsim.io::write_vars_to_cdf(test_plants[, -1], plants, ids=test_plants[, 1])
+  
+  test_basin_loss_factors <- data.frame(id=1:10, hydropower_loss=0.1*(1:10), water_cooled_loss=0.03*(1:10))
+  wsim.io::write_vars_to_cdf(test_basin_loss_factors[, -1], basin_loss_factors, ids=test_basin_loss_factors[, 1])
+  
+  test_basin_temperature <- data.frame(id=1:10, T_Bt_RO=sqrt(1:10))
+  wsim.io::write_vars_to_cdf(test_basin_temperature[, -1, drop=FALSE], basin_temp, ids=test_basin_temperature[, 1])
+  
+  test_temperature <- matrix(1:24, nrow=4, byrow=TRUE)
+  wsim.io::write_vars_to_cdf(list(T=test_temperature), temperature, extent=c(-30, 30, 0, 80))
+  
+  test_temperature_rp <- matrix(5, nrow=4, ncol=6)
+  wsim.io::write_vars_to_cdf(list(T_rp=test_temperature_rp), temperature_rp, extent=c(-30, 30, 0, 80))
+  
+  return_code <- system2('./wsim_electricity_plant_losses.R', args=c(
+    '--basin_losses',   basin_loss_factors,
+    '--basin_temp',     basin_temp,
+    '--plants',         plants,
+    '--temperature',    temperature,
+    '--temperature_rp', temperature_rp,
+    '--output',         output
+  ))
+  
+  expect_equal(return_code, 0)
+  
+  losses <- wsim.io::read_vars(output, as.data.frame=TRUE)
+  
+  expect_equal(losses$id, c(1,3), check.attributes=FALSE)
+  expect_equal(losses[1, 'loss_risk'], 0.4)
+  expect_equal(losses[2, 'loss_risk'], 0.12)
+  
+  file.remove(basin_loss_factors)
+  file.remove(basin_temp)
+  file.remove(plants)
+  file.remove(temperature)
+  file.remove(temperature_rp)
+  file.remove(output)
+})
+
 test_that('wsim_electricity_aggregate_losses.R functionality works', {
   plants <- tempfile(fileext='.nc')
   plant_losses <- tempfile(fileext='.nc')
