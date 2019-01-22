@@ -32,6 +32,11 @@ WORKDIR /wsim/wsim.electricity
 RUN sed -i 's/Version:.*/Version: '"$WSIM_VERSION"'/' DESCRIPTION
 RUN make install
 
+COPY wsim.agriculture /wsim/wsim.agriculture
+WORKDIR /wsim/wsim.electricity
+RUN sed -i 's/Version:.*/Version: '"$WSIM_VERSION"'/' DESCRIPTION
+RUN make install
+
 COPY workflow /wsim/workflow
 WORKDIR /wsim/workflow
 RUN sed -i 's/__version__.*/__version__ = "'"$WSIM_VERSION"'"/' wsim_workflow/version.py

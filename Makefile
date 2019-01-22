@@ -1,14 +1,14 @@
 install:
-	for s in wsim.io wsim.distributions wsim.lsm wsim.electricity; do \
+	for s in wsim.io wsim.distributions wsim.lsm wsim.electricity wsim.agriculture; do \
 		$(MAKE) -C $${s} $@ || exit 1; \
 	done;
 check:
-	for s in wsim.io wsim.distributions wsim.lsm wsim.electricity workflow; do \
+	for s in wsim.io wsim.distributions wsim.lsm wsim.electricity wsim.agriculture workflow; do \
 		$(MAKE) -C $${s} $@ || exit 1; \
 	done;
 	Rscript test_cli.R
 html:
-	for s in wsim.io wsim.distributions wsim.electricity wsim.lsm; do \
+	for s in wsim.io wsim.distributions wsim.electricity wsim.agriculture wsim.lsm; do \
 		$(MAKE) -C $${s} $@ || exit 1; \
 	done;
 	$(MAKE) -C docs images html;
