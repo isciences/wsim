@@ -63,6 +63,7 @@ RUN echo "MAKEFLAGS = -j" >> /etc/R/Makeconf
 # because testthat.so could not be found.
 RUN Rscript -e 'for (package in c( \
   "Rcpp", \
+  "codetools", \
   "testthat", \
   "abind", \
   "devtools", \
