@@ -30,7 +30,11 @@ test_that('Growing season identified correctly', {
   expect_true( is_growing_season(40,  300, 50))  
   expect_true( is_growing_season(50,  300, 50))  
   
-  expect_false(is_growing_season(51,  300, 50))  
+  expect_false(is_growing_season(51,  300, 50))
+  
+  expect_equal(NA, is_growing_season(22, NA, 60))
+  expect_equal(NA, is_growing_season(22, 20, NA))
+  expect_equal(NA, is_growing_season(22, NA, NA))
 })
 
 test_that('Days from planting are calculated correctly', {
