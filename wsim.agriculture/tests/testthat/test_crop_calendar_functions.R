@@ -52,6 +52,9 @@ test_that('Days from planting are calculated correctly', {
   expect_equal(70,  days_since_planting(5,  300, 50))  
   expect_equal(115, days_since_planting(50, 300, 50))  
   expect_equal(NA_integer_, days_since_planting(51, 300, 50))  
+  
+  # NA propagation
+  expect_equal(NA_integer_, days_since_planting(50, NA, NA)) 
 })
 
 test_that('Days until harvest are calculated correctly', {
@@ -69,4 +72,7 @@ test_that('Days until harvest are calculated correctly', {
   expect_equal(45, days_until_harvest(5,  300, 50))  
   expect_equal(0, days_until_harvest(50, 300, 50))  
   expect_equal(NA_integer_, days_until_harvest(51, 300, 50))  
+  
+  # NA propagation
+  expect_equal(NA_integer_, days_until_harvest(50, NA, NA)) 
 })
