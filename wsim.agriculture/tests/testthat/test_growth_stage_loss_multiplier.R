@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-context('Growth stage losses')
+context('Growth stage loss multiplier')
 
 test_that('Growth stage losses calculated correctly', {
   early_losses <-rbind(
