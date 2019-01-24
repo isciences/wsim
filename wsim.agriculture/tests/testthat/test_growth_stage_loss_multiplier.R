@@ -49,3 +49,20 @@ test_that('Growth stage losses calculated correctly', {
   expect_equal(1.25, loss_for_day(280 - 30))
   expect_equal(1,    loss_for_day(280))
 })
+
+test_that('Growth stage losses vectorized correctly', {
+  early_losses <- rbind(
+    c(0, 1.5),
+    c(30, 1.0)
+  )  
+  late_losses <- rbind(
+    c(0, 1.0),
+    c(30, 1.0)
+  )
+  
+  plant_day <- 120:125
+  harvest_day <- 180:185
+  
+  mult <- growth_stage_loss_multiplier(152, plant_day, harvest_day, early_losses, late_losses)
+  expect_equal(length(mult), length(plant_day))
+})

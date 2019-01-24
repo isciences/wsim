@@ -40,6 +40,6 @@ growth_stage_loss_multiplier <- function(day_of_year, plant_date, harvest_date, 
     yright=1
   )
   
-  max(early_loss_fn(days_since_planting(day_of_year, plant_date, harvest_date)),
-      late_loss_fn(days_until_harvest(day_of_year, plant_date, harvest_date)))
+  pmax(early_loss_fn(days_since_planting(day_of_year, plant_date, harvest_date)),
+       late_loss_fn(days_until_harvest(day_of_year, plant_date, harvest_date)))
 }
