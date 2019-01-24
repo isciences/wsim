@@ -91,4 +91,20 @@ test_that('Functions handle vector inputs correctly', {
                       c(190, 190, 190)
     )
   )
+  
+  expect_equal(
+    c(10, NA_integer_, NA_integer_),
+    days_since_planting(180,
+                      c(170, 181,  NA),
+                      c(190, 190, 190)
+    )
+  )
+  
+  expect_equal(
+    c(10, NA_integer_, NA_integer_),
+    days_until_harvest(180,
+                     c(170, 181,  NA),
+                     c(190, 190, 190)
+    )
+  )
 })

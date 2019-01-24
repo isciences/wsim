@@ -18,12 +18,14 @@
 #'         \code{day_of_year} is outside the growing season.
 #' @export
 days_until_harvest <- function(day_of_year, plant_date, harvest_date) {
-  if (any(is.na(c(day_of_year, plant_date, harvest_date))) ||
-      !is_growing_season(day_of_year, plant_date, harvest_date)) {
-    NA_integer_
-  } else if (harvest_date > plant_date | day_of_year <= harvest_date) {
-    harvest_date - day_of_year
-  } else {
-    365 - day_of_year + harvest_date
-  }
+  as.integer(
+    ifelse(
+      is_growing_season(day_of_year, plant_date, harvest_date),
+      ifelse(harvest_date > plant_date | day_of_year <= harvest_date,
+             harvest_date - day_of_year,
+             365 - day_of_year + harvest_date
+      ),
+      NA_integer_
+    )
+  )
 }
