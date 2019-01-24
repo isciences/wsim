@@ -16,7 +16,7 @@
 #' @param  rp return period (positive) of stress
 #' @return loss fraction (0 to 1)
 #' @export
-loss_function <- function(rp) {
+loss_function_r <- function(rp) {
   # An earlier version of the agricultural assessment included an exponential
   # damage function that could be parameterized according to the return periods
   # associated with the onset of loss, 50% loss, and complete loss. However,
