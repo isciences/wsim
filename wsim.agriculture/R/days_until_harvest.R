@@ -17,7 +17,7 @@
 #' @return number of days until harvest or \code{NA_integer_} if 
 #'         \code{day_of_year} is outside the growing season.
 #' @export
-days_until_harvest <- function(day_of_year, plant_date, harvest_date) {
+days_until_harvest_r <- function(day_of_year, plant_date, harvest_date) {
   as.integer(
     ifelse(
       is_growing_season(day_of_year, plant_date, harvest_date),

@@ -18,7 +18,7 @@
 #' @param harvest_date day of year when harvest occurs
 #' @return            TRUE if day is within growing season, FALSE otherwise
 #' @export
-is_growing_season <- function(day_of_year, plant_date, harvest_date) {
+is_growing_season_r <- function(day_of_year, plant_date, harvest_date) {
   ifelse(harvest_date > plant_date,
     day_of_year >= plant_date & day_of_year <= harvest_date,
     day_of_year >= plant_date | day_of_year <= harvest_date
