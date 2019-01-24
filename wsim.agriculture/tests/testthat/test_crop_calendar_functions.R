@@ -76,3 +76,19 @@ test_that('Days until harvest are calculated correctly', {
   # NA propagation
   expect_equal(NA_integer_, days_until_harvest(50, NA, NA)) 
 })
+
+test_that('Functions handle vector inputs correctly', {
+  # For our typical use case, we will have a constant day of the year,
+  # with pixel-specific planting and harvest dates. So we want to be
+  # able to call our calendar functions with a single day of year and
+  # a matrix/vector of planting and harvest dates, and get a return
+  # value of the same dimensions of the planting and harvest dates.
+  
+  expect_equal(
+    c(TRUE, FALSE, NA),
+    is_growing_season(180,
+                      c(170, 181,  NA),
+                      c(190, 190, 190)
+    )
+  )
+})
