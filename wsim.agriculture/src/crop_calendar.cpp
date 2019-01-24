@@ -44,6 +44,8 @@ Rcpp::LogicalVector is_growing_season(int day_of_year,
   }
   
   Rcpp::LogicalVector res = Rcpp::no_init(plant_date.size());
+  res.attr("dim") = plant_date.attr("dim");
+  
   for (decltype(n) i = 0; i < n; i++) {
     res[i] = is_growing_season_impl(day_of_year, plant_date[i], harvest_date[i]);
   }
@@ -79,6 +81,7 @@ Rcpp::IntegerVector days_since_planting(int day_of_year,
   }
   
   Rcpp::IntegerVector res = Rcpp::no_init(plant_date.size());
+  res.attr("dim") = plant_date.attr("dim");
   
   for (decltype(n) i = 0; i < n; i++) {
     res[i] = days_since_planting_impl(day_of_year, plant_date[i], harvest_date[i]);
@@ -115,6 +118,7 @@ Rcpp::IntegerVector days_until_harvest(int day_of_year,
   }
   
   Rcpp::IntegerVector res = Rcpp::no_init(plant_date.size());
+  res.attr("dim") = plant_date.attr("dim");
   
   for (decltype(n) i = 0; i < n; i++) {
     res[i] = days_until_harvest_impl(day_of_year, plant_date[i], harvest_date[i]);

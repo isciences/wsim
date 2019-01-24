@@ -85,26 +85,35 @@ test_that('Functions handle vector inputs correctly', {
   # value of the same dimensions of the planting and harvest dates.
   
   expect_equal(
-    c(TRUE, FALSE, NA),
+    rbind(c(TRUE, FALSE),
+          c(NA,    TRUE)),
     is_growing_season(180,
-                      c(170, 181,  NA),
-                      c(190, 190, 190)
+                      rbind(c(170, 181),
+                            c(NA,  170)),
+                      rbind(c(190, 190),
+                            c(190, 190))
     )
   )
   
   expect_equal(
-    c(10, NA_integer_, NA_integer_),
+    rbind(c(10, NA_integer_),
+          c(10, NA_integer_)),
     days_since_planting(180,
-                      c(170, 181,  NA),
-                      c(190, 190, 190)
+                      rbind(c(170, 181),
+                            c(170,  NA)),
+                      rbind(c(190, 190),
+                            c(190,  NA))
     )
   )
   
   expect_equal(
-    c(10, NA_integer_, NA_integer_),
+    rbind(c(10, NA_integer_),
+          c(NA_integer_, 10)),
     days_until_harvest(180,
-                     c(170, 181,  NA),
-                     c(190, 190, 190)
+                     rbind(c(170, 181),
+                           c(NA, 170)),
+                     rbind(c(190, 190),
+                           c(190, 190))
     )
   )
 })
