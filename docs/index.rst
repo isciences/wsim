@@ -81,7 +81,7 @@ Contributors
 
 WSIM is developed by `ISciences, LLC <https://www.isciences.com>`_.
 
-.. image:: http://www.federalsolutions.com/uploads/2/5/2/6/25268217/8714808.jpg?128
+.. image:: _static/erdc_logo.jpg
    :target: https://www.erdc.usace.army.mil
 
 The U.S. Army Engineer Research and Development Center (`ERDC <https://www.erdc.usace.army.mil/>`_) sponsors development of WSIM.
