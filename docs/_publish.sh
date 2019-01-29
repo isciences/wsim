@@ -15,6 +15,7 @@ done
 
 docker rm -v $id
 
-rsync -rloDzvv $HTMLDIR/html/ wsim.isciences.com:/var/www/html
+aws s3 sync $HTMLDIR/html s3://wsim-website
+
 rm -rf $HTMLDIR
 echo "Done"
