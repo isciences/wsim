@@ -27,8 +27,8 @@ An example hotspot map is displayed below.
 
   <div style="width:100%;height:20em;margin-bottom:2em">
 		<div id="map" style="width:80%;height:100%;display:inline-block">
-			<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ol3/4.3.3/ol.css" />
-			<script src="https://cdnjs.cloudflare.com/ajax/libs/ol3/4.3.3/ol.js"></script>
+			<link rel="stylesheet" href="_static/ol.css" />
+			<script src="_static/ol.js"></script>
 			<script>
   var map = new ol.Map({
   layers: [
