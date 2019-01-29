@@ -27,8 +27,8 @@ An example hotspot map is displayed below.
 
   <div style="width:100%;height:20em;margin-bottom:2em">
 		<div id="map" style="width:80%;height:100%;display:inline-block">
-			<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ol3/4.3.3/ol.css" />
-			<script src="https://cdnjs.cloudflare.com/ajax/libs/ol3/4.3.3/ol.js"></script>
+			<link rel="stylesheet" href="_static/ol.css" />
+			<script src="_static/ol.js"></script>
 			<script>
   var map = new ol.Map({
   layers: [
@@ -81,10 +81,10 @@ Contributors
 
 WSIM is developed by `ISciences, LLC <https://www.isciences.com>`_.
 
-.. image:: http://www.federalsolutions.com/uploads/2/5/2/6/25268217/8714808.jpg?128
-   :target: http://www.erdc.usace.army.mil
+.. image:: _static/erdc_logo.jpg
+   :target: https://www.erdc.usace.army.mil
 
-The U.S. Army Engineer Research and Development Center (`ERDC <http://www.erdc.usace.army.mil/>`_) sponsors development of WSIM.
+The U.S. Army Engineer Research and Development Center (`ERDC <https://www.erdc.usace.army.mil/>`_) sponsors development of WSIM.
 
 .. toctree::
    :maxdepth: 2
