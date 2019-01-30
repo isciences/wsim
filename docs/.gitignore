@@ -1,2 +1,4 @@
 _build
 _generated
+_static/ol.js
+_static/ol.css
