@@ -37,6 +37,7 @@ Rcpp::DataFrame parse_mirca_condensed_crop_calendar(std::string filename, int he
   std::vector<int32_t> units;
   std::vector<int16_t> crops;
   std::vector<int16_t> subcrops;
+  std::vector<double>  areas;
   std::vector<int16_t> plant_months;
   std::vector<int16_t> harvest_months;
   
@@ -66,6 +67,7 @@ Rcpp::DataFrame parse_mirca_condensed_crop_calendar(std::string filename, int he
       units.push_back(unit_code);
       crops.push_back(crop_class);
       subcrops.push_back(subcrop);
+      areas.push_back(crop_area);
       plant_months.push_back(plant_month);
       harvest_months.push_back(harvest_month);
       
@@ -79,6 +81,7 @@ Rcpp::DataFrame parse_mirca_condensed_crop_calendar(std::string filename, int he
     Rcpp::Named("unit_code")=     Rcpp::wrap(units),
     Rcpp::Named("crop")=          Rcpp::wrap(crops),
     Rcpp::Named("subcrop")=       Rcpp::wrap(subcrops),
+    Rcpp::Named("area_ha")=       Rcpp::wrap(areas),
     Rcpp::Named("plant_month")=   Rcpp::wrap(plant_months),
     Rcpp::Named("harvest_month")= Rcpp::wrap(harvest_months)
   );

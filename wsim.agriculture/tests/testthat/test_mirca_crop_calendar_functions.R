@@ -26,17 +26,17 @@ test_that('Condensed crop calendar can be parsed', {
   calendar <- parse_mirca_condensed_crop_calendar(fname, header_lines=0) 
   
   expected <- data.frame(rbind(
-    c(unit_code=4000, crop=1, subcrop=1, plant_month=11, harvest_month=5 ),
-    c(unit_code=4000, crop=1, subcrop=2, plant_month=7,  harvest_month=10),
+    c(unit_code=4000, crop=1, subcrop=1, area_ha=1181492.48, plant_month=11, harvest_month=5 ),
+    c(unit_code=4000, crop=1, subcrop=2, area_ha=0,          plant_month=7,  harvest_month=10),
     
-    c(unit_code=4000, crop=3, subcrop=1, plant_month=4,  harvest_month=11),
-    c(unit_code=4000, crop=3, subcrop=2, plant_month=4,  harvest_month=10),
-    c(unit_code=4000, crop=3, subcrop=3, plant_month=7,  harvest_month=10),
-    c(unit_code=4000, crop=3, subcrop=4, plant_month=11, harvest_month=2),
-    c(unit_code=4000, crop=3, subcrop=5, plant_month=3,  harvest_month=6),
+    c(unit_code=4000, crop=3, subcrop=1, area_ha=0,         plant_month=4,  harvest_month=11),
+    c(unit_code=4000, crop=3, subcrop=2, area_ha=0,         plant_month=4,  harvest_month=10),
+    c(unit_code=4000, crop=3, subcrop=3, area_ha=1964.19,   plant_month=7,  harvest_month=10),
+    c(unit_code=4000, crop=3, subcrop=4, area_ha=0,         plant_month=11, harvest_month=2),
+    c(unit_code=4000, crop=3, subcrop=5, area_ha=0,         plant_month=3,  harvest_month=6),
     
-    c(unit_code=8000, crop=1, subcrop=1, plant_month=11, harvest_month=7 ),
-    c(unit_code=8000, crop=1, subcrop=2, plant_month=5,  harvest_month=8 )
+    c(unit_code=8000, crop=1, subcrop=1, area_ha=100738.67, plant_month=11, harvest_month=7 ),
+    c(unit_code=8000, crop=1, subcrop=2, area_ha=0,         plant_month=5,  harvest_month=8 )
   ))
   
   expect_equal(calendar, expected, check.attributes=FALSE)
