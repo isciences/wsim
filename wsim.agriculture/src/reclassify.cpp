@@ -31,8 +31,14 @@ Rcpp::NumericVector reclassify(const Rcpp::NumericVector & x,
                                bool  na_default) {
   auto n = x.size();
   auto rows = reclass.rows();
+  
+  if (reclass.cols() != 2) {
+    Rcpp::stop("Reclassification values should be specified using a two-column matrix.");
+  }
+  
   bool reclass_na_to_value = false;
   double reclass_na_value;
+  
   Rcpp::NumericVector x_out = Rcpp::no_init(n);
   x_out.attr("dim") = x.attr("dim");
   

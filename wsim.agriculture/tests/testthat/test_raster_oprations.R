@@ -33,3 +33,15 @@ test_that('Reclassification produces correct values', {
     c(NA, 8, NA),
     c(12, NA, 8)))
 })
+
+test_that('Reclassify behaves on malformed inputs', {
+  x <- 1:4 
+  
+  # one-column matrix
+  expect_error(reclassify(x, matrix(1:4, ncol=1), TRUE), 
+               'should be specified using a two-column')
+  
+  # zero-row matrix
+  expect_equal(rep.int(NA_real_, 4),
+               reclassify(x, array(dim=c(0,2)), TRUE))
+})
