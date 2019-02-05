@@ -29,3 +29,8 @@ test_that('Returned values are between 1 and 365', {
   expect_equal(365, mean_doy(c(350, 352, 30)))
   expect_equal(1, mean_doy(c(350, 352, 31)))
 })
+
+test_that('NA is returned on empty input', {
+  expect_equal(NA_integer_, mean_doy(vector('numeric', 0)))
+  expect_equal(NA_integer_, mean_doy(rep.int(NA_real_, 8)))
+})

@@ -11,38 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
+#include "mean_doy.h"
 #include <Rcpp.h>
 // [[Rcpp::plugins(cpp11)]]
-
-template<typename T>
-static int mean_doy(const T& begin, const T& end) {
-  double sum_sin = 0;
-  double sum_cos = 0;
-  
-  constexpr double doy2rad = 2*PI/365;
-  
-  for(auto it = begin; it != end; it++) {
-    // Tried using sincos from math.h here, behind ifdef for _GNU_SOURCE.
-    // No performance improvment.
-    if (!std::isnan(*it)) {
-      sum_sin += std::sin((*it - 1)*doy2rad);
-      sum_cos += std::cos((*it - 1)*doy2rad);
-    }
-  }
-  
-  double mean_r = std::atan2(sum_sin, sum_cos);
-  
-  if (mean_r < 0)
-    mean_r += 2*PI;
-  
-  int doy = 1 + std::round(mean_r/doy2rad); 
-  
-  if (doy > 365)
-    doy -= 365;
-  
-  return doy;
-}
 
 //' Compute the mean day-of-year
 //' 
@@ -50,6 +21,6 @@ static int mean_doy(const T& begin, const T& end) {
 //' @return the mean date
 //' @export
 // [[Rcpp::export]]
-int mean_doy(Rcpp::NumericVector x) {
-  return mean_doy(x.begin(), x.end());
+Rcpp::IntegerVector mean_doy(Rcpp::NumericVector x) {
+  return Rcpp::IntegerVector::create(mean_doy(x.begin(), x.end()));
 }
