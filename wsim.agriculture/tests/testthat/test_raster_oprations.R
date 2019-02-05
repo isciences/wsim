@@ -45,3 +45,54 @@ test_that('Reclassify behaves on malformed inputs', {
   expect_equal(rep.int(NA_real_, 4),
                reclassify(x, array(dim=c(0,2)), TRUE))
 })
+
+test_that('Day-of-year aggregation computes a correct result', {
+  x <- rbind(
+    c(10, 20, 4,    NA, NA, NA),
+    c(30, NA, 330, 331, NA, NA)
+  )  
+  
+  y <- aggregate_mean_doy(x, 2)
+  
+  expect_equal(y, 
+               matrix(
+                 c(
+                   mean_doy(c(10, 20, 30)),
+                   mean_doy(c(4, 330, 331)),
+                   NA),
+                 nrow=1))
+})
+
+test_that('Sum aggregation computes a correct result', {
+  x <- rbind(
+    c(10, 20, 4,    NA, NA, NA),
+    c(30, NA, 330, 331, NA, NA)
+  )  
+  
+  y <- aggregate_sum(x, 2)
+  
+  expect_equal(y, 
+               matrix(
+                 c(
+                   sum(c(10, 20, 30),  na.rm=TRUE),
+                   sum(c(4, 330, 331), na.rm=TRUE),
+                   NA),
+                 nrow=1))
+})
+
+test_that('Mean aggregation computes a correct result', {
+  x <- rbind(
+    c(10, 20, 4,    NA, NA, NA),
+    c(30, NA, 330, 331, NA, NA)
+  )  
+  
+  y <- aggregate_mean(x, 2)
+  
+  expect_equal(y, 
+               matrix(
+                 c(
+                   mean(c(10, 20, 30),  na.rm=TRUE),
+                   mean(c(4, 330, 331), na.rm=TRUE),
+                   NA),
+                 nrow=1))
+})
