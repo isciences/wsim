@@ -392,7 +392,7 @@ test_that('we get a useful error message if we forget to provide variable names'
                'must be a named list')
 })
 
-test_that('we can write multidimensional data', {
+test_that('we can write multidimensional spatial data', {
   fname <- tempfile(fileext='.nc')
 
   data <- array(1:120, dim=c(5,8,3))
@@ -417,4 +417,53 @@ test_that('we can write multidimensional data', {
                t(data[,,which(crops=='wheat')]))
   expect_equal(ncdat[,,which(crops=='wheat'), which(quantiles==75)],
                0.1+t(data[,,which(crops=='wheat')]))
+
+  file.remove(fname)
+})
+
+test_that('we can write multidimensional id-based data', {
+  fname <- tempfile(fileext='.nc')
+
+  # 4 regions
+  # 3 crops
+  # 3 quantiles
+  data <- data.frame(
+    id=rep(1:4, each=9),
+    crop=rep.int(rep(c('corn', 'wheat', 'maize'), each=3), 4),
+    quantile=rep.int(c(0.25, 0.5, 0.75), 12),
+    yield=1:36,
+    stringsAsFactors = FALSE
+  )
+
+  write_vars_to_cdf(data,
+                    fname,
+                    ids=sort(unique(data$id)),
+                    extra_dims=list(
+                      crop=sort(unique(data$crop)),
+                      quantile=sort(unique(data$quantile))
+                    ))
+
+  cdf <- ncdf4::nc_open(fname)
+
+  real_dims <- Filter(function(n) {
+    !endsWith(n, '_nchar')
+  }, names(cdf$dim))
+
+  real_vars <- names(cdf$var)
+
+  data_reconstructed <- cbind(
+    do.call(combos,
+            sapply(real_dims, function(dimname) {
+              cdf$dim[[dimname]]$vals
+            })
+
+    ),
+    sapply(real_vars, function(n) ncdf4::ncvar_get(cdf, varid=n))
+  )
+
+  if ('dplyr' %in% installed.packages()[, 'Package']) ({
+    expect_true(dplyr::all_equal(data, data_reconstructed))
+  })
+
+  file.remove(fname)
 })

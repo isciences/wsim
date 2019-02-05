@@ -83,6 +83,7 @@ write_vars_to_cdf <- function(vars,
   datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
   history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
+  # TODO allow implicit id definition with 'id' col in vars
   is_spatial <- is.null(ids)
   character_ids <- !is_spatial && mode(ids) == 'character'
 
@@ -164,10 +165,12 @@ write_vars_to_cdf <- function(vars,
       stop('All IDs must be defined.')
     }
 
-    for (varname in names(vars)) {
-      if (length(vars[[varname]]) != length(ids)) {
-        stop(sprintf("Variable %s has %d values but we have %d ids.",
-                     varname, length(vars[[varname]]), length(ids)))
+    if (is.null(extra_dims)) {
+      for (varname in names(vars)) {
+        if (length(vars[[varname]]) != length(ids)) {
+          stop(sprintf("Variable %s has %d values but we have %d ids.",
+                       varname, length(vars[[varname]]), length(ids)))
+        }
       }
     }
 
@@ -202,7 +205,9 @@ write_vars_to_cdf <- function(vars,
   # Create all variables, putting in blank strings for the units.  We will
   # overwrite this with the actual units, if they have been passed in
   # as attributes.
-  ncvars <- lapply(names(vars), function(param) {
+  regular_var_names <- names(vars)[(names(vars) != 'id' | is_spatial) &
+                                   !(names(vars) %in% names(extra_dims))]
+  ncvars <- lapply(regular_var_names, function(param) {
     if (mode(vars[[param]]) == "character") {
       if (is_spatial) {
         stop("Character data only supported for non-spatial datasets.")
@@ -225,11 +230,16 @@ write_vars_to_cdf <- function(vars,
                      compression=1)
   })
 
-  names(ncvars) <- names(vars)
+  stopifnot(names(ncvars) == regular_var_names)
+  names(ncvars) <- regular_var_names
 
   if (is_spatial) {
     # Add a CRS var
     ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
+  } else {
+    #if ('id' %in% names(ncvars)) {
+    #  ncvars[['id']] <- NULL
+    #}
   }
 
   if (character_ids) {
@@ -293,13 +303,22 @@ write_vars_to_cdf <- function(vars,
       permut <- c(2, 1)
     else
       permut <- c(2, 1, 3:(2+length(extra_dims)))
+  } else {
+    cmbn <- do.call(combos, c(list(id=ids), extra_dims))
   }
 
-  for (param in names(vars)) {
+  for (param in regular_var_names) {
     if (is_spatial) {
       dat <- aperm(vars[[param]], permut)
     } else {
-      dat <- vars[[param]]
+      if (is.null(extra_dims)) {
+        dat <- vars[[param]]
+      } else {
+        dat <- merge(cmbn,
+                     vars,
+                     by=names(cmbn),
+                     all.x=TRUE)[[param]]
+      }
     }
 
     ncdf4::ncvar_put(ncout, ncvars[[param]], dat)
