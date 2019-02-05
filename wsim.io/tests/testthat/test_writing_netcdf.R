@@ -386,3 +386,35 @@ test_that('factors are converted to text when writing to netCDF', {
 
   file.remove(fname)
 })
+
+test_that('we get a useful error message if we forget to provide variable names', {
+  expect_error(write_vars_to_cdf(list(1:8), '', ids=2:9),
+               'must be a named list')
+})
+
+test_that('we can write multidimensional data', {
+  fname <- tempfile(fileext='.nc')
+
+  data <- array(1:120, dim=c(5,8,3))
+  crops <- c('maize', 'corn', 'wheat')
+  quantiles <- c(25, 50, 75)
+
+  write_vars_to_cdf(list(yield=abind::abind(data-0.1,
+                                            data,
+                                            data+0.1,
+                                            rev.along=0)),
+                         fname,
+                         extent=c(-180, 180, -90, 90),
+                         extra_dims=list(
+                           crop=crops,
+                           quantile=quantiles
+                         ))
+
+  nc <- ncdf4::nc_open(fname)
+  ncdat <- ncdf4::ncvar_get(nc, 'yield')
+
+  expect_equal(ncdat[,,which(crops=='wheat'), which(quantiles==50)],
+               t(data[,,which(crops=='wheat')]))
+  expect_equal(ncdat[,,which(crops=='wheat'), which(quantiles==75)],
+               0.1+t(data[,,which(crops=='wheat')]))
+})

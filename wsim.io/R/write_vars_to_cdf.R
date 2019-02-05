@@ -68,7 +68,18 @@ default_netcdf_nodata <- list(
 #'               file, if present.
 #'
 #'@export
-write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, xmax=NULL, ymin=NULL, ymax=NULL, attrs=list(), prec=NULL, append=FALSE) {
+write_vars_to_cdf <- function(vars,
+                              filename,
+                              extent=NULL,
+                              ids=NULL,
+                              xmin=NULL,
+                              xmax=NULL,
+                              ymin=NULL,
+                              ymax=NULL,
+                              extra_dims=NULL,
+                              attrs=list(),
+                              prec=NULL,
+                              append=FALSE) {
   datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
   history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
@@ -79,6 +90,14 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
     list(key="Conventions", val="CF-1.6"),
     list(key="wsim_version", val=wsim_version_string())
   )
+
+  if (is.null(names(vars)) || length(vars) != length(names(vars))) {
+    stop("vars must be a named list of variables.")
+  }
+
+  if (append && !is.null(extra_dims)) {
+    stop("Extra dimensions not yet supported in append mode.")
+  }
 
   if (is.array(vars)) {
     vars <- cube_to_matrices(vars)
@@ -167,6 +186,19 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
     }
   }
 
+  extra_ncdf_dims <- list()
+  for (dimname in names(extra_dims)) {
+    vals <- extra_dims[[dimname]]
+    if (class(vals) == 'character') {
+      new_dim <- ncdf4::ncdim_def(dimname, units='', vals=1:length(vals), create_dimvar=FALSE)
+    } else {
+      new_dim <- ncdf4::ncdim_def(dimname, units='', vals=vals, create_dimvar=TRUE)
+    }
+    extra_ncdf_dims[[dimname]] <- new_dim
+  }
+
+  dims <- c(dims, extra_ncdf_dims)
+
   # Create all variables, putting in blank strings for the units.  We will
   # overwrite this with the actual units, if they have been passed in
   # as attributes.
@@ -202,8 +234,14 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
 
   if (character_ids) {
     # Have to manually create dimension variable
-    id_nchar_dim <- ncdf4::ncdim_def("id_nchar", units="", vals=1:max(nchar(ids)), create_dimvar=FALSE)
-    ncvars$id <- ncdf4::ncvar_def(name="id", units="", dim=list(id_nchar_dim, dims[[1]]), missval=NULL, prec='char')
+    ncvars$id <- create_char_dimension_variable(dims[[1]], 'id', ids)
+  }
+
+  for (dimname in names(extra_dims)) {
+    vals <- extra_dims[[dimname]]
+    if (class(vals) == 'character') {
+      ncvars[[dimname]] <- create_char_dimension_variable(extra_ncdf_dims[[dimname]], dimname, vals)
+    }
   }
 
   # Does the file already exist?
@@ -245,9 +283,26 @@ write_vars_to_cdf <- function(vars, filename, extent=NULL, ids=NULL, xmin=NULL, 
     ncdf4::ncvar_put(ncout, ncvars$id, ids)
   }
 
+  for (dimname in names(extra_dims)) {
+    ncdf4::ncvar_put(ncout, extra_ncdf_dims[[dimname]], extra_dims[[dimname]])
+  }
+
   # Write data to vars
+  if (is_spatial) {
+    if (is.null(extra_dims))
+      permut <- c(2, 1)
+    else
+      permut <- c(2, 1, 3:(2+length(extra_dims)))
+  }
+
   for (param in names(vars)) {
-    ncdf4::ncvar_put(ncout, ncvars[[param]], t(vars[[param]]))
+    if (is_spatial) {
+      dat <- aperm(vars[[param]], permut)
+    } else {
+      dat <- vars[[param]]
+    }
+
+    ncdf4::ncvar_put(ncout, ncvars[[param]], dat)
   }
 
   # Write attributes
@@ -366,4 +421,15 @@ validate_extent <- function(extent, xmin, xmax, ymin, ymax) {
   }
 
   return(extent)
+}
+
+#' Create a character-type dimension variable
+#'
+#' @param ncvars  list of \code{ncvar} handles, indexed by name
+#' @param dim     \code{ncdim} handle
+#' @param varname name of dimension/variable
+#' @param vals    values of dimension
+create_char_dimension_variable <- function(dim, varname, vals) {
+  nchar_dim <- ncdf4::ncdim_def(sprintf("%s_nchar", varname), units="", vals=1:max(nchar(vals)), create_dimvar=FALSE)
+  ncdf4::ncvar_def(name=dim$name, units="", dim=list(nchar_dim, dim), missval=NULL, prec='char')
 }
