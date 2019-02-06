@@ -19,10 +19,14 @@
 #'             all variables will be read.
 #' @return structure described in \code{\link{read_vars}}
 #' @export
-read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, count=NULL) {
+read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, count=NULL, extra_dims=NULL) {
   stopifnot(is.null(offset) == is.null(count))
   if (!is.null(offset)) {
     stopifnot(length(offset) == length(count))
+  }
+
+  if (!is.null(offset) && !is.null(extra_dims)) {
+    stop("Can read count/offset and extra_dims, but not both.")
   }
 
   def <- parse_vardef(vardef)
@@ -113,6 +117,33 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
 
   if (length(vars) == 0) {
     stop("No vars found to load in ", fname)
+  }
+
+  # TODO assert all vars have same dimensions
+  dimnames <- sapply(cdf$var[[vars[[1]]$var_in]]$dim, function(d) d$name)
+
+  # Make sure right number of extra dimensions were specified.
+  if (is.null(offset)) {
+    expected_extra_dims <- length(dimnames) - ifelse(is_spatial, 2, 1)
+    if (length(extra_dims) != expected_extra_dims) {
+      stop(sprintf("Expected %d extra dimensions but got %d.", expected_extra_dims, length(extra_dims)))
+    }
+  }
+
+  if (!is.null(extra_dims)) {
+    offset <- sapply(dimnames, function(dimname) {
+      if (dimname %in% names(extra_dims)) {
+        i <- which(cdf[['dim']][[dimname]][['vals']]==extra_dims[[dimname]])
+        if (length(i) == 0) {
+          stop(sprintf("Invalid value %s for dimension %s.", extra_dims[[dimname]], dimname))
+        }
+        return(i)
+      } else {
+        return(1)
+      }
+    })
+
+    count <- ifelse(dimnames %in% names(extra_dims), 1, -1)
   }
 
   for (var in cdf$var) {

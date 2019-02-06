@@ -135,9 +135,55 @@ test_that('we can retrieve a vertical slice of a file', {
 
   # Read a single vertical slice
   slice <- read_vars_from_cdf(fname, offset=c(1,1,3), count=c(-1,-1,1))
+  expect_equal(data[,,3], slice$data[[1]], check.attributes=FALSE)
 
+  # Read a vertical slice using higher-level extra_dims API
+  slice <- read_vars_from_cdf(fname, extra_dims=list(elev=2.5))
   expect_equal(data[,,3], slice$data[[1]], check.attributes=FALSE)
 
   file.remove(fname)
 })
 
+test_that('we can use extra_dims arg to read from a N-D array', {
+  fname <- tempfile(fileext='.nc')
+
+  data <- array(1:(10*5*7), dim=c(10, 5, 7))
+  data_with_quantiles <- abind::abind(data*0.9, data, data*1.1, rev.along=0)
+
+  latdim <- ncdf4::ncdim_def("lat", units="degrees_north", vals=as.double(10:1)-0.5)
+  londim <- ncdf4::ncdim_def("lon", units="degrees_east", vals=as.double(1:5)-0.5)
+  elevdim <- ncdf4::ncdim_def("elev", units="fathoms", vals=as.double(1:7)-0.5)
+  qdim <- ncdf4::ncdim_def("quantile", units="", vals=c(0.25, 0.5, 0.75))
+
+  pressure <- ncdf4::ncvar_def(name="Pressure", units="kPa", dim=list(londim, latdim, elevdim, qdim), prec='double')
+  pressure_sqrt <- ncdf4::ncvar_def(name="Pressure_sqrt", units="kPa", dim=list(londim, latdim, elevdim, qdim), prec='double')
+
+  ncout <- ncdf4::nc_create(fname, list(pressure, pressure_sqrt))
+
+  ncdf4::ncvar_put(ncout, pressure, aperm(data_with_quantiles, c(2,1,3,4)))
+  ncdf4::ncvar_put(ncout, pressure_sqrt, sqrt(aperm(data_with_quantiles, c(2,1,3,4))))
+
+  ncdf4::nc_close(ncout)
+
+  expect_error(
+    enchilada <- read_vars_from_cdf(fname),
+    "Expected 2 extra dimensions but got 0"
+  )
+
+  expect_error(
+    slice <- read_vars_from_cdf(fname, extra_dims=list(elev=2.5)),
+    "Expected 2 extra dimensions but got 1"
+  )
+
+  expect_error(
+    slice <- read_vars_from_cdf(fname, extra_dims=list(elev=9.5, quantile=0.5)),
+    "Invalid value 9.5 for dimension elev"
+  )
+
+  slice <- read_vars_from_cdf(fname, extra_dims=list(elev=2.5, quantile=0.75))
+
+  expect_equal(slice$data$Pressure_sqrt, sqrt(slice$data$Pressure))
+  expect_equal(slice$data$Pressure, data[,,3]*1.1, check.attributes=FALSE)
+
+  file.remove(fname)
+})
