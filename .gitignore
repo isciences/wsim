@@ -7,4 +7,5 @@ RcppExports.R
 .idea/
 ..Rcheck
 .Rhistory
+*.Rcheck
 *.nc
