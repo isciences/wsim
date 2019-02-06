@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -37,7 +37,12 @@ default_netcdf_nodata <- list(
 #' @param xmin lowest longitude value (left side of cell)
 #' @param xmax highest longitude value (right side of cell)
 #' @param ymin lowest latitude value (bottom of cell)
-#' @param ymax highest latitude value (topof cell)
+#' @param ymax highest latitude value (top of cell)
+#' @param extra_dims Optional list of extra dimensions (excluding
+#'                   'id' or spatial dimensions). Specified as a list
+#'                   with dimension names as keys and a vector of
+#'                   acceptable values as values, e.g.
+#'                   \code{extra_dims=list(crop=c('maize', 'rice'), season=c('spring', 'fall))}
 #' @param attrs List of attributes to associate with the file,
 #'              or with each variable.  Each attribute is
 #'              described by a list, with the following
@@ -444,7 +449,6 @@ validate_extent <- function(extent, xmin, xmax, ymin, ymax) {
 
 #' Create a character-type dimension variable
 #'
-#' @param ncvars  list of \code{ncvar} handles, indexed by name
 #' @param dim     \code{ncdim} handle
 #' @param varname name of dimension/variable
 #' @param vals    values of dimension
