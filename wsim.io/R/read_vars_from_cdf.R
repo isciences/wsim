@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -17,6 +17,11 @@
 #' @inheritParams read_vars
 #' @param vars A list of variables to read.  If NULL (default),
 #'             all variables will be read.
+#' @param extra_dims list containing names and values of extra dimensions
+#'        along which a values at a single point should be extracted, e.g.
+#'        \code{extra_dims=list(crop='maize', quantile=0.50)}. It provides
+#'        a higher-abstraction alternative to the use of \code{offset} and
+#'        \code{count}.
 #' @return structure described in \code{\link{read_vars}}
 #' @export
 read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, count=NULL, extra_dims=NULL) {
