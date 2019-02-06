@@ -42,7 +42,7 @@ default_netcdf_nodata <- list(
 #'                   'id' or spatial dimensions). Specified as a list
 #'                   with dimension names as keys and a vector of
 #'                   acceptable values as values, e.g.
-#'                   \code{extra_dims=list(crop=c('maize', 'rice'), season=c('spring', 'fall))}
+#'                   \code{extra_dims=list(crop=c('maize', 'rice'), season=c('spring', 'fall'))}
 #' @param attrs List of attributes to associate with the file,
 #'              or with each variable.  Each attribute is
 #'              described by a list, with the following
