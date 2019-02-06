@@ -389,7 +389,7 @@ test_that('factors are converted to text when writing to netCDF', {
 
 test_that('we get a useful error message if we forget to provide variable names', {
   expect_error(write_vars_to_cdf(list(1:8), '', ids=2:9),
-               'must be a named list')
+               'must be .* a named list')
 })
 
 test_that('we can write multidimensional spatial data', {
@@ -464,6 +464,28 @@ test_that('we can write multidimensional id-based data', {
   if ('dplyr' %in% installed.packages()[, 'Package']) ({
     expect_true(dplyr::all_equal(data, data_reconstructed))
   })
+
+  file.remove(fname)
+})
+
+test_that('We can pass an array that has dimnames instead of a named list of variables', {
+  fname <- tempfile(fileext='.nc')
+
+  dat <- array(runif(120), dim=c(5, 8, 3))
+
+  expect_error(
+    write_vars_to_cdf(dat, fname, extent=c(0,1,0,1)),
+    'must be an array with dimnames, or a named list'
+  )
+
+  dimnames(dat)[[3]] <- c('location', 'scale', 'shape')
+
+  write_vars_to_cdf(dat, fname, extent=c(0,1,0,1))
+
+  cdf <- ncdf4::nc_open(fname)
+  varnames <- sapply(cdf$var, function(v) v$name)
+
+  expect_true(all(c('location', 'scale', 'shape') %in% varnames))
 
   file.remove(fname)
 })

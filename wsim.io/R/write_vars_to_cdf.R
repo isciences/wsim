@@ -97,16 +97,16 @@ write_vars_to_cdf <- function(vars,
     list(key="wsim_version", val=wsim_version_string())
   )
 
-  if (is.null(names(vars)) || length(vars) != length(names(vars))) {
-    stop("vars must be a named list of variables.")
-  }
-
   if (append && !is.null(extra_dims)) {
     stop("Extra dimensions not yet supported in append mode.")
   }
 
   if (is.array(vars)) {
     vars <- cube_to_matrices(vars)
+  }
+
+  if (is.null(names(vars)) || length(vars) != length(names(vars))) {
+    stop("vars must be an array with dimnames, or a named list of variables.")
   }
 
   for (varname in names(vars)) {
