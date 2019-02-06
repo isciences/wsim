@@ -41,7 +41,6 @@ Rcpp::NumericMatrix aggregate_sum (const Rcpp::NumericMatrix & mat, int factor) 
   return out;
 }
 
-//'@export
 //[[Rcpp::export]]
 Rcpp::NumericMatrix aggregate_mean (const Rcpp::NumericMatrix & mat, int factor) {
   using index_t=decltype(mat.rows());
