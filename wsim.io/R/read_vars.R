@@ -18,6 +18,11 @@
 #' @param expect.nvars  If specified, \code{read_vars} will throw an
 #'                      error unless exactly \code{expect.nvars}
 #'                      variables are read from the file.
+#' @param expect.vars   If specified, \code{read_vars} will throw an
+#'                      error if the list of variables read from the
+#'                      file (after renaming transformations) does not
+#'                      match \code{expect.vars}, irrespective of
+#'                      order.
 #' @param expect.dims   If specified, \code{read_vars} will throw an
 #'                      error if dimensions of read data are not
 #'                      equal to \code{expect.dims}.
@@ -62,7 +67,7 @@
 #' }
 #'
 #' @export
-read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL, as.data.frame=FALSE) {
+read_vars <- function(vardef, expect.nvars=NULL, expect.vars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL, as.data.frame=FALSE) {
   stopifnot(
     (is.character(vardef) && length(vardef) == 1)
     || is.wsim.io.vardef(vardef))
@@ -83,22 +88,9 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
 
     check_extent(def, loaded, expect.extent)
     check_ids(def, loaded, expect.ids)
-
-    if (!is.null(expect.dims)) {
-      if(as.data.frame) {
-        stop("Can't check dimensions of data loaded to data frame.")
-      }
-
-      check_dims(def, loaded, expect.dims)
-    }
-
-    if (!is.null(expect.nvars)) {
-      if (as.data.frame) {
-        stop("Can't check number of variables in data loaded to data frame.")
-      }
-
-      check_nvars(def, loaded, expect.nvars)
-    }
+    check_dims(def, loaded, expect.dims)
+    check_nvars(def, loaded, expect.nvars)
+    check_vars(def, loaded, expect.vars)
 
     return(loaded)
   }
@@ -188,20 +180,46 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
   }
 
   check_nvars(def, loaded, expect.nvars)
+  check_vars(def, loaded, expect.vars)
   check_extent(def, loaded, expect.extent)
   check_dims(def, loaded, expect.dims)
   return(loaded)
 }
 
 check_nvars <- function(def, data, nvars) {
-  if (is.null(nvars) || length(data$data) == nvars) {
-    return()
-  }
+  if (!is.null(nvars)) {
+    if (class(data) == 'data.frame') {
+      actual_nvars = length(Filter(function(n) { !(n %in% attr(data, 'dimvars')) },
+                            names(data)))
+    } else {
+      actual_nvars = length(data$data)
+    }
 
-  stop("Expected to read exactly ",
-       nvars, " variable", ifelse(nvars==1, "", "s"),
-       " from ", def$filename,
-       " (got ", length(data$data), ")")
+    if (any(nvars != actual_nvars)) {
+      stop("Expected to read exactly ",
+           nvars, " variable", ifelse(nvars==1, "", "s"),
+           " from ", def$filename,
+           " (got ", length(data$data), ")")
+    }
+  }
+}
+
+check_vars <- function(def, data, vars) {
+  if (!is.null(vars)) {
+    if (as.data.frame) {
+      varnames <- Filter(function(v) { !(v %in% attr('loaded', 'dimvars')) },
+                         names(data))
+    } else {
+      varnames <- names(data$data)
+    }
+
+    if (sort(varnames) != sort(vars)) {
+      stop("Expected to read %s from %s but got %s.",
+           paste(sort(vars), collapse=','),
+           def$filename,
+           paste(sort(varnames), collapse=','))
+    }
+  }
 }
 
 check_extent <- function(def, data, extent) {
@@ -233,13 +251,17 @@ format_ids <- function(ids, n) {
 }
 
 check_dims <- function(def, data, dims) {
-  if (is.null(dims) || length(data$data) == 0 || all(dim(data$data[[1]]) == dims)) {
-    return()
-  }
+  if (!is.null(dims)) {
+    if(class(data) == 'data.frame') {
+      stop("Can't check dimensions of data loaded to data frame.")
+    }
 
-  stop("Unexpected dimensions of ", def$filename,
-       " (expected [", paste(dims, collapse=", "), "]",
-       ", got [", paste(dim(data$data[[1]]), collapse=", "), "])")
+    if (length(data$data) > 0 && !all(dim(data$data[[1]]) == dims)) {
+      stop("Unexpected dimensions of ", def$filename,
+           " (expected [", paste(dims, collapse=", "), "]",
+           ", got [", paste(dim(data$data[[1]]), collapse=", "), "])")
+    }
+  }
 }
 
 is_mon <- function(fname) {

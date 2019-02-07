@@ -218,6 +218,8 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
       }
     }
 
+    attr(df, 'dimvars') <- names(dimension_vals)
+
     # TODO revisit whether these are actually needed on a data frame
     if (is_spatial) {
       attr(df, 'extent') <- extent
