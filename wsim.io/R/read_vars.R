@@ -251,38 +251,3 @@ is_ncep_daily_precip <- function(fname) {
     '^PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.\\d{8}([.]?RT)?([.]gz)?$',
     basename(fname))
 }
-
-to_data_frame <- function(dataset) {
-  df <- cbind(do.call(combos, dimnames(dataset$data[[1]])),
-        lapply(dataset$data, as.vector),
-        stringsAsFactors=FALSE)
-
-  # Copy global attributes over to data frame
-  for (attrname in names(dataset$attrs)) {
-    if (!(attrname %in% c('ids', 'class', 'names')))
-      attr(df, attrname) <- dataset$attrs[[attrname]]
-  }
-
-  # Copy variable attributes over to data frame
-  for (varname in names(dataset$data)) {
-    for (attrname in names(attributes(dataset$data[[varname]]))) {
-      if (!(attrname %in% c('dim', 'dimnames'))) {
-        attr(df[[varname]], attrname) <- attr(dataset$data[[varname]], attrname)
-      }
-    }
-  }
-
-  return(df)
-}
-
-to_data_frame_2 <- function(dataset) {
-  #as.data.frame.table(dataset$data$fertilizer, responseName='fertilizer', stringsAsFactors=FALSE)
-}
-
-to_data_frame_3 <- function(dataset) {
-  cbind(do.call(combos, dimnames(dataset$data[[1]])),
-        lapply(dataset$data, as.vector),
-        stringsAsFactors=FALSE)
-
-  # TODO affix attributes etc.
-}
