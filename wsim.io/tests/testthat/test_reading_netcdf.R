@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -98,8 +98,6 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
   expect_equal(v$var_a, var_a, check.attributes=FALSE)
   expect_equal(v$var_b, var_b, check.attributes=FALSE)
   expect_equal(v$var_c, var_c, check.attributes=FALSE)
-
-  expect_equal(v$id, 2:5, check.attributes=FALSE)
 
   # No extent for non-spatial data
   expect_null(attr(v, 'extent'))
@@ -409,5 +407,38 @@ test_that("we can read multiple variables from a netCDF into a RasterBrick", {
   expect_s4_class(brick, "RasterBrick")
   expect_equal(raster::metadata(brick)$distribution, "fake")
   expect_equal(names(brick), c("location", "scale"))
+  file.remove(fname)
+})
+
+test_that("we can read multidimensional tabular data", {
+  fname <- tempfile(fileext='.nc')
+
+  data <- data.frame(
+    id=rep(1:4, each=8, times=1),
+    crop=rep(c(13,21), each=2, times=8),
+    plot=rep(c(15,19,7,3), each=1, times=4),
+    yield=sqrt(1:32),
+    fertilizer=(1:32)*0.1,
+    stringsAsFactors=FALSE
+  )
+
+  id_dim <- ncdf4::ncdim_def('id', units='', vals=1:4, create_dimvar=TRUE)
+  crop_dim <- ncdf4::ncdim_def('crop', units='', vals=c(13,21), create_dimvar=TRUE)
+  plot_dim <- ncdf4::ncdim_def('plot', units='', vals=c(15,19,7,3), create_dimvar=TRUE)
+
+  yield_var <- ncdf4::ncvar_def('yield', units='kg', dim=list(id_dim, crop_dim, plot_dim))
+  fertilizer_var <- ncdf4::ncvar_def('fertilizer', units='kg', dim=list(id_dim, crop_dim, plot_dim))
+
+  cdf <- ncdf4::nc_create(fname, vars=list(yield_var, fertilizer_var))
+  ncdf4::ncvar_put(cdf, yield_var, data$yield)
+  ncdf4::ncvar_put(cdf, fertilizer_var, data$fertilizer)
+  ncdf4::nc_close(cdf)
+
+  #data2 <- read_vars(fname, extra_dims=list(crop=13, plot=7), as.data.frame=TRUE)
+  data2 <- read_vars(fname)
+
+  # FIXME finish writing test
+  fail()
+
   file.remove(fname)
 })

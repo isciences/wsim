@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -80,10 +80,7 @@ test_that('2D subsets are read correctly when y-inversion is required', {
   ncdf4::ncvar_put(ncout, var, t(data[nrow(data):1,]))
   ncdf4::nc_close(ncout)
 
-  expect_equal(
-    read_vars_from_cdf(fname)$data[[1]]
-    ,
-    data)
+  expect_equal(read_vars_from_cdf(fname)$data[[1]], data, check.attributes=FALSE)
 
   expect_equal(
     read_vars_from_cdf(fname)$extent

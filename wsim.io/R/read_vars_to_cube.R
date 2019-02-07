@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -42,9 +42,10 @@ read_vars_to_cube <- function(vardefs, attrs_to_read=as.character(c()), offset=N
   }
 
   data <- do.call(c, lapply(vars, `[[`, 'data'))
+  data <- lapply(data, function(d) { if (!is.matrix(d)) t(d) else d })
 
   cube <- abind::abind(data, along=3)
-  dimnames(cube)[[3]] <- as.vector(sapply(vars, function(var) names(var$data)))
+  dimnames(cube) <- list(NULL, NULL, as.vector(sapply(vars, function(var) names(var$data))))
 
   attr(cube, 'extent') <- extent
   attr(cube, 'ids') <- ids

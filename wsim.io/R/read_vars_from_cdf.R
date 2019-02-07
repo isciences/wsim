@@ -127,9 +127,11 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   # TODO assert all vars have same dimensions
   dimnames <- sapply(cdf$var[[vars[[1]]$var_in]]$dim, function(d) d$name)
 
-  # Make sure right number of extra dimensions were specified.
-  if (is.null(offset)) {
-    expected_extra_dims <- length(dimnames) - ifelse(is_spatial, 2, 1)
+  # Make sure right number of extra dimensions were specified. For spatial data we require all
+  # extra dimensions to be constrained, so that we read in a matrix no matter what. For non-spatial
+  # data we don't care; it all just ends up in a data frame anyway.
+  if (is.null(offset) & is_spatial) {
+    expected_extra_dims <- length(dimnames) - 2
     if (length(extra_dims) != expected_extra_dims) {
       stop(sprintf("Expected %d extra dimensions but got %d.", expected_extra_dims, length(extra_dims)))
     }
@@ -158,6 +160,19 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
         if (var_to_load$var_in == var$name) {
           if (is.null(offset)) {
             d <- ncdf4::ncvar_get(cdf, var$name)
+
+            real_dims <- Filter(function(d) { !endsWith(d$name, '_nchar') },
+                                cdf$var[[var$name]]$dim)
+
+            dimnames(d) <- lapply(real_dims, function(d) d$vals)
+            names(dimnames(d)) <- lapply(real_dims, function(d) d$name)
+            # FIXME using dimnames coerces everything to a character.
+            # Ideas:
+            # - store the dimension variables in something other than dimnames
+            # - store the type somewhere so that they can be converted back if
+            #   the array is converted into a data frame (lossy?)
+            # - push as.data.frame logic up into read_vars_from_cdf and avoid
+            #   dimnames intermediate in the first place.
           } else {
             # Collapse 3D array to 2D array, but don't
             # collapse a column (e.g., single meridian of longitude)
@@ -169,15 +184,19 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
                                   start=offset,
                                   count=count,
                                   collapse_degen=collapse)
+
+            # FIXME set dimnames in offset case?
           }
 
           if (!is.null(wrap_rows)) {
             d <- rbind(d[wrap_rows, ], d[-wrap_rows, ])
           }
 
-          d <- t(d)
-          if (flip_latitudes) {
-            d <- apply(d, 2, rev)
+          if (is_spatial) {
+            d <- t(d)
+            if (flip_latitudes) {
+              d <- apply(d, 2, rev)
+            }
           }
 
           attrs <- ncdf4::ncatt_get(cdf, var$name)

@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -241,12 +241,9 @@ is_ncep_daily_precip <- function(fname) {
 }
 
 to_data_frame <- function(dataset) {
-  if (is.null(dataset$ids))
-    stop("Only ID-based data can be converted to a data frame")
-
-  df <- data.frame(c(list(id=dataset$ids),
-                      lapply(dataset$data, as.vector)),
-                   stringsAsFactors=FALSE)
+  df <- cbind(do.call(combos, dimnames(dataset$data[[1]])),
+        lapply(dataset$data, as.vector),
+        stringsAsFactors=FALSE)
 
   # Copy global attributes over to data frame
   for (attrname in names(dataset$attrs)) {
@@ -257,11 +254,23 @@ to_data_frame <- function(dataset) {
   # Copy variable attributes over to data frame
   for (varname in names(dataset$data)) {
     for (attrname in names(attributes(dataset$data[[varname]]))) {
-      if (!(attrname %in% c('dim'))) {
+      if (!(attrname %in% c('dim', 'dimnames'))) {
         attr(df[[varname]], attrname) <- attr(dataset$data[[varname]], attrname)
       }
     }
   }
 
   return(df)
+}
+
+to_data_frame_2 <- function(dataset) {
+  #as.data.frame.table(dataset$data$fertilizer, responseName='fertilizer', stringsAsFactors=FALSE)
+}
+
+to_data_frame_3 <- function(dataset) {
+  cbind(do.call(combos, dimnames(dataset$data[[1]])),
+        lapply(dataset$data, as.vector),
+        stringsAsFactors=FALSE)
+
+  # TODO affix attributes etc.
 }
