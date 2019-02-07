@@ -93,8 +93,6 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
                 min(lats) - dlat/2,
                 max(lats) + dlat/2)
   } else {
-    flip_latitudes <- FALSE
-
     if (!is.null(offset)) {
       stopifnot(length(offset) == 1)
       ids <- ncdf4::ncvar_get(cdf, "id", start=offset, count=count)
@@ -107,41 +105,22 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
 
   data <- list()
 
-  # Get a list of all dimensional vars in the file
-  cdf_vars <- lapply(Filter(function(var) {
-    var$ndims > 0
-  }, cdf$var), function(var) var$name)
-
-  # If no vars are specified, use all of the vars
-  if (is.null(vars) || length(vars) == 0) {
-    vars <- lapply(cdf_vars, make_var)
-  }
-
-  # Check that all requested vars can be found in the file
-  for (var in vars) {
-    if (!(var$var_in %in% cdf_vars))
-      stop("Could not find var ", var$var_in, " in ", fname)
-  }
-
-  if (length(vars) == 0) {
-    stop("No vars found to load in ", fname)
-  }
-
-  # TODO assert all vars have same dimensions
-  dimnames <- sapply(cdf$var[[vars[[1]]$var_in]]$dim, function(d) d$name)
+  vars <- check_var_list(cdf, vars)
+  vars_to_read <- sapply(vars, `[[`, 'var_in')
+  real_dims <- shared_dimensions(cdf, vars_to_read)
 
   # Make sure right number of extra dimensions were specified. For spatial data we require all
   # extra dimensions to be constrained, so that we read in a matrix no matter what. For non-spatial
   # data we don't care; it all just ends up in a data frame anyway.
   if (is.null(offset) & is_spatial) {
-    expected_extra_dims <- length(dimnames) - 2
+    expected_extra_dims <- length(real_dims) - 2
     if (length(extra_dims) != expected_extra_dims) {
       stop(sprintf("Expected %d extra dimensions but got %d.", expected_extra_dims, length(extra_dims)))
     }
   }
 
   if (!is.null(extra_dims)) {
-    offset <- sapply(dimnames, function(dimname) {
+    offset <- sapply(real_dims, function(dimname) {
       if (dimname %in% names(extra_dims)) {
         i <- which(cdf[['dim']][[dimname]][['vals']]==extra_dims[[dimname]])
         if (length(i) == 0) {
@@ -153,15 +132,8 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
       }
     })
 
-    count <- ifelse(dimnames %in% names(extra_dims), 1, -1)
+    count <- ifelse(real_dims %in% names(extra_dims), 1, -1)
   }
-
-  if (as.data.frame) {
-    vardata <- list()
-  }
-
-  vars_to_read <- sapply(vars, `[[`, 'var_in')
-  real_dims <- shared_dimensions(cdf, vars_to_read)
 
   for (var in cdf$var) {
     if (var$name %in% vars_to_read) {
@@ -292,4 +264,33 @@ shared_dimensions <- function(cdf, varnames) {
   return(shared_dims)
 }
 
+#' Get a list of variables that can be read from a netCDF file
+#'
+#' A list of requested variable names can be provided.
+#'
+#' @param cdf  ncdf4 file handle
+#' @param vars a (possibly-empty) list of var objects to read from \code{cdf}
+#' @return a list of \code{var} objects.
+check_var_list <- function(cdf, vars) {
+  # Get a list of all dimensional vars in the file
+  cdf_vars <- lapply(Filter(function(var) {
+    var$ndims > 0
+  }, cdf$var), function(var) var$name)
 
+  # If no vars are specified, use all of the vars
+  if (is.null(vars) || length(vars) == 0) {
+    vars <- lapply(cdf_vars, make_var)
+  } else {
+    # Check that all requested vars can be found in the file
+    for (var in vars) {
+      if (!(var$var_in %in% cdf_vars))
+        stop("Could not find var ", var$var_in, " in ", cdf$filename)
+    }
+  }
+
+  if (length(vars) == 0) {
+    stop("No vars found to load in ", cdf$filename)
+  }
+
+  return(vars)
+}
