@@ -79,14 +79,26 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
   }
 
   if(endsWith(def$filename, '.nc')) {
-    loaded <- read_vars_from_cdf(vardef, offset=offset, count=count)
-    check_nvars(def, loaded, expect.nvars)
+    loaded <- read_vars_from_cdf(vardef, offset=offset, count=count, as.data.frame=as.data.frame)
+
     check_extent(def, loaded, expect.extent)
     check_ids(def, loaded, expect.ids)
-    check_dims(def, loaded, expect.dims)
 
-    if (as.data.frame)
-      return(to_data_frame(loaded))
+    if (!is.null(expect.dims)) {
+      if(as.data.frame) {
+        stop("Can't check dimensions of data loaded to data frame.")
+      }
+
+      check_dims(def, loaded, expect.dims)
+    }
+
+    if (!is.null(expect.nvars)) {
+      if (as.data.frame) {
+        stop("Can't check number of variables in data loaded to data frame.")
+      }
+
+      check_nvars(def, loaded, expect.nvars)
+    }
 
     return(loaded)
   }

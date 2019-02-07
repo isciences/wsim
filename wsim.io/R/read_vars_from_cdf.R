@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+BUILTIN_ATTRIBUTES = c('class', 'dim', 'dimnames', 'names')
+
 #' Read all variables from a netCDF file
 #'
 #' @inheritParams parse_vardef
@@ -22,9 +24,10 @@
 #'        \code{extra_dims=list(crop='maize', quantile=0.50)}. It provides
 #'        a higher-abstraction alternative to the use of \code{offset} and
 #'        \code{count}.
-#' @return structure described in \code{\link{read_vars}}
+#' @param as.data.frame return data in a data frame
+#' @return structure described in \code{\link{read_vars}}, or a data frame
 #' @export
-read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, count=NULL, extra_dims=NULL) {
+read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, count=NULL, extra_dims=NULL, as.data.frame=FALSE) {
   stopifnot(is.null(offset) == is.null(count))
   if (!is.null(offset)) {
     stopifnot(length(offset) == length(count))
@@ -153,61 +156,50 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     count <- ifelse(dimnames %in% names(extra_dims), 1, -1)
   }
 
+  if (as.data.frame) {
+    vardata <- list()
+  }
+
+  vars_to_read <- sapply(vars, `[[`, 'var_in')
+  real_dims <- shared_dimensions(cdf, vars_to_read)
+
   for (var in cdf$var) {
-    if (var$ndims > 0) {
+    if (var$name %in% vars_to_read) {
       # Read this as a regular variable
-      for (var_to_load in vars) {
-        if (var_to_load$var_in == var$name) {
-          if (is.null(offset)) {
-            d <- ncdf4::ncvar_get(cdf, var$name)
+      if (is.null(offset)) {
+        d <- ncdf4::ncvar_get(cdf, var$name)
+      } else {
+        # Collapse 3D array to 2D array, but don't
+        # collapse a column (e.g., single meridian of longitude)
+        # to a vector
+        collapse <- !is.na(count[3]) && count[3] == 1
 
-            real_dims <- Filter(function(d) { !endsWith(d$name, '_nchar') },
-                                cdf$var[[var$name]]$dim)
+        d <- ncdf4::ncvar_get(cdf,
+                              var$name,
+                              start=offset,
+                              count=count,
+                              collapse_degen=collapse)
+      }
 
-            dimnames(d) <- lapply(real_dims, function(d) d$vals)
-            names(dimnames(d)) <- lapply(real_dims, function(d) d$name)
-            # FIXME using dimnames coerces everything to a character.
-            # Ideas:
-            # - store the dimension variables in something other than dimnames
-            # - store the type somewhere so that they can be converted back if
-            #   the array is converted into a data frame (lossy?)
-            # - push as.data.frame logic up into read_vars_from_cdf and avoid
-            #   dimnames intermediate in the first place.
-          } else {
-            # Collapse 3D array to 2D array, but don't
-            # collapse a column (e.g., single meridian of longitude)
-            # to a vector
-            collapse <- !is.na(count[3]) && count[3] == 1
+      if (!is.null(wrap_rows)) {
+        d <- rbind(d[wrap_rows, ], d[-wrap_rows, ])
+      }
 
-            d <- ncdf4::ncvar_get(cdf,
-                                  var$name,
-                                  start=offset,
-                                  count=count,
-                                  collapse_degen=collapse)
-
-            # FIXME set dimnames in offset case?
-          }
-
-          if (!is.null(wrap_rows)) {
-            d <- rbind(d[wrap_rows, ], d[-wrap_rows, ])
-          }
-
-          if (is_spatial) {
-            d <- t(d)
-            if (flip_latitudes) {
-              d <- apply(d, 2, rev)
-            }
-          }
-
-          attrs <- ncdf4::ncatt_get(cdf, var$name)
-          for (k in names(attrs)) {
-            attr(d, k) <- attrs[[k]]
-          }
-
-          data[[var_to_load$var_out]] <- perform_transforms(d, var_to_load$transforms)
+      if (is_spatial) {
+        d <- t(d)
+        if (flip_latitudes) {
+          d <- apply(d, 2, rev)
         }
       }
-    } else {
+
+      attrs <- ncdf4::ncatt_get(cdf, var$name)
+      for (k in names(attrs)) {
+        attr(d, k) <- attrs[[k]]
+      }
+
+      var_to_load <- Find(function(v) { v$var_in == var$name }, vars)
+      data[[var_to_load$var_out]] <- perform_transforms(d, var_to_load$transforms)
+    } else if (var$ndims == 0) {
       # This variable has no dimensions, and is
       # only used to store attributes.  Read the
       # attributes and put them in with the global
@@ -218,12 +210,86 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     }
   }
 
-  ncdf4::nc_close(cdf)
+  if (as.data.frame) {
+    dimension_vals <- list()
+    for (i in 1:length(real_dims)) {
+      d <- cdf$dim[[real_dims[[i]]]]
 
-  return(list(
-    attrs= global_attrs,
-    data= data,
-    extent= extent,
-    ids= ids
-  ))
+      if (is.null(offset) || count[i] == -1) {
+        dimension_vals[[d$name]] <- d$vals
+      } else {
+        dimension_vals[[d$name]] <- d$vals[offset[i]:(offset[i]+count[i]-1)]
+      }
+    }
+
+    dim_df_cols <- do.call(combos, dimension_vals)
+
+    # Prevent recyling in cbind if subsetting went awry
+    stopifnot(all(sapply(data, length) == nrow(dim_df_cols)))
+
+    df <- cbind(dim_df_cols,
+                lapply(data, as.vector),
+                stringsAsFactors=FALSE)
+
+    # Copy global attributes over to data frame
+    for (attrname in names(global_attrs)) {
+      if (!(attrname %in% BUILTIN_ATTRIBUTES))
+        attr(df, attrname) <- global_attrs[[attrname]]
+    }
+
+    # Copy variable attributes over to data frame
+    for (varname in names(data)) {
+      for (attrname in names(attributes(data[[varname]]))) {
+        if (!(attrname %in% BUILTIN_ATTRIBUTES)) {
+          attr(df[[varname]], attrname) <- attr(data[[varname]], attrname)
+        }
+      }
+    }
+
+    # TODO revisit whether these are actually needed on a data frame
+    if (is_spatial) {
+      attr(df, 'extent') <- extent
+    } else {
+      attr(df, 'id') <- ids
+    }
+
+    ncdf4::nc_close(cdf)
+    return(df)
+  } else {
+    ncdf4::nc_close(cdf)
+    return(list(
+      attrs= global_attrs,
+      data= data,
+      extent= extent,
+      ids= ids
+    ))
+  }
 }
+
+#' Given a netCDF file handle and a list of variable names,
+#' return the names of the dimensions that are shared among
+#' all variables.
+shared_dimensions <- function(cdf, varnames) {
+  dim_counts <- list()
+  for (varname in varnames) {
+    var <- cdf$var[[varname]]
+    for (dim in var$dim) {
+      if (is.null(dim_counts[[dim$name]])) {
+        dim_counts[[dim$name]] <- 1
+      } else {
+        dim_counts[[dim$name]] <- dim_counts[[dim$name]] + 1
+      }
+    }
+  }
+
+  shared_dims <- Filter(function(dimname) {
+    dim_counts[[dimname]] == length(varnames)
+  }, names(dim_counts))
+
+  # TODO guard against pathological case where variables are
+  # declared against same dimensions but in a different order?
+
+  return(shared_dims)
+}
+
+

@@ -115,7 +115,7 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
   file.remove(fname)
 })
 
-test_that("we get an error trying to read a spatial netCDF file into a data frame", {
+test_that("we can read a spatial netCDF file into a data frame", {
   fname <- tempfile(fileext='.nc')
   data <- matrix(runif(4), nrow=2)
 
@@ -128,8 +128,14 @@ test_that("we get an error trying to read a spatial netCDF file into a data fram
                     attrs=list(list(var="my_data", key="station", val="a"),
                                list(key="yearmon", val="201702")))
 
-  expect_error(v <- read_vars(fname, as.data.frame=TRUE),
-               'Only ID-based data can be converted to a data frame')
+  v <- read_vars(fname, as.data.frame=TRUE)
+
+  expect_equal(v, rbind(
+    data.frame(lon=-30, lat=57.5, my_data=data[1,1]),
+    data.frame(lon=-30, lat=32.5, my_data=data[2,1]),
+    data.frame(lon=-10, lat=57.5, my_data=data[1,2]),
+    data.frame(lon=-10, lat=32.5, my_data=data[2,2])
+  ), check.attributes=FALSE)
 
   file.remove(fname)
 })
@@ -415,7 +421,7 @@ test_that("we can read multidimensional tabular data", {
 
   data <- data.frame(
     id=rep(1:4, each=8, times=1),
-    crop=rep(c(13,21), each=2, times=8),
+    crop=rep(c(13,21), each=4, times=2),
     plot=rep(c(15,19,7,3), each=1, times=4),
     yield=sqrt(1:32),
     fertilizer=(1:32)*0.1,
@@ -426,19 +432,16 @@ test_that("we can read multidimensional tabular data", {
   crop_dim <- ncdf4::ncdim_def('crop', units='', vals=c(13,21), create_dimvar=TRUE)
   plot_dim <- ncdf4::ncdim_def('plot', units='', vals=c(15,19,7,3), create_dimvar=TRUE)
 
-  yield_var <- ncdf4::ncvar_def('yield', units='kg', dim=list(id_dim, crop_dim, plot_dim))
-  fertilizer_var <- ncdf4::ncvar_def('fertilizer', units='kg', dim=list(id_dim, crop_dim, plot_dim))
+  yield_var <- ncdf4::ncvar_def('yield', units='kg', dim=list(id_dim, crop_dim, plot_dim), prec='double')
+  fertilizer_var <- ncdf4::ncvar_def('fertilizer', units='kg', dim=list(id_dim, crop_dim, plot_dim), prec='double')
 
   cdf <- ncdf4::nc_create(fname, vars=list(yield_var, fertilizer_var))
   ncdf4::ncvar_put(cdf, yield_var, data$yield)
   ncdf4::ncvar_put(cdf, fertilizer_var, data$fertilizer)
   ncdf4::nc_close(cdf)
 
-  #data2 <- read_vars(fname, extra_dims=list(crop=13, plot=7), as.data.frame=TRUE)
-  data2 <- read_vars(fname)
-
-  # FIXME finish writing test
-  fail()
+  data2 <- read_vars(fname, as.data.frame=TRUE)
+  expect_equal(data, data2, check.attributes=FALSE)
 
   file.remove(fname)
 })

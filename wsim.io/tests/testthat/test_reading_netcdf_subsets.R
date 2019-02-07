@@ -182,5 +182,15 @@ test_that('we can use extra_dims arg to read from a N-D array', {
   expect_equal(slice$data$Pressure_sqrt, sqrt(slice$data$Pressure))
   expect_equal(slice$data$Pressure, data[,,3]*1.1, check.attributes=FALSE)
 
+  # Can also read it as data frame
+  df <- read_vars_from_cdf(fname, extra_dims=list(elev=2.5, quantile=0.75), as.data.frame=TRUE)
+
+  expect_equal(as.vector(slice$data$Pressure), df$Pressure, check.attributes=FALSE)
+  expect_true(all(df$elev==2.5))
+  expect_true(all(df$quantile==0.75))
+
+  expect_equal(df$lon, rep(londim$vals, each=length(latdim$vals), length.out=nrow(df)))
+  expect_equal(df$lat, rep(latdim$vals, length.out=nrow(df)))
+
   file.remove(fname)
 })
