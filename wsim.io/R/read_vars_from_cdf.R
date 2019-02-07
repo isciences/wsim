@@ -241,6 +241,10 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
 #' Given a netCDF file handle and a list of variable names,
 #' return the names of the dimensions that are shared among
 #' all variables.
+#' @param cdf      a ncdf4 file handle
+#' @param varnames variable names to be included in the scan
+#' @return a list of dimension names that are common to all
+#'         variables in \code{varnames}
 shared_dimensions <- function(cdf, varnames) {
   dim_counts <- list()
   for (varname in varnames) {
