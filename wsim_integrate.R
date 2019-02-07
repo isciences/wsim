@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -42,7 +42,7 @@ attrs_for_stat <- function(var_attrs, var, stat, stat_var) {
 
   Filter(Negate(is.null), lapply(names(var_attrs[[var]]), function(field) {
     # Don't pass "dim" R attr, or _FillValue/missing_data netCDF attr through
-    if (field %in% c('dim', '_FillValue', 'missing_data')) {
+    if (field %in% c('dim', 'dimnames', '_FillValue', 'missing_data')) {
       return(NULL)
     }
 
@@ -108,6 +108,10 @@ main <- function(raw_args) {
   ids <- first_input$ids
   dims <- dim(first_input$data[[1]])
   var_attrs <- lapply(first_input$data, attributes)
+
+  if (length(dims) == 1) {
+    dims <- c(1, dims)
+  }
 
   # Validate configuration
   validate_stats(parsed_stats)
@@ -184,7 +188,7 @@ main <- function(raw_args) {
                                      expect.ids=ids)$data
 
     for (var_name in var_names) {
-      data[[var_name]][,,slice] <- data_slice[[var_name]]
+      data[[var_name]][,,slice] <- as.matrix(data_slice[[var_name]])
     }
 
     if (i >= window) {
