@@ -23,7 +23,7 @@ lat_seq <- function(extent, dims) {
   nlat <- dims[1]
   dlat <- (maxlat - minlat) / nlat
 
-  lats <- as.double(seq(maxlat - (dlat/2), minlat + (dlat/2), by=-dlat))
+  as.double(seq(maxlat - (dlat/2), minlat + (dlat/2), by=-dlat))
 }
 
 #' Compute a sequence of longitude values (W to E)
@@ -38,5 +38,5 @@ lon_seq <- function(extent, dims) {
   nlon <- dims[2]
 
   dlon <- (maxlon - minlon) / nlon
-  lons <- as.double(seq(minlon + (dlon/2), maxlon - (dlon/2), by=dlon))
+  as.double(seq(minlon + (dlon/2), maxlon - (dlon/2), by=dlon))
 }
