@@ -37,7 +37,7 @@ test_that('we can write a subset of multidimensional spatial data', {
   write_vars_to_cdf(list(yield=corn_deficit_yield),
                     fname,
                     extent=c(-180, 180, -90, 90),
-                    extra_dims=list(
+                    write_slice=list(
                       crop='corn',
                       stress='deficit'
                     ),
@@ -72,7 +72,7 @@ test_that('we get an error if we try to partially write an extra dimension with 
     write_vars_to_cdf(list(yield=rye_deficit_yield),
                       fname,
                       extent=c(-180, 180, -90, 90),
-                      extra_dims=list(
+                      write_slice=list(
                         crop='rye',
                         stress='deficit'
                       ),

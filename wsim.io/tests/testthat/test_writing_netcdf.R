@@ -421,6 +421,33 @@ test_that('we can write multidimensional spatial data', {
   file.remove(fname)
 })
 
+test_that('we can write data where different variables have different numbers of dimensions', {
+  fname <- tempfile(fileext='.nc')
+
+  crops <- c('wheat', 'maize')
+  stresses <- c('heat', 'cold', 'hail')
+
+  write_vars_to_cdf(list(months_stress=array(0L, dim=c(5,8,2,3))),
+                    fname,
+                    extent=c(-180, 180, -90, 90),
+                    extra_dims=list(
+                      crop=crops,
+                      stress=stresses
+                    ),
+                    prec='byte')
+
+  write_vars_to_cdf(list(cumulative_stress=array(0L, dim=c(5,8,2))),
+                    fname,
+                    extent=c(-180, 180, -90, 90),
+                    extra_dims=list(
+                      crop=crops
+                    ),
+                    prec='double',
+                    append=TRUE)
+
+  file.remove(fname)
+})
+
 test_that('we can write multidimensional id-based data', {
   fname <- tempfile(fileext='.nc')
 

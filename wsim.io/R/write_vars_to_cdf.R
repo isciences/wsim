@@ -82,9 +82,11 @@ write_vars_to_cdf <- function(vars,
                               ymin=NULL,
                               ymax=NULL,
                               extra_dims=NULL,
+                              write_slice=NULL,
                               attrs=list(),
                               prec=NULL,
-                              append=FALSE) {
+                              append=FALSE,
+                              put_data=TRUE) {
   datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
   history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
@@ -230,8 +232,6 @@ write_vars_to_cdf <- function(vars,
                      prec=var_prec(param),
                      compression=1)
   })
-
-  stopifnot(names(ncvars) == regular_var_names)
   names(ncvars) <- regular_var_names
 
   if (is_spatial) {
@@ -266,7 +266,7 @@ write_vars_to_cdf <- function(vars,
       check_coordinate_variables(ncout, id=ids)
     }
 
-    check_values_in_dimension(ncout, extra_dims)
+    check_values_in_dimension(ncout, write_slice)
 
     # Add any missing variable definitions
     for (var in ncvars) {
@@ -306,45 +306,47 @@ write_vars_to_cdf <- function(vars,
     cmbn <- do.call(combos, c(list(id=ids), extra_dims))
   }
 
-  for (param in regular_var_names) {
-    if (is_spatial) {
-      ndim <- length(dim(vars[[param]]))
-      if (ndim > 2) {
-        permut <- c(2, 1, 3:ndim)
+  if (put_data) {
+    for (param in regular_var_names) {
+      if (is_spatial) {
+        ndim <- length(dim(vars[[param]]))
+        if (ndim > 2) {
+          permut <- c(2, 1, 3:ndim)
+        } else {
+          permut <- c(2, 1)
+        }
+
+        dat <- aperm(vars[[param]], permut)
       } else {
-        permut <- c(2, 1)
+        if (is.null(extra_dims)) {
+          dat <- vars[[param]]
+        } else {
+          dat <- merge(cmbn,
+                       vars,
+                       by=names(cmbn),
+                       all.x=TRUE)[[param]]
+        }
       }
 
-      dat <- aperm(vars[[param]], permut)
-    } else {
-      if (is.null(extra_dims)) {
-        dat <- vars[[param]]
+      verbose <- FALSE
+
+      if (is.null(write_slice)) {
+        start <- NA
+        count <- NA
       } else {
-        dat <- merge(cmbn,
-                     vars,
-                     by=names(cmbn),
-                     all.x=TRUE)[[param]]
+        dimnames <- sapply(ncout$var[[param]]$dim, function(d) d$name)
+
+        start <- find_offset(ncout, dimnames, write_slice)
+        count <- find_count(dimnames, write_slice)
       }
+
+      ncdf4::ncvar_put(nc=ncout,
+                       varid=ncvars[[param]],
+                       vals=dat,
+                       start=start,
+                       count=count,
+                       verbose=verbose)
     }
-
-    verbose <- FALSE
-
-    if (!append || is.null(extra_dims)) {
-      start <- NA
-      count <- NA
-    } else {
-      dimnames <- sapply(ncout$var[[param]]$dim, function(d) d$name)
-
-      start <- find_offset(ncout, dimnames, extra_dims)
-      count <- find_count(dimnames, extra_dims)
-    }
-
-    ncdf4::ncvar_put(nc=ncout,
-                     varid=ncvars[[param]],
-                     vals=dat,
-                     start=start,
-                     count=count,
-                     verbose=verbose)
   }
 
   # Write attributes
