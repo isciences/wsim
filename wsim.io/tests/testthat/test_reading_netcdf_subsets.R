@@ -174,7 +174,7 @@ test_that('we can use extra_dims arg to read from a N-D array', {
 
   expect_error(
     slice <- read_vars_from_cdf(fname, extra_dims=list(elev=9.5, quantile=0.5)),
-    "Invalid value 9.5 for dimension elev"
+    "Invalid value .* for dimension"
   )
 
   slice <- read_vars_from_cdf(fname, extra_dims=list(elev=2.5, quantile=0.75))

@@ -120,19 +120,8 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   }
 
   if (!is.null(extra_dims)) {
-    offset <- sapply(real_dims, function(dimname) {
-      if (dimname %in% names(extra_dims)) {
-        i <- which(cdf[['dim']][[dimname]][['vals']]==extra_dims[[dimname]])
-        if (length(i) == 0) {
-          stop(sprintf("Invalid value %s for dimension %s.", extra_dims[[dimname]], dimname))
-        }
-        return(i)
-      } else {
-        return(1)
-      }
-    })
-
-    count <- ifelse(real_dims %in% names(extra_dims), 1, -1)
+    offset <- find_offset(cdf, real_dims, extra_dims)
+    count <- find_count(real_dims, extra_dims)
   }
 
   for (var in cdf$var) {
@@ -299,4 +288,31 @@ check_var_list <- function(cdf, vars) {
   }
 
   return(vars)
+}
+
+#' Compute the offset vector for specified values of dimensions
+#'
+#' @param cdf        a ncdf4 file handle
+#' @param real_dims  a list of dimensions
+#' @param dim_values a list whose keys represent dimension names and values
+#'                   represent values along those dimensions
+find_offset <- function(cdf, real_dims, dim_values) {
+  sapply(real_dims, function(dimname) {
+    if (dimname %in% names(dim_values)) {
+      i <- which(cdf[['dim']][[dimname]][['vals']]==dim_values[[dimname]])
+      if (length(i) == 0) {
+        stop(sprintf("Invalid value \"%s\" for dimension \"%s\".", dim_values[[dimname]], dimname))
+      }
+      return(i)
+    } else {
+      return(1)
+    }
+  })
+}
+
+#' Compute the count vector for specified valuws of dimensions
+#'
+#' @inheritParams find_offset
+find_count <- function(real_dims, dim_values) {
+  ifelse(real_dims %in% names(dim_values), 1, -1)
 }

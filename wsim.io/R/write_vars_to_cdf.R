@@ -97,10 +97,6 @@ write_vars_to_cdf <- function(vars,
     list(key="wsim_version", val=wsim_version_string())
   )
 
-  if (append && !is.null(extra_dims)) {
-    stop("Extra dimensions not yet supported in append mode.")
-  }
-
   if (is.array(vars)) {
     vars <- cube_to_matrices(vars)
   }
@@ -270,15 +266,18 @@ write_vars_to_cdf <- function(vars,
       check_coordinate_variables(ncout, id=ids)
     }
 
+    check_values_in_dimension(ncout, extra_dims)
+
     # Add any missing variable definitions
     for (var in ncvars) {
-      if (!(var$name %in% names(ncout$var))) {
+      if (!(var$name %in% names(ncout$var) || var$name %in% names(ncout$dim))) {
         ncout <- ncdf4::ncvar_add(ncout, var)
       }
     }
 
     existing_history <- ncdf4::ncatt_get(ncout, 0, "history")
     if (existing_history$hasatt) {
+      # TODO avoid pasting same command to history multiple times
       history_entry <- paste0(existing_history$value, history_entry)
     }
 
@@ -292,28 +291,30 @@ write_vars_to_cdf <- function(vars,
       list(key="date_created", val=datestring),
       list(key="history", val=history_entry)
     ))
-  }
 
-  if (character_ids) {
-    ncdf4::ncvar_put(ncout, ncvars$id, ids)
-  }
+    if (character_ids) {
+      ncdf4::ncvar_put(ncout, ncvars$id, ids)
+    }
 
-  for (dimname in names(extra_dims)) {
-    ncdf4::ncvar_put(ncout, extra_ncdf_dims[[dimname]], extra_dims[[dimname]])
+    for (dimname in names(extra_dims)) {
+      ncdf4::ncvar_put(ncout, extra_ncdf_dims[[dimname]], extra_dims[[dimname]])
+    }
   }
 
   # Write data to vars
-  if (is_spatial) {
-    if (is.null(extra_dims))
-      permut <- c(2, 1)
-    else
-      permut <- c(2, 1, 3:(2+length(extra_dims)))
-  } else {
+  if (!is_spatial) {
     cmbn <- do.call(combos, c(list(id=ids), extra_dims))
   }
 
   for (param in regular_var_names) {
     if (is_spatial) {
+      ndim <- length(dim(vars[[param]]))
+      if (ndim > 2) {
+        permut <- c(2, 1, 3:ndim)
+      } else {
+        permut <- c(2, 1)
+      }
+
       dat <- aperm(vars[[param]], permut)
     } else {
       if (is.null(extra_dims)) {
@@ -326,7 +327,24 @@ write_vars_to_cdf <- function(vars,
       }
     }
 
-    ncdf4::ncvar_put(ncout, ncvars[[param]], dat)
+    verbose <- FALSE
+
+    if (!append || is.null(extra_dims)) {
+      start <- NA
+      count <- NA
+    } else {
+      dimnames <- sapply(ncout$var[[param]]$dim, function(d) d$name)
+
+      start <- find_offset(ncout, dimnames, extra_dims)
+      count <- find_count(dimnames, extra_dims)
+    }
+
+    ncdf4::ncvar_put(nc=ncout,
+                     varid=ncvars[[param]],
+                     vals=dat,
+                     start=start,
+                     count=count,
+                     verbose=verbose)
   }
 
   # Write attributes
@@ -368,6 +386,18 @@ check_coordinate_variables <- function(ncout, ...) {
       if (any(current != existing)) {
         stop("Values of dimension ", v, " do not match existing values.")
       }
+    }
+  }
+}
+
+#' Validate extra dimensions
+#'
+#' @param ncout a netCDF file opened for writing
+#' @param vars  list containing values of any named dimension variables
+check_values_in_dimension <- function(ncout, vars) {
+  for (v in names(vars)) {
+    if (!(vars[[v]] %in% ncout$dim[[v]]$vals)) {
+      stop("Invalid value \"", vars[[v]], "\" for dimension \"", v, "\"")
     }
   }
 }
