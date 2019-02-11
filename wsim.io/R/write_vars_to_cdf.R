@@ -237,10 +237,6 @@ write_vars_to_cdf <- function(vars,
   if (is_spatial) {
     # Add a CRS var
     ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
-  } else {
-    #if ('id' %in% names(ncvars)) {
-    #  ncvars[['id']] <- NULL
-    #}
   }
 
   if (character_ids) {
