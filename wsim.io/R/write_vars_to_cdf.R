@@ -86,12 +86,13 @@ write_vars_to_cdf <- function(vars,
                               attrs=list(),
                               prec=NULL,
                               append=FALSE,
-                              put_data=TRUE) {
+                              put_data=TRUE,
+                              quick_append=FALSE) {
   datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
   history_entry <- paste0(datestring, ': ', get_command(), '\n')
 
   # TODO allow implicit id definition with 'id' col in vars
-  is_spatial <- is.null(ids)
+  is_spatial <- is.null(ids) # !(is.null(extent) && is.null(xmin) && is.null(xmax) && is.null(ymin) && is.null(ymax))
   character_ids <- !is_spatial && mode(ids) == 'character'
 
   standard_attrs <- list(
@@ -113,141 +114,112 @@ write_vars_to_cdf <- function(vars,
     }
   }
 
-  # Return the data precision for variable named var
-  var_prec <- function(var) {
-    if (is.character(prec)) {
-      return(prec)
-    }
+  if (!append || !quick_append) {
+    if (is_spatial) {
+      extent <- validate_extent(extent, xmin, xmax, ymin, ymax)
 
-    # return var-specific floating-point type, as specified by arg
-    if (is.list(prec) && !is.null(prec[[var]])) {
-      return(prec[[var]])
-    }
+      lats <- lat_seq(extent, dim(vars[[1]]))
+      lons <- lon_seq(extent, dim(vars[[1]]))
 
-    # Guess precision
-    if (mode(vars[[var]]) == 'logical' || all(vars[[var]] %in% c(0,1)))
-      return('byte') # ncdf4 library does not support bool type
+      dims <- list(
+        ncdf4::ncdim_def("lon", units="degrees_east", vals=lons, longname="Longitude", create_dimvar=TRUE),
+        ncdf4::ncdim_def("lat", units="degrees_north", vals=lats, longname="Latitude", create_dimvar=TRUE)
+      )
 
-    if (mode(vars[[var]]) == 'character')
-      return('char') # ncdf4 library does not support string type
+      standard_attrs <- c(standard_attrs, list(
+        list(var="lon", key="axis", val="X"),
+        list(var="lon", key="standard_name", val="longitude"),
+        list(var="lat", key="axis", val="Y"),
+        list(var="lat", key="standard_name", val="latitude")
+      ))
+    } else {
+      if (any(is.na(ids))) {
+        stop('All IDs must be defined.')
+      }
 
-    # return default floating-point type, as specified by arg
-    if (can_coerce_to_integer(vars[[var]])) {
-      return('integer')
-    }
-
-    return('double')
-  }
-
-  # Return a fill value to use for the variable named var
-  var_fill <- function(var) {
-    stopifnot(var_prec(var) %in% names(default_netcdf_nodata))
-
-    default_netcdf_nodata[[var_prec(var)]]
-  }
-
-  if (is_spatial) {
-    extent <- validate_extent(extent, xmin, xmax, ymin, ymax)
-
-    lats <- lat_seq(extent, dim(vars[[1]]))
-    lons <- lon_seq(extent, dim(vars[[1]]))
-
-    dims <- list(
-      ncdf4::ncdim_def("lon", units="degrees_east", vals=lons, longname="Longitude", create_dimvar=TRUE),
-      ncdf4::ncdim_def("lat", units="degrees_north", vals=lats, longname="Latitude", create_dimvar=TRUE)
-    )
-
-    standard_attrs <- c(standard_attrs, list(
-      list(var="lon", key="axis", val="X"),
-      list(var="lon", key="standard_name", val="longitude"),
-      list(var="lat", key="axis", val="Y"),
-      list(var="lat", key="standard_name", val="latitude")
-    ))
-  } else {
-    if (any(is.na(ids))) {
-      stop('All IDs must be defined.')
-    }
-
-    if (is.null(extra_dims)) {
-      for (varname in names(vars)) {
-        if (length(vars[[varname]]) != length(ids)) {
-          stop(sprintf("Variable %s has %d values but we have %d ids.",
-                       varname, length(vars[[varname]]), length(ids)))
+      if (is.null(extra_dims)) {
+        for (varname in names(vars)) {
+          if (length(vars[[varname]]) != length(ids)) {
+            stop(sprintf("Variable %s has %d values but we have %d ids.",
+                         varname, length(vars[[varname]]), length(ids)))
+          }
         }
+      }
+
+      if (character_ids) {
+        # The R ncdf4 library does not support proper netCDF 4 strings. So we do it the
+        # old-school way, with fixed-length character arrays. Data written in this
+        # way seems to be interpreted correctly by software such as QGIS.
+        dims <- list(
+          ncdf4::ncdim_def("id", units="", vals=1:length(ids), create_dimvar=FALSE)
+        )
+      } else {
+        # Assume that our IDs are integers, and error out if they're not.
+        dims <- list(
+          ncdf4::ncdim_def("id", units="", vals=coerce_to_integer(ids), create_dimvar=TRUE)
+        )
       }
     }
 
-    if (character_ids) {
-      # The R ncdf4 library does not support proper netCDF 4 strings. So we do it the
-      # old-school way, with fixed-length character arrays. Data written in this
-      # way seems to be interpreted correctly by software such as QGIS.
-      dims <- list(
-        ncdf4::ncdim_def("id", units="", vals=1:length(ids), create_dimvar=FALSE)
-      )
-    } else {
-      # Assume that our IDs are integers, and error out if they're not.
-      dims <- list(
-        ncdf4::ncdim_def("id", units="", vals=coerce_to_integer(ids), create_dimvar=TRUE)
-      )
+    extra_ncdf_dims <- list()
+    for (dimname in names(extra_dims)) {
+      vals <- extra_dims[[dimname]]
+      if (class(vals) == 'character') {
+        new_dim <- ncdf4::ncdim_def(dimname, units='', vals=1:length(vals), create_dimvar=FALSE)
+      } else {
+        new_dim <- ncdf4::ncdim_def(dimname, units='', vals=vals, create_dimvar=TRUE)
+      }
+      extra_ncdf_dims[[dimname]] <- new_dim
     }
-  }
 
-  extra_ncdf_dims <- list()
-  for (dimname in names(extra_dims)) {
-    vals <- extra_dims[[dimname]]
-    if (class(vals) == 'character') {
-      new_dim <- ncdf4::ncdim_def(dimname, units='', vals=1:length(vals), create_dimvar=FALSE)
-    } else {
-      new_dim <- ncdf4::ncdim_def(dimname, units='', vals=vals, create_dimvar=TRUE)
-    }
-    extra_ncdf_dims[[dimname]] <- new_dim
+    dims <- c(dims, extra_ncdf_dims)
   }
-
-  dims <- c(dims, extra_ncdf_dims)
 
   # Create all variables, putting in blank strings for the units.  We will
   # overwrite this with the actual units, if they have been passed in
   # as attributes.
   regular_var_names <- names(vars)[(names(vars) != 'id' | is_spatial) &
                                    !(names(vars) %in% names(extra_dims))]
-  ncvars <- lapply(regular_var_names, function(param) {
-    if (mode(vars[[param]]) == "character") {
-      if (is_spatial) {
-        stop("Character data only supported for non-spatial datasets.")
+  if (!append || !quick_append) {
+    ncvars <- lapply(regular_var_names, function(param) {
+      if (mode(vars[[param]]) == "character") {
+        if (is_spatial) {
+          stop("Character data only supported for non-spatial datasets.")
+        }
+
+        nchar_dim <- ncdf4::ncdim_def(paste0(param, "_nchar"),
+                                      units="",
+                                      vals=1:max(nchar(vars[[param]]), na.rm=TRUE),
+                                      create_dimvar=FALSE)
+        vardims <- list(nchar_dim, dims[[1]])
+      } else {
+        vardims <- dims
       }
 
-      nchar_dim <- ncdf4::ncdim_def(paste0(param, "_nchar"),
-                                    units="",
-                                    vals=1:max(nchar(vars[[param]]), na.rm=TRUE),
-                                    create_dimvar=FALSE)
-      vardims <- list(nchar_dim, dims[[1]])
-    } else {
-      vardims <- dims
+      ncdf4::ncvar_def(name=param,
+                       units="",
+                       dim=vardims,
+                       missval=var_fill(param, vars, prec),
+                       prec=var_prec(param, vars, prec),
+                       compression=1)
+    })
+    names(ncvars) <- regular_var_names
+
+    if (is_spatial) {
+      # Add a CRS var
+      ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
     }
 
-    ncdf4::ncvar_def(name=param,
-                     units="",
-                     dim=vardims,
-                     missval=var_fill(param),
-                     prec=var_prec(param),
-                     compression=1)
-  })
-  names(ncvars) <- regular_var_names
+    if (character_ids) {
+      # Have to manually create dimension variable
+      ncvars$id <- create_char_dimension_variable(dims[[1]], 'id', ids)
+    }
 
-  if (is_spatial) {
-    # Add a CRS var
-    ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
-  }
-
-  if (character_ids) {
-    # Have to manually create dimension variable
-    ncvars$id <- create_char_dimension_variable(dims[[1]], 'id', ids)
-  }
-
-  for (dimname in names(extra_dims)) {
-    vals <- extra_dims[[dimname]]
-    if (class(vals) == 'character') {
-      ncvars[[dimname]] <- create_char_dimension_variable(extra_ncdf_dims[[dimname]], dimname, vals)
+    for (dimname in names(extra_dims)) {
+      vals <- extra_dims[[dimname]]
+      if (class(vals) == 'character') {
+        ncvars[[dimname]] <- create_char_dimension_variable(extra_ncdf_dims[[dimname]], dimname, vals)
+      }
     }
   }
 
@@ -256,30 +228,32 @@ write_vars_to_cdf <- function(vars,
     ncout <- ncdf4::nc_open(filename, write=TRUE)
 
     # Verify that our dimensions match up before writing
-    if (is_spatial) {
-      check_coordinate_variables(ncout, lat=lats, lon=lons)
-    } else {
-      check_coordinate_variables(ncout, id=ids)
-    }
-
-    check_values_in_dimension(ncout, write_slice)
-
-    # Add any missing variable definitions
-    for (var in ncvars) {
-      if (!(var$name %in% names(ncout$var) || var$name %in% names(ncout$dim))) {
-        ncout <- ncdf4::ncvar_add(ncout, var)
+    if (!quick_append) {
+      if (is_spatial) {
+        check_coordinate_variables(ncout, lat=lats, lon=lons)
+      } else {
+        check_coordinate_variables(ncout, id=ids)
       }
-    }
 
-    existing_history <- ncdf4::ncatt_get(ncout, 0, "history")
-    if (existing_history$hasatt) {
-      # TODO avoid pasting same command to history multiple times
-      history_entry <- paste0(existing_history$value, history_entry)
-    }
+      check_values_in_dimension(ncout, write_slice)
 
-    standard_attrs <- c(standard_attrs, list(
-      list(key="history", val=history_entry)
-    ))
+      # Add any missing variable definitions
+      for (var in ncvars) {
+        if (!(var$name %in% names(ncout$var) || var$name %in% names(ncout$dim))) {
+          ncout <- ncdf4::ncvar_add(ncout, var)
+        }
+      }
+
+      existing_history <- ncdf4::ncatt_get(ncout, 0, "history")
+      if (existing_history$hasatt) {
+        # TODO avoid pasting same command to history multiple times
+        history_entry <- paste0(existing_history$value, history_entry)
+      }
+
+      standard_attrs <- c(standard_attrs, list(
+        list(key="history", val=history_entry)
+      ))
+    }
   } else {
     ncout <- ncdf4::nc_create(filename, ncvars)
 
@@ -337,7 +311,7 @@ write_vars_to_cdf <- function(vars,
       }
 
       ncdf4::ncvar_put(nc=ncout,
-                       varid=ncvars[[param]],
+                       varid=param,
                        vals=dat,
                        start=start,
                        count=count,
@@ -346,20 +320,22 @@ write_vars_to_cdf <- function(vars,
   }
 
   # Write attributes
-  for (attr in c(standard_attrs, attrs)) {
-    if (!is.null(attr$var) && attr$var == '*') {
-      # Global attribute. Apply the attribute to all variables modified
-      # in this function call.
-      for (var in names(vars)) {
-        update_attribute(ncout, var, attr$key, attr$val, attr$prec)
+  if (!append || !quick_append) {
+    for (attr in c(standard_attrs, attrs)) {
+      if (!is.null(attr$var) && attr$var == '*') {
+        # Global attribute. Apply the attribute to all variables modified
+        # in this function call.
+        for (var in names(vars)) {
+          update_attribute(ncout, var, attr$key, attr$val, attr$prec)
+        }
+      } else {
+        update_attribute(ncout, attr$var, attr$key, attr$val, attr$prec)
       }
-    } else {
-      update_attribute(ncout, attr$var, attr$key, attr$val, attr$prec)
     }
-  }
 
-  if (is_spatial) {
-    write_wgs84_crs_attributes(ncout, names(vars))
+    if (is_spatial) {
+      write_wgs84_crs_attributes(ncout, names(vars))
+    }
   }
 
   ncdf4::nc_close(ncout)
@@ -484,3 +460,43 @@ create_char_dimension_variable <- function(dim, varname, vals) {
   nchar_dim <- ncdf4::ncdim_def(sprintf("%s_nchar", varname), units="", vals=1:max(nchar(vals)), create_dimvar=FALSE)
   ncdf4::ncvar_def(name=dim$name, units="", dim=list(nchar_dim, dim), missval=NULL, prec='char')
 }
+
+# Return the data precision for variable named var
+#' @param var  name of the variable
+#' @param vars list containing data for vars
+#' @param prec precision argument as described in write_vars_to_cdf
+#' @param text representation of precision for variable
+var_prec <- function(var, vars, prec) {
+  if (is.character(prec)) {
+    return(prec)
+  }
+
+  # return var-specific floating-point type, as specified by arg
+  if (is.list(prec) && !is.null(prec[[var]])) {
+    return(prec[[var]])
+  }
+
+  # Guess precision
+  if (mode(vars[[var]]) == 'logical' || all(vars[[var]] %in% c(0,1)))
+    return('byte') # ncdf4 library does not support bool type
+
+  if (mode(vars[[var]]) == 'character')
+    return('char') # ncdf4 library does not support string type
+
+  # return default floating-point type, as specified by arg
+  if (can_coerce_to_integer(vars[[var]])) {
+    return('integer')
+  }
+
+  return('double')
+}
+
+#' Return a fill value to use for the variable named var
+#'
+#' @inheritParams var_prec
+var_fill <- function(var, vars, prec) {
+  stopifnot(var_prec(var, vars, prec) %in% names(default_netcdf_nodata))
+
+  default_netcdf_nodata[[var_prec(var, vars, prec)]]
+}
+
