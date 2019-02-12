@@ -66,3 +66,10 @@ test_that('Growth stage losses vectorized correctly', {
   mult <- growth_stage_loss_multiplier(152, plant_day, harvest_day, early_losses, late_losses)
   expect_equal(length(mult), length(plant_day))
 })
+
+test_that('Zero-length inputs are handled', {
+  early_losses <- array(NA, dim=c(0, 2))
+  late_losses <- array(NA, dim=c(0, 2))
+  
+  expect_equal(1, growth_stage_loss_multiplier(50, 10, 100, early_losses, late_losses))
+})

@@ -26,19 +26,27 @@ growth_stage_loss_multiplier <- function(day_of_year, plant_date, harvest_date, 
   # TODO: hash out details of whether these functions should be stepwise
   # or linearly interpolated.
   
-  early_loss_fn <- stats::approxfun(
-    x=early_loss_factors[,1],
-    y=early_loss_factors[,2],
-    yleft=1,
-    yright=1
-  )
+  if (nrow(early_loss_factors) > 0) {
+    early_loss_fn <- stats::approxfun(
+      x=early_loss_factors[,1],
+      y=early_loss_factors[,2],
+      yleft=1,
+      yright=1
+    )
+  } else {
+    early_loss_fn <- function(...) 1
+  }
   
-  late_loss_fn <- stats::approxfun(
-    x=late_loss_factors[,1],
-    y=late_loss_factors[,2],
-    yleft=1,
-    yright=1
-  )
+  if (nrow(late_loss_factors) > 0) {
+    late_loss_fn <- stats::approxfun(
+      x=late_loss_factors[,1],
+      y=late_loss_factors[,2],
+      yleft=1,
+      yright=1
+    )
+  } else {
+    late_loss_fn <- function(...) 1
+  }
   
   pmax(early_loss_fn(days_since_planting(day_of_year, plant_date, harvest_date)),
        late_loss_fn(days_until_harvest(day_of_year, plant_date, harvest_date)))
