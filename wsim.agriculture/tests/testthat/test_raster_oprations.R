@@ -96,3 +96,22 @@ test_that('Mean aggregation computes a correct result', {
                    NA),
                  nrow=1))
 })
+
+test_that('We get errors on bad inputs', {
+  x <- array(12*8, dim=c(12, 8))
+  
+  for (aggregate_fn in c(aggregate_mean, aggregate_sum, aggregate_mean_doy)) {
+    expect_error(
+      aggregate_fn(x, 0),
+      'must be a positive integer')
+    
+    expect_error(
+      aggregate_fn(x, -1),
+      'must be a positive integer')
+    
+    expect_error(
+      aggregate_fn(x, 3),
+      'must .* evenly divisible')
+  }
+
+})
