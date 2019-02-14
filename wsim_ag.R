@@ -58,7 +58,7 @@ test_args <- list(
   '--deficit',        '/mnt/fig/WSIM/WSIM_derived_V2/composite/composite_1mo_201809.nc::deficit',
   '--temperature_rp', '/mnt/fig/WSIM/WSIM_derived_V2/rp/rp_1mo_201809.nc::T_rp',
   '--calendar',       '/tmp/calendar.nc',
-  '--loss_factors',   '/home/dbaston/dev/wsim2/wsim.agriculture/data/cropfactors.csv'
+  '--loss_factors',   '/home/dbaston/dev/wsim2/wsim.agriculture/data/example_crop_factors.tab'
 )
 
 main <- function(raw_args) {
@@ -113,12 +113,12 @@ main <- function(raw_args) {
       
       losses <- list()
       for (stress in stresses) {
-        cat('Computing', stress, 'losses for', crop, '\n')
+        infof('Computing %s losses for %s', stress, crop)
         
         early_losses <- loss_factors[loss_factors$crop==base_crop & loss_factors$days > 0, c('days', stress)]
         late_losses  <- loss_factors[loss_factors$crop==base_crop & loss_factors$days < 0, c('days', stress)]
         
-        months_stress <- read_vars_from_cdf('/tmp/state.nc::months_stress', 
+        months_stress <- read_vars_from_cdf(paste0(args$state, '::months_stress'), 
                                             extra_dims=list(crop=crop, stress=stress))$data[[1]]
         
         loss <- loss_function(rp[[stress]])
@@ -132,8 +132,8 @@ main <- function(raw_args) {
         losses[[stress]] <- loss
         months_stress <- (months_stress + 1) * (stress > stress_threshold)
         write_vars_to_cdf(list(months_stress=months_stress),
-                          '/tmp/next_state.nc',
-                          extent=c(-180, 180, -90, 90),
+                          args$output,
+                          extent=extent,
                           write_slice=list(crop=crop, stress=stress),
                           append=TRUE,
                           quick_append=TRUE)
