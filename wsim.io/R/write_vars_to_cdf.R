@@ -69,8 +69,20 @@ default_netcdf_nodata <- list(
 #'               \item float
 #'               \item double
 #'               }
-#' @param append Determines if we should add variables to an existing
-#'               file, if present.
+#' @param append       Determines if we should add variables to an existing
+#'                     file, if present.
+#' @param write_slice  Optional list used to write a two-dimensional array
+#'                     (lat, lon) across constant values of other dimensions.
+#'                     List keys are used to indicate dimension names and values
+#'                     are used to indicate the constant value for that dimension.
+#' @param put_data     Flag indicating whether to write data contained in
+#'                     \code{vars}. If \code{FALSE}, only dimensions and
+#'                     coordinate varibles will be written.
+#' @param quick_append Flag indicating whether to validate that data
+#'                     written in an append operation conforms to the
+#'                     original dimensions of the file. If \code{TRUE},
+#'                     these checks will not be performed, increasing
+#'                     write performance.
 #'
 #'@export
 write_vars_to_cdf <- function(vars,
