@@ -26,6 +26,16 @@ error <- function(...) {
   futile.logger::flog.error(strip(paste(lapply(list(...), toString), collapse=' ')))
 }
 
+#' Format and generate a log message at the \code{ERROR} level
+#'
+#' @param msg A message to log. May be a format string.
+#' @param ... Arguments to fill placeholders in format string
+#'
+#' @export
+errorf <- function(msg, ...) {
+  futile.logger::flog.error(msg, ...)
+}
+
 #' Generate a log message at the \code{FATAL} level
 #'
 #' @param ... Any number of string-convertible objects
@@ -33,6 +43,16 @@ error <- function(...) {
 #' @export
 fatal <- function(...) {
   futile.logger::flog.fatal(strip(paste(lapply(list(...), toString), collapse=' ')))
+}
+
+#' Format and generate a log message at the \code{FATAL} level
+#'
+#' @param msg A message to log. May be a format string.
+#' @param ... Arguments to fill placeholders in format string
+#'
+#' @export
+fatalf <- function(msg, ...) {
+  futile.logger::flog.fatal(msg, ...)
 }
 
 #' Generate a log message at the \code{INFO} level
@@ -44,6 +64,16 @@ info <- function(...) {
   futile.logger::flog.info(strip(paste(lapply(list(...), toString), collapse=' ')))
 }
 
+#' Format and generate a log message at the \code{INFO} level
+#'
+#' @param msg A message to log. May be a format string.
+#' @param ... Arguments to fill placeholders in format string
+#'
+#' @export
+infof <- function(msg, ...) {
+  futile.logger::flog.info(msg, ...)
+}
+
 #' Generate a log message at the \code{WARN} level
 #'
 #' @param ... Any number of string-convertible objects
@@ -51,6 +81,16 @@ info <- function(...) {
 #' @export
 warn <- function(...) {
   futile.logger::flog.warn(strip(paste(lapply(list(...), toString), collapse=' ')))
+}
+
+#' Format and generate a log message at the \code{WARN} level
+#'
+#' @param msg A message to log. May be a format string.
+#' @param ... Arguments to fill placeholders in format string
+#'
+#' @export
+warnf <- function(msg, ...) {
+  futile.logger::flog.warn(msg, ...)
 }
 
 #' Initialize logging functionality
