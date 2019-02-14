@@ -59,6 +59,9 @@ main <- function(raw_args) {
   res <- c((extent[4]-extent[3])/dim(regions)[1], (extent[2]-extent[1])/dim(regions)[2])
   stopifnot(res[1]==res[2])
   aggregation_factor <- args$res/res[1]
+  infof('Aggregating from %f-degree pixels to %f-degree pixels', res[1], res[1]*aggregation_factor)
+  stopifnot(aggregation_factor >= 1)
+  stopifnot(aggregation_factor == round(aggregation_factor))
   
   plant_date <- list()
   harvest_date <- list()
@@ -71,13 +74,21 @@ main <- function(raw_args) {
       crop_string <- sprintf('%s_%d', gsub('[\\s/]+', '_', crop_name, perl=TRUE), subcrop_id)
       infof('Constructing calendar for %s (%d/%d)', crop_name, subcrop_id, num_subcrops)
       
-      reclass_matrix <- as.matrix(calendar[calendar$crop==crop_name & calendar$subcrop==subcrop_id,
+      reclass_matrix <- as.matrix(calendar[calendar$crop==crop_id & calendar$subcrop==subcrop_id,
                                            c('unit_code', 'plant_month', 'harvest_month')],
                                   rownames.force=FALSE)
+      
       reclass_matrix[, 2] <- start_days[reclass_matrix[, 2]]
       reclass_matrix[, 3] <- end_days[reclass_matrix[, 3]]
-      plant_date[[crop_string]] <- aggregate_mean_doy(wsim.agriculture::reclassify(regions, reclass_matrix[, c(1,2)], TRUE), aggregation_factor)
-      harvest_date[[crop_string]] <- aggregate_mean_doy(wsim.agriculture::reclassify(regions, reclass_matrix[, c(1,3)], TRUE), aggregation_factor)
+      
+      plant_date[[crop_string]] <- aggregate_mean_doy(
+        wsim.agriculture::reclassify(regions,
+                                     reclass_matrix[, c(1,2), drop=FALSE], TRUE),
+        aggregation_factor)
+      harvest_date[[crop_string]] <- aggregate_mean_doy(
+        wsim.agriculture::reclassify(regions,
+                                     reclass_matrix[, c(1,3), drop=FALSE], TRUE),
+        aggregation_factor)
     }
   }
   
