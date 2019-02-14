@@ -15,8 +15,8 @@
 
 wsim.io::logging_init('process_mirca_2000_crop_calendar')
 suppressMessages({
+  require(abind)
   require(dplyr)
-  library(Rcpp)
   require(wsim.io)
   require(wsim.agriculture)
 })
@@ -33,15 +33,15 @@ Options:
 --output <file>              Output netCDF file
 '->usage
 
-test_args <- list(
-  '--condensed_calendar', '/home/dbaston/Downloads/condensed_cropping_calendars/cropping_calendar_rainfed.txt',
-  '--regions',            '/home/dbaston/Downloads/unit_code_grid/unit_code.asc',
-  '--res',                0.5,
-  '--output',             '/tmp/calendar.nc'
-)
+#test_args <- list(
+#  '--condensed_calendar', '/home/dbaston/Downloads/condensed_cropping_calendars/cropping_calendar_rainfed.txt',
+#  '--regions',            '/home/dbaston/Downloads/unit_code_grid/unit_code.asc',
+#  '--res',                0.5,
+#  '--output',             '/tmp/calendar.nc'
+#)
 
 main <- function(raw_args) {
-  args <- wsim.io::parse_args(usage, raw_args)  
+  args <- wsim.io::parse_args(usage, raw_args, types=list(res="numeric"))  
   
   calendar <- parse_mirca_condensed_crop_calendar(
     args$condensed_calendar) %>%
@@ -49,13 +49,16 @@ main <- function(raw_args) {
     mutate(area_frac= area_ha/sum(area_ha)) %>%
     as.data.frame()
   
-  regions <- read_vars(args$regions)$data[[1]]
+  regions <- read_vars(args$regions, expect.nvars=1)
+  extent <- regions$extent 
+  regions <- regions$data[[1]]
   
   start_days <- c(1,  32, 60, 91,  121, 152, 182, 213, 244, 274, 305, 335)
   end_days   <- c(31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
   
-  # FIXME calculate dynamically
-  aggregation_factor <- 0.5*60 / 5 # 5 arc-minute to half-degree
+  res <- c((extent[4]-extent[3])/dim(regions)[1], (extent[2]-extent[1])/dim(regions)[2])
+  stopifnot(res[1]==res[2])
+  aggregation_factor <- args$res/res[1]
   
   plant_date <- list()
   harvest_date <- list()
@@ -63,11 +66,13 @@ main <- function(raw_args) {
   for (i in 1:nrow(mirca_crops)) {
     crop_id <- mirca_crops[i, 'mirca_id']
     crop_name <- mirca_crops[i, 'mirca_name']
-    for (subcrop_id in 1:mirca_crops[i, 'mirca_subcrops']) {
+    num_subcrops <- mirca_crops[i, 'mirca_subcrops']
+    for (subcrop_id in 1:num_subcrops) {
       crop_string <- sprintf('%s_%d', gsub('[\\s/]+', '_', crop_name, perl=TRUE), subcrop_id)
-      cat(crop_string, '\n')
+      infof('Constructing calendar for %s (%d/%d)', crop_name, subcrop_id, num_subcrops)
       
-      reclass_matrix <- as.matrix(calendar[calendar$crop==crop & calendar$subcrop==subcrop, c('unit_code', 'plant_month', 'harvest_month')],
+      reclass_matrix <- as.matrix(calendar[calendar$crop==crop_name & calendar$subcrop==subcrop_id,
+                                           c('unit_code', 'plant_month', 'harvest_month')],
                                   rownames.force=FALSE)
       reclass_matrix[, 2] <- start_days[reclass_matrix[, 2]]
       reclass_matrix[, 3] <- end_days[reclass_matrix[, 3]]
@@ -76,20 +81,16 @@ main <- function(raw_args) {
     }
   }
   
-  stk <- function(...) abind::abind(..., along=3)
   write_vars_to_cdf(
     list(
-      plant_date=do.call(stk, plant_date),
-      harvest_date=do.call(stk, harvest_date)),
-    extent=c(-180, 180, -90, 90),
-    '/tmp/calendar.nc',
-    extra_dims=list(crop=names(plant_date)))
+      plant_date=abind(plant_date, along=3),
+      harvest_date=abind(harvest_date, along=3)),
+    extent=extent,
+    args$output,
+    extra_dims=list(crop=names(plant_date))
+  )
   
-  for (cname in names(plant_date)) {
-    cat(cname, '\n')
-    d <- read_vars_from_cdf('/tmp/calendar.nc', extra_dims=c(crop=cname))
-    
-    expect_equal(d$data$plant_date, plant_date[[cname]], check.attributes=FALSE)
-    expect_equal(d$data$harvest_date, harvest_date[[cname]], check.attributes=FALSE)
-  }
+  infof('Wrote crop calendar to %s', args$output)
 }
+
+tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
