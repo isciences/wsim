@@ -77,7 +77,7 @@ def spinup(config, meta_steps):
 
     # Steps for anomalies and composite anomalies
     for window in [1] + config.integration_windows():
-        for yearmon in config.result_fit_yearmons()[window-1:]:
+        for yearmon in config.historical_yearmons()[window-1:]:
             steps += compute_return_periods(config.workspace(),
                                             result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
                                             forcing_vars=config.forcing_rp_vars() if window == 1 else None,
@@ -292,7 +292,7 @@ def time_integrate_results(config: Config, window: int, *, basis: Optional[str]=
     """
     Integrate all LSM results with the given time window
     """
-    yearmons_in = config.result_fit_yearmons()
+    yearmons_in = config.historical_yearmons()
     yearmons_out = yearmons_in[window-1:]
 
     integrate = wsim_integrate(

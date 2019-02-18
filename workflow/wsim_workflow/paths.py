@@ -224,6 +224,26 @@ class ElectricityStatic(metaclass=ABCMeta):
         pass
 
 
+class AgricultureStatic(metaclass=ABCMeta):
+
+    def __init__(self, source):
+        self.source = source
+
+    def crop_calendar(self, method: str) -> str:
+        pass
+
+    def growth_stage_loss_factors(self) -> str:
+        pass
+
+    def dam_locations(self) -> Vardef:
+        pass
+
+    def basins(self) -> Vardef:
+        pass
+
+    def basin_downstream(self) -> Vardef:
+        pass
+
 class DefaultWorkspace:
 
     def __init__(self, outputs: str, tempdir: Optional[str]=None):
@@ -245,7 +265,8 @@ class DefaultWorkspace:
                   temporary: bool=False,
                   basis: str=None,
                   summary: bool=False,
-                  sector: Optional[str]=None) -> str:
+                  sector: Optional[str]=None,
+                  method: Optional[str]=None) -> str:
 
         assert (year is None) != (yearmon is None)
 
@@ -264,7 +285,7 @@ class DefaultWorkspace:
             root = os.path.join(root, sector)
 
         return os.path.join(root,
-                            self.make_dirname(thing, window, basis, summary, year is not None),
+                            self.make_dirname(thing, window, basis, summary, year is not None, method),
                             self.make_filename(thing,
                                                time=yearmon or year,
                                                window=window,
@@ -274,13 +295,14 @@ class DefaultWorkspace:
                                                summary=summary))
 
     @staticmethod
-    def make_stem(thing: str, basis: Optional[str], summary: Optional[bool]) -> str:
-        return '_'.join(filter(None, (basis, thing, 'summary' if summary else None)))
+    def make_stem(thing: str, basis: Optional[str], method: Optional[str], summary: Optional[bool]) -> str:
+        return '_'.join(filter(None, (basis, thing, method, 'summary' if summary else None)))
 
     @staticmethod
-    def make_dirname(thing, window: int, basis: str, summary: bool, annual: bool) -> str:
+    def make_dirname(thing, window: int, basis: str, summary: bool, annual: bool, method) -> str:
         return '_'.join(filter(None, (basis,
                                       thing,
+                                      method,
                                       'integrated' if window and window > 1 else None,
                                       'summary' if summary else None,
                                       'annual' if annual else None
@@ -293,8 +315,9 @@ class DefaultWorkspace:
                       target: str=None,
                       member: str=None,
                       basis: str=None,
+                      method: str=None,
                       summary: bool=False) -> str:
-        filename = DefaultWorkspace.make_stem(thing, basis, summary)
+        filename = DefaultWorkspace.make_stem(thing, basis, method, summary)
 
         if window:
             filename += '_{window}mo'
@@ -309,7 +332,7 @@ class DefaultWorkspace:
 
         filename += '.nc'
 
-        return filename.format(thing=thing, window=window, time=time, target=target, member=member, basis=basis)
+        return filename.format(thing=thing, method=method, window=window, time=time, target=target, member=member, basis=basis)
 
     # Summaries of data from multi-member forecast ensembles
     def composite_summary(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
@@ -365,22 +388,33 @@ class DefaultWorkspace:
         return self.make_path('results', yearmon=yearmon, window=window, target=target, summary=True)
 
     # Individual model inputs, outputs, and derivatives
-    def state(self, *, yearmon: str, member: Optional[str]=None, target: Optional[str]=None) -> str:
-        return self.make_path('state', yearmon=yearmon, member=member, target=target, window=None)
+    def state(self, *,
+              sector: Optional[str]=None,
+              yearmon: str,
+              member: Optional[str]=None,
+              target: Optional[str]=None,
+              method: Optional[str]=None) -> str:
+        assert (sector == 'agriculture') == (method is not None)
+
+        return self.make_path('state', sector=sector, yearmon=yearmon, member=member, target=target, window=None, method=method)
 
     def forcing(self, *, yearmon: str, member: Optional[str]=None, target: Optional[str]=None) -> str:
         return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=None)
 
     def results(self, *,
+                sector: Optional[str]=None,
                 year: Optional[int]=None,
                 yearmon: Optional[str]=None,
                 window: int,
                 member: Optional[str]=None,
                 target: Optional[str]=None,
                 temporary: bool=False,
-                basis: Optional[str]=None) -> str:
+                basis: Optional[str]=None,
+                method: Optional[str]=None) -> str:
 
         assert window is not None
+
+        assert (sector == 'agriculture') == (method is not None)
 
         if year:
             # Check that "annual" summaries are not generated for return periods
@@ -388,6 +422,8 @@ class DefaultWorkspace:
             assert window < 12
 
         return self.make_path('results',
+                              sector=sector,
+                              method=method,
                               year=year,
                               yearmon=yearmon,
                               window=window,
@@ -460,8 +496,8 @@ class DefaultWorkspace:
     def basin_loss_factors(self, *, yearmon: str, target: Optional[str], member: Optional[str]) -> str:
         return self.make_path('loss_factors', sector='electricity', yearmon=yearmon, window=1, target=target, member=member, basis='basin')
 
-    def basin_upstream_storage(self) -> str:
-        return os.path.join(self.outputs, 'electricity', 'spinup', 'basin_upstream_storage.nc')
+    def basin_upstream_storage(self, sector: str) -> str:
+        return os.path.join(self.outputs, sector, 'spinup', 'basin_upstream_storage.nc')
 
     def basin_water_stress(self) -> str:
         return os.path.join(self.outputs, 'electricity', 'spinup', 'basin_baseline_water_stress.nc')
@@ -471,6 +507,13 @@ class DefaultWorkspace:
 
     def electric_loss_risk(self, *, yearmon: str, target: Optional[str]=None, member: Optional[str]=None, basis: str, summary: bool=False):
         return self.make_path('loss_risk', sector='electricity', yearmon=yearmon, window=1, target=target, member=member, basis=basis, summary=summary)
+
+    # Ag assessment misc
+    def agriculture_bt_ro_rp(self, *, yearmon: str, target: Optional[str]=None, member: Optional[str]=None):
+        return self.make_path('bt_ro_rp', sector='agriculture', yearmon=yearmon, target=target, member=member)
+
+    def agriculture_loss_risk(self, *, yearmon: str, target: Optional[str]=None, member: Optional[str]=None, basis: str, summary: bool=False):
+        return self.make_path('loss_risk', sector='agriculture', yearmon=yearmon, window=1, target=target, member=member, basis=basis, summary=summary)
 
     # Distribution fit files. Must provide either a numeric month, or an annual_stat
     def fit_obs(self, *,

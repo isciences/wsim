@@ -60,7 +60,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def workspace(self):
+    def workspace(self) -> paths.DefaultWorkspace:
         pass
 
     @abc.abstractmethod

@@ -119,7 +119,7 @@ def crop_calendars(*, source_dir: str) -> List[Step]:
     steps = _regions(source_dir=source_dir) + _condensed_crop_calendar(source_dir=source_dir)
 
     for method in ('rainfed', 'irrigated'):
-        calendar = os.path.join(dirname, 'calendar_{}.nc'.format(method))
+        calendar = os.path.join(dirname, 'crop_calendar_{}.nc'.format(method))
         condensed_calendar = os.path.join(dirname, 'cropping_calendar_{}.txt'.format(method))
 
         steps += [

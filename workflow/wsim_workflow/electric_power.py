@@ -358,11 +358,11 @@ def compute_plant_losses(workspace: DefaultWorkspace,
 
 
 def compute_basin_integration_windows(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:
-    annual_flow_fit =  workspace.fit_obs(var='Bt_RO', month=12, window=12, stat='sum', basis='basin')
+    annual_flow_fit = workspace.fit_obs(var='Bt_RO', month=12, window=12, stat='sum', basis='basin')
 
     return [
         Step(
-            targets=workspace.basin_upstream_storage(),
+            targets=workspace.basin_upstream_storage(sector='electricity'),
             dependencies=[static.basins(), static.dam_locations(), annual_flow_fit],
             commands=[
                 [
@@ -370,7 +370,8 @@ def compute_basin_integration_windows(workspace: DefaultWorkspace, static: Elect
                     '--flow', annual_flow_fit,
                     '--dams', static.dam_locations().file,
                     '--basins', static.basins().file,
-                    '--output', workspace.basin_upstream_storage(),
+                    '--sector', 'electric_power',
+                    '--output', workspace.basin_upstream_storage(sector='electricity'),
                 ]
             ]
         )
@@ -414,10 +415,10 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
         Step(
             targets=[outfile],
             dependencies=[v.file for v in bt_ro] + bt_ro_fits + bt_ro_min_fits +
-                         [workspace.basin_water_stress(), workspace.basin_upstream_storage()],
+                         [workspace.basin_water_stress(), workspace.basin_upstream_storage(sector='electricity')],
             commands=[
                 wsim_basin_losses(
-                    basin_windows=workspace.basin_upstream_storage(),
+                    basin_windows=workspace.basin_upstream_storage(sector='electricity'),
                     basin_stress=workspace.basin_water_stress(),
                     bt_ro=bt_ro,
                     bt_ro_min_fits=bt_ro_min_fits,

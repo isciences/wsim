@@ -23,11 +23,11 @@ from wsim_workflow import dates
 from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gadm, gmted, gppd, stn30, natural_earth
+from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gadm, gmted, gppd, stn30, natural_earth, mirca2000
 from wsim_workflow.step import Step
 
 
-class CFSStatic(paths.Static, paths.ElectricityStatic):
+class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
     def __init__(self, source):
         super(CFSStatic, self).__init__(source)
 
@@ -42,7 +42,9 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
             grand.dam_locations(source_dir=self.source) + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
             hydrobasins.downstream_ids(source_dir=self.source, basins_file=self.basins().file, ids_file=self.basin_downstream().file) + \
-            natural_earth.natural_earth(source_dir=self.source, layer='coastline', resolution=10)
+            natural_earth.natural_earth(source_dir=self.source, layer='coastline', resolution=10) + \
+            mirca2000.crop_calendars(source_dir=self.source) + \
+            [Step(targets='/tmp/factors.csv', commands=[['touch', '/tmp/factors.csv']])] # TODO
 
     # Static inputs
     def wc(self) -> paths.Vardef:
@@ -75,6 +77,12 @@ class CFSStatic(paths.Static, paths.ElectricityStatic):
     def provinces(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36_level_1.gpkg'), None)
 
+    def crop_calendar(self, method: str) -> str:
+        return os.path.join(self.source, 'MIRCA2000', 'crop_calendar_{}.nc'.format(method))
+
+    def growth_stage_loss_factors(self) -> str:
+        # FIXME
+        return '/tmp/factors.csv'
 
 class NCEP(paths.ObservedForcing):
 
@@ -404,7 +412,7 @@ class CFSConfig(ConfigBase):
             self._forecast.global_prep_steps()
 
     def historical_years(self):
-        return range(1948, 2018)  # 1948-2017
+        return range(1948, 2019)  # 1948-2018
 
     def result_fit_years(self):
         return range(1950, 2010)  # 1950-2009
