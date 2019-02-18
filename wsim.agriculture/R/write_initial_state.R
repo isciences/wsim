@@ -1,4 +1,4 @@
-#' Write an initial agriculture state file to disk
+#' Write an empty agriculture state file to disk
 #' 
 #' @param fname      name of output file
 #' @param dim        dimensions of state (e.g., (360, 720))
@@ -30,5 +30,22 @@ write_empty_state <- function(fname, dim, extent, crop_names, stresses, fill_zer
     extra_dims=list(crop=crop_names),
     prec='double',
     append=TRUE,
+    put_data=fill_zero)
+}
+
+#' Write an empty agriculture results file to disk
+#' 
+#' @inheritParams write_empty_state
+#' @export
+write_empty_results <- function(fname, dim, extent, crop_names, methods, fill_zero=TRUE) {
+  placeholder <- array(0L, dim=c(dim, length(crop_names), length(methods)))
+  
+  wsim.io::write_vars_to_cdf(
+    list(loss=placeholder,
+         growing_season_loss=placeholder),
+    fname,
+    extent=extent,
+    extra_dims=list(crop=crop_names),
+    prec='single',
     put_data=fill_zero)
 }
