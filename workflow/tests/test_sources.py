@@ -17,17 +17,23 @@ import subprocess
 import tempfile
 import unittest
 
-from wsim_workflow.data_sources import isric, stn30, gmted, gppd, natural_earth, ntsg_drt, aqueduct
+from typing import List, Union
+
+from wsim_workflow.data_sources import isric, stn30, gmted, gppd, natural_earth, ntsg_drt, aqueduct, mirca2000
 from wsim_workflow.output import gnu_make
 from wsim_workflow.workflow import write_makefile
+from wsim_workflow.step import Step
 
 
-def execute_steps(steps, target):
+def execute_steps(steps: List[Step], target: Union[str, List[str]]) -> int:
+    if type(target) is str:
+        target = [target]
+
     makefile = tempfile.mkstemp()[-1]
     bindir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
     write_makefile(gnu_make, makefile, steps, bindir)
 
-    return_code = subprocess.call(['make', '-f', makefile, target])
+    return_code = subprocess.call(['make', '-f', makefile] + target)
 
     os.remove(makefile)
     return return_code
@@ -115,5 +121,19 @@ class TestSources(unittest.TestCase):
         [fname] = steps[-1].targets
 
         return_code = execute_steps(steps, fname)
+
+        self.assertEqual(0, return_code)
+
+    @unittest.skip
+    def test_mirca2000(self):
+        steps = mirca2000.crop_calendars(source_dir=self.source_dir)
+
+        calendar_files = []
+        for step in steps:
+            for target in step.targets:
+                if target.endswith('.nc'):
+                    calendar_files.append(target)
+
+        return_code = execute_steps(steps, calendar_files)
 
         self.assertEqual(0, return_code)
