@@ -23,20 +23,21 @@ suppressMessages({
 '
 Compute crop-specific loss risk
 
-Usage: wsim_ag --state <file> --surplus <file> --deficit <file> --temperature_rp <file> --calendar <file> --loss_factors <file> --output <file>
+Usage: wsim_ag --state <file> --surplus <file>... --deficit <file>... --temperature_rp <file> --calendar <file> --loss_factors <file> --next_state <file> --results <file>
 
 Options:
 --state <file>           Previous state
---surplus <file>         Composite surplus index
---deficit <file>         Composite deficit index
+--surplus <file>         Return period of one or more variables associated with surplus
+--deficit <file>         Return period of one or more variables associated with deficit
 --temperature_rp <file>  Surface temperature return period
 --calendar <file>        Crop calendar file
 --loss_factors <file>    Loss factor csv
---output <file>          output file
+--next_state <file>      output file
+--results <file>         output file
 '->usage
 
 subcrop_names <- Reduce(
-  c, 
+  c,
   sapply(1:nrow(mirca_crops),
          function(i)
            sapply(1:mirca_crops[i, 'mirca_subcrops'],
@@ -50,10 +51,12 @@ subcrop_names <- Reduce(
 
 stress_threshold <- 30
 stresses <- c('surplus', 'deficit', 'heat', 'cold')
+methods <- c('irrigated', 'rainfed')
 
 test_args <- list(
   '--state',          '/tmp/state.nc',
-  '--output',         '/tmp/next_state.nc',
+  '--next_state',     '/tmp/next_state.nc',
+  '--results',        '/tmp/results.nc',
   '--surplus',        '/mnt/fig/WSIM/WSIM_derived_V2/composite/composite_1mo_201809.nc::surplus',
   '--deficit',        '/mnt/fig/WSIM/WSIM_derived_V2/composite/composite_1mo_201809.nc::deficit',
   '--temperature_rp', '/mnt/fig/WSIM/WSIM_derived_V2/rp/rp_1mo_201809.nc::T_rp',
@@ -61,41 +64,59 @@ test_args <- list(
   '--loss_factors',   '/home/dbaston/dev/wsim2/wsim.agriculture/data/example_crop_factors.tab'
 )
 
+clamp <- function(vals, minval, maxval) {
+  pmax(pmin(vals, maxval), minval)
+}
+
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
+
+  surpluses <- wsim.io::read_vars_to_cube(args$surplus)
+  wsim.io::info('Read surplus values:', paste(dimnames(surpluses)[[3]], collapse=", "))
+  surplus <- clamp(wsim.distributions::stack_max(surpluses), -60, 60)
+  extent <- attr(surpluses, 'extent')
+  rm(surpluses)
+
+  deficits <- wsim.io::read_vars_to_cube(args$deficit)
+  wsim.io::info('Read deficit values:', paste(dimnames(deficits)[[3]], collapse=", "))
+  stopifnot(all(extent == attr(deficits, 'extent')))
+  deficit <- clamp(wsim.distributions::stack_min(deficits), -60, 60)
+  rm(deficits)
   
-  surplus <- wsim.io::read_vars(args$surplus)
-  extent <- surplus$extent
-  surplus <- surplus$data[[1]]
-  
-  deficit <- wsim.io::read_vars(args$deficit,
-                                expect.nvars=1,
-                                expect.dims=dim(surplus),
-                                expect.extent=extent)$data[[1]]
-  
+  stopifnot(dim(surplus) == dim(deficit))
+
   heat <- wsim.io::read_vars(args$temperature_rp,
                              expect.nvars=1,
                              expect.dims=dim(surplus),
                              expect.extent=extent)$data[[1]]
+
   cold <- (-heat)
-  
+
   rp <- list(
     surplus=surplus,
     deficit=deficit,
     heat=heat,
     cold=cold
   )
-  
-  write_empty_state(args$output,
+
+  infof('Initializing state file at %s.', args$next_state)
+  write_empty_state(args$next_state,
                     dim(surplus),
                     extent,
                     subcrop_names,
                     stresses,
                     fill_zero=FALSE)
-  
-    
-  day_of_year <- 220
-  
+
+  infof('Initializing results file at %s.', args$results)
+  write_empty_results(args$results,
+                      dim(surplus),
+                      extent,
+                      subcrop_names,
+                      fill_zero=FALSE)
+
+  start_of_month <- 190
+  end_of_month <- 220
+
   loss_factors <- read.table(args$loss_factors, header=TRUE, sep='\t')
   # TODO validate crop names in loss_factors against MIRCA2K
 
@@ -104,50 +125,65 @@ main <- function(raw_args) {
     for (subcrop in 1:num_subcrops) {
       crop <- sprintf('%s_%d',
                       gsub('[\\s/]+', '_', base_crop, perl=TRUE),
-                      subcrop)  
-      
+                      subcrop)
+
       calendar <- read_vars_from_cdf(args$calendar,
-                                     extra_dims=list(crop=crop)) # TODO add dimension, varname asserts
+                                     extra_dims=list(crop=crop
+                                                     )) #method=method)) # TODO add dimension, varname asserts
+
+
       plant_date <- calendar$data$plant
       harvest_date <- calendar$data$harvest
-      
+
       losses <- list()
       for (stress in stresses) {
         infof('Computing %s losses for %s', stress, crop)
-        
+
         early_losses <- loss_factors[loss_factors$crop==base_crop & loss_factors$days > 0, c('days', stress)]
         late_losses  <- loss_factors[loss_factors$crop==base_crop & loss_factors$days < 0, c('days', stress)]
-        
-        months_stress <- read_vars_from_cdf(paste0(args$state, '::months_stress'), 
+
+        months_stress <- read_vars_from_cdf(paste0(args$state, '::months_stress'),
                                             extra_dims=list(crop=crop, stress=stress))$data[[1]]
-        
-        loss <- loss_function(rp[[stress]])
-        loss <- loss * growth_stage_loss_multiplier(day_of_year,
+
+        loss <- loss_function(rp[[stress]])*is_growing_season(end_of_month, plant_date, harvest_date)
+        loss <- loss * growth_stage_loss_multiplier(0.5*(start_of_month+end_of_month),
                                                     plant_date,
                                                     harvest_date,
                                                     early_losses,
                                                     late_losses)
         loss <- loss * duration_loss_multiplier(months_stress)
-        
+
         losses[[stress]] <- loss
         months_stress <- (months_stress + 1) * (stress > stress_threshold)
         write_vars_to_cdf(list(months_stress=months_stress),
-                          args$output,
+                          args$next_state,
                           extent=extent,
                           write_slice=list(crop=crop, stress=stress),
                           append=TRUE,
                           quick_append=TRUE)
       }
-      
-      # TODO avoid NA propagation when only some of losses are NA
-      loss <- pmin(Reduce('+', losses), 1.0)
-      
+
+      loss <- apply(abind::abind(losses, along=3), 1:2, sum, na.rm=TRUE)
+
       cumulative_loss <- read_vars_from_cdf(paste0(args$state, '::cumulative_loss'),
                                             extra_dims=list(crop=crop))$data[[1]]
-      cumulative_loss <- cumulative_loss + loss
-      
+      cumulative_loss <- cumulative_loss + loss*(end_of_month-start_of_month)
+
+      # TODO double-check date accounting (sum of monthly)
+      denom <- days_since_planting(end_of_month, plant_date, harvest_date)
+      growing_season_loss <- (denom > 0) * (cumulative_loss / denom)
+
       write_vars_to_cdf(list(cumulative_loss=cumulative_loss),
-                        args$output,
+                        args$next_state,
+                        extent=extent,
+                        write_slice=list(crop=crop),
+                        append=TRUE,
+                        quick_append=TRUE)
+
+
+      write_vars_to_cdf(list(loss=loss,
+                             growing_season_loss=growing_season_loss),
+                        args$results,
                         extent=extent,
                         write_slice=list(crop=crop),
                         append=TRUE,
