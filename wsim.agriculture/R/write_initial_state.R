@@ -37,8 +37,8 @@ write_empty_state <- function(fname, dim, extent, crop_names, stresses, fill_zer
 #' 
 #' @inheritParams write_empty_state
 #' @export
-write_empty_results <- function(fname, dim, extent, crop_names, methods, fill_zero=TRUE) {
-  placeholder <- array(0L, dim=c(dim, length(crop_names), length(methods)))
+write_empty_results <- function(fname, dim, extent, crop_names, fill_zero=TRUE) {
+  placeholder <- array(0L, dim=c(dim, length(crop_names)))
   
   wsim.io::write_vars_to_cdf(
     list(loss=placeholder,
