@@ -65,6 +65,7 @@ main <- function(raw_args) {
   
   plant_date <- list()
   harvest_date <- list()
+  area_frac <- list()
   
   for (i in 1:nrow(mirca_crops)) {
     crop_id <- mirca_crops[i, 'mirca_id']
@@ -75,7 +76,7 @@ main <- function(raw_args) {
       infof('Constructing calendar for %s (%d/%d)', crop_name, subcrop_id, num_subcrops)
       
       reclass_matrix <- as.matrix(calendar[calendar$crop==crop_id & calendar$subcrop==subcrop_id,
-                                           c('unit_code', 'plant_month', 'harvest_month')],
+                                           c('unit_code', 'plant_month', 'harvest_month', 'area_frac')],
                                   rownames.force=FALSE)
       
       reclass_matrix[, 2] <- start_days[reclass_matrix[, 2]]
@@ -89,16 +90,22 @@ main <- function(raw_args) {
         wsim.agriculture::reclassify(regions,
                                      reclass_matrix[, c(1,3), drop=FALSE], TRUE),
         aggregation_factor)
+      area_frac[[crop_string]] <- aggregate_mean(
+        wsim.agriculture::reclassify(regions,
+                                     reclass_matrix[, c(1,4), drop=FALSE], TRUE),
+      aggregation_factor)
     }
   }
   
   write_vars_to_cdf(
     list(
       plant_date=abind(plant_date, along=3),
-      harvest_date=abind(harvest_date, along=3)),
+      harvest_date=abind(harvest_date, along=3),
+      area_frac=abind(area_frac, along=3)),
     extent=extent,
     args$output,
-    extra_dims=list(crop=names(plant_date))
+    extra_dims=list(crop=names(plant_date)),
+    prec=list(area_frac='single')
   )
   
   infof('Wrote crop calendar to %s', args$output)
