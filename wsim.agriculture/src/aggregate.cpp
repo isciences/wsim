@@ -51,6 +51,10 @@ Rcpp::NumericMatrix aggregate_sum (const Rcpp::NumericMatrix & mat, int factor) 
   return out;
 }
 
+//' Aggregate a matrix, reducing a block of cells by the arithmetic mean of the defined values
+//' 
+//' @inheritParams aggregate_mean_doy
+//' @export
 //[[Rcpp::export]]
 Rcpp::NumericMatrix aggregate_mean (const Rcpp::NumericMatrix & mat, int factor) {
   using index_t=decltype(mat.rows());
