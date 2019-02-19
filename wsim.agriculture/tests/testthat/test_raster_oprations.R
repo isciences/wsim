@@ -97,7 +97,7 @@ test_that('Mean aggregation computes a correct result', {
                  nrow=1))
 })
 
-test_that('We get errors on bad inputs', {
+test_that('Aggregation functions produce errors on bad inputs', {
   x <- array(12*8, dim=c(12, 8))
   
   for (aggregate_fn in c(aggregate_mean, aggregate_sum, aggregate_mean_doy)) {
@@ -114,4 +114,30 @@ test_that('We get errors on bad inputs', {
       'must .* evenly divisible')
   }
 
+})
+
+test_that('Disaggregate generates correct results', {
+  x <- rbind(
+    c(1, 4, 7,  10),
+    c(2, 5, NA, 11),
+    c(3, 6, 9,  12)
+  )
+  
+  y <- disaggregate(x, 2)
+  
+  expect_equal(y,
+               rbind(c(1, 1, 4, 4, 7,   7, 10, 10),
+                     c(1, 1, 4, 4, 7,   7, 10, 10),
+                     c(2, 2, 5, 5, NA, NA, 11, 11),
+                     c(2, 2, 5, 5, NA, NA, 11, 11),
+                     c(3, 3, 6, 6, 9,   9, 12, 12),
+                     c(3, 3, 6, 6, 9,   9, 12, 12)
+                     ))
+})
+
+test_that('Disaggregate throws errors on invalid inputs', {
+  x <- array(1:12, dim=c(3, 4))
+  
+  expect_error(disaggregate(x,  0), 'Invalid .* factor')
+  expect_error(disaggregate(x, -1), 'Invalid .* factor')
 })
