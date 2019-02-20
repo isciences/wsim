@@ -13,4 +13,5 @@ LinkingTo:
     Rcpp
 Imports: 
     Rcpp,
+    dplyr,
     wsim.io
