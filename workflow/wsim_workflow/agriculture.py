@@ -26,8 +26,8 @@ CULTIVATION_METHODS = ('rainfed', 'irrigated')
 def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
-    starting_year = 2000  # FIXME define this rigorously somehow. We probably don't want to run it back to 1948.
-    historical_yearmons = [yearmon for yearmon in config.historical_yearmons() if parse_yearmon(yearmon)[0] > starting_year]
+    last_result_fit_yearmon = config.result_fit_yearmons()[-1]
+    historical_yearmons = [yearmon for yearmon in config.historical_yearmons() if yearmon > last_result_fit_yearmon]
 
     for method in CULTIVATION_METHODS:
         steps += make_initial_state(config.workspace(), method, historical_yearmons[0])
@@ -47,9 +47,8 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 
     steps = []
 
-    steps += compute_gridded_b2b_btro(config.workspace(), yearmon=yearmon)
-
     if yearmon not in config.historical_yearmons():
+        steps += compute_gridded_b2b_btro(config.workspace(), yearmon=yearmon)
         for method in CULTIVATION_METHODS:
             steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
 

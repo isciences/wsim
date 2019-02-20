@@ -51,7 +51,6 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
         steps += config.result_postprocess_steps(yearmon=yearmon)
 
-    if yearmon not in config.result_fit_yearmons():
         # Do time integration
         for window in config.integration_windows():
             steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), yearmon=yearmon, window=window)
@@ -77,7 +76,7 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
         if window == 1:
             meta_steps['all_monthly_composites'].require(composite_indicator_steps)
 
-        if yearmon not in config.result_fit_yearmons():
+        if yearmon not in config.historical_yearmons():
             steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
 
         # Express composite anomalies in terms of a return period

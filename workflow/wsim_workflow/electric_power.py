@@ -129,7 +129,6 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                                    static=config.static_data(),
                                                    yearmon=yearmon)
 
-    if yearmon not in config.result_fit_yearmons():
         # Do time integration
         for window in config.integration_windows():
             steps += actions.time_integrate(config.workspace(),
@@ -137,6 +136,8 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                             yearmon=yearmon,
                                             window=window,
                                             basis='basin')
+
+    if yearmon not in config.result_fit_yearmons():
         # Compute return periods
         steps += actions.compute_return_periods(config.workspace(),
                                                 result_vars=config.lsm_rp_vars(basis='basin'),
