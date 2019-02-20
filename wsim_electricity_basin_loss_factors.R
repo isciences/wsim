@@ -34,41 +34,6 @@ Options:
 --output <file>         Output loss risk by basin
 '->usage
 
-# Read fits from several files and return a list
-# whose keys are integration periods in months
-# and whose values are data frames for fit parameters
-read_fits <- function(vardefs, expected_ids) {
-  fits <- list()
-  for (vardef in vardefs) {
-    df <- wsim.io::read_vars(vardef, expect.ids=expected_ids, as.data.frame=TRUE)
-    window <- attr(df, 'integration_window_months')
-    df$window <- as.integer(window)
-    fits[[as.character(window)]] <- df
-  }
-
-  do.call(function(...) rbind(..., make.row.names=FALSE), fits)
-}
-
-# Read total blue water from several files and
-# return a list whose keys are integration periods
-# in months and whose values are data frames for
-# fit parameters
-read_obs <- function(vardefs, expected_ids) {
-  obs <- list()
-
-  for (vardef in vardefs) {
-    df <- wsim.io::read_vars(vardef, expect.ids=expected_ids, as.data.frame=TRUE)
-    names(df) <- c('id', 'flow')
-    window <- attr(df[, -1], 'integration_window_months')
-    if (is.null(window))
-      window <- 1
-    df$window <- as.integer(window)
-    obs[[as.character(window)]] <- df
-  }
-
-  do.call(function(...) rbind(..., make.row.names=FALSE), obs)
-}
-
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
 
@@ -76,10 +41,11 @@ main <- function(raw_args) {
   basin_ids <- basin_windows$id
   basin_bws <- wsim.io::read_vars(args$stress, expect.nvars=1, expect.ids=basin_ids, as.data.frame=TRUE)
 
-  bt_ro_fits            <- read_fits(wsim.io::expand_inputs(args$bt_ro_fit), basin_ids)
-  bt_ro_annual_min_fits <- read_fits(wsim.io::expand_inputs(args$bt_ro_min_fit), basin_ids)
-  bt_ro                 <- read_obs(wsim.io::expand_inputs(args$bt_ro), basin_ids)
-
+  bt_ro_fits            <- wsim.io::read_integrated_vars(wsim.io::expand_inputs(args$bt_ro_fit), basin_ids)
+  bt_ro_annual_min_fits <- wsim.io::read_integrated_vars(wsim.io::expand_inputs(args$bt_ro_min_fit), basin_ids)
+  bt_ro                 <- wsim.io::read_integrated_vars(wsim.io::expand_inputs(args$bt_ro), basin_ids)
+  names(bt_ro) <- c('id', 'flow', 'window')
+  
   required_windows <- sort(unique(basin_windows$months_storage))
   for (w in required_windows) {
     if (!(w %in% bt_ro$window))
