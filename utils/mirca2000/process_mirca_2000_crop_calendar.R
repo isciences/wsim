@@ -24,10 +24,10 @@ suppressMessages({
 '
 Prepare crop calendar netCDF from MIRCA2000 condensed crop calendar format
 
-Usage: process_mirca_2000_crop_calendar --condensed_calendar <file> --regions <file> --res <degrees> --output <file> 
+Usage: process_mirca_2000_crop_calendar --condensed_calendar <file>... --regions <file> --res <degrees> --output <file> 
 
 Options:
---condensed_calendar <file>  Condensed crop calendar file
+--condensed_calendar <file>  Condensed crop calendar file(s)
 --regions <file>             Region raster
 --res <degrees>              Output resolution (degrees)
 --output <file>              Output netCDF file
@@ -43,11 +43,10 @@ Options:
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args, types=list(res="numeric"))  
   
-  calendar <- parse_mirca_condensed_crop_calendar(
-    args$condensed_calendar) %>%
-    group_by(unit_code, crop) %>%
-    mutate(area_frac= area_ha/sum(area_ha)) %>%
-    as.data.frame()
+  calendars <- lapply(args$condensed_calendar, read_mirca_crop_calendar)
+  calendar <- do.call(combine_calendars, calendars) 
+  
+  infof("Read %d crop calendars.", length(calendars))
   
   regions <- read_vars(args$regions, expect.nvars=1)
   extent <- regions$extent 
