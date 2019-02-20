@@ -60,7 +60,7 @@ test_args <- list(
   '--surplus',        '/mnt/fig/WSIM/WSIM_derived_V2/composite/composite_1mo_201809.nc::surplus',
   '--deficit',        '/mnt/fig/WSIM/WSIM_derived_V2/composite/composite_1mo_201809.nc::deficit',
   '--temperature_rp', '/mnt/fig/WSIM/WSIM_derived_V2/rp/rp_1mo_201809.nc::T_rp',
-  '--calendar',       '/tmp/calendar.nc',
+  '--calendar',       '/tmp/calendar_rainfed2.nc',
   '--loss_factors',   '/home/dbaston/dev/wsim2/wsim.agriculture/data/example_crop_factors.tab'
 )
 
@@ -163,7 +163,7 @@ main <- function(raw_args) {
                           quick_append=TRUE)
       }
 
-      loss <- apply(abind::abind(losses, along=3), 1:2, sum, na.rm=TRUE)
+      loss <- pmin(wsim.distributions::stack_sum(abind::abind(losses, along=3)), 1.0)
 
       cumulative_loss <- read_vars_from_cdf(paste0(args$state, '::cumulative_loss'),
                                             extra_dims=list(crop=crop))$data[[1]]
