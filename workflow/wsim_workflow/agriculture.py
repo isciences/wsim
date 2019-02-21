@@ -35,7 +35,7 @@ def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps += compute_basin_integration_windows(config.workspace(), config.static_data())
 
     for yearmon in historical_yearmons:
-        steps += compute_gridded_b2b_btro(config.workspace(), yearmon=yearmon)
+        steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon)
         for method in CULTIVATION_METHODS:
             steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
 
@@ -48,7 +48,7 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
     steps = []
 
     if yearmon not in config.historical_yearmons():
-        steps += compute_gridded_b2b_btro(config.workspace(), yearmon=yearmon)
+        steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon)
         for method in CULTIVATION_METHODS:
             steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
 
@@ -98,10 +98,11 @@ def compute_basin_integration_windows(workspace: DefaultWorkspace, static: Agric
     ]
 
 
-def compute_gridded_b2b_btro(workspace: DefaultWorkspace, *,
+def compute_gridded_b2b_btro(workspace: DefaultWorkspace,
+                             static: AgricultureStatic, *,
                              yearmon: str,
-                             target: Optional[str]=None,
-                             member: Optional[str]=None) -> List[Step]:
+                             target: Optional[str] = None,
+                             member: Optional[str] = None) -> List[Step]:
     windows = (1, 3, 6, 12, 24, 36)
 
     bt_ro = []
@@ -128,37 +129,64 @@ def compute_gridded_b2b_btro(workspace: DefaultWorkspace, *,
                          bt_ro_fits +
                          [workspace.basin_upstream_storage(sector='agriculture')],
             commands=[
-                # FIXME create this command
+                wsim_ag_b2b_rasterize(
+                    basins=static.basins().file,
+                    bt_ro=bt_ro,
+                    fits=bt_ro_fits,
+                    windows=workspace.basin_upstream_storage(sector='agriculture'),
+                    res=0.5,
+                    output=outfile
+                )
             ]
         )
     ]
 
-def assign(obj, **kwargs):
-    import copy
-    obj = copy.deepcopy(obj)
-    obj.update(kwargs)
-    return obj
+
+def wsim_ag_b2b_rasterize(basins: List[str],
+                          bt_ro: List[Vardef],
+                          fits: List[str],
+                          windows: str,
+                          res: float,
+                          output: str) -> List[str]:
+    cmd = [
+        '{BINDIR}/wsim_ag_b2b_rasterize.R',
+        '--basins', basins,
+        '--windows', windows,
+        '--res', str(res),
+        '--output', output
+    ]
+
+    for fit in fits:
+        cmd += ['--fit', fit]
+
+    for f in bt_ro:
+        cmd += ['--bt_ro', str(f)]
+
+    return cmd
+
 
 def compute_loss_risk(workspace: DefaultWorkspace,
                       static: AgricultureStatic,
                       *,
                       method: str,
                       yearmon: str,
-                      target: Optional[str]=None,
-                      member: Optional[str]=None) -> List[Step]:
-
+                      target: Optional[str] = None,
+                      member: Optional[str] = None) -> List[Step]:
     if member:
         if get_lead_months(yearmon, target) > 1:
-            current_state = workspace.state(sector='agriculture', method=method, yearmon=yearmon, target=target, member=member)
+            current_state = workspace.state(sector='agriculture', method=method, yearmon=yearmon, target=target,
+                                            member=member)
         else:
             current_state = workspace.state(sector='agriculture', method=method, yearmon=target)
 
-        next_state = workspace.state(sector='agriculture', method=method, yearmon=yearmon, target=get_next_yearmon(target), member=member)
+        next_state = workspace.state(sector='agriculture', method=method, yearmon=yearmon,
+                                     target=get_next_yearmon(target), member=member)
     else:
         current_state = workspace.state(sector='agriculture', method=method, yearmon=yearmon)
         next_state = workspace.state(sector='agriculture', method=method, yearmon=get_next_yearmon(yearmon))
 
-    results = workspace.results(sector='agriculture', method=method, yearmon=yearmon, window=1, target=target, member=member)
+    results = workspace.results(sector='agriculture', method=method, yearmon=yearmon, window=1, target=target,
+                                member=member)
 
     temperature_rp = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'T_rp')
 
