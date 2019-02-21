@@ -25,16 +25,7 @@ def _condensed_crop_calendar(*, source_dir: str) -> List[Step]:
     url = 'https://hessenbox-a10.rz.uni-frankfurt.de/dl/fiBX48XXU1GQumNk7iAsoXyG/condensed_cropping_calendars.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
 
-    gz_files = [
-        os.path.join(dirname, 'cropping_calendar_rainfed.txt.gz'),
-        os.path.join(dirname, 'cropping_calendar_irrigated.txt.gz')
-    ]
-    txt_files = [
-        os.path.join(dirname, 'cropping_calendar_rainfed.txt'),
-        os.path.join(dirname, 'cropping_calendar_irrigated.txt')
-    ]
-
-    return [
+    steps = [
         # Download
         Step(
             targets=zip_path,
@@ -46,26 +37,34 @@ def _condensed_crop_calendar(*, source_dir: str) -> List[Step]:
                     url
                 ]
             ]
-        ),
-
-        # Unzip data
-        Step(
-            targets=gz_files,
-            dependencies=zip_path,
-            commands=[
-                [
-                    'unzip', '-D', '-j', zip_path, '-d', dirname
-                ],
-            ]
-        ),
-
-        # Unzip data (again)
-        Step(
-            targets=txt_files,
-            dependencies=gz_files,
-            commands=[['gunzip', f] for f in gz_files]
-        ),
+        )
     ]
+
+    for method in ('irrigated', 'rainfed'):
+        gz_file = os.path.join(dirname, 'cropping_calendar_{}.txt.gz'.format(method))
+        txt_file = gz_file.strip('.gz')
+
+        steps += [
+            # Unzip data
+            Step(
+                targets=gz_file,
+                dependencies=zip_path,
+                commands=[
+                    [
+                        'unzip', '-D', '-j', zip_path, '-d', dirname
+                    ],
+                ]
+            ),
+
+            # Unzip data (again)
+            Step(
+                targets=txt_file,
+                dependencies=gz_file,
+                commands=[['gunzip', gz_file]]
+            )
+        ]
+
+    return steps
 
 
 def _regions(*, source_dir: str) -> List[Step]:
