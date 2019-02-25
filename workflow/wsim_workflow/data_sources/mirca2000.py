@@ -117,18 +117,19 @@ def crop_calendars(*, source_dir: str) -> List[Step]:
 
     steps = _regions(source_dir=source_dir) + _condensed_crop_calendar(source_dir=source_dir)
 
-    for method in ('rainfed', 'irrigated'):
-        calendar = os.path.join(dirname, 'crop_calendar_{}.nc'.format(method))
-        condensed_calendar = os.path.join(dirname, 'cropping_calendar_{}.txt'.format(method))
+    for hierarchy in (('rainfed', 'irrigated'), ('irrigated', 'rainfed')):
+        calendar = os.path.join(dirname, 'crop_calendar_{}.nc'.format(hierarchy[0]))
+        condensed_calendars = [os.path.join(dirname, 'cropping_calendar_{}.txt'.format(method)) for method in hierarchy]
 
         steps += [
             Step(
                 targets=calendar,
-                dependencies=[condensed_calendar, regions_grid],
+                dependencies=condensed_calendars + [regions_grid],
                 commands=[
                     [
                         os.path.join('{BINDIR}', 'utils', 'mirca2000', 'process_mirca_2000_crop_calendar.R'),
-                        '--condensed_calendar', condensed_calendar,
+                        '--condensed_calendar', condensed_calendars[0],
+                        '--condensed_calendar', condensed_calendars[1],
                         '--regions', regions_grid,
                         '--res', str(0.5),
                         '--output', calendar
