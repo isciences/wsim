@@ -109,7 +109,9 @@ main <- function(raw_args) {
     extent=extent,
     args$output,
     extra_dims=list(crop=names(plant_date)),
-    prec=list(area_frac='single')
+    prec=list(area_frac='single',
+              plant_date='short',
+              harvest_date='short')
   )
   
   infof('Wrote crop calendar to %s', args$output)
