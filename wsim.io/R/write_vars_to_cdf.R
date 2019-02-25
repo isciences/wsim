@@ -15,6 +15,7 @@
 default_netcdf_nodata <- list(
   byte= -127,
   char= NULL,
+  short=-32768,
   integer= -9999,
   single=-3.4028234663852886e+38,
   float= -3.4028234663852886e+38,
@@ -63,11 +64,12 @@ default_netcdf_nodata <- list(
 #'               will be selected depending on the values.
 #'               Acceptable precision descriptions include:
 #'               \itemize{
-#'               \item byte
-#'               \item integer
-#'               \item single
-#'               \item float
-#'               \item double
+#'               \item byte (8-bit signed integer)
+#'               \item short (16-bit signed integer)
+#'               \item integer (32-bit signed integer)
+#'               \item single (32-bit floating point)
+#'               \item float (32-bit floating point)
+#'               \item double (64-bit floating point)
 #'               }
 #' @param append       Determines if we should add variables to an existing
 #'                     file, if present.
