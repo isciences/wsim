@@ -41,26 +41,36 @@ def production(*, source_dir: str) -> List[Step]:
         )
     ]
 
+    # Lookup dict generated in R using:
+    # toJSON(
+    #   lapply(
+    #     split(
+    #       merge(wsim.agriculture::wsim_crops, wsim.agriculture::spam_crops),
+    #       merge(wsim.agriculture::wsim_crops, wsim.agriculture::spam_crops)$wsim_name
+    #     ),
+    #     function(group) group$spam_abbrev
+    #   )
+    # )
     spam_crops = {
-        'wheat'      : 'whea',
-        'rice'       : 'rice',
-        'maize'      : 'maiz',
-        'barley'     : 'barl',
-        'millet'     : ['pmil', 'smil'],
-        'sorghum'    : 'sorg',
-        'soybeans'   : 'soyb',
-        'sunflower'  : 'sunf',
-        'potatoes'   : 'pota',
-        'cassava'    : 'cass',
-        'sugarcane'  : 'sugc',
-        'sugarbeet'  : 'sugb',
-        'oilpalm'    : 'oilp',
-        'rapeseed'   : 'rape',
-        'groundnuts' : 'grou',
-        'pulses'     : ['bean', 'chic', 'cowp', 'pige', 'lent', 'opul'],
-        'cotton'     : 'cott',
-        'cocoa'      : 'coco',
-        'coffee'     : ['acof', 'rcof']
+        "barley":["barl"],
+        "cassava":["cass"],
+        "cocoa":["coco"],
+        "coffee":["acof","rcof"],
+        "cotton":["cott"],
+        "groundnuts":["grou"],
+        "maize":["maiz"],
+        "millet":["pmil","smil"],
+        "oilpalm":["oilp"],
+        "potatoes":["pota"],
+        "pulses":["lent","pige","opul","chic","cowp","bean"],
+        "rapeseed":["rape"],
+        "rice":["rice"],
+        "sorghum":["sorg"],
+        "soybeans":["soyb"],
+        "sugarbeets":["sugb"],
+        "sugarcane":["sugc"],
+        "sunflower":["sunf"],
+        "wheat":["whea"]
     }
 
     tempdir = '/tmp'
@@ -70,8 +80,8 @@ def production(*, source_dir: str) -> List[Step]:
         for crop, abbrev in spam_crops.items():
             wsim_fname = 'spam_production_{}_{}.tif'.format(crop, method)
 
-            if type(abbrev) is str:
-                spam_fname = production_tif(abbrev, method)
+            if len(abbrev) == 1:
+                spam_fname = production_tif(abbrev[0], method)
 
                 steps += [
                     Step(
