@@ -67,32 +67,37 @@ main <- function(raw_args) {
   area_frac <- list()
   
   for (i in 1:nrow(mirca_crops)) {
-    crop_id <- mirca_crops[i, 'mirca_id']
-    crop_name <- mirca_crops[i, 'mirca_name']
-    num_subcrops <- mirca_crops[i, 'mirca_subcrops']
-    for (subcrop_id in 1:num_subcrops) {
-      crop_string <- sprintf('%s_%d', gsub('[\\s/]+', '_', crop_name, perl=TRUE), subcrop_id)
-      infof('Constructing calendar for %s (%d/%d)', crop_name, subcrop_id, num_subcrops)
-      
-      reclass_matrix <- as.matrix(calendar[calendar$crop==crop_id & calendar$subcrop==subcrop_id,
-                                           c('unit_code', 'plant_month', 'harvest_month', 'area_frac')],
-                                  rownames.force=FALSE)
-      
-      reclass_matrix[, 2] <- start_days[reclass_matrix[, 2]]
-      reclass_matrix[, 3] <- end_days[reclass_matrix[, 3]]
-      
-      plant_date[[crop_string]] <- aggregate_mean_doy(
-        wsim.agriculture::reclassify(regions,
-                                     reclass_matrix[, c(1,2), drop=FALSE], TRUE),
+    mirca_crop_id <- mirca_crops[i, 'mirca_id']
+    wsim_crop_id <- mirca_crops[i, 'wsim_id']
+    
+    if (!is.na(wsim_crop_id)) {
+      crop_name <- wsim_crops[wsim_crops$wsim_id==wsim_crop_id, 'wsim_name']
+    
+      num_subcrops <- mirca_crops[i, 'mirca_subcrops']
+      for (subcrop_id in 1:num_subcrops) {
+        crop_string <- sprintf('%s_%d', gsub('[\\s/]+', '_', crop_name, perl=TRUE), subcrop_id)
+        infof('Constructing calendar for %s (%d/%d)', crop_name, subcrop_id, num_subcrops)
+        
+        reclass_matrix <- as.matrix(calendar[calendar$crop==mirca_crop_id & calendar$subcrop==subcrop_id,
+                                             c('unit_code', 'plant_month', 'harvest_month', 'area_frac')],
+                                    rownames.force=FALSE)
+        
+        reclass_matrix[, 2] <- start_days[reclass_matrix[, 2]]
+        reclass_matrix[, 3] <- end_days[reclass_matrix[, 3]]
+        
+        plant_date[[crop_string]] <- aggregate_mean_doy(
+          wsim.agriculture::reclassify(regions,
+                                       reclass_matrix[, c(1,2), drop=FALSE], TRUE),
+          aggregation_factor)
+        harvest_date[[crop_string]] <- aggregate_mean_doy(
+          wsim.agriculture::reclassify(regions,
+                                       reclass_matrix[, c(1,3), drop=FALSE], TRUE),
+          aggregation_factor)
+        area_frac[[crop_string]] <- aggregate_mean(
+          wsim.agriculture::reclassify(regions,
+                                       reclass_matrix[, c(1,4), drop=FALSE], TRUE),
         aggregation_factor)
-      harvest_date[[crop_string]] <- aggregate_mean_doy(
-        wsim.agriculture::reclassify(regions,
-                                     reclass_matrix[, c(1,3), drop=FALSE], TRUE),
-        aggregation_factor)
-      area_frac[[crop_string]] <- aggregate_mean(
-        wsim.agriculture::reclassify(regions,
-                                     reclass_matrix[, c(1,4), drop=FALSE], TRUE),
-      aggregation_factor)
+      }
     }
   }
   
