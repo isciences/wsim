@@ -1,3 +1,8 @@
+#' Crop names and codes used by WSIM
+#' 
+#' @name wsim_crops
+NULL
+
 #' Crop names and codes used in SPAM 2010
 #' 
 #' @name spam_crops
