@@ -20,6 +20,38 @@ from ..step import Step
 
 SUBDIR = 'SPAM2010'
 
+# Lookup dict generated in R using:
+# toJSON(
+#   lapply(
+#     split(
+#       merge(wsim.agriculture::wsim_crops, wsim.agriculture::spam_crops),
+#       merge(wsim.agriculture::wsim_crops, wsim.agriculture::spam_crops)$wsim_name
+#     ),
+#     function(group) group$spam_abbrev
+#   )
+# )
+_spam_crops = {
+    "barley":["barl"],
+    "cassava":["cass"],
+    "cocoa":["coco"],
+    "coffee":["acof","rcof"],
+    "cotton":["cott"],
+    "groundnuts":["grou"],
+    "maize":["maiz"],
+    "millet":["pmil","smil"],
+    "oilpalm":["oilp"],
+    "potatoes":["pota"],
+    "pulses":["lent","pige","opul","chic","cowp","bean"],
+    "rapeseed":["rape"],
+    "rice":["rice"],
+    "sorghum":["sorg"],
+    "soybeans":["soyb"],
+    "sugarbeets":["sugb"],
+    "sugarcane":["sugc"],
+    "sunflower":["sunf"],
+    "wheat":["whea"]
+}
+
 
 def production(*, source_dir: str) -> List[Step]:
     dirname = os.path.join(source_dir, SUBDIR)
@@ -41,47 +73,15 @@ def production(*, source_dir: str) -> List[Step]:
         )
     ]
 
-    # Lookup dict generated in R using:
-    # toJSON(
-    #   lapply(
-    #     split(
-    #       merge(wsim.agriculture::wsim_crops, wsim.agriculture::spam_crops),
-    #       merge(wsim.agriculture::wsim_crops, wsim.agriculture::spam_crops)$wsim_name
-    #     ),
-    #     function(group) group$spam_abbrev
-    #   )
-    # )
-    spam_crops = {
-        "barley":["barl"],
-        "cassava":["cass"],
-        "cocoa":["coco"],
-        "coffee":["acof","rcof"],
-        "cotton":["cott"],
-        "groundnuts":["grou"],
-        "maize":["maiz"],
-        "millet":["pmil","smil"],
-        "oilpalm":["oilp"],
-        "potatoes":["pota"],
-        "pulses":["lent","pige","opul","chic","cowp","bean"],
-        "rapeseed":["rape"],
-        "rice":["rice"],
-        "sorghum":["sorg"],
-        "soybeans":["soyb"],
-        "sugarbeets":["sugb"],
-        "sugarcane":["sugc"],
-        "sunflower":["sunf"],
-        "wheat":["whea"]
-    }
-
     tempdir = '/tmp'
     dir_in_zip = 'spam2010v1r0_global_prod.geotiff'
 
     for method in ('rainfed', 'irrigated'):
-        for crop, abbrev in spam_crops.items():
-            wsim_fname = 'spam_production_{}_{}.tif'.format(crop, method)
+        for crop, abbrev in _spam_crops.items():
+            wsim_fname = wsim_production_tif(crop, method)
 
             if len(abbrev) == 1:
-                spam_fname = production_tif(abbrev[0], method)
+                spam_fname = spam_production_tif(abbrev[0], method)
 
                 steps += [
                     Step(
@@ -98,7 +98,7 @@ def production(*, source_dir: str) -> List[Step]:
                     )
                 ]
             else:
-                spam_fnames = [production_tif(a, method) for a in abbrev]
+                spam_fnames = [spam_production_tif(a, method) for a in abbrev]
 
                 steps += [
                     Step(
@@ -117,7 +117,11 @@ def production(*, source_dir: str) -> List[Step]:
     return steps
 
 
-def production_tif(abbrev: str, method: str):
+def wsim_production_tif(crop: str, method: str) -> str:
+    return 'spam_production_{}_{}.tif'.format(crop, method)
+
+
+def spam_production_tif(abbrev: str, method: str) -> str:
     return 'spam2010v1r0_global_production_{}_{}.tif'.format(abbrev, method[0])
 
 
