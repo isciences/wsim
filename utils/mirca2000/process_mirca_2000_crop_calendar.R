@@ -52,9 +52,6 @@ main <- function(raw_args) {
   extent <- regions$extent 
   regions <- regions$data[[1]]
   
-  start_days <- c(1,  32, 60, 91,  121, 152, 182, 213, 244, 274, 305, 335)
-  end_days   <- c(31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
-  
   res <- c((extent[4]-extent[3])/dim(regions)[1], (extent[2]-extent[1])/dim(regions)[2])
   stopifnot(res[1]==res[2])
   aggregation_factor <- args$res/res[1]
@@ -82,8 +79,8 @@ main <- function(raw_args) {
                                              c('unit_code', 'plant_month', 'harvest_month', 'area_frac')],
                                     rownames.force=FALSE)
         
-        reclass_matrix[, 2] <- start_days[reclass_matrix[, 2]]
-        reclass_matrix[, 3] <- end_days[reclass_matrix[, 3]]
+        reclass_matrix[, 2] <- start_of_month(reclass_matrix[, 2])
+        reclass_matrix[, 3] <- end_of_month(reclass_matrix[, 3])
         
         plant_date[[crop_string]] <- aggregate_mean_doy(
           wsim.agriculture::reclassify(regions,
