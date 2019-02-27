@@ -112,7 +112,7 @@ def exact_extract(*,
                   output: str,
                   weights: Union[str, List[str], None]=None,
                   stats: Union[str, List[str]],
-                  comment: Optional[str]=None):
+                  comment: Optional[str]=None) -> Step:
 
     if isinstance(stats, str):
         stats = [stats]
