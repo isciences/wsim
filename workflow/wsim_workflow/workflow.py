@@ -59,7 +59,8 @@ def generate_steps(config: ConfigBase, *,
         'all_adjusted_monthly_composites',
         'forcing_summaries',
         'results_summaries',
-        'electric_power_assessment'
+        'electric_power_assessment',
+        'agriculture_assessment'
     )}
 
     if config.should_run_spinup() and not no_spinup:
