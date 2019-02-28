@@ -12,10 +12,10 @@
 write_empty_state <- function(fname, 
                               res=0.5,
                               extent=c(-180, 180, -90, 90),
-                              crop_names=wsim_crops$wsim_name,
+                              crop_names=wsim_subcrop_names(),
                               stresses=c('surplus', 'deficit', 'heat', 'cold'),
                               fill_zero=TRUE) {
-  dim <- c((extent[4]-extent[3])/res, (extent[2]-extent[1])/res)
+  dim <- c((extent[4]-extent[3]), (extent[2]-extent[1]))/res
   
   months_stress <- array(0L, dim=c(dim, length(crop_names), length(stresses)))
   
@@ -50,9 +50,9 @@ write_empty_state <- function(fname,
 write_empty_results <- function(fname,
                                 res=0.5,
                                 extent=c(-180, 180, -90, 90),
-                                crop_names=wsim_crops$wsim_name,
+                                crop_names=wsim_subcrop_names(),
                                 fill_zero=TRUE) {
-  dim <- c((extent[4]-extent[3])/res, (extent[2]-extent[1])/res)
+  dim <- c((extent[4]-extent[3]), (extent[2]-extent[1]))/res
   
   placeholder <- array(0L, dim=c(dim, length(crop_names)))
   
