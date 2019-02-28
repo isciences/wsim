@@ -77,6 +77,29 @@ test_that('Days until harvest are calculated correctly', {
   expect_equal(NA_integer_, days_until_harvest(50, NA, NA)) 
 })
 
+test_that('Growing days are calculated correctly', {
+  expect_equal(0,
+               growing_days(5, 10, 
+                            11, 15))
+  
+  expect_equal(2,
+               growing_days(5,  12,
+                            11, 15))
+  
+  expect_equal(3,
+               growing_days(13, 15,
+                            11, 15))
+  
+  # wrap around the calendar
+  expect_equal(5,
+               growing_days(10, 5,
+                            11, 15))
+  
+  expect_equal(NA_integer_,
+               growing_days(5, 10,
+                            NA, NA))
+})
+
 test_that('Functions handle vector inputs correctly', {
   # For our typical use case, we will have a constant day of the year,
   # with pixel-specific planting and harvest dates. So we want to be
@@ -92,6 +115,17 @@ test_that('Functions handle vector inputs correctly', {
                             c(NA,  170)),
                       rbind(c(190, 190),
                             c(190, 190))
+    )
+  )
+  
+  expect_equal(
+    rbind(c(11,             5),
+          c(NA_integer_,  11)),
+    growing_days(175, 185,
+                 rbind(c(170, 181),
+                       c(NA,  170)),
+                 rbind(c(190, 190),
+                       c(190, 190))
     )
   )
   
