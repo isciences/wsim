@@ -72,7 +72,9 @@ main <- function(raw_args) {
     
       num_subcrops <- mirca_crops[i, 'mirca_subcrops']
       for (subcrop_id in 1:num_subcrops) {
-        crop_string <- sprintf('%s_%d', gsub('[\\s/]+', '_', crop_name, perl=TRUE), subcrop_id)
+        crop_string <- ifelse(num_subcrops > 1,
+                              sprintf('%s_%d', crop_name, subcrop_id),
+                              crop_name)
         infof('Constructing calendar for %s (%d/%d)', crop_name, subcrop_id, num_subcrops)
         
         reclass_matrix <- as.matrix(calendar[calendar$crop==mirca_crop_id & calendar$subcrop==subcrop_id,
