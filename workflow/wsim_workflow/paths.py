@@ -244,6 +244,10 @@ class AgricultureStatic(metaclass=ABCMeta):
     def basin_downstream(self) -> Vardef:
         pass
 
+    def countries(self) -> Vardef:
+        pass
+
+
 class DefaultWorkspace:
 
     def __init__(self, outputs: str, tempdir: Optional[str]=None):

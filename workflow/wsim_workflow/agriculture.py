@@ -15,11 +15,13 @@ import os
 
 from typing import List, Mapping, Optional, Union
 
+from .commands import exact_extract
 from .config_base import ConfigBase
 from .dates import get_lead_months, get_next_yearmon, parse_yearmon
 from .paths import AgricultureStatic, DefaultWorkspace, read_vars, Vardef
 from .step import Step
 
+AGGREGATION_POLYGONS = ('country',)
 CULTIVATION_METHODS = ('rainfed', 'irrigated')
 
 
@@ -52,6 +54,13 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
         for method in CULTIVATION_METHODS:
             steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
 
+        # Compute aggregated losses
+        for basis in AGGREGATION_POLYGONS:
+            continue
+            steps += meta_steps['agriculture_assessment'].require(
+                #compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
+            )
+
     return steps
 
 
@@ -63,17 +72,52 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
     return steps
 
 
+def compute_aggregated_losses(workspace: DefaultWorkspace,
+                              static: AgricultureStatic,
+                              *,
+                              yearmon: str,
+                              target: Optional[str]=None,
+                              member: Optional[str]=None,
+                              basis: str
+                              ) -> List[Step]:
+
+
+    if basis == 'country':
+        boundaries = static.countries()
+    else:
+        raise Exception("Not yet.")
+
+    aggregated_results = workspace.results(
+        sector='agriculture', basis=basis,
+        yearmon=yearmon, window=1, member=member, target=target)
+
+    losses = [workspace.results(sector='agriculture', method=method,
+                                yearmon=yearmon, window=1, member=member, target=target)
+              for method in CULTIVATION_METHODS]
+
+    return [
+        exact_extract(
+            boundaries=boundaries,
+            fid='???',
+            input=losses,
+            weights=spam,
+            stats=['weighted mean'],
+            output=aggregated_results
+        )
+    ]
+
+
 def make_initial_state(workspace: DefaultWorkspace, method: str, yearmon: str) -> List[Step]:
     state = workspace.state(sector='agriculture', method=method, yearmon=yearmon)
 
     return [
-        Step(
-            targets=state,
-            commands=[
-                # FIXME actually make this command
-                ['touch', state]
-            ]
-        )
+        Step(targets=state,
+             commands=[
+                 [
+                     'Rscript', '-e',
+                     "'wsim.agriculture::write_empty_state(\"{}\")'".format(state)
+                 ]
+             ])
     ]
 
 
@@ -193,7 +237,7 @@ def compute_loss_risk(workspace: DefaultWorkspace,
     calendar = static.crop_calendar(method)
     loss_factors = static.growth_stage_loss_factors()
 
-    surplus = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'RO_rp')
+    surplus = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'RO_mm_rp')
     if method == 'irrigated':
         deficit = workspace.agriculture_bt_ro_rp(yearmon=yearmon, member=member, target=target)
     elif method == 'rainfed':
@@ -215,7 +259,8 @@ def compute_loss_risk(workspace: DefaultWorkspace,
                         deficit=deficit,
                         temperature_rp=temperature_rp,
                         calendar=static.crop_calendar(method=method),
-                        loss_factors=loss_factors)
+                        loss_factors=loss_factors,
+                        yearmon=target if target else yearmon)
             ]
         )
     ]
@@ -229,7 +274,8 @@ def wsim_ag(*,
             deficit: Union[str, List[str]],
             temperature_rp: str,
             calendar: str,
-            loss_factors: str
+            loss_factors: str,
+            yearmon: str
             ) -> List[str]:
     if type(surplus) is str:
         surplus = [surplus]
@@ -243,7 +289,8 @@ def wsim_ag(*,
         '--calendar', calendar,
         '--loss_factors', loss_factors,
         '--next_state', next_state,
-        '--results', results
+        '--results', results,
+        '--yearmon', yearmon
     ]
 
     for s in surplus:
