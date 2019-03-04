@@ -13,10 +13,10 @@
 
 #' Calculate number of growing days during an interval
 #' 
-#' @param from        first day of year in interval
-#' @param to          second day of year in interval
-#' @param plant_date  planting date
-#' @param harvest_day harvest date
+#' @param from         first day of year in interval
+#' @param to           second day of year in interval
+#' @param plant_date   planting date
+#' @param harvest_date harvest date
 #' @return number of days within growing season
 #' @export
 growing_days <- function(from, to, plant_date, harvest_date) {
