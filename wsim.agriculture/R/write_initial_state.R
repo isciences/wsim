@@ -45,20 +45,26 @@ write_empty_state <- function(fname,
 
 #' Write an empty agriculture results file to disk
 #' 
+#' @param vars a list of variable names to create in the results file
 #' @inheritParams write_empty_state
 #' @export
 write_empty_results <- function(fname,
                                 res=0.5,
                                 extent=c(-180, 180, -90, 90),
                                 crop_names=wsim_subcrop_names(),
+                                vars=c('loss', 'growing_season_loss'),
                                 fill_zero=TRUE) {
   dim <- c((extent[4]-extent[3]), (extent[2]-extent[1]))/res
   
   placeholder <- array(0L, dim=c(dim, length(crop_names)))
   
+  to_write <- list()
+  for (var in vars) {
+    to_write[[var]] <- placeholder
+  }
+  
   wsim.io::write_vars_to_cdf(
-    list(loss=placeholder,
-         growing_season_loss=placeholder),
+    to_write,
     fname,
     extent=extent,
     extra_dims=list(crop=crop_names),
