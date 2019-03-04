@@ -151,3 +151,104 @@ test_that('Functions handle vector inputs correctly', {
     )
   )
 })
+
+test_that('growing days this season calculated correctly', {
+  # ---------xxxxxxxxxx----------
+  # ----P*******************H----
+  expect_equal(10, growing_days_this_season(from=10, to=19, 
+                                            plant_date=5, harvest_date=25))
+  expect_equal(15, days_since_planting_this_season(from=10, to=19,
+                                                   plant_date=5, harvest_date=25))
+  
+  # ---------xxxxxxxxxx----------
+  # ---------------P********H----
+  expect_equal(4, growing_days_this_season(from=10, to=19, 
+                                           plant_date=16, harvest_date=25))
+  expect_equal(4, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=16, harvest_date=25))
+  
+  # ---------xxxxxxxxxx----------
+  # ----P*********H--------------
+  expect_equal(6, growing_days_this_season(from=10, to=19, 
+                                           plant_date=5, harvest_date=15))
+  expect_equal(11, days_since_planting_this_season(from=10, to=19,
+                                                   plant_date=5, harvest_date=15))
+  
+  # ---------xxxxxxxxxx----------
+  # ----P****H-------------------
+  expect_equal(1, growing_days_this_season(from=10, to=19, 
+                                           plant_date=5, harvest_date=10))
+  expect_equal(6, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=5, harvest_date=10))
+  
+  # ---------xxxxxxxxxx----------
+  # ------------------P****H-----
+  expect_equal(1, growing_days_this_season(from=10, to=19, 
+                                           plant_date=19, harvest_date=24))
+  expect_equal(1, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=19, harvest_date=24))
+  
+  # ---------xxxxxxxxxx----------
+  # ----P*************H----------
+  expect_equal(10, growing_days_this_season(from=10, to=19, 
+                                           plant_date=5, harvest_date=19))
+  expect_equal(15, days_since_planting_this_season(from=10, to=19,
+                                                   plant_date=5, harvest_date=19))
+  
+  # ---------xxxxxxxxxx----------
+  # ****H----------P*************
+  expect_equal(4, growing_days_this_season(from=10, to=19, 
+                                           plant_date=16, harvest_date=5))
+  expect_equal(4, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=16, harvest_date=5))
+  
+  # ---------xxxxxxxxxx----------
+  # ****H-------------------P****
+  expect_equal(0, growing_days_this_season(from=10, to=19, 
+                                           plant_date=25, harvest_date=5))
+  expect_equal(0, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=25, harvest_date=5))
+  
+  # ---------xxxxxxxxxx----------
+  # **************HP*************
+  expect_equal(4, growing_days_this_season(from=10, to=19, 
+                                           plant_date=16, harvest_date=15))
+  expect_equal(4, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=16, harvest_date=15))
+  
+  # ---------xxxxxxxxxx----------
+  # *************H--P************
+  expect_equal(3, growing_days_this_season(from=10, to=19, 
+                                           plant_date=17, harvest_date=14))
+  expect_equal(3, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=17, harvest_date=14))
+  
+  # ---------xxxxxxxxxx----------
+  # *********************H--P****
+  expect_equal(10, growing_days_this_season(from=10, to=19, 
+                                            plant_date=25, harvest_date=22))
+  expect_equal(360, days_since_planting_this_season(from=10, to=19,
+                                                    plant_date=25, harvest_date=22))
+  
+  # ---------xxxxxxxxxx----------
+  # -P**H------------------------
+  expect_equal(0, growing_days_this_season(from=10, to=19, 
+                                           plant_date=2, harvest_date=5))
+  expect_equal(0, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=2, harvest_date=5))
+  
+  # ---------xxxxxxxxxx----------
+  # -------------------P**H------
+  expect_equal(0, growing_days_this_season(from=10, to=19, 
+                                           plant_date=20, harvest_date=23))
+  expect_equal(0, days_since_planting_this_season(from=10, to=19,
+                                                  plant_date=20, harvest_date=23))
+  
+  # ---------xxxxxxxxxx----------
+  # -----------------------------
+  expect_equal(NA_integer_, growing_days_this_season(from=10, to=19, 
+                                                     plant_date=NA, harvest_date=NA))
+  
+  expect_equal(NA_integer_, days_since_planting_this_season(from=10, to=19, 
+                                                            plant_date=NA, harvest_date=NA))
+})
