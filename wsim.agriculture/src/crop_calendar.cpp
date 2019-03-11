@@ -249,6 +249,38 @@ static int growing_days_this_season_impl(int from, int to, int plant_date, int h
   return 0; 
 }
 
+static int growing_days_this_year_impl(int from, int to, int plant_date, int harvest_date) {
+  if (plant_date == NA_INTEGER || harvest_date == NA_INTEGER) {
+    return NA_INTEGER;
+  }
+  
+  if (to > harvest_date) {
+    to = harvest_date;
+  }
+    
+  if (harvest_date > plant_date && from < plant_date) {
+    from = plant_date;
+  }
+    
+  return std::max(0, to - from + 1);
+}
+
+static int growing_days_next_year_impl(int from, int to, int plant_date, int harvest_date) {
+  if (plant_date == NA_INTEGER || harvest_date == NA_INTEGER) {
+    return NA_INTEGER;
+  }
+  
+  if (harvest_date > plant_date) {
+    return 0;
+  }
+  
+  if (from < plant_date) {
+    from = plant_date;
+  }
+  
+  return std::max(0, to - from + 1);
+}
+
 static int days_since_planting_this_season_impl(int from, int to, int plant_date, int harvest_date) {
   if (plant_date == NA_INTEGER || harvest_date == NA_INTEGER) {
     return NA_INTEGER;
@@ -325,6 +357,57 @@ Rcpp::IntegerVector growing_days_this_season(int from,
   
   return res;
 }
+
+//' Return the number of growing days within a period that contribute to a harvest in the current year.
+//' 
+//' @inheritParams first_growing_day
+//' 
+//' @export
+// [[Rcpp::export]]
+Rcpp::IntegerVector growing_days_this_year(int from,
+                                           int to,
+                                           const Rcpp::IntegerVector & plant_date,
+                                           const Rcpp::IntegerVector & harvest_date) {
+  auto n = plant_date.size();
+  if (n != harvest_date.size()) {
+    Rcpp::stop("Size mismatch between planting and harvest dates.");
+  }
+  
+  Rcpp::IntegerVector res = Rcpp::no_init(n);
+  res.attr("dim") = plant_date.attr("dim");
+  
+  for (decltype(n) i = 0; i < n; i++) {
+    res[i] = growing_days_this_year_impl(from, to, plant_date[i], harvest_date[i]);
+  }
+  
+  return res;
+}
+
+//' Return the number of growing days within a period that contribute to a harvest in the following year.
+//' 
+//' @inheritParams first_growing_day
+//' 
+//' @export
+// [[Rcpp::export]]
+Rcpp::IntegerVector growing_days_next_year(int from,
+                                           int to,
+                                           const Rcpp::IntegerVector & plant_date,
+                                           const Rcpp::IntegerVector & harvest_date) {
+  auto n = plant_date.size();
+  if (n != harvest_date.size()) {
+    Rcpp::stop("Size mismatch between planting and harvest dates.");
+  }
+  
+  Rcpp::IntegerVector res = Rcpp::no_init(n);
+  res.attr("dim") = plant_date.attr("dim");
+  
+  for (decltype(n) i = 0; i < n; i++) {
+    res[i] = growing_days_next_year_impl(from, to, plant_date[i], harvest_date[i]);
+  }
+  
+  return res;
+}
+
 
 //' Compute the maximum number of growing days between the most recent planting date
 //' and a range of dates
