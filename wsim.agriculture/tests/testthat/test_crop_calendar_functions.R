@@ -286,8 +286,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(0, do.call(days_since_planting_next_year, cal))
   
   # ---------xxxxxxxxxx----------
-  # -------------------P**H------
-  cal <- list(from=10, to=19, plant_date=20, harvest_date=23) 
+  # --------------------P**H-----
+  cal <- list(from=10, to=19, plant_date=21, harvest_date=24) 
   
   expect_equal(0, do.call(growing_days_this_season, cal))
   expect_equal(0, do.call(growing_days_this_year, cal))
