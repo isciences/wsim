@@ -14,17 +14,20 @@ context('Loss function')
 
 test_that('Loss function behaves as expected', {
   # no loss at or below lower threshold return period
-  expect_equal(0, loss_function(5))
-  expect_equal(0, loss_function(6))
+  expect_equal(0, loss_function(5, 6, 100, 2))
+  expect_equal(0, loss_function(6, 6, 100, 2))
   
   # total loss at or above upper threshold return period
-  expect_equal(1, loss_function(70))
-  expect_equal(1, loss_function(71))
+  expect_equal(1, loss_function(70, 6, 70, 2))
+  expect_equal(1, loss_function(71, 6, 70, 2))
   
   # losses increase with return period
-  expect_true(!is.unsorted(loss_function(6:70)))
+  expect_true(!is.unsorted(loss_function(6:70, 6, 70, 2)))
   
   # NA propagation
   expect_equal(c(0, NA_real_, 1),
-               loss_function(c(6, NA, 70)))
+               loss_function(c(6, NA, 70), 6, 70, 2))
+  
+  # preserves dimensions
+  expect_equal(c(3, 7, 2), dim(loss_function(array(9, dim=c(3, 7, 2)), 6, 70, 2)))
 })
