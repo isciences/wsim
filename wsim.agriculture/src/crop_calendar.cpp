@@ -522,6 +522,8 @@ Rcpp::IntegerVector days_since_planting_this_season(int from,
   return res;
 }
 
+//' Determine if a planting occured between two dates that will result in a harvest this year
+//' 
 //' @export
 // [[Rcpp::export]]
 Rcpp::LogicalVector planted_for_this_year(int from, int to, const Rcpp::IntegerVector & plant_date, const Rcpp::IntegerVector & harvest_date) {
@@ -541,6 +543,8 @@ Rcpp::LogicalVector planted_for_this_year(int from, int to, const Rcpp::IntegerV
   
 }
 
+//' Determine if a planting occured between two dates that will result in a harvest next year
+//' 
 //' @export
 // [[Rcpp::export]]
 Rcpp::LogicalVector planted_for_next_year(int from, int to, const Rcpp::IntegerVector & plant_date, const Rcpp::IntegerVector & harvest_date) {
@@ -569,6 +573,8 @@ static inline int growing_season_length_impl(int plant_date, int harvest_date) {
   }
 }
 
+//' Calculate the length of the drowing season in days
+//' 
 //' @inheritParams first_growing_day;
 //' @export
 // [[Rcpp::export]]

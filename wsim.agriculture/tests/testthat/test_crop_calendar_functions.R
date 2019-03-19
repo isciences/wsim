@@ -164,6 +164,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(15, do.call(days_since_planting_this_season, cal))
   expect_equal(15, do.call(days_since_planting_this_year, cal))
   expect_equal(0,  do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ---------------P********H----
@@ -176,6 +178,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(4,  do.call(days_since_planting_this_season, cal))
   expect_equal(4,  do.call(days_since_planting_this_year, cal))
   expect_equal(0,  do.call(days_since_planting_next_year, cal))
+  expect_true(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ----P*********H--------------
@@ -188,6 +192,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(11, do.call(days_since_planting_this_season, cal))
   expect_equal(11, do.call(days_since_planting_this_year, cal))
   expect_equal(0,  do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ----P****H-------------------
@@ -200,6 +206,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(6, do.call(days_since_planting_this_season, cal))
   expect_equal(6, do.call(days_since_planting_this_year, cal))
   expect_equal(0, do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ------------------P****H-----
@@ -212,6 +220,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(1, do.call(days_since_planting_this_season, cal))
   expect_equal(1, do.call(days_since_planting_this_year, cal))
   expect_equal(0, do.call(days_since_planting_next_year, cal))
+  expect_true(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ----P*************H----------
@@ -224,6 +234,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(15, do.call(days_since_planting_this_season, cal))
   expect_equal(15, do.call(days_since_planting_this_year, cal))
   expect_equal(0,  do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ****H----------P*************
@@ -236,6 +248,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(4,   do.call(days_since_planting_this_season, cal))
   expect_equal(0,   do.call(days_since_planting_this_year, cal))
   expect_equal(4,   do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_true(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ****H-------------------P****
@@ -248,6 +262,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(0,   do.call(days_since_planting_this_season, cal))
   expect_equal(0,   do.call(days_since_planting_this_year, cal))
   expect_equal(0,   do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # **************HP*************
@@ -260,6 +276,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(4,   do.call(days_since_planting_this_season, cal))
   expect_equal(365, do.call(days_since_planting_this_year, cal))
   expect_equal(4,   do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_true(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # *************H--P************
@@ -272,6 +290,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(3,   do.call(days_since_planting_this_season, cal))
   expect_equal(363, do.call(days_since_planting_this_year, cal))
   expect_equal(3,   do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_true(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # *********************H--P****
@@ -284,6 +304,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(360, do.call(days_since_planting_this_season, cal))
   expect_equal(360, do.call(days_since_planting_this_year, cal))
   expect_equal(0,   do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # -P**H------------------------
@@ -296,6 +318,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(0, do.call(days_since_planting_this_season, cal))
   expect_equal(0, do.call(days_since_planting_this_year, cal))
   expect_equal(0, do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # --------------------P**H-----
@@ -308,6 +332,8 @@ test_that('growing days this season calculated correctly', {
   expect_equal(0, do.call(days_since_planting_this_season, cal))
   expect_equal(0, do.call(days_since_planting_this_year, cal))
   expect_equal(0, do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # -----------------------------
@@ -320,4 +346,6 @@ test_that('growing days this season calculated correctly', {
   expect_equal(NA_integer_, do.call(days_since_planting_this_season, cal))
   expect_equal(NA_integer_, do.call(days_since_planting_this_year, cal))
   expect_equal(NA_integer_, do.call(days_since_planting_next_year, cal))
+  expect_false(do.call(planted_for_this_year, cal))
+  expect_false(do.call(planted_for_next_year, cal))
 })
