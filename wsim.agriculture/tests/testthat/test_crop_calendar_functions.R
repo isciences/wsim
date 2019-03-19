@@ -157,6 +157,7 @@ test_that('growing days this season calculated correctly', {
   # ----P*******************H----
   cal <- list(from=10, to=19, plant_date=5, harvest_date=25) 
   
+  expect_equal(21, growing_season_length(cal$plant, cal$harvest))
   expect_equal(10, do.call(growing_days_this_season, cal))
   expect_equal(10, do.call(growing_days_this_year, cal))
   expect_equal(0,  do.call(growing_days_next_year, cal))
@@ -168,17 +169,19 @@ test_that('growing days this season calculated correctly', {
   # ---------------P********H----
   cal <- list(from=10, to=19, plant_date=16, harvest_date=25) 
   
-  expect_equal(4, do.call(growing_days_this_season, cal))
-  expect_equal(4, do.call(growing_days_this_year, cal))
-  expect_equal(0, do.call(growing_days_next_year, cal))
-  expect_equal(4, do.call(days_since_planting_this_season, cal))
-  expect_equal(4, do.call(days_since_planting_this_year, cal))
-  expect_equal(0, do.call(days_since_planting_next_year, cal))
+  expect_equal(10, growing_season_length(cal$plant, cal$harvest))
+  expect_equal(4,  do.call(growing_days_this_season, cal))
+  expect_equal(4,  do.call(growing_days_this_year, cal))
+  expect_equal(0,  do.call(growing_days_next_year, cal))
+  expect_equal(4,  do.call(days_since_planting_this_season, cal))
+  expect_equal(4,  do.call(days_since_planting_this_year, cal))
+  expect_equal(0,  do.call(days_since_planting_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ----P*********H--------------
   cal <- list(from=10, to=19, plant_date=5, harvest_date=15)
   
+  expect_equal(11, growing_season_length(cal$plant, cal$harvest))
   expect_equal(6,  do.call(growing_days_this_season, cal))
   expect_equal(6,  do.call(growing_days_this_year, cal))
   expect_equal(0,  do.call(growing_days_next_year, cal))
@@ -190,6 +193,7 @@ test_that('growing days this season calculated correctly', {
   # ----P****H-------------------
   cal <- list(from=10, to=19, plant_date=5, harvest_date=10) 
   
+  expect_equal(6, growing_season_length(cal$plant, cal$harvest))
   expect_equal(1, do.call(growing_days_this_season, cal))
   expect_equal(1, do.call(growing_days_this_year, cal))
   expect_equal(0, do.call(growing_days_next_year, cal))
@@ -201,6 +205,7 @@ test_that('growing days this season calculated correctly', {
   # ------------------P****H-----
   cal <- list(from=10, to=19, plant_date=19, harvest_date=24) 
   
+  expect_equal(6, growing_season_length(cal$plant, cal$harvest))
   expect_equal(1, do.call(growing_days_this_season, cal))
   expect_equal(1, do.call(growing_days_this_year, cal))
   expect_equal(0, do.call(growing_days_next_year, cal))
@@ -212,6 +217,7 @@ test_that('growing days this season calculated correctly', {
   # ----P*************H----------
   cal <- list(from=10, to=19, plant_date=5, harvest_date=19) 
   
+  expect_equal(15, growing_season_length(cal$plant, cal$harvest))
   expect_equal(10, do.call(growing_days_this_season, cal))
   expect_equal(10, do.call(growing_days_this_year, cal))
   expect_equal(0,  do.call(growing_days_next_year, cal))
@@ -223,28 +229,31 @@ test_that('growing days this season calculated correctly', {
   # ****H----------P*************
   cal <- list(from=10, to=19, plant_date=16, harvest_date=5) 
   
-  expect_equal(4, do.call(growing_days_this_season, cal))
-  expect_equal(0, do.call(growing_days_this_year, cal))
-  expect_equal(4, do.call(growing_days_next_year, cal))
-  expect_equal(4, do.call(days_since_planting_this_season, cal))
-  expect_equal(0, do.call(days_since_planting_this_year, cal))
-  expect_equal(4, do.call(days_since_planting_next_year, cal))
+  expect_equal(355, growing_season_length(cal$plant, cal$harvest))
+  expect_equal(4,   do.call(growing_days_this_season, cal))
+  expect_equal(0,   do.call(growing_days_this_year, cal))
+  expect_equal(4,   do.call(growing_days_next_year, cal))
+  expect_equal(4,   do.call(days_since_planting_this_season, cal))
+  expect_equal(0,   do.call(days_since_planting_this_year, cal))
+  expect_equal(4,   do.call(days_since_planting_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # ****H-------------------P****
   cal <- list(from=10, to=19, plant_date=25, harvest_date=5) 
   
-  expect_equal(0, do.call(growing_days_this_season, cal))
-  expect_equal(0, do.call(growing_days_this_year, cal))
-  expect_equal(0, do.call(growing_days_next_year, cal))
-  expect_equal(0, do.call(days_since_planting_this_season, cal))
-  expect_equal(0, do.call(days_since_planting_this_year, cal))
-  expect_equal(0, do.call(days_since_planting_next_year, cal))
+  expect_equal(346, growing_season_length(cal$plant, cal$harvest))
+  expect_equal(0,   do.call(growing_days_this_season, cal))
+  expect_equal(0,   do.call(growing_days_this_year, cal))
+  expect_equal(0,   do.call(growing_days_next_year, cal))
+  expect_equal(0,   do.call(days_since_planting_this_season, cal))
+  expect_equal(0,   do.call(days_since_planting_this_year, cal))
+  expect_equal(0,   do.call(days_since_planting_next_year, cal))
   
   # ---------xxxxxxxxxx----------
   # **************HP*************
   cal <- list(from=10, to=19, plant_date=16, harvest_date=15) 
   
+  expect_equal(365, growing_season_length(cal$plant, cal$harvest))
   expect_equal(4,   do.call(growing_days_this_season, cal))
   expect_equal(6,   do.call(growing_days_this_year, cal))
   expect_equal(4,   do.call(growing_days_next_year, cal))
@@ -256,6 +265,7 @@ test_that('growing days this season calculated correctly', {
   # *************H--P************
   cal <- list(from=10, to=19, plant_date=17, harvest_date=14) 
   
+  expect_equal(363, growing_season_length(cal$plant, cal$harvest))
   expect_equal(3,   do.call(growing_days_this_season, cal))
   expect_equal(5,   do.call(growing_days_this_year, cal))
   expect_equal(3,   do.call(growing_days_next_year, cal))
@@ -267,6 +277,7 @@ test_that('growing days this season calculated correctly', {
   # *********************H--P****
   cal <- list(from=10, to=19, plant_date=25, harvest_date=22)
   
+  expect_equal(363, growing_season_length(cal$plant, cal$harvest))
   expect_equal(10,  do.call(growing_days_this_season, cal))
   expect_equal(10,  do.call(growing_days_this_year, cal))
   expect_equal(0,   do.call(growing_days_next_year, cal))
@@ -278,6 +289,7 @@ test_that('growing days this season calculated correctly', {
   # -P**H------------------------
   cal <- list(from=10, to=19, plant_date=2, harvest_date=5) 
   
+  expect_equal(4, growing_season_length(cal$plant, cal$harvest))
   expect_equal(0, do.call(growing_days_this_season, cal))
   expect_equal(0, do.call(growing_days_this_year, cal))
   expect_equal(0, do.call(growing_days_next_year, cal))
@@ -289,6 +301,7 @@ test_that('growing days this season calculated correctly', {
   # --------------------P**H-----
   cal <- list(from=10, to=19, plant_date=21, harvest_date=24) 
   
+  expect_equal(4, growing_season_length(cal$plant, cal$harvest))
   expect_equal(0, do.call(growing_days_this_season, cal))
   expect_equal(0, do.call(growing_days_this_year, cal))
   expect_equal(0, do.call(growing_days_next_year, cal))
@@ -300,6 +313,7 @@ test_that('growing days this season calculated correctly', {
   # -----------------------------
   cal <- list(from=10, to=19, plant_date=NA, harvest_date=NA) 
   
+  expect_equal(NA_integer_, growing_season_length(cal$plant, cal$harvest))
   expect_equal(NA_integer_, do.call(growing_days_this_season, cal))
   expect_equal(NA_integer_, do.call(growing_days_this_year, cal))
   expect_equal(NA_integer_, do.call(growing_days_next_year, cal))

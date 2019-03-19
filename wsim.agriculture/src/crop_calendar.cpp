@@ -115,7 +115,7 @@ static inline int days_until_harvest_impl(int day_of_year, int plant_date, int h
 //'         \code{day_of_year} is outside the growing season.
 //' @export
 // [[Rcpp::export]]
-Rcpp::IntegerVector days_until_harvest(int day_of_year,
+Rcpp::IntegerVector days_until_harvest(const Rcpp::IntegerVector & day_of_year,
                                        const Rcpp::IntegerVector & plant_date,
                                        const Rcpp::IntegerVector & harvest_date) {
   auto n = plant_date.size();
@@ -126,8 +126,14 @@ Rcpp::IntegerVector days_until_harvest(int day_of_year,
   Rcpp::IntegerVector res = Rcpp::no_init(n);
   res.attr("dim") = plant_date.attr("dim");
   
-  for (decltype(n) i = 0; i < n; i++) {
-    res[i] = days_until_harvest_impl(day_of_year, plant_date[i], harvest_date[i]);
+  if (day_of_year.size() == 1) {
+    for (decltype(n) i = 0; i < n; i++) {
+      res[i] = days_until_harvest_impl(day_of_year[0], plant_date[i], harvest_date[i]);
+    }
+  } else {
+    for (decltype(n) i = 0; i < n; i++) {
+      res[i] = days_until_harvest_impl(day_of_year[i], plant_date[i], harvest_date[i]);
+    }
   }
   
   return res;
@@ -295,7 +301,7 @@ static int days_since_planting_this_year_impl(int from, int to, int plant_date, 
   }
   
   if (harvest_date > plant_date) {
-    return to - plant_date + 1;
+    return std::max(0, to - plant_date + 1);
   }
   
   return 365 - plant_date + 1 + to;
@@ -511,6 +517,72 @@ Rcpp::IntegerVector days_since_planting_this_season(int from,
   
   for (decltype(n) i = 0; i < n; i++) {
     res[i] = days_since_planting_this_season_impl(from, to, plant_date[i], harvest_date[i]);
+  }
+  
+  return res;
+}
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::LogicalVector planted_for_this_year(int from, int to, const Rcpp::IntegerVector & plant_date, const Rcpp::IntegerVector & harvest_date) {
+  auto n = plant_date.size();
+  if (n != harvest_date.size()) {
+    Rcpp::stop("Size mismatch between planting and harvest dates.");
+  }
+  
+  Rcpp::LogicalVector res = Rcpp::no_init(n);
+  res.attr("dim") = plant_date.attr("dim");
+  
+  for (decltype(n) i = 0; i < n; i++) {
+    res[i] = plant_date[i] < harvest_date[i] && plant_date[i] >= from && plant_date[i] <= to;
+  }
+  
+  return res;
+  
+}
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::LogicalVector planted_for_next_year(int from, int to, const Rcpp::IntegerVector & plant_date, const Rcpp::IntegerVector & harvest_date) {
+  auto n = plant_date.size();
+  if (n != harvest_date.size()) {
+    Rcpp::stop("Size mismatch between planting and harvest dates.");
+  }
+  
+  Rcpp::LogicalVector res = Rcpp::no_init(n);
+  res.attr("dim") = plant_date.attr("dim");
+  
+  for (decltype(n) i = 0; i < n; i++) {
+    res[i] = plant_date[i] > harvest_date[i] && plant_date[i] >= from && plant_date[i] <= to;
+  }
+  
+  return res;
+}
+
+static inline int growing_season_length_impl(int plant_date, int harvest_date) {
+  if (plant_date == NA_INTEGER || harvest_date == NA_INTEGER) {
+    return NA_INTEGER;
+  } else if (harvest_date > plant_date) {
+    return harvest_date - plant_date + 1;
+  } else {
+    return harvest_date + (365 - plant_date + 1);    
+  }
+}
+
+//' @inheritParams first_growing_day;
+//' @export
+// [[Rcpp::export]]
+Rcpp::IntegerVector growing_season_length(const Rcpp::IntegerVector & plant_date, const Rcpp::IntegerVector & harvest_date) {
+  auto n = plant_date.size();
+  if (n != harvest_date.size()) {
+    Rcpp::stop("Size mismatch between planting and harvest dates.");
+  }
+  
+  Rcpp::IntegerVector res = Rcpp::no_init(n);
+  res.attr("dim") = plant_date.attr("dim");
+  
+  for (decltype(n) i = 0; i < n; i++) {
+    res[i] = growing_season_length_impl(plant_date[i], harvest_date[i]);
   }
   
   return res;
