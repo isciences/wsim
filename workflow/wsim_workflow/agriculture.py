@@ -270,6 +270,7 @@ def wsim_ag(*,
             state: str,
             next_state: str,
             results: str,
+            extra_output: Optional[str],
             surplus: Union[str, List[str]],
             deficit: Union[str, List[str]],
             temperature_rp: str,
@@ -298,5 +299,8 @@ def wsim_ag(*,
 
     for d in deficit:
         cmd += ['--deficit', d]
+
+    if extra_output:
+        cmd += ['--extra_output', extra_output]
 
     return cmd
