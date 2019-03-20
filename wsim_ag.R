@@ -40,15 +40,15 @@ Options:
 stresses <- c('surplus', 'deficit', 'heat', 'cold')
 
 test_args <- list(
-  '--state',          '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_201001.nc',
-  '--next_state',     '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_201002.nc',
-  '--results',        '/home/dbaston/wsim/oct22/agriculture/results_rainfed/results_1mo_201001.nc',
-  '--extra_output',   '/home/dbaston/wsim/oct22/agriculture/results_rainfed/extra_output_1mo_201001.nc',
-  '--surplus',        '/home/dbaston/wsim/oct22/rp/rp_1mo_201001.nc::RO_mm_rp',
-  '--deficit',        '/home/dbaston/wsim/oct22/rp/rp_1mo_201001.nc::PETmE_rp@negate,Ws_rp',
-  '--temperature_rp', '/home/dbaston/wsim/oct22/rp/rp_1mo_201001.nc::T_rp',
+  '--state',          '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_195501.nc',
+  '--next_state',     '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_195502.nc',
+  '--results',        '/home/dbaston/wsim/oct22/agriculture/results_rainfed/results_1mo_195501.nc',
+  '--extra_output',   '/home/dbaston/wsim/oct22/agriculture/results_rainfed/extra_output_1mo_195501.nc',
+  '--surplus',        '/home/dbaston/wsim/oct22/rp/rp_1mo_195501.nc::RO_mm_rp',
+  '--deficit',        '/home/dbaston/wsim/oct22/rp/rp_1mo_195501.nc::PETmE_rp@negate,Ws_rp',
+  '--temperature_rp', '/home/dbaston/wsim/oct22/rp/rp_1mo_195501.nc::T_rp',
   '--calendar',       '/mnt/fig_rw/WSIM_DEV/source/MIRCA2000/crop_calendar_rainfed.nc',
-  '--yearmon',        '201001'
+  '--yearmon',        '195501'
 )
 
 clamp <- function(vals, minval, maxval) {
@@ -87,32 +87,54 @@ main <- function(raw_args) {
   )
 
   res <- c(extent[4]-extent[3], extent[2]-extent[1]) / dim(surplus)
+  
+  all_in_memory <- TRUE
 
-  infof('Initializing state file at %s.', args$next_state, res[1],res[2])
-  if (file.exists(args$next_state)) {
-    file.remove(args$next_state)
-  }
-  write_empty_state(fname=args$next_state,
-                    res=res,
-                    extent=extent,
-                    fill_zero=FALSE)
-
-  infof('Initializing results file at %s.', args$results)
-  if (file.exists(args$results)) {
-    file.remove(args$results)
-  }
-  write_empty_results(fname=args$results,
+  if (all_in_memory) {
+    states_to_write <- list(
+      loss_days_current_year = list(),
+      loss_days_next_year = list(),
+      fraction_remaining_current_year = list(),
+      fraction_remaining_next_year = list()
+    )
+  
+    results_to_write <- list(
+      loss= list(),
+      mean_loss_current_year= list(),
+      mean_loss_next_year= list(),
+      cumulative_loss_current_year= list(),
+      cumulative_loss_next_year= list()
+    )
+    
+    extra_data_to_write <- list(
+      surplus=list(),
+      deficit=list(),
+      heat=list(),
+      cold=list(),
+      rp_temp=list(),
+      rp_surplus=list(),
+      rp_deficit=list()
+    )
+  } else {
+    infof('Initializing results file at %s.', args$results)
+    write_empty_results(fname=args$results,
+                        res=res,
+                        extent=extent,
+                        fill_zero=FALSE)
+    
+    infof('Initializing state file at %s.', args$next_state, res[1],res[2])
+    write_empty_state(fname=args$next_state,
                       res=res,
                       extent=extent,
                       fill_zero=FALSE)
-  
-  if (!is.null(args$extra_output)) {
-    infof('Initializing extra output file at %s.', args$extra_output)
-    write_empty_results(fname=args$extra_output,
-                        res=res,
-                        extent=extent,
-                        vars=c('surplus', 'deficit', 'heat', 'cold', 'rp_surplus', 'rp_deficit', 'rp_temp'),
-                        fill_zero=FALSE)
+    if (!is.null(args$extra_output)) {
+      infof('Initializing extra output file at %s.', args$extra_output)
+      write_empty_results(fname=args$extra_output,
+                          res=res,
+                          extent=extent,
+                          vars=c('surplus', 'deficit', 'heat', 'cold', 'rp_surplus', 'rp_deficit', 'rp_temp'),
+                          fill_zero=FALSE)
+    }
   }
 
   month <- as.integer(substr(args$yearmon, 5, 6))
@@ -191,46 +213,95 @@ main <- function(raw_args) {
     
     loss[((is.na(gd$this_year) | gd$this_year < 1) & (is.na(gd$next_year) | gd$next_year < 1))] <- NA
         
-    infof('Writing next state for %s', crop) 
-    write_vars_to_cdf(next_state,
-                      args$next_state,
-                      extent=extent,
-                      write_slice=list(crop=crop),
-                      append=TRUE,
-                      quick_append=TRUE)
-    
-    infof('Writing results for %s', crop) 
-    write_vars_to_cdf(list(loss                   = loss,
-                           mean_loss_current_year = growing_season_loss$this_year,
-                           mean_loss_next_year    = growing_season_loss$next_year,
-                           cumulative_loss_current_year = 1 - next_state$fraction_remaining_current_year,
-                           cumulative_loss_next_year    = 1 - next_state$fraction_remaining_next_year),
-                      args$results,
-                      extent=extent,
-                      write_slice=list(crop=crop),
-                      append=TRUE,
-                      quick_append=TRUE)
-    
-    if (!is.null(args$extra_output)) {
-      infof('Writing extra data for %s', crop) 
-      write_vars_to_cdf(list(surplus=losses$surplus,
-                             deficit=losses$deficit,
-                             heat=losses$heat,
-                             cold=losses$cold,
-                             rp_temp=rp$heat,
-                             rp_surplus=rp$surplus,
-                             rp_deficit=rp$deficit),
-                        args$extra_output,
+    if (all_in_memory) {
+      for (v in names(next_state)) {
+        states_to_write[[v]][[crop]] <- next_state[[v]]
+      }
+    } else {
+      infof('Writing next state for %s', crop) 
+      write_vars_to_cdf(next_state,
+                        args$next_state,
                         extent=extent,
                         write_slice=list(crop=crop),
                         append=TRUE,
                         quick_append=TRUE)
     }
+    
+    results <- list(
+      loss=                         loss,
+      mean_loss_current_year=       growing_season_loss$this_year,
+      mean_loss_next_year=          growing_season_loss$next_year,
+      cumulative_loss_current_year= pmax(1 - next_state$fraction_remaining_current_year, 0),
+      cumulative_loss_next_year=    pmax(1 - next_state$fraction_remaining_next_year, 0)
+    )
+    
+    if (all_in_memory) {
+      for (v in names(results)) {
+        results_to_write[[v]][[crop]] <- results[[v]]
+      }
+    } else {
+      infof('Writing results for %s', crop) 
+      write_vars_to_cdf(results,
+                        args$results,
+                        extent=extent,
+                        write_slice=list(crop=crop),
+                        append=TRUE,
+                        quick_append=TRUE)
+    }
+    
+    if (!is.null(args$extra_output)) {
+      to_write <- list(
+        surplus=    losses$surplus,
+        deficit=    losses$deficit,
+        heat=       losses$heat,
+        cold=       losses$heat,
+        rp_temp=    rp$heat,
+        rp_surplus= rp$surplus,
+        rp_deficit= rp$deficit
+      )  
+      
+      if (all_in_memory) {
+        for (v in names(to_write)) {
+          extra_data_to_write[[v]][[crop]] <- to_write[[v]]
+        }
+      } else {
+        infof('Writing extra data for %s', crop) 
+        write_vars_to_cdf(to_write,
+                          args$extra_output,
+                          extent=extent,
+                          write_slice=list(crop=crop),
+                          append=TRUE,
+                          quick_append=TRUE)
+      }
+    }
   }
+  
+  if (all_in_memory) {
+    infof('Writing next state to %s', args$next_state)
+    write_vars_to_cdf(lapply(states_to_write, abind::abind, rev.along=0),
+                      args$next_state,
+                      extent=extent,
+                      extra_dims=list(crop=wsim_subcrop_names()))
+    infof('Writing results to %s', args$results)
+    write_vars_to_cdf(lapply(results_to_write, abind::abind, rev.along=0),
+                      args$results,
+                      extent=extent,
+                      extra_dims=list(crop=wsim_subcrop_names()))
+    if (!is.null(args$extra_output)) {
+      infof('Writing extra output to %s', args$extra_output)
+      write_vars_to_cdf(lapply(extra_data_to_write, abind::abind, rev.along=0),
+                        args$extra_output,
+                        extent=extent,
+                        extra_dims=list(crop=wsim_subcrop_names()))
+    }
+  }
+                    
 }
 
 if (!interactive()) {
-  #tryCatch(
+  tryCatch(
     main(commandArgs(trailingOnly=TRUE))
-   # , error=wsim.io::die_with_message)
+  ,error=wsim.io::die_with_message)
 }
+
+#main(test_args)
