@@ -23,7 +23,7 @@ suppressMessages({
 '
 Compute crop-specific loss risk
 
-Usage: wsim_ag --state <file> --surplus <file>... --deficit <file>... --temperature_rp <file> --calendar <file> --loss_factors <file> --next_state <file> --results <file> --yearmon <yearmon> [--extra_output <file>]
+Usage: wsim_ag --state <file> --surplus <file>... --deficit <file>... --temperature_rp <file> --calendar <file> --next_state <file> --results <file> --yearmon <yearmon> [--extra_output <file>]
 
 Options:
 --state <file>           Previous state
@@ -32,27 +32,22 @@ Options:
 --extra_output <file>    Optional file to which intermediate calculations can be saved
 --temperature_rp <file>  Surface temperature return period
 --calendar <file>        Crop calendar file
---loss_factors <file>    Loss factor csv
 --next_state <file>      output file
 --results <file>         output file
 --yearmon <yearmon>      yearmon
 '->usage
 
-stress_threshold <- 30
 stresses <- c('surplus', 'deficit', 'heat', 'cold')
-methods <- c('irrigated', 'rainfed')
 
 test_args <- list(
   '--state',          '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_201001.nc',
   '--next_state',     '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_201002.nc',
   '--results',        '/home/dbaston/wsim/oct22/agriculture/results_rainfed/results_1mo_201001.nc',
-  #'--extra_output',   '/home/dbaston/wsim/oct22/agriculture/results_rainfed/extra_output_1mo_201001.nc',
+  '--extra_output',   '/home/dbaston/wsim/oct22/agriculture/results_rainfed/extra_output_1mo_201001.nc',
   '--surplus',        '/home/dbaston/wsim/oct22/rp/rp_1mo_201001.nc::RO_mm_rp',
-  '--deficit',        '/home/dbaston/wsim/oct22/rp/rp_1mo_201001.nc::PETmE_rp,Ws_rp',
-  #'--deficit',        '/home/dbaston/wsim/oct22/agriculture/bt_ro_rp/bt_ro_rp_201003.nc',
+  '--deficit',        '/home/dbaston/wsim/oct22/rp/rp_1mo_201001.nc::PETmE_rp@negate,Ws_rp',
   '--temperature_rp', '/home/dbaston/wsim/oct22/rp/rp_1mo_201001.nc::T_rp',
   '--calendar',       '/mnt/fig_rw/WSIM_DEV/source/MIRCA2000/crop_calendar_rainfed.nc',
-  '--loss_factors',   '/tmp/factors.csv',
   '--yearmon',        '201001'
 )
 
@@ -100,7 +95,6 @@ main <- function(raw_args) {
   write_empty_state(fname=args$next_state,
                     res=res,
                     extent=extent,
-                    stresses=stresses,
                     fill_zero=FALSE)
 
   infof('Initializing results file at %s.', args$results)
@@ -121,10 +115,6 @@ main <- function(raw_args) {
                         fill_zero=FALSE)
   }
 
-  # TODO forgo argument and just pull table from module?
-  #loss_factors <- read.table(args$loss_factors, header=TRUE, sep='\t')
-  loss_factors <- wsim.agriculture::example_crop_factors
-
   month <- as.integer(substr(args$yearmon, 5, 6))
   
   from <- start_of_month(month)
@@ -142,6 +132,9 @@ main <- function(raw_args) {
 
     plant_date <- calendar$data$plant
     harvest_date <- calendar$data$harvest
+    
+    initial_fraction_remaining <- initial_crop_fraction_remaining(growing_season_length(plant_date, harvest_date),
+                                                                  2.072e-3, 1.675e-6)
 
     # How many days of growth did we have this month, considering only the second growing season
     # in cases where this month spanned the end of an old growing season and the start of a
@@ -162,60 +155,16 @@ main <- function(raw_args) {
     stopifnot(all(is.na(gd$this_year) == is.na(plant_date)))
     stopifnot(all(is.na(gd$next_year) == is.na(plant_date)))
 
-    losses <- list()
-    for (stress in stresses) {
-      early_losses <- loss_factors[loss_factors$crop==base_crop & loss_factors$days > 0, c('days', stress)]
-      late_losses  <- loss_factors[loss_factors$crop==base_crop & loss_factors$days < 0, c('days', stress)]
-
-      months_stress <- read_vars_from_cdf(sprintf('%s::months_stress', args$state),
-                                          extra_dims=list(crop=crop, stress=stress))$data[[1]]
-      
-      rp_coalesced <- wsim.lsm::coalesce(rp[[stress]], 0)
-      base_loss <- loss_function(rp_coalesced, 12, 80, 2)
-      
-      loss <- list(
-        this_year= base_loss*1, #growth_stage_loss_multiplier(from + 0.5*gd$this_year,
-                                #                         plant_date,
-                                #                         harvest_date,
-                                #                         early_losses,
-                                #                         late_losses),
-        next_year= base_loss*1  #growth_stage_loss_multiplier(to - 0.5*gd$next_year,
-                                #                         plant_date,
-                                #                         harvest_date,
-                                #                         early_losses,
-                                )#                         late_losses))
-      
-      high_stress <- rp_coalesced > stress_threshold 
-      
-      # Update consecutive months of stress. Reset the counter if we begin a new growing season.
-      # We carry stress forward unless there was a planting in the current month (identified by days_since_planting <= days_in_month)
-      mstress <- list(
-        this_year= high_stress*(months_stress*!planted_for_this_year(from, to, plant_date, harvest_date) + gd$this_year/30),
-        next_year= high_stress*(months_stress*!planted_for_next_year(from, to, plant_date, harvest_date) + gd$next_year/30)
-      ) 
-      
-      #loss$this_year <- loss$this_year * duration_loss_multiplier(mstress$this_year)
-      #loss$next_year <- loss$next_year * duration_loss_multiplier(mstress$next_year)
-      
-      losses[[stress]] <- loss
-      
-      write_vars_to_cdf(list(months_stress=ifelse(mstress$next_year > 0, mstress$next_year, mstress$this_year)),
-                        args$next_state,
-                        extent=extent,
-                        write_slice=list(crop=crop, stress=stress),
-                        append=TRUE,
-                        quick_append=TRUE)
-    }
+    losses <- lapply(stresses, function(stress) {
+      loss_function(wsim.lsm::coalesce(rp[[stress]], 0),
+                    12, 80, 2)
+    })
+    names(losses) <- stresses
     
-    loss$this_year <- pmin(wsim.distributions::stack_sum(abind::abind(
-      lapply(losses, function(l) l$this_year), along=3)), 1.0) 
-    
-    loss$next_year <- pmin(wsim.distributions::stack_sum(abind::abind(
-      lapply(losses, function(l) l$next_year), along=3)), 1.0) 
+    loss <- pmin(wsim.distributions::stack_sum(abind::abind(losses, along=3)), 1.0) 
     
     # sanity check losses
-    stopifnot(all(is.na(loss$this_year) | (loss$this_year >= 0 & loss$this_year <= 1)))
-    stopifnot(all(is.na(loss$next_year) | (loss$next_year >= 0 & loss$next_year <= 1)))
+    stopifnot(all(is.na(loss) | (loss >= 0 & loss <= 1)))
     
     prev_state <- read_vars_from_cdf(sprintf('%s::%s', args$state, paste('loss_days_current_year',
                                                                          'loss_days_next_year',
@@ -224,10 +173,10 @@ main <- function(raw_args) {
                                                                          sep=',')),
                                      extra_dims=list(crop=crop))$data
 
-    
     next_state <- update_crop_state(prev_state, gd, days_in_month, loss,
                                     reset = (month==1),
-                                    winter_growth = (harvest_date < plant_date))
+                                    winter_growth = (harvest_date < plant_date),
+                                    initial_fraction_remaining = initial_fraction_remaining)
     
     # state variables are defined wherever calendars are
     stopifnot(all(is.na(plant_date) == is.na(next_state$fraction_remaining_current_year)))
@@ -240,8 +189,7 @@ main <- function(raw_args) {
       next_year= ifelse(days_since_planting$next_year > 0, next_state$loss_days_next_year    / days_since_planting$next_year, NA)
     )
     
-    loss$this_year[is.na(gd$this_year) | gd$this_year < 1] <- NA
-    loss$next_year[is.na(gd$next_year) | gd$next_year < 1] <- NA # Set loss to NA wherever there was no growth
+    loss[((is.na(gd$this_year) | gd$this_year < 1) & (is.na(gd$next_year) | gd$next_year < 1))] <- NA
         
     infof('Writing next state for %s', crop) 
     write_vars_to_cdf(next_state,
@@ -252,7 +200,7 @@ main <- function(raw_args) {
                       quick_append=TRUE)
     
     infof('Writing results for %s', crop) 
-    write_vars_to_cdf(list(loss                   = wsim.lsm::coalesce(loss$next_year, loss$this_year),
+    write_vars_to_cdf(list(loss                   = loss,
                            mean_loss_current_year = growing_season_loss$this_year,
                            mean_loss_next_year    = growing_season_loss$next_year,
                            cumulative_loss_current_year = 1 - next_state$fraction_remaining_current_year,
@@ -265,10 +213,10 @@ main <- function(raw_args) {
     
     if (!is.null(args$extra_output)) {
       infof('Writing extra data for %s', crop) 
-      write_vars_to_cdf(list(surplus=losses$surplus$this_year,
-                             deficit=losses$deficit$this_year,
-                             heat=losses$heat$this_year,
-                             cold=losses$cold$this_year,
+      write_vars_to_cdf(list(surplus=losses$surplus,
+                             deficit=losses$deficit,
+                             heat=losses$heat,
+                             cold=losses$cold,
                              rp_temp=rp$heat,
                              rp_surplus=rp$surplus,
                              rp_deficit=rp$deficit),
