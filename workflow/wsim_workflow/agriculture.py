@@ -242,7 +242,7 @@ def compute_loss_risk(workspace: DefaultWorkspace,
         deficit = workspace.agriculture_bt_ro_rp(yearmon=yearmon, member=member, target=target)
     elif method == 'rainfed':
         deficit = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target),
-                            'PETmE_rp',
+                            'PETmE_rp@negate',
                             'Ws_rp')
     else:
         raise Exception('Unknown cultivation method:', method)
