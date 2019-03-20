@@ -30,11 +30,15 @@ write_empty_state <- function(fname,
     extent=extent,
     extra_dims=list(crop=crop_names,
                     stress=stresses),
-    prec='byte',
+    prec='single',
     put_data=fill_zero)
   
   wsim.io::write_vars_to_cdf(
-    list(cumulative_loss=cumulative_loss),
+    list(fraction_remaining_current_year = cumulative_loss + 1,
+         fraction_remaining_next_year = cumulative_loss + 1,
+         loss_days_current_year=cumulative_loss,
+         loss_days_next_year=cumulative_loss
+         ),
     fname,
     extent=extent,
     extra_dims=list(crop=crop_names),
@@ -52,7 +56,11 @@ write_empty_results <- function(fname,
                                 res=0.5,
                                 extent=c(-180, 180, -90, 90),
                                 crop_names=wsim_subcrop_names(),
-                                vars=c('loss', 'growing_season_loss'),
+                                vars=c('loss',
+                                       'mean_loss_current_year',
+                                       'mean_loss_next_year',
+                                       'cumulative_loss_current_year',
+                                       'cumulative_loss_next_year'),
                                 fill_zero=TRUE) {
   dim <- c((extent[4]-extent[3]), (extent[2]-extent[1]))/res
   
