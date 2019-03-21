@@ -255,7 +255,7 @@ main <- function(raw_args) {
         surplus=    losses$surplus,
         deficit=    losses$deficit,
         heat=       losses$heat,
-        cold=       losses$heat,
+        cold=       losses$cold,
         rp_temp=    rp$heat,
         rp_surplus= rp$surplus,
         rp_deficit= rp$deficit
