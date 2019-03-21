@@ -72,10 +72,11 @@ main <- function(raw_args) {
 
   stopifnot(dim(surplus) == dim(deficit))
 
-  heat <- wsim.io::read_vars(args$temperature_rp,
-                             expect.nvars=1,
-                             expect.dims=dim(surplus),
-                             expect.extent=extent)$data[[1]]
+  heat <- clamp(wsim.io::read_vars(args$temperature_rp,
+                                   expect.nvars=1,
+                                   expect.dims=dim(surplus),
+                                   expect.extent=extent)$data[[1]],
+                -60, 60)
 
   cold <- (-heat)
 
