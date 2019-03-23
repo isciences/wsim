@@ -22,12 +22,12 @@
 #' @return returns a generated loss value from 0 to 1
 #' @export
 random_loss <- function(n_surplus, n_deficit, independent, ...) {
-  heat_rp <- wsim.distributions::quantile2rp(runif(1))  
+  heat_rp <- quantile2rp(runif(1))  
   cold_rp <- -heat_rp
   
   if (independent) {
-    surplus_rp <- max(wsim.distributions::quantile2rp(runif(n_surplus)))
-    deficit_rp <- max(wsim.distributions::quantile2rp(runif(n_deficit)))
+    surplus_rp <- max(quantile2rp(runif(n_surplus)))
+    deficit_rp <- max(quantile2rp(runif(n_deficit)))
   } else {
     surplus_rp <- heat_rp
     deficit_rp <- -heat_rp
@@ -38,4 +38,10 @@ random_loss <- function(n_surplus, n_deficit, independent, ...) {
       loss_function(cold_rp, ...) +
       loss_function(surplus_rp, ...) +
       loss_function(deficit_rp, ...))
+}
+
+# Convert a quantile to a return period (copied from wsim.distributions
+# package to avoid adding a dependency for such a small function.
+quantile2rp <- function(q) {
+  1/((q>0.5) - q)
 }
