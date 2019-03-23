@@ -49,7 +49,7 @@ simulate_expected_loss <- function(N=10000, ...) {
         method=method,
         inputs=inputs,
         mean_loss=apply(loss, 2, mean),
-        sd_loss=apply(loss, 2, sd),
+        sd_loss=apply(loss, 2, stats::sd),
         stringsAsFactors=FALSE
       )
       

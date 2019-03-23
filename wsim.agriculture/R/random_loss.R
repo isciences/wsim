@@ -22,12 +22,12 @@
 #' @return returns a generated loss value from 0 to 1
 #' @export
 random_loss <- function(n_surplus, n_deficit, independent, ...) {
-  heat_rp <- quantile2rp(runif(1))  
+  heat_rp <- quantile2rp(stats::runif(1))  
   cold_rp <- -heat_rp
   
   if (independent) {
-    surplus_rp <- max(quantile2rp(runif(n_surplus)))
-    deficit_rp <- max(quantile2rp(runif(n_deficit)))
+    surplus_rp <- max(quantile2rp(stats::runif(n_surplus)))
+    deficit_rp <- max(quantile2rp(stats::runif(n_deficit)))
   } else {
     surplus_rp <- heat_rp
     deficit_rp <- -heat_rp
