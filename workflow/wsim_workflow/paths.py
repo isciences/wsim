@@ -232,9 +232,6 @@ class AgricultureStatic(metaclass=ABCMeta):
     def crop_calendar(self, method: str) -> str:
         pass
 
-    def growth_stage_loss_factors(self) -> str:
-        pass
-
     def dam_locations(self) -> Vardef:
         pass
 

@@ -235,7 +235,6 @@ def compute_loss_risk(workspace: DefaultWorkspace,
     temperature_rp = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'T_rp')
 
     calendar = static.crop_calendar(method)
-    loss_factors = static.growth_stage_loss_factors()
 
     surplus = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'RO_mm_rp')
     if method == 'irrigated':
@@ -250,7 +249,7 @@ def compute_loss_risk(workspace: DefaultWorkspace,
     return [
         Step(
             targets=[results, next_state],
-            dependencies=[current_state, surplus, deficit, temperature_rp, calendar, loss_factors],
+            dependencies=[current_state, surplus, deficit, temperature_rp, calendar],
             commands=[
                 wsim_ag(state=current_state,
                         next_state=next_state,
@@ -259,7 +258,6 @@ def compute_loss_risk(workspace: DefaultWorkspace,
                         deficit=deficit,
                         temperature_rp=temperature_rp,
                         calendar=static.crop_calendar(method=method),
-                        loss_factors=loss_factors,
                         yearmon=target if target else yearmon)
             ]
         )
@@ -275,7 +273,6 @@ def wsim_ag(*,
             deficit: Union[str, List[str]],
             temperature_rp: str,
             calendar: str,
-            loss_factors: str,
             yearmon: str
             ) -> List[str]:
     if type(surplus) is str:
@@ -288,7 +285,6 @@ def wsim_ag(*,
         '--state', state,
         '--temperature_rp', temperature_rp,
         '--calendar', calendar,
-        '--loss_factors', loss_factors,
         '--next_state', next_state,
         '--results', results,
         '--yearmon', yearmon

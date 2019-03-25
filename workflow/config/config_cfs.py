@@ -81,10 +81,6 @@ class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
     def crop_calendar(self, method: str) -> str:
         return os.path.join(self.source, 'MIRCA2000', 'crop_calendar_{}.nc'.format(method))
 
-    def growth_stage_loss_factors(self) -> str:
-        # FIXME
-        return '/tmp/factors.csv'
-
     def production(self, crop: str, method: str) -> str:
         return os.path.join(self.source_dir, spam2010.SUBDIR, spam2010.spam_production_tif())
 
