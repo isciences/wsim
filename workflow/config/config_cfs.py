@@ -45,7 +45,15 @@ class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
             natural_earth.natural_earth(source_dir=self.source, layer='coastline', resolution=10) + \
             mirca2000.crop_calendars(source_dir=self.source) + \
             spam2010.production(source_dir=self.source) + \
-            [Step(targets='/tmp/factors.csv', commands=[['touch', '/tmp/factors.csv']])] # TODO
+            spam2010.allocate_spam_production(spam_zip = spam2010.spam_zip(self.source),
+                                     method = 'irrigated',
+                                     area_fractions = self.crop_calendar(method='irrigated'),
+                                     output = self.production(method='irrigated')) + \
+            spam2010.allocate_spam_production(spam_zip = spam2010.spam_zip(self.source),
+                                              method = 'rainfed',
+                                              area_fractions = self.crop_calendar(method='rainfed'),
+                                              output = self.production(method='rainfed'))
+
 
     # Static inputs
     def wc(self) -> paths.Vardef:
@@ -81,8 +89,9 @@ class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
     def crop_calendar(self, method: str) -> str:
         return os.path.join(self.source, 'MIRCA2000', 'crop_calendar_{}.nc'.format(method))
 
-    def production(self, crop: str, method: str) -> str:
-        return os.path.join(self.source_dir, spam2010.SUBDIR, spam2010.spam_production_tif())
+    def production(self, method: str) -> str:
+        return os.path.join(self.source, spam2010.SUBDIR, 'production_{}.nc'.format(method))
+
 
 class NCEP(paths.ObservedForcing):
 
