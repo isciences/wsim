@@ -1,5 +1,8 @@
+**/*.Rcheck/
 **/*.Rd
 **/*.Rproj
+**/*.egg
+**/*.egg-info/
 **/*.o
 **/*.so
 **/*.swo
@@ -20,6 +23,10 @@ docs/_build
 docs/_generated
 publish.sh
 testdata/
+workflow/build
+workflow/dist
+wsim.agriculture/docs
 wsim.distributions/docs
+wsim.electricity/docs
 wsim.io/docs
 wsim.lsm/docs
