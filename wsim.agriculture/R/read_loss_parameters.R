@@ -17,7 +17,7 @@
 #' @return list of read parameters
 #' @export
 read_loss_parameters <- function(fname) {
-  params <- read.csv(fname, header=TRUE, colClasses='character', stringsAsFactors=FALSE)
+  params <- utils::read.csv(fname, header=TRUE, colClasses='character', stringsAsFactors=FALSE)
   
   list(
     mean_loss_fit_a= as.numeric(read_key(params, 'mean_loss_fit_a')),

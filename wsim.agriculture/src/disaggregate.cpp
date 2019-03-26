@@ -83,7 +83,6 @@ static auto na_ignore(BinOp op) {
   };
 }
 
-//' @export
 //[[Rcpp::export]]
 Rcpp::NumericMatrix disaggregate_pfun(const Rcpp::NumericMatrix & m1,
                                       const Rcpp::NumericMatrix & m2,
