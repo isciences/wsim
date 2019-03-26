@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::plugins(cpp1y)]]
 #include <Rcpp.h>
 
 //' Disaggregate a matrix by duplicating each cell a fixed number of times
@@ -43,4 +43,92 @@ Rcpp::NumericMatrix disaggregate (const Rcpp::NumericMatrix & mat, int factor) {
   }
   
   return out;
+}
+
+template<typename BinOp>
+Rcpp::NumericMatrix disaggregate_pfun_impl(
+    const Rcpp::NumericMatrix & a,
+    const Rcpp::NumericMatrix & b,
+    BinOp op) {
+  
+  auto rows = a.rows();
+  auto cols = a.cols();
+  auto factor = a.rows() / b.rows();
+  
+  Rcpp::NumericMatrix out = Rcpp::no_init(rows, cols);
+  
+  for (decltype(cols) j = 0; j < cols; j++) {
+    for (decltype(rows) i = 0; i < rows; i++) {
+      out(i, j) = op(a(i, j), b(i/factor, j/factor));  
+    }
+  }
+  
+  return out;
+}
+
+template<typename BinOp>
+static auto na_ignore(BinOp op) {
+  return [op](const double & a, const double & b) {
+    if (std::isnan(a)) {
+      if (std::isnan(b)) {
+        return NA_REAL;
+      } else {
+        return b;
+      }
+    } else if (std::isnan(b)) {
+      return a;
+    } else {
+      return op(a, b);
+    }
+  };
+}
+
+//' @export
+//[[Rcpp::export]]
+Rcpp::NumericMatrix disaggregate_pfun(const Rcpp::NumericMatrix & m1,
+                                      const Rcpp::NumericMatrix & m2,
+                                      const std::string & op,
+                                      bool na_rm) {
+  const Rcpp::NumericMatrix& a = m1.size() > m2.size() ? m1 : m2;
+  const Rcpp::NumericMatrix& b = m1.size() > m2.size() ? m2 : m1;
+  
+  auto rows = a.rows();
+  auto cols = a.cols();
+  
+  auto factor = rows / b.rows();
+  if (b.rows()*factor != rows || b.cols()*factor != cols) {
+    Rcpp::stop("Dimensions of two matrices may only differ by a constant integer factor.");
+  }
+  
+  if (op == "sum") {
+    auto sum = ([](const double & a, const double & b) { return a + b; });
+    if (na_rm) {
+      return disaggregate_pfun_impl(a, b, na_ignore(sum));
+    } else {
+      return disaggregate_pfun_impl(a, b, sum);
+    }
+  } else if (op == "difference") {
+    auto difference = ([](const double & a, const double & b) { return a - b; });
+    if (na_rm) {
+      return disaggregate_pfun_impl(a, b, na_ignore(difference));
+    } else {
+      return disaggregate_pfun_impl(a, b, difference);
+    }
+  } else if (op == "product") {
+    auto product = ([](const double & a, const double & b) { return a * b; });
+    if (na_rm) {
+      return disaggregate_pfun_impl(a, b, na_ignore(product));
+    } else {
+      return disaggregate_pfun_impl(a, b, product);
+    }
+  } else if (op == "quotient") {
+    auto quotient = ([](const double & a, const double & b) { return a / b; });
+    if (na_rm) {
+      return disaggregate_pfun_impl(a, b, na_ignore(quotient));
+    } else {
+      return disaggregate_pfun_impl(a, b, quotient);
+    }
+  } else {
+    Rcpp::stop("Unknown operation.");
+  }
 }

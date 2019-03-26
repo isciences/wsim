@@ -141,3 +141,57 @@ test_that('Disaggregate throws errors on invalid inputs', {
   expect_error(disaggregate(x,  0), 'Invalid .* factor')
   expect_error(disaggregate(x, -1), 'Invalid .* factor')
 })
+
+test_that('psum performs element-wise summation', {
+  x <- array(runif(6), dim=c(2,3))  
+  y <- array(runif(6), dim=c(2,3))
+  
+  expect_equal(psum(x, y), x+y)
+})
+
+test_that('psum can ignore NAs', {
+  x <- array(runif(25), dim=c(5, 5))
+  y <- array(runif(25), dim=c(5, 5))
+  
+  y[sample(length(y), 3)] <- NA
+  x[sample(length(x), 2)] <- NA
+  
+  # By default, NA values are propagated
+  expect_equal(psum(x, y), x+y)
+  
+  # With na.rm=TRUE, a+NA == a
+  expect_equal(psum(x, y, na.rm=TRUE),
+               ifelse(is.na(x) & !is.na(y), 0, x) + ifelse(is.na(y) & !is.na(x), 0, y))
+})
+
+test_that('pprod performs elementwise product, propagating NAs', {
+  x <- array(runif(25), dim=c(5, 5))
+  y <- array(runif(25), dim=c(5, 5))
+  
+  x[1] <- NA
+  y[1] <- NA
+  y[sample(length(y), 3)] <- NA
+  x[sample(length(x), 2)] <- NA
+  
+  expect_equal(pprod(x, y), x*y)
+})
+
+test_that('psum and pprod complain about incompatibile dimensions', {
+  x <- array(runif(6), dim=c(2,3))  
+  y <- array(runif(6), dim=c(3,2))
+  
+  expect_error(psum(x, y),
+               'Dimensions .* may only differ by')
+  expect_error(pprod(x, y),
+               'Dimensions .* may only differ by')
+})
+
+test_that('psum and pprod implcitly disaggregate when dimensions differ by an integer multiple', {
+  x <- array(runif(6), dim=c(2,3))
+  y <- array(runif(6), dim=c(2,3))
+  
+  expect_equal(psum(x, disaggregate(y, 3)),
+               disaggregate(x, 3) + disaggregate(y, 3))
+  expect_equal(pprod(x, disaggregate(y, 3)),
+               disaggregate(x, 3) * disaggregate(y, 3))
+})
