@@ -516,6 +516,12 @@ class DefaultWorkspace:
     def agriculture_loss_risk(self, *, yearmon: str, target: Optional[str]=None, member: Optional[str]=None, basis: str, summary: bool=False):
         return self.make_path('loss_risk', sector='agriculture', yearmon=yearmon, window=1, target=target, member=member, basis=basis, summary=summary)
 
+    def loss_params(self, *, sector: str, method: str):
+        assert sector == 'agriculture'
+        assert method in { 'rainfed', 'irrigated' }
+
+        return os.path.join(self.outputs, sector, 'spinup', 'loss_params_{}.csv'.format(method))
+
     # Distribution fit files. Must provide either a numeric month, or an annual_stat
     def fit_obs(self, *,
                 var: str,

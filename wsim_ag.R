@@ -15,15 +15,15 @@
 
 wsim.io::logging_init('wsim_ag')
 suppressMessages({
-  require(Rcpp)
-  require(wsim.io)
-  require(wsim.agriculture)
+  library(Rcpp)
+  library(wsim.io)
+  library(wsim.agriculture)
 })
 
 '
 Compute crop-specific loss risk
 
-Usage: wsim_ag --state <file> --surplus <file>... --deficit <file>... --temperature_rp <file> --calendar <file> --next_state <file> --results <file> --yearmon <yearmon> [--extra_output <file>]
+Usage: wsim_ag --state <file> --surplus <file>... --deficit <file>... --temperature_rp <file> --loss_params <file> --calendar <file> --next_state <file> --results <file> --yearmon <yearmon> [--extra_output <file>]
 
 Options:
 --state <file>           Previous state
@@ -35,6 +35,7 @@ Options:
 --next_state <file>      output file
 --results <file>         output file
 --yearmon <yearmon>      yearmon
+--loss_params <file>     File defining parameters for loss function
 '->usage
 
 stresses <- c('surplus', 'deficit', 'heat', 'cold')
@@ -57,6 +58,8 @@ clamp <- function(vals, minval, maxval) {
 
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
+  
+  loss_params <- read_loss_parameters(args$loss_params)
 
   surpluses <- wsim.io::read_vars_to_cube(args$surplus)
   wsim.io::info('Read surplus values:', paste(dimnames(surpluses)[[3]], collapse=", "))
@@ -157,7 +160,8 @@ main <- function(raw_args) {
     harvest_date <- calendar$data$harvest
     
     initial_fraction_remaining <- initial_crop_fraction_remaining(growing_season_length(plant_date, harvest_date),
-                                                                  2.072e-3, 1.675e-6)
+                                                                  loss_params$mean_loss_fit_a,
+                                                                  loss_params$mean_loss_fit_b)
 
     # How many days of growth did we have this month, considering only the second growing season
     # in cases where this month spanned the end of an old growing season and the start of a
@@ -180,7 +184,9 @@ main <- function(raw_args) {
 
     losses <- lapply(stresses, function(stress) {
       loss_function(wsim.lsm::coalesce(rp[[stress]], 0),
-                    12, 80, 2)
+                    loss_params$loss_initial,
+                    loss_params$loss_total,
+                    loss_params$loss_power)
     })
     names(losses) <- stresses
     

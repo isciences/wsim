@@ -28,15 +28,17 @@ CULTIVATION_METHODS = ('rainfed', 'irrigated')
 def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
-    last_result_fit_yearmon = config.result_fit_yearmons()[-1]
-    historical_yearmons = [yearmon for yearmon in config.historical_yearmons() if yearmon > last_result_fit_yearmon]
+    dawn_of_agriculture = '200001'
+    ag_assessment_yearmons = [yearmon for yearmon in config.historical_yearmons() if yearmon >= dawn_of_agriculture]
 
     for method in CULTIVATION_METHODS:
-        steps += make_initial_state(config.workspace(), method, historical_yearmons[0])
+        steps += make_initial_state(config.workspace(), method, dawn_of_agriculture)
 
     steps += compute_basin_integration_windows(config.workspace(), config.static_data())
 
-    for yearmon in historical_yearmons:
+    steps += compute_expected_losses(config.workspace())
+
+    for yearmon in ag_assessment_yearmons:
         steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon)
         for method in CULTIVATION_METHODS:
             steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
@@ -72,6 +74,18 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
     return steps
 
 
+def compute_expected_losses(workspace: DefaultWorkspace):
+    outputs = [workspace.loss_params(sector='agriculture', method=method) for method in CULTIVATION_METHODS]
+
+    return [
+        Step(
+            targets=outputs,
+            commands=[
+                wsim_ag_spinup(output_dir=os.path.dirname(outputs[0]))
+            ]
+        )
+    ]
+
 def compute_aggregated_losses(workspace: DefaultWorkspace,
                               static: AgricultureStatic,
                               *,
@@ -95,6 +109,7 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
                                 yearmon=yearmon, window=1, member=member, target=target)
               for method in CULTIVATION_METHODS]
 
+    return []
     return [
         exact_extract(
             boundaries=boundaries,
@@ -235,6 +250,7 @@ def compute_loss_risk(workspace: DefaultWorkspace,
     temperature_rp = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'T_rp')
 
     calendar = static.crop_calendar(method)
+    loss_params = workspace.loss_params(sector='agriculture', method=method)
 
     surplus = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'RO_mm_rp')
     if method == 'irrigated':
@@ -249,15 +265,17 @@ def compute_loss_risk(workspace: DefaultWorkspace,
     return [
         Step(
             targets=[results, next_state],
-            dependencies=[current_state, surplus, deficit, temperature_rp, calendar],
+            dependencies=[current_state, surplus, deficit, temperature_rp, calendar, loss_params],
             commands=[
                 wsim_ag(state=current_state,
                         next_state=next_state,
                         results=results,
+                        extra_output=results.replace('results_1mo', 'extra'),
                         surplus=surplus,
                         deficit=deficit,
                         temperature_rp=temperature_rp,
                         calendar=static.crop_calendar(method=method),
+                        loss_params=loss_params,
                         yearmon=target if target else yearmon)
             ]
         )
@@ -273,7 +291,8 @@ def wsim_ag(*,
             deficit: Union[str, List[str]],
             temperature_rp: str,
             calendar: str,
-            yearmon: str
+            yearmon: str,
+            loss_params: str
             ) -> List[str]:
     if type(surplus) is str:
         surplus = [surplus]
@@ -287,6 +306,7 @@ def wsim_ag(*,
         '--calendar', calendar,
         '--next_state', next_state,
         '--results', results,
+        '--loss_params', loss_params,
         '--yearmon', yearmon
     ]
 
@@ -300,3 +320,9 @@ def wsim_ag(*,
         cmd += ['--extra_output', extra_output]
 
     return cmd
+
+def wsim_ag_spinup(*, output_dir: str):
+    return [
+        os.path.join('{BINDIR}', 'wsim_ag_spinup.R'),
+        '--output_dir', output_dir
+    ]
