@@ -48,11 +48,11 @@ class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
             spam2010.allocate_spam_production(spam_zip = spam2010.spam_zip(self.source),
                                      method = 'irrigated',
                                      area_fractions = self.crop_calendar(method='irrigated'),
-                                     output = self.production(method='irrigated')) + \
+                                     output = self.production(method='irrigated').file) + \
             spam2010.allocate_spam_production(spam_zip = spam2010.spam_zip(self.source),
                                               method = 'rainfed',
                                               area_fractions = self.crop_calendar(method='rainfed'),
-                                              output = self.production(method='rainfed'))
+                                              output = self.production(method='rainfed').file)
 
 
     # Static inputs
@@ -89,8 +89,8 @@ class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
     def crop_calendar(self, method: str) -> str:
         return os.path.join(self.source, 'MIRCA2000', 'crop_calendar_{}.nc'.format(method))
 
-    def production(self, method: str) -> str:
-        return os.path.join(self.source, spam2010.SUBDIR, 'production_{}.nc'.format(method))
+    def production(self, method: str) -> paths.Vardef:
+        return paths.Vardef(os.path.join(self.source, spam2010.SUBDIR, 'production_{}.nc'.format(method)), 'production')
 
 
 class NCEP(paths.ObservedForcing):

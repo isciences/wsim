@@ -12,9 +12,8 @@
 # limitations under the License.
 
 import os
-import string
 
-from typing import List, Union
+from typing import List
 
 from ..step import Step
 

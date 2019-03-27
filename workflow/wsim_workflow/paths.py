@@ -244,6 +244,12 @@ class AgricultureStatic(metaclass=ABCMeta):
     def countries(self) -> Vardef:
         pass
 
+    def provinces(self) -> Vardef:
+        pass
+
+    def production(self, method: str) -> Vardef:
+        pass
+
 
 class DefaultWorkspace:
 
@@ -415,7 +421,9 @@ class DefaultWorkspace:
 
         assert window is not None
 
-        assert (sector == 'agriculture') == (method is not None)
+        if sector == 'agriculture':
+            # Polygon-aggregated results don't distinguish between cultivation methods but raster results do
+            assert (method is None) != (basis is None)
 
         if year:
             # Check that "annual" summaries are not generated for return periods

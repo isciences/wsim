@@ -15,7 +15,6 @@ import os
 
 from typing import List, Mapping, Optional, Union
 
-from .commands import exact_extract
 from .config_base import ConfigBase
 from .dates import get_lead_months, get_next_yearmon, parse_yearmon
 from .paths import AgricultureStatic, DefaultWorkspace, read_vars, Vardef
@@ -58,9 +57,8 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 
         # Compute aggregated losses
         for basis in AGGREGATION_POLYGONS:
-            continue
             steps += meta_steps['agriculture_assessment'].require(
-                #compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
+                compute_aggregated_losses(config.workspace(), config.static_data(), yearmon=yearmon, basis=basis)
             )
 
     return steps
@@ -86,6 +84,7 @@ def compute_expected_losses(workspace: DefaultWorkspace):
         )
     ]
 
+
 def compute_aggregated_losses(workspace: DefaultWorkspace,
                               static: AgricultureStatic,
                               *,
@@ -95,29 +94,45 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
                               basis: str
                               ) -> List[Step]:
 
-
+    # FIXME get id_field from somewhere
     if basis == 'country':
-        boundaries = static.countries()
+        boundaries = static.countries().file
+        id_field = 'GID'
+    elif basis == 'province':
+        boundaries = static.provinces().file
+        id_field = 'GID'
+    elif basis == 'basin':
+        boundaries = static.basins().file
+        id_field = 'HYBAS_ID'
     else:
         raise Exception("Not yet.")
 
+    # FIXME write .nc not .rds
     aggregated_results = workspace.results(
         sector='agriculture', basis=basis,
-        yearmon=yearmon, window=1, member=member, target=target)
+        yearmon=yearmon, window=1, member=member, target=target).replace('.nc', '.rds')
 
-    losses = [workspace.results(sector='agriculture', method=method,
+    loss = {method: workspace.results(sector='agriculture', method=method,
                                 yearmon=yearmon, window=1, member=member, target=target)
-              for method in CULTIVATION_METHODS]
+              for method in CULTIVATION_METHODS}
+    prod = {method: static.production(method).file for method in CULTIVATION_METHODS}
 
-    return []
     return [
-        exact_extract(
-            boundaries=boundaries,
-            fid='???',
-            input=losses,
-            weights=spam,
-            stats=['weighted mean'],
-            output=aggregated_results
+        Step(
+            targets=aggregated_results,
+            dependencies=list(loss.values()) + list(prod.values()) + [boundaries],
+            commands=[
+                [
+                    '{BINDIR}/wsim_ag_aggregate.R',
+                    '--boundaries', boundaries,
+                    '--id_field', id_field,
+                    '--prod_i', prod['irrigated'],
+                    '--loss_i', loss['irrigated'],
+                    '--prod_r', prod['rainfed'],
+                    '--loss_r', loss['rainfed'],
+                    '--output', aggregated_results
+                ]
+            ]
         )
     ]
 
