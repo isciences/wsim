@@ -173,7 +173,7 @@ test_that("we cannot write if variable and id dimensions do not match", {
 
   expect_error(
     write_vars_to_cdf(data[-1, -1], fname, ids=data$id),
-    "Variable .* has .* values but we have .*"
+    "Variable .* has .* values but we expected .*"
   )
 })
 
@@ -488,9 +488,11 @@ test_that('we can write multidimensional id-based data', {
     sapply(real_vars, function(n) ncdf4::ncvar_get(cdf, varid=n))
   )
 
-  if ('dplyr' %in% installed.packages()[, 'Package']) ({
-    expect_true(dplyr::all_equal(data, data_reconstructed))
-  })
+  expect_equal(
+    data[with(data, order(id, crop, quantile)), ],
+    data_reconstructed[with(data_reconstructed, order(id, crop, quantile)), ],
+    check.attributes=FALSE
+  )
 
   file.remove(fname)
 })

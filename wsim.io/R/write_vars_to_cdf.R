@@ -151,13 +151,14 @@ write_vars_to_cdf <- function(vars,
         stop('All IDs must be defined.')
       }
 
-      if (is.null(extra_dims)) {
-        for (varname in names(vars)) {
-          if (length(vars[[varname]]) != length(ids)) {
-            stop(sprintf("Variable %s has %d values but we have %d ids.",
-                         varname, length(vars[[varname]]), length(ids)))
-          }
-        }
+      if (is.null(extra_dims) || !is.null(write_slice)) {
+        verify_var_size(vars, length(ids))
+      } else {
+        verify_var_size(vars, length(ids)*prod(sapply(extra_dims, length)))
+      }
+
+      if (!is.null(extra_dims)) {
+        extra_dims <- lapply(extra_dims, sort)
       }
 
       if (character_ids) {
@@ -308,7 +309,8 @@ write_vars_to_cdf <- function(vars,
           dat <- merge(cmbn,
                        vars,
                        by=names(cmbn),
-                       all.x=TRUE)[[param]]
+                       all.x=TRUE)
+          dat <- dat[do.call(order, dat[, c('id', names(cmbn))]), ][[param]]
         }
       }
 
@@ -514,3 +516,13 @@ var_fill <- function(var, vars, prec) {
   default_netcdf_nodata[[var_prec(var, vars, prec)]]
 }
 
+verify_var_size <- function(vars, sz) {
+  for(varname in names(vars)) {
+    if (varname != 'id') {
+      if (length(vars[[varname]]) != sz) {
+        stop(sprintf("Variable %s has %d values but we expected %d for the supplied ids/extra dimensions.",
+                     varname, length(vars[[varname]]), sz))
+      }
+    }
+  }
+}

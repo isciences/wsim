@@ -445,3 +445,25 @@ test_that("we can read multidimensional tabular data", {
 
   file.remove(fname)
 })
+
+test_that("multidimensional tabular round-trip is successful when extra_dims specified out-of-order", {
+  fname <- tempfile(fileext='.nc')
+
+  data <- merge(
+   data.frame(id=24:37),
+   data.frame(crop=c('maize', 'sugarcane', 'salsify'), stringsAsFactors=FALSE)
+  )
+  data$yield_2018 <- runif(nrow(data))
+  data$yield_2017 <- runif(nrow(data))
+  data <- data[with(data, order(id, crop)), ]
+
+  write_vars_to_cdf(data, fname, ids=sort(unique(data$id)), extra_dims=list(crop=c('maize', 'sugarcane', 'salsify')))
+
+  data2 <- read_vars_from_cdf(fname, as.data.frame=TRUE)
+
+  data2 <- data2[with(data2, order(id, crop)), ]
+#
+  expect_equal(data, data2, check.attributes=FALSE)
+
+  file.remove(fname)
+})
