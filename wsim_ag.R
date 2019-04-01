@@ -41,15 +41,16 @@ Options:
 stresses <- c('surplus', 'deficit', 'heat', 'cold')
 
 test_args <- list(
-  '--state',          '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_195501.nc',
-  '--next_state',     '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_195502.nc',
-  '--results',        '/home/dbaston/wsim/oct22/agriculture/results_rainfed/results_1mo_195501.nc',
-  '--extra_output',   '/home/dbaston/wsim/oct22/agriculture/results_rainfed/extra_output_1mo_195501.nc',
-  '--surplus',        '/home/dbaston/wsim/oct22/rp/rp_1mo_195501.nc::RO_mm_rp',
-  '--deficit',        '/home/dbaston/wsim/oct22/rp/rp_1mo_195501.nc::PETmE_rp@negate,Ws_rp',
-  '--temperature_rp', '/home/dbaston/wsim/oct22/rp/rp_1mo_195501.nc::T_rp',
+  '--state',          '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_200201.nc',
+  '--next_state',     '/home/dbaston/wsim/oct22/agriculture/state_rainfed/state_200202.nc',
+  '--results',        '/home/dbaston/wsim/oct22/agriculture/results_rainfed/results_1mo_200201.nc',
+  '--extra_output',   '/home/dbaston/wsim/oct22/agriculture/results_rainfed/extra_output_1mo_200201.nc',
+  '--surplus',        '/home/dbaston/wsim/oct22/rp/rp_1mo_200201.nc::RO_mm_rp',
+  '--deficit',        '/home/dbaston/wsim/oct22/rp/rp_1mo_200201.nc::PETmE_rp@negate,Ws_rp',
+  '--temperature_rp', '/home/dbaston/wsim/oct22/rp/rp_1mo_200201.nc::T_rp',
   '--calendar',       '/mnt/fig_rw/WSIM_DEV/source/MIRCA2000/crop_calendar_rainfed.nc',
-  '--yearmon',        '195501'
+  '--yearmon',        '200201',
+  '--loss_params',    '/home/dbaston/wsim/oct22/agriculture/spinup/loss_params_rainfed.csv'
 )
 
 clamp <- function(vals, minval, maxval) {
@@ -90,8 +91,6 @@ main <- function(raw_args) {
     cold=cold
   )
 
-  res <- c(extent[4]-extent[3], extent[2]-extent[1]) / dim(surplus)
-  
   all_in_memory <- TRUE
 
   if (all_in_memory) {
@@ -120,6 +119,8 @@ main <- function(raw_args) {
       rp_deficit=list()
     )
   } else {
+    res <- c(extent[4]-extent[3], extent[2]-extent[1]) / dim(surplus)
+  
     infof('Initializing results file at %s.', args$results)
     write_empty_results(fname=args$results,
                         res=res,
@@ -143,90 +144,19 @@ main <- function(raw_args) {
 
   month <- as.integer(substr(args$yearmon, 5, 6))
   
-  from <- start_of_month(month)
-  to <- end_of_month(month)
-  days_in_month <- to - from + 1
-  
   for (crop in wsim_subcrop_names()) {
-    base_crop <- strsplit(crop, '_')[[1]][1]
-
-    # if (crop != 'maize_1')
-    # next
-
-    calendar <- read_vars_from_cdf(args$calendar,
-                                   extra_dims=list(crop=crop))
-
-    plant_date <- calendar$data$plant
-    harvest_date <- calendar$data$harvest
+    infof("Processing %s", crop)  
+    calendar <- read_vars_from_cdf(args$calendar, extra_dims=list(crop=crop))$data
+    prev_state <- read_vars_from_cdf(args$state, extra_dims=list(crop=crop))$data
+    out <- run_ag(month, calendar$plant, calendar$harvest, prev_state, rp, loss_params)
     
-    initial_fraction_remaining <- initial_crop_fraction_remaining(growing_season_length(plant_date, harvest_date),
-                                                                  loss_params$mean_loss_fit_a,
-                                                                  loss_params$mean_loss_fit_b)
-
-    # How many days of growth did we have this month, considering only the second growing season
-    # in cases where this month spanned the end of an old growing season and the start of a
-    # new one.
-    gd <- list(
-      this_year= growing_days_this_year(from, to, plant_date, harvest_date),
-      next_year= growing_days_next_year(from, to, plant_date, harvest_date))
-    
-    # sanity check growing days
-    stopifnot(all(is.na(gd$this_year) | (gd$this_year >= 0 & gd$this_year <= days_in_month)))
-    stopifnot(all(is.na(gd$next_year) | (gd$next_year >= 0 & gd$next_year <= days_in_month)))
-    
-    days_since_planting <-
-      list(this_year= days_since_planting_this_year(1, to, plant_date, harvest_date),
-           next_year= days_since_planting_next_year(1, to, plant_date, harvest_date))
-
-    # Growing days should then be defined wherever calendar is defined.
-    stopifnot(all(is.na(gd$this_year) == is.na(plant_date)))
-    stopifnot(all(is.na(gd$next_year) == is.na(plant_date)))
-
-    losses <- lapply(stresses, function(stress) {
-      loss_function(wsim.lsm::coalesce(rp[[stress]], 0),
-                    loss_params$loss_initial,
-                    loss_params$loss_total,
-                    loss_params$loss_power)
-    })
-    names(losses) <- stresses
-    
-    loss <- pmin(wsim.distributions::stack_sum(abind::abind(losses, along=3)), 1.0) 
-    
-    # sanity check losses
-    stopifnot(all(is.na(loss) | (loss >= 0 & loss <= 1)))
-    
-    prev_state <- read_vars_from_cdf(sprintf('%s::%s', args$state, paste('loss_days_current_year',
-                                                                         'loss_days_next_year',
-                                                                         'fraction_remaining_current_year',
-                                                                         'fraction_remaining_next_year',
-                                                                         sep=',')),
-                                     extra_dims=list(crop=crop))$data
-
-    next_state <- update_crop_state(prev_state, gd, days_in_month, loss,
-                                    reset = (month==1),
-                                    winter_growth = (harvest_date < plant_date),
-                                    initial_fraction_remaining = initial_fraction_remaining)
-    
-    # state variables are defined wherever calendars are
-    stopifnot(all(is.na(plant_date) == is.na(next_state$fraction_remaining_current_year)))
-    stopifnot(all(is.na(plant_date) == is.na(next_state$fraction_remaining_next_year)))
-    stopifnot(all(is.na(plant_date) == is.na(next_state$loss_days_current_year)))
-    stopifnot(all(is.na(plant_date) == is.na(next_state$loss_days_next_year)))
-
-    growing_season_loss <- list(
-      this_year= ifelse(days_since_planting$this_year > 0, next_state$loss_days_current_year / days_since_planting$this_year, NA),
-      next_year= ifelse(days_since_planting$next_year > 0, next_state$loss_days_next_year    / days_since_planting$next_year, NA)
-    )
-    
-    loss[((is.na(gd$this_year) | gd$this_year < 1) & (is.na(gd$next_year) | gd$next_year < 1))] <- NA
-        
     if (all_in_memory) {
-      for (v in names(next_state)) {
-        states_to_write[[v]][[crop]] <- next_state[[v]]
+      for (v in names(out$next_state)) {
+        states_to_write[[v]][[crop]] <- out$next_state[[v]]
       }
     } else {
       infof('Writing next state for %s', crop) 
-      write_vars_to_cdf(next_state,
+      write_vars_to_cdf(out$next_state,
                         args$next_state,
                         extent=extent,
                         write_slice=list(crop=crop),
@@ -234,21 +164,13 @@ main <- function(raw_args) {
                         quick_append=TRUE)
     }
     
-    results <- list(
-      loss=                         loss,
-      mean_loss_current_year=       growing_season_loss$this_year,
-      mean_loss_next_year=          growing_season_loss$next_year,
-      cumulative_loss_current_year= pmax(1 - next_state$fraction_remaining_current_year, 0),
-      cumulative_loss_next_year=    pmax(1 - next_state$fraction_remaining_next_year, 0)
-    )
-    
     if (all_in_memory) {
-      for (v in names(results)) {
-        results_to_write[[v]][[crop]] <- results[[v]]
+      for (v in names(out$results)) {
+        results_to_write[[v]][[crop]] <- out$results[[v]]
       }
     } else {
       infof('Writing results for %s', crop) 
-      write_vars_to_cdf(results,
+      write_vars_to_cdf(out$results,
                         args$results,
                         extent=extent,
                         write_slice=list(crop=crop),
@@ -258,14 +180,14 @@ main <- function(raw_args) {
     
     if (!is.null(args$extra_output)) {
       to_write <- list(
-        surplus=    losses$surplus,
-        deficit=    losses$deficit,
-        heat=       losses$heat,
-        cold=       losses$cold,
+        surplus=    out$losses$surplus,
+        deficit=    out$losses$deficit,
+        heat=       out$losses$heat,
+        cold=       out$losses$cold,
         rp_temp=    rp$heat,
         rp_surplus= rp$surplus,
         rp_deficit= rp$deficit
-      )  
+      )
       
       if (all_in_memory) {
         for (v in names(to_write)) {
@@ -302,7 +224,6 @@ main <- function(raw_args) {
                         extra_dims=list(crop=wsim_subcrop_names()))
     }
   }
-                    
 }
 
 if (!interactive()) {

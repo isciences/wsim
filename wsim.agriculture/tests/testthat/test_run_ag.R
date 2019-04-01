@@ -160,5 +160,4 @@ test_that('Results are expected over winter growing season', {
                                         loss_params$mean_loss_fit_b)
   end_of_feb_loss <- (1 - f0*subset(post_state, month==2)$fraction_remaining_current_year)[1]
   expect_equal(end_of_feb_loss, subset(results, month==2)$cumulative_loss_current_year)
-  
 })

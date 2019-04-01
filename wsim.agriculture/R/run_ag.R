@@ -58,7 +58,7 @@ run_ag <- function(month, plant_date, harvest_date, prev_state, stresses, loss_p
                     loss_params$loss_total,
                     loss_params$loss_power)
     })
-    names(losses) <- stresses
+    names(losses) <- names(stresses)
     
     # TODO change to stack_max
     loss <- pmin(wsim.distributions::stack_sum(abind::abind(losses, along=3)), 1.0) 
