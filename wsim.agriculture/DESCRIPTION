@@ -13,5 +13,8 @@ LinkingTo:
     Rcpp
 Imports: 
     Rcpp,
+    abind,
     dplyr,
-    wsim.io
+    wsim.distributions,
+    wsim.io,
+    wsim.lsm
