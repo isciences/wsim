@@ -1,23 +1,23 @@
 wsim_crops <- utils::read.table(sep='\t', header=TRUE, stringsAsFactors=FALSE, 
-                          colClasses=c("integer", "character"), text='
-wsim_id	wsim_name
-1	wheat
-2	rice
-3	maize
-4	barley
-5	millet
-6	sorghum
-7	soybeans
-8	sunflower
-9	potatoes
-10	cassava
-11	sugarcane
-12	sugarbeets
-13	oilpalm
-14	rapeseed
-15	groundnuts
-16	pulses
-17	cotton
-18	cocoa
-19	coffee
+                          colClasses=c("integer", "character","logical"), text='
+wsim_id	wsim_name	food
+1	wheat	TRUE
+2	rice	TRUE
+3	maize	TRUE
+4	barley	TRUE
+5	millet	TRUE
+6	sorghum	TRUE
+7	soybeans	TRUE
+8	sunflower	TRUE
+9	potatoes	TRUE
+10	cassava	TRUE
+11	sugarcane	FALSE
+12	sugarbeets	FALSE
+13	oilpalm	FALSE
+14	rapeseed	FALSE
+15	groundnuts	TRUE
+16	pulses	TRUE
+17	cotton	FALSE
+18	cocoa	FALSE
+19	coffee	FALSE
 ')
