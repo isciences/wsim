@@ -20,7 +20,7 @@ from .dates import get_lead_months, get_next_yearmon, parse_yearmon
 from .paths import AgricultureStatic, DefaultWorkspace, read_vars, Vardef
 from .step import Step
 
-AGGREGATION_POLYGONS = ('country',)
+AGGREGATION_POLYGONS = ('country', 'province', 'basin')
 CULTIVATION_METHODS = ('rainfed', 'irrigated')
 
 
