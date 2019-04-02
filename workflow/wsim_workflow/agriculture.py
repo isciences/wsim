@@ -19,6 +19,7 @@ from .config_base import ConfigBase
 from .dates import get_lead_months, get_next_yearmon, parse_yearmon
 from .paths import AgricultureStatic, DefaultWorkspace, read_vars, Vardef
 from .step import Step
+from . import commands
 
 AGGREGATION_POLYGONS = ('country', 'province', 'basin')
 CULTIVATION_METHODS = ('rainfed', 'irrigated')
@@ -67,10 +68,52 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
-    # FIXME support forecasts
+    # Compute a gridded loss risk for each forecast target/ensemble member
+    for method in CULTIVATION_METHODS:
+        for target in config.forecast_targets(yearmon):
+            for member in config.forecast_ensemble_members(yearmon):
+                steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member)
+                steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, target=target, method=method)
+
+            steps += compute_loss_summary(config.workspace(), config.forecast_ensemble_members(yearmon), target=target, method=method)
+
+            for basis in AGGREGATION_POLYGONS:
+                steps += meta_steps['agriculture_assessment'].require(
+                    compute_aggregated_losses(config.workspace(),
+                                              config.static_data(),
+                                              yearmon=yearmon,
+                                              basis=basis,
+                                              member=None)
+                )
 
     return steps
 
+
+def compute_loss_summary(workspace: DefaultWorkspace,
+                         ensemble_members: List[str], *,
+                         yearmon: str,
+                         target: str,
+                         method: str) -> List[Step]:
+
+    loss_vars = ('loss',
+                 'cumulative_loss_current_year',
+                 'cumulative_loss_next_year')
+
+    return [
+        commands.wsim_integrate(
+            inputs=[workspace.results(sector='agriculture',
+                                      yearmon=yearmon,
+                                      target=target,
+                                      member=member,
+                                      method=method)
+                    for member in ensemble_members],
+            stats=['q{}::{}'.format(q, ','.join(loss_vars)) for q in (25, 50, 75)],
+            output=workspace.results(sector='agriculture',
+                                     yearmon=yearmon,
+                                     target=target,
+                                     method=method)
+        )
+    ]
 
 def compute_expected_losses(workspace: DefaultWorkspace):
     outputs = [workspace.loss_params(sector='agriculture', method=method) for method in CULTIVATION_METHODS]
