@@ -8,7 +8,7 @@ wsim_id	wsim_name	food
 5	millet	TRUE
 6	sorghum	TRUE
 7	soybeans	TRUE
-8	sunflower	TRUE
+8	sunflower	FALSE
 9	potatoes	TRUE
 10	cassava	TRUE
 11	sugarcane	FALSE
