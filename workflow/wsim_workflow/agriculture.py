@@ -150,10 +150,9 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
     else:
         raise Exception("Not yet.")
 
-    # FIXME write .nc not .rds
     aggregated_results = workspace.results(
         sector='agriculture', basis=basis,
-        yearmon=yearmon, window=1, member=member, target=target).replace('.nc', '.rds')
+        yearmon=yearmon, window=1, member=member, target=target)
 
     loss = {method: workspace.results(sector='agriculture', method=method,
                                 yearmon=yearmon, window=1, member=member, target=target)

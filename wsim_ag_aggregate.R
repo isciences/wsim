@@ -72,7 +72,8 @@ main <- function(raw_args) {
   }
   info('Finished computing zonal statistics')
   
-  dat <- read.csv(outfile, stringsAsFactors=FALSE)
+  dat <- read.csv(outfile, stringsAsFactors=FALSE) %>%
+    rename(id=!!rlang::sym(idcol))
   file.remove(outfile)
   
   strtok <- function(x, splitchar, toks) {
@@ -80,37 +81,42 @@ main <- function(raw_args) {
   }
   
   production <- dat %>%
-    dplyr::select(!!rlang::sym(idcol), names(dat)[startsWith(names(dat), 'production')]) %>%
-    gather(key='crop_method', value='production', -!!rlang::sym(idcol)) %>%
+    dplyr::select(id, names(dat)[startsWith(names(dat), 'production')]) %>%
+    gather(key='crop_method', value='production', -id) %>%
     mutate(method=strtok(crop_method, '_', 2),
            crop=strtok(crop_method, '_', 3),
            subcrop=suppressWarnings(as.integer(strtok(crop_method, '_', 4)))) %>%
-    dplyr::select(!!rlang::sym(idcol), crop, subcrop, method, production)
+    dplyr::select(id, crop, subcrop, method, production)
   
   loss <- dat %>%
-    select(!!rlang::sym(idcol), names(dat)[startsWith(names(dat), 'loss')]) %>%
-    gather(key='crop_method', value='loss', -!!rlang::sym(idcol)) %>%
+    select(id, names(dat)[startsWith(names(dat), 'loss')]) %>%
+    gather(key='crop_method', value='loss', -id) %>%
     mutate(method=strtok(crop_method, '_', 2),
            crop=strtok(crop_method, '_', 3),
            subcrop=suppressWarnings(as.integer(strtok(crop_method, '_', 4)))) %>%
-    select(!!rlang::sym(idcol), crop, method, loss)
-    
-  overall_loss <- production %>%
-    inner_join(loss, by=c(idcol, 'crop', 'method')) %>%
-    group_by(!!rlang::sym(idcol), crop) %>%
+    select(id, crop, method, loss)
+  
+  aggregated <- production %>%
+    inner_join(loss, by=c('id', 'crop', 'method')) %>%
+    group_by(id, crop) %>%
     summarize(overall_loss=sum(loss)/sum(production),
               overall_production=sum(production)) %>%
-    rename(id=!!rlang::sym(idcol)) %>%
     arrange(crop, id)
   
-  # Use RDS until write_vars_to_cdf correctly handles multidimensional tabular data.
-  saveRDS(overall_loss, args$output)
-  infof('Wrote losses to %s', args$output)
+  # TODO write this to disk, as well as aggregation by food and non-food
+  aggregated_all_crops <- production %>%
+    inner_join(loss, by=c('id', 'crop', 'method')) %>%
+    group_by(id) %>%
+    summarize(overall_loss=sum(loss)/sum(production),
+              overall_production=sum(production)) %>%
+    arrange(id)
+  
     
-  #wsim.io::write_vars_to_cdf(overall_loss,
-  #                  '/tmp/oloss.nc',
-  #                  ids=sort(unique(overall_loss$id)),
-  #                  extra_dims=list(crop=sort(unique(overall_loss$crop))))
+  wsim.io::write_vars_to_cdf(aggregated,
+                             args$output,
+                             ids=sort(unique(aggregated$id)),
+                             extra_dims=list(crop=sort(unique(aggregated$crop))))
+  infof('Wrote losses to %s', args$output)
 }
 
 if (!interactive()) {
