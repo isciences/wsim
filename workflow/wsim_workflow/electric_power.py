@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -432,33 +432,15 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
 
 
 def compute_basin_water_stress(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:
-    # FIXME this is a bit ugly, because the tempfile names are determined
-    # when the workflow is processed, not when it is executed. While this
-    # could be improved, the issue will go away when exactextract is updated
-    # to output netCDF directly.
-
-    temp_csv = tempfile.mktemp(suffix='.csv')
-    temp_nc = tempfile.mktemp(suffix='.nc')
-
     return [
         commands.exact_extract(
             boundaries=static.basins().file,
             fid='HYBAS_ID',
-            input=static.water_stress().file,
-            output=temp_csv,
-            stats='mean'
-        ).merge(
-            commands.table2nc(
-                input=temp_csv,
-                fid="HYBAS_ID",
-                column="mean",
-                output=temp_nc
-            )
-        ).merge(
-            commands.wsim_merge(
-                inputs=Vardef(temp_nc, 'mean').read_as('baseline_water_stress'),
-                output=workspace.basin_water_stress()
-            )
+            id_name='id',
+            id_type='int32',
+            rasters={'water_stress': static.water_stress().file},
+            output=workspace.basin_water_stress(),
+            stats='baseline_water_stress=mean(water_stress)'
         )
     ]
 
