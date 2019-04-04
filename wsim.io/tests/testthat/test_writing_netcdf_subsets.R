@@ -82,3 +82,21 @@ test_that('we get an error if we try to partially write an extra dimension with 
 
   file.remove(fname)
 })
+
+test_that('we can write only a subset to a new file', {
+  fname <- tempfile(fileext='.nc')
+
+  dat <- matrix(runif(100), nrow=10)
+
+  write_vars_to_cdf(list(yield=dat),
+                    fname,
+                    extent=c(0,1,0,1),
+                    extra_dims=list(crop=c('rice', 'cotton', 'bananas')),
+                    write_slice=list(crop='cotton'))
+
+  expect_true(all(is.na(read_vars(fname, extra_dims=list(crop='rice'))$data$yield)))
+  expect_equal(dat, read_vars(fname, extra_dims=list(crop='cotton'))$data$yield, check.attributes=FALSE)
+  expect_true(all(is.na(read_vars(fname, extra_dims=list(crop='bananas'))$data$yield)))
+
+  file.remove(fname)
+})
