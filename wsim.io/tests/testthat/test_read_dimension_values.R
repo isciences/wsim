@@ -23,7 +23,7 @@ test_that('We get an empty list with a non-netCDF file', {
   file.remove(fname)
 })
 
-test_that('We get an error if file file does not exist', {
+test_that('We get an error if the file does not exist', {
   expect_error(read_dimension_values(tempfile(fileext='.tif')))
   expect_error(read_dimension_values(tempfile(fileext='.nc')))
 })
@@ -49,4 +49,11 @@ test_that('We get a list with dimension names and values', {
   expect_setequal(names(some_dims), c('lat', 'crop'))
 
   file.remove(fname)
+})
+
+test_that('we get a list of bands in a raster file', {
+  isciences_internal()
+
+  expect_setequal(read_varnames(file.path(testdata, 'values_T_month01.grd')),
+                  as.character(1:29))
 })
