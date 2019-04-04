@@ -179,7 +179,7 @@ write_vars_to_cdf <- function(vars,
     extra_ncdf_dims <- list()
     for (dimname in names(extra_dims)) {
       vals <- extra_dims[[dimname]]
-      if (class(vals) == 'character') {
+      if (mode(vals) == 'character') {
         new_dim <- ncdf4::ncdim_def(dimname, units='', vals=1:length(vals), create_dimvar=FALSE)
       } else {
         new_dim <- ncdf4::ncdim_def(dimname, units='', vals=vals, create_dimvar=TRUE)
@@ -232,7 +232,7 @@ write_vars_to_cdf <- function(vars,
 
     for (dimname in names(extra_dims)) {
       vals <- extra_dims[[dimname]]
-      if (class(vals) == 'character') {
+      if (mode(vals) == 'character') {
         ncvars[[dimname]] <- create_char_dimension_variable(extra_ncdf_dims[[dimname]], dimname, vals)
       }
     }
