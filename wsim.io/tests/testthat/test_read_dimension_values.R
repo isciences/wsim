@@ -45,7 +45,7 @@ test_that('We get a list with dimension names and values', {
   expect_equal(dims$crop, c('peanuts', 'cashews'), check.attributes=FALSE)
   expect_equal(dims$stress, c('surplus', 'deficit'), check.attributes=FALSE)
 
-  some_dims <- read_dimension_values(fname, exclude.dims=c('lon', 'stress'))
+  some_dims <- read_dimension_values(paste0(fname, '::', 'level'), exclude.dims=c('lon', 'stress'))
   expect_setequal(names(some_dims), c('lat', 'crop'))
 
   file.remove(fname)

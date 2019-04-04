@@ -27,7 +27,7 @@ read_dimension_values <- function(vardef, exclude.dims=NULL) {
     return(list())
 
   if (length(parsed_vardef$vars) > 0) {
-    var <- parse_var(parsed_vardef$vars[1])$var_in
+    var <- parsed_vardef$vars[[1]]$var_in
   } else {
     var <- 1
   }
