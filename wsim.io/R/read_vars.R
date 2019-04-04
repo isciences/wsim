@@ -48,7 +48,11 @@
 #'                      \code{origin} must also be specified.
 #' @param as.data.frame If \code{TRUE}, \code{read_vars} will return a
 #'                      data frame
-#'
+#' @param extra_dims list containing names and values of extra dimensions
+#'        along which a values at a single point should be extracted, e.g.
+#'        \code{extra_dims=list(crop='maize', quantile=0.50)}. It provides
+#'        a higher-abstraction alternative to the use of \code{offset} and
+#'        \code{count}.
 #' @return A list having the following structure:
 #' \describe{
 #' \item{attrs}{a list of global attributes in the file}
@@ -67,7 +71,8 @@
 #' }
 #'
 #' @export
-read_vars <- function(vardef, expect.nvars=NULL, expect.vars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL, as.data.frame=FALSE) {
+read_vars <- function(vardef, expect.nvars=NULL, expect.vars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL, as.data.frame=FALSE,
+                      extra_dims=NULL) {
   stopifnot(
     (is.character(vardef) && length(vardef) == 1)
     || is.wsim.io.vardef(vardef))
@@ -84,7 +89,7 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.vars=NULL, expect.dims=N
   }
 
   if(endsWith(def$filename, '.nc')) {
-    loaded <- read_vars_from_cdf(vardef, offset=offset, count=count, as.data.frame=as.data.frame)
+    loaded <- read_vars_from_cdf(vardef, offset=offset, count=count, as.data.frame=as.data.frame, extra_dims=extra_dims)
 
     check_extent(def, loaded, expect.extent)
     check_ids(def, loaded, expect.ids)
@@ -94,6 +99,8 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.vars=NULL, expect.dims=N
 
     return(loaded)
   }
+
+  stopifnot(is.null(extra_dims))
 
   if (length(def$vars) == 0) {
     def$vars <- list(make_var("1"))

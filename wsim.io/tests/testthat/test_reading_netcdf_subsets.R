@@ -135,7 +135,7 @@ test_that('we can retrieve a vertical slice of a file', {
   expect_equal(data[,,3], slice$data[[1]], check.attributes=FALSE)
 
   # Read a vertical slice using higher-level extra_dims API
-  slice <- read_vars_from_cdf(fname, extra_dims=list(elev=2.5))
+  slice <- read_vars(fname, extra_dims=list(elev=2.5))
   expect_equal(data[,,3], slice$data[[1]], check.attributes=FALSE)
 
   file.remove(fname)

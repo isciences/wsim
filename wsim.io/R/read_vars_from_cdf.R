@@ -19,11 +19,6 @@ BUILTIN_ATTRIBUTES = c('class', 'dim', 'dimnames', 'names')
 #' @inheritParams read_vars
 #' @param vars A list of variables to read.  If NULL (default),
 #'             all variables will be read.
-#' @param extra_dims list containing names and values of extra dimensions
-#'        along which a values at a single point should be extracted, e.g.
-#'        \code{extra_dims=list(crop='maize', quantile=0.50)}. It provides
-#'        a higher-abstraction alternative to the use of \code{offset} and
-#'        \code{count}.
 #' @param as.data.frame return data in a data frame
 #' @return structure described in \code{\link{read_vars}}, or a data frame
 #' @export
