@@ -417,7 +417,8 @@ class DefaultWorkspace:
                 target: Optional[str]=None,
                 temporary: bool=False,
                 basis: Optional[str]=None,
-                method: Optional[str]=None) -> str:
+                method: Optional[str]=None,
+                summary: Optional[bool]=False) -> str:
 
         assert window is not None
 
@@ -439,7 +440,8 @@ class DefaultWorkspace:
                               member=member,
                               target=target,
                               temporary=temporary,
-                              basis=basis)
+                              basis=basis,
+                              summary=summary)
 
     def return_period(self, *,
                       yearmon: str,

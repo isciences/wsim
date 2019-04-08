@@ -23,22 +23,24 @@ from . import commands
 
 AGGREGATION_POLYGONS = ('country', 'province', 'basin')
 CULTIVATION_METHODS = ('rainfed', 'irrigated')
+DAWN_OF_AGRICULTURE = '200001'
 
 
-def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
+def ag_historical_yearmons(config: ConfigBase):
+    return [yearmon for yearmon in config.historical_yearmons() if yearmon >= DAWN_OF_AGRICULTURE]
+
+
+def spinup(config: ConfigBase, _meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
-    dawn_of_agriculture = '200001'
-    ag_assessment_yearmons = [yearmon for yearmon in config.historical_yearmons() if yearmon >= dawn_of_agriculture]
-
     for method in CULTIVATION_METHODS:
-        steps += make_initial_state(config.workspace(), method, dawn_of_agriculture)
+        steps += make_initial_state(config.workspace(), method, DAWN_OF_AGRICULTURE)
 
     steps += compute_basin_integration_windows(config.workspace(), config.static_data())
 
     steps += compute_expected_losses(config.workspace())
 
-    for yearmon in ag_assessment_yearmons:
+    for yearmon in ag_historical_yearmons(config):
         steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon)
         for method in CULTIVATION_METHODS:
             steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
@@ -51,7 +53,7 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 
     steps = []
 
-    if yearmon not in config.historical_yearmons():
+    if yearmon not in ag_historical_yearmons(config):
         steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon)
         for method in CULTIVATION_METHODS:
             steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
@@ -69,22 +71,26 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
     steps = []
 
     # Compute a gridded loss risk for each forecast target/ensemble member
-    for method in CULTIVATION_METHODS:
-        for target in config.forecast_targets(yearmon):
-            for member in config.forecast_ensemble_members(yearmon):
-                steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member)
-                steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, target=target, method=method)
+    for target in config.forecast_targets(yearmon):
+        for member in config.forecast_ensemble_members(yearmon)[:4]:
+            steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member)
+            for method in CULTIVATION_METHODS:
+                steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member, method=method)
 
-            steps += compute_loss_summary(config.workspace(), config.forecast_ensemble_members(yearmon), target=target, method=method)
+        for method in CULTIVATION_METHODS:
+            steps += meta_steps['agriculture_assessment'].require(
+                compute_loss_summary(config.workspace(), config.forecast_ensemble_members(yearmon)[:4], yearmon=yearmon, target=target, method=method)
+            )
 
-            for basis in AGGREGATION_POLYGONS:
-                steps += meta_steps['agriculture_assessment'].require(
-                    compute_aggregated_losses(config.workspace(),
-                                              config.static_data(),
-                                              yearmon=yearmon,
-                                              basis=basis,
-                                              member=None)
-                )
+        for basis in AGGREGATION_POLYGONS:
+            steps += meta_steps['agriculture_assessment'].require(
+                compute_aggregated_losses(config.workspace(),
+                                          config.static_data(),
+                                          yearmon=yearmon,
+                                          target=target,
+                                          summary=True,
+                                          basis=basis)
+            )
 
     return steps
 
@@ -105,15 +111,19 @@ def compute_loss_summary(workspace: DefaultWorkspace,
                                       yearmon=yearmon,
                                       target=target,
                                       member=member,
-                                      method=method)
+                                      method=method,
+                                      window=1)
                     for member in ensemble_members],
             stats=['q{}::{}'.format(q, ','.join(loss_vars)) for q in (25, 50, 75)],
             output=workspace.results(sector='agriculture',
                                      yearmon=yearmon,
                                      target=target,
-                                     method=method)
+                                     method=method,
+                                     window=1,
+                                     summary=True)
         )
     ]
+
 
 def compute_expected_losses(workspace: DefaultWorkspace):
     outputs = [workspace.loss_params(sector='agriculture', method=method) for method in CULTIVATION_METHODS]
@@ -134,7 +144,8 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
                               yearmon: str,
                               target: Optional[str]=None,
                               member: Optional[str]=None,
-                              basis: str
+                              basis: str,
+                              summary: Optional[bool]=False
                               ) -> List[Step]:
 
     # FIXME get id_field from somewhere
@@ -152,11 +163,11 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
 
     aggregated_results = workspace.results(
         sector='agriculture', basis=basis,
-        yearmon=yearmon, window=1, member=member, target=target)
+        yearmon=yearmon, window=1, member=member, target=target, summary=summary)
 
     loss = {method: workspace.results(sector='agriculture', method=method,
-                                yearmon=yearmon, window=1, member=member, target=target)
-              for method in CULTIVATION_METHODS}
+                                      yearmon=yearmon, window=1, member=member, target=target, summary=summary)
+            for method in CULTIVATION_METHODS}
     prod = {method: static.production(method).file for method in CULTIVATION_METHODS}
 
     return [
@@ -327,7 +338,6 @@ def compute_loss_risk(workspace: DefaultWorkspace,
                 wsim_ag(state=current_state,
                         next_state=next_state,
                         results=results,
-                        extra_output=results.replace('results_1mo', 'extra'),
                         surplus=surplus,
                         deficit=deficit,
                         temperature_rp=temperature_rp,
