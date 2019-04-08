@@ -37,34 +37,66 @@ Options:
 --output <file>       File to which aggregated results should be written
 '->usage
 
+parse_quantiles <- function(varnames) {
+  sort(unique(as.integer(regmatches(varnames,
+                             regexpr('(?<=)\\d+$', varnames, perl=TRUE)))))
+}
+
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args)
-  
+
   outfile <- tempfile(fileext='.csv')
   idcol <- args$id_field
-  
-  xx_cmd <- "/home/dbaston/dev/exactextract/cmake-build-release/exactextract"
+
+  xx_cmd <- "exactextract"
   xx_args <- c("-p", args$boundaries,
             "-f", args$id_field,
-            "-o", outfile,
-            "--progress")
-  
+            "-o", outfile)
+
   crops <- wsim.agriculture::wsim_subcrop_names()
   
+  # Probe the loss files to see if losses are expressed as quantiles
+  loss_quantiles <- parse_quantiles(wsim.io::read_varnames(args$loss_i))
+  if (length(loss_quantiles) > 0) {
+    wsim.io::info('Inputs appear to be available at the following quantiles:', loss_quantiles)
+  }
+
+  prod_rasters <- list(
+    rainfed= args$prod_r,
+    irrigated= args$prod_i
+  )
+
+  loss_rasters <- list(
+    rainfed= args$loss_r,
+    irrigated= args$loss_i
+  )
+
   for (method in c('rainfed', 'irrigated')) {
     for (band in seq_along(crops)) {
       xx_args  <- c(xx_args,
                  "-r", sprintf("\"production_%s_%s:NETCDF:%s:production[%d]\"",
-                               method, crops[band], ifelse(method=='rainfed', args$prod_r, args$prod_i), band),
-                 "-r", sprintf("\"loss_%s_%s:NETCDF:%s:cumulative_loss_current_year[%s]\"",
-                               method, crops[band], ifelse(method=='rainfed', args$loss_r, args$loss_i), band),
-                 "-s", sprintf("\"sum(production_%s_%s)\"",
-                               method, crops[band]),
-                 "-s", sprintf("\"weighted_sum(loss_%s_%s,production_%s_%s)\"",
+                               method, crops[band], prod_rasters[[method]], band),
+                 "-s", sprintf("\"production_%s_%s=sum(production_%s_%s)\"",
                                method, crops[band], method, crops[band]))
+
+      if (length(loss_quantiles) == 0) {
+        xx_args <- c(xx_args,
+                 "-r", sprintf("\"loss_%s_%s:NETCDF:%s:cumulative_loss_current_year[%d]\"",
+                               method, crops[band], loss_rasters[[method]], band),
+                 "-s", sprintf("\"loss_%s_%s=weighted_sum(loss_%s_%s,production_%s_%s)\"",
+                               method, crops[band], method, crops[band], method, crops[band]))
+      } else {
+        for (q in loss_quantiles) {
+          xx_args <- c(xx_args,
+                   "-r", sprintf("\"loss_%s_%s_q%d:NETCDF:%s:cumulative_loss_current_year_q%d[%d]\"",
+                                 method, crops[band], q, loss_rasters[[method]], q, band),
+                   "-s", sprintf("\"loss_%s_%s_q%d=weighted_sum(loss_%s_%s_q%d,production_%s_%s)\"",
+                                 method, crops[band], q, method, crops[band], q, method, crops[band]))
+        }
+      }
     }
   }
-  
+
   info('Computing zonal statistics')
   ret_code <- system2(xx_cmd, xx_args)
   if (ret_code != 0) {
@@ -72,51 +104,29 @@ main <- function(raw_args) {
   }
   info('Finished computing zonal statistics')
   
-  dat <- read.csv(outfile, stringsAsFactors=FALSE) %>%
-    rename(id=!!rlang::sym(idcol))
+  dat <- wsim.agriculture::parse_exactextract_results(outfile)
   file.remove(outfile)
   
-  strtok <- function(x, splitchar, toks) {
-    sapply(strsplit(x, splitchar), function(tok) tok[toks])
-  }
+  system.time(summarized <- wsim.agriculture::summarize_loss(dat$production, dat$loss))
   
-  production <- dat %>%
-    dplyr::select(id, names(dat)[startsWith(names(dat), 'production')]) %>%
-    gather(key='crop_method', value='production', -id) %>%
-    mutate(method=strtok(crop_method, '_', 2),
-           crop=strtok(crop_method, '_', 3),
-           subcrop=suppressWarnings(as.integer(strtok(crop_method, '_', 4)))) %>%
-    dplyr::select(id, crop, subcrop, method, production)
-  
-  loss <- dat %>%
-    select(id, names(dat)[startsWith(names(dat), 'loss')]) %>%
-    gather(key='crop_method', value='loss', -id) %>%
-    mutate(method=strtok(crop_method, '_', 2),
-           crop=strtok(crop_method, '_', 3),
-           subcrop=suppressWarnings(as.integer(strtok(crop_method, '_', 4)))) %>%
-    select(id, crop, method, loss)
-  
-  aggregated <- production %>%
-    inner_join(loss, by=c('id', 'crop', 'method')) %>%
-    group_by(id, crop) %>%
-    summarize(overall_loss=sum(loss)/sum(production),
-              overall_production=sum(production)) %>%
-    arrange(crop, id)
-  
-  # TODO write this to disk, as well as aggregation by food and non-food
-  aggregated_all_crops <- production %>%
-    inner_join(loss, by=c('id', 'crop', 'method')) %>%
-    group_by(id) %>%
-    summarize(overall_loss=sum(loss)/sum(production),
-              overall_production=sum(production)) %>%
-    arrange(id)
-  
-    
-  wsim.io::write_vars_to_cdf(aggregated,
+  wsim.io::write_vars_to_cdf(wsim.agriculture::format_loss_by_crop(summarized$by_crop),
                              args$output,
-                             ids=sort(unique(aggregated$id)),
-                             extra_dims=list(crop=sort(unique(aggregated$crop))))
-  infof('Wrote losses to %s', args$output)
+                             ids=sort(unique(summarized$by_crop$id)),
+                             extra_dims=list(crop=sort(unique(summarized$by_crop$crop))),
+                             prec='single')
+  infof('Wrote per-crop aggregated results to %s', args$output)
+  
+  the_rest <- dplyr::inner_join(
+    wsim.agriculture::format_loss_by_type(summarized$by_type),
+    wsim.agriculture::format_overall_loss(summarized$overall),
+    by='id')
+  
+  wsim.io::write_vars_to_cdf(the_rest,
+                             args$output,
+                             ids=sort(unique(the_rest$id)),
+                             prec='single',
+                             append=TRUE)
+  infof('Wrote overall results to %s', args$output)
 }
 
 if (!interactive()) {
