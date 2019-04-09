@@ -19,7 +19,7 @@
 #'                     \item crop
 #'                     \item subcrop
 #'                     \item production }
-#' @param production data frame of loss data, having columns: \itemize{
+#' @param loss data frame of loss data, having columns: \itemize{
 #'                     \item id
 #'                     \item method
 #'                     \item crop

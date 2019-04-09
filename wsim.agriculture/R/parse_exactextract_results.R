@@ -13,7 +13,8 @@
 
 #' Parse a data frame representing
 #'
-#' @param a data frame or CSV filename
+#' @param dat a data frame or CSV filename
+#' @return a list with data frames of parsed production and loss data
 #'
 #' @export
 parse_exactextract_results <- function(dat) {
