@@ -54,12 +54,14 @@ ag_results <- function(next_state, loss, from, to, gd, plant_date, harvest_date,
     this_year= initial_crop_fraction_remaining(days_since_planting$this_year, loss_params$mean_loss_fit_a, loss_params$mean_loss_fit_b),
     next_year= initial_crop_fraction_remaining(days_since_planting$next_year, loss_params$mean_loss_fit_a, loss_params$mean_loss_fit_b)
   )
+  
+  min_loss <- -1
 
   list(
     loss=                         ifelse(((is.na(gd$this_year) | gd$this_year < 1) & (is.na(gd$next_year) | gd$next_year < 1)), NA, loss),
     mean_loss_current_year=       ifelse(days_since_planting$this_year > 0, next_state$loss_days_current_year / days_since_planting$this_year, 0),
     mean_loss_next_year=          ifelse(days_since_planting$next_year > 0, next_state$loss_days_next_year    / days_since_planting$next_year, 0),
-    cumulative_loss_current_year= pmax(1 - initial_fraction_remaining$this_year*next_state$fraction_remaining_current_year, 0),
-    cumulative_loss_next_year=    pmax(1 - initial_fraction_remaining$next_year*next_state$fraction_remaining_next_year, 0)
+    cumulative_loss_current_year= pmax(1 - initial_fraction_remaining$this_year*next_state$fraction_remaining_current_year, min_loss),
+    cumulative_loss_next_year=    pmax(1 - initial_fraction_remaining$next_year*next_state$fraction_remaining_next_year, min_loss)
   )
 }
