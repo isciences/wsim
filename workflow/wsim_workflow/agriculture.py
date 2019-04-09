@@ -72,14 +72,14 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 
     # Compute a gridded loss risk for each forecast target/ensemble member
     for target in config.forecast_targets(yearmon):
-        for member in config.forecast_ensemble_members(yearmon)[:4]:
+        for member in config.forecast_ensemble_members(yearmon):
             steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member)
             for method in CULTIVATION_METHODS:
                 steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member, method=method)
 
         for method in CULTIVATION_METHODS:
             steps += meta_steps['agriculture_assessment'].require(
-                compute_loss_summary(config.workspace(), config.forecast_ensemble_members(yearmon)[:4], yearmon=yearmon, target=target, method=method)
+                compute_loss_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, method=method)
             )
 
         for basis in AGGREGATION_POLYGONS:
