@@ -388,8 +388,10 @@ def wsim_ag(*,
 
     return cmd
 
+
 def wsim_ag_spinup(*, output_dir: str):
     return [
         os.path.join('{BINDIR}', 'wsim_ag_spinup.R'),
+        '--loss_method', 'max',
         '--output_dir', output_dir
     ]

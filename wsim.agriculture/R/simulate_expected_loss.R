@@ -13,12 +13,14 @@
 #' Simulate expected cumulative losses for growing seasons of 1-12 months
 #' 
 #' @param N number of trials in simulation
+#' @param combine_with specifies how losses from multiple stresses should be
+#'                     combined. options: [sum, max]                   
 #' @param ... arguments to pass to \code{loss_function}
 #' @return a data frame with columns \code{season_length_months},
 #'         \code{method} (rainfed or irrigated), \code{inputs} (independent
 #'         or identical), \code{mean_loss}, and \code{sd_loss}.
 #' @export
-simulate_expected_loss <- function(N=10000, ...) {
+simulate_expected_loss <- function(N=10000, combine_with, ...) {
   methods <- list(
     rainfed=list(
       vars_surplus=1,
@@ -38,7 +40,8 @@ simulate_expected_loss <- function(N=10000, ...) {
       loss <- sapply(1:12, function(season_length) {
         random_loss_args <- c(list(methods[[method]]$vars_surplus,
                                    methods[[method]]$vars_deficit,
-                                   inputs=='independent'),
+                                   inputs=='independent',
+                                   combine_with),
                               loss_args)
         
         replicate(N, 1-prod(1-replicate(season_length, do.call(random_loss, random_loss_args))))

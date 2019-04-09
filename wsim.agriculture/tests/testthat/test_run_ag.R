@@ -18,7 +18,8 @@ loss_params <- list(
   mean_loss_fit_b=-2e-6,
   loss_initial=12,
   loss_total=80,
-  loss_power=2
+  loss_power=2,
+  loss_method='sum'
 )
 
 make_stresses <- function(seed) {

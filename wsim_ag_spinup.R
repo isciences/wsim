@@ -23,10 +23,11 @@ library(wsim.io)
 '
 Perform spin-up calculations for agriculture assessment
 
-Usage: wsim_ag_spinup --output_dir <dir<
+Usage: wsim_ag_spinup --loss_method <method> --output_dir <dir>
 
 Options:
---output_dir <dir>       Output directory
+--output_dir <dir>      Output directory
+--loss_method <method>  Method for combining losses from multiple streses [sum or max]
 '->usage
 
 main <- function(raw_args) {
@@ -38,19 +39,20 @@ main <- function(raw_args) {
   
   num_iterations = 10000
   
-  infof("Performing expected loss simulations (N=%d)", num_iterations)
-  simulation_results <- simulate_expected_loss(N=num_iterations, rp_onset, rp_total, rp_power)
+  infof("Performing expected loss simulations (N=%d, combining losses using %s)", num_iterations, args$loss_method)
+  simulation_results <- simulate_expected_loss(N=num_iterations, combine_with=args$loss_method, rp_onset, rp_total, rp_power)
   
   write_list <- function(dat, fname) {
     write.csv(data.frame(param=names(dat),
                          value=as.character(dat),
-                         row.names=FALSE),
-              fname)
+                         stringsAsFactors=FALSE),
+              fname,
+              row.names=FALSE)
   }
   
-  for (method in unique(simulation_results$method)) {
+  for (m in unique(simulation_results$method)) {
     inputs <- simulation_results %>%
-      filter(method==method) %>%
+      filter(method==m) %>%
       group_by(season_length_months) %>%
       summarize(expected_loss= mean(mean_loss)) %>%
       transmute(season_length = 30.42*season_length_months,
@@ -59,14 +61,15 @@ main <- function(raw_args) {
     
     fit <- lm(expected_loss ~ season_length + season_length2 + 0, inputs)
     
-    infof("Writing loss function params for method: %s", method)
+    infof("Writing loss function params for method: %s", m)
     write_list(list(
       mean_loss_fit_a= fit$coefficients[1],
       mean_loss_fit_b= fit$coefficients[2],
       loss_initial= rp_onset,
       loss_total= rp_total,
-      loss_power= rp_power
-    ), file.path(args$output_dir, sprintf('loss_params_%s.csv', method)))
+      loss_power= rp_power,
+      loss_method= args$loss_method
+    ), file.path(args$output_dir, sprintf('loss_params_%s.csv', m)))
   }
 }
 

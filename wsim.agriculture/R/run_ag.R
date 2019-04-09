@@ -60,8 +60,12 @@ run_ag <- function(month, plant_date, harvest_date, prev_state, stresses, loss_p
     })
     names(losses) <- names(stresses)
     
-    # TODO change to stack_max
-    loss <- pmin(wsim.distributions::stack_sum(abind::abind(losses, along=3)), 1.0) 
+    combfn <- switch(loss_params$loss_method,
+                     max=wsim.distributions::stack_max,
+                     sum=wsim.distributions::stack_sum,
+                     stop('Unknown loss method'))
+    
+    loss <- pmin(combfn(abind::abind(losses, along=3)), 1.0) 
     
     # sanity check losses
     stopifnot(all(is.na(loss) | (loss >= 0 & loss <= 1)))

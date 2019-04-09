@@ -18,10 +18,12 @@
 #'                    surplus will be assumed to have the same return period as 
 #'                    heat and deficit will be assumed to have the same return
 #'                    period as cold.
+#' @param combine_with specifies how losses from multiple stresses should be
+#'                     combined. options: [sum, max]                   
 #' @param ...         arguments to pass to \code{loss_function}
 #' @return returns a generated loss value from 0 to 1
 #' @export
-random_loss <- function(n_surplus, n_deficit, independent, ...) {
+random_loss <- function(n_surplus, n_deficit, independent, combine_with, ...) {
   heat_rp <- quantile2rp(stats::runif(1))  
   cold_rp <- -heat_rp
   
@@ -33,11 +35,23 @@ random_loss <- function(n_surplus, n_deficit, independent, ...) {
     deficit_rp <- -heat_rp
   }
   
-  min(1.0,
-      loss_function(heat_rp, ...) +
-      loss_function(cold_rp, ...) +
-      loss_function(surplus_rp, ...) +
-      loss_function(deficit_rp, ...))
+  if (combine_with == 'sum') {
+    return(min(1.0,
+               loss_function(heat_rp, ...) +
+                 loss_function(cold_rp, ...) +
+                 loss_function(surplus_rp, ...) +
+                 loss_function(deficit_rp, ...)))
+  } else if (combine_with == 'max') {
+    return(min(1.0,
+               max(loss_function(heat_rp, ...),
+                   loss_function(cold_rp, ...),
+                   loss_function(surplus_rp, ...),
+                   loss_function(deficit_rp, ...)) 
+               ))
+  } else {
+    stop('Unknown loss combination method: ', combine_with)  
+  }
+  
 }
 
 # Convert a quantile to a return period (copied from wsim.distributions

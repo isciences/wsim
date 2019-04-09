@@ -24,7 +24,8 @@ read_loss_parameters <- function(fname) {
     mean_loss_fit_b= as.numeric(read_key(params, 'mean_loss_fit_b')),
     loss_initial= as.numeric(read_key(params, 'loss_initial')),
     loss_total= as.numeric(read_key(params, 'loss_total')),
-    loss_power= as.numeric(read_key(params, 'loss_power'))
+    loss_power= as.numeric(read_key(params, 'loss_power')),
+    loss_method= as.character(read_key(params, 'loss_method'))
   )
 }
 

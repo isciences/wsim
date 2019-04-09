@@ -59,11 +59,12 @@ test_that('Types read correctly', {
       'mean_loss_fit_b,2.11e-6',
       'loss_initial,12',
       'loss_total,80',
-      'loss_power,2'), fileConn)
+      'loss_power,2',
+      'loss_method,sum'), fileConn)
   close(fileConn)
   
   params <- read_loss_parameters(fname)
-  expect_true(all(sapply(params, is.numeric)))
+  expect_true(all(sapply(params[names(params) != 'loss_method'], is.numeric)))
   
   file.remove(fname)
 })

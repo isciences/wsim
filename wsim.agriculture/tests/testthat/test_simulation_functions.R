@@ -13,11 +13,11 @@
 context('Loss simulation functions')
 
 test_that('random loss returns a single value', {
-  expect_length(random_loss(2, 2, FALSE, 12, 80, 2), 1)  
+  expect_length(random_loss(n_surplus=2, n_deficit=2, independent=FALSE, combine_with='max', 12, 80, 2), 1)  
 })
 
 test_that('simulation returns expected structure', {
-  df <- simulate_expected_loss(10, 12, 80, 2)
+  df <- simulate_expected_loss(10, 'sum', 12, 80, 2)
   
   expect_equal(names(df),
                c('season_length_months',
@@ -26,4 +26,11 @@ test_that('simulation returns expected structure', {
                  'mean_loss',
                  'sd_loss'))
   expect_length(df$method, 12 * 2 * 2)
+})
+
+test_that('we get an error when an unsupported combine method is specified', {
+  expect_error(
+    simulate_expected_loss(10, 'mode', 12, 80, 2),
+    'Unknown.*method'
+  )
 })
