@@ -11,6 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#' Summarize losses for each geography, given data frames of production and loss
+#' 
+#' @param production data frame of production data, having columns: \itemize{
+#'                     \item id
+#'                     \item method
+#'                     \item crop
+#'                     \item subcrop
+#'                     \item production }
+#' @param production data frame of loss data, having columns: \itemize{
+#'                     \item id
+#'                     \item method
+#'                     \item crop
+#'                     \item subcrop
+#'                     \item quantile
+#'                     \item loss }
+#' @return a list of three data frames summarizing losses for each region by crop, by crop type (food/non-food), and overall.
+#'
 #' @export
 summarize_loss <- function(production, loss) {
   df <- dplyr::inner_join(production, loss, by=c('id', 'method', 'subcrop', 'crop'))
@@ -35,7 +52,10 @@ summarize_loss <- function(production, loss) {
   )
 }
 
-#'
+#' Format data frame of losses by crop for writing to disk
+#' 
+#' @param df data frame returned by \code{summarize_loss}
+#' @return data frame that can be passed to \code{write_vars_to_cdf}
 #' @export
 format_loss_by_crop <- function(df) {
   if (all(is.na(df$quantile))) {
@@ -51,7 +71,10 @@ format_loss_by_crop <- function(df) {
   }
 }
 
-#'
+#' Format data frame of overall losses for writing to disk
+#' 
+#' @param df data frame returned by \code{summarize_loss}
+#' @return data frame that can be passed to \code{write_vars_to_cdf}
 #' @export
 format_overall_loss <- function(df) {
   if (all(is.na(df$quantile))) {
@@ -67,7 +90,10 @@ format_overall_loss <- function(df) {
   }
 }
 
-#'
+#' Format data frame of losses by type for writing to disk
+#' 
+#' @param df data frame returned by \code{summarize_loss}
+#' @return data frame that can be passed to \code{write_vars_to_cdf}
 #' @export
 format_loss_by_type <- function(df) {
   if (all(is.na(df$quantile))) {
