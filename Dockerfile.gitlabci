@@ -1,18 +1,6 @@
-FROM debian:stretch
-
-RUN apt-get update  && apt-get install -y \
-  apt-transport-https \
-  apt-utils \
-  ca-certificates \
-  gnupg \
-  software-properties-common \
-  && rm -rf /var/lib/apt/lists*
-
-RUN apt-key adv --no-tty --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
-RUN add-apt-repository "deb http://cran.rstudio.com/bin/linux/debian stretch-cran35/"
+FROM debian:buster-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  cmake \
   enchant \
   g++ \
   gcc \
@@ -20,14 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   gfortran \
   libc-dev \
   libcurl4-openssl-dev \
-  libgdal20 \
   libgdal-dev \
-  libgeos-3.5.1 \
   libgeos-dev \
   libnetcdf-dev \
-  libnetcdf11 \
   libproj-dev \
-  libproj12 \
   libssl-dev \
   libssh2-1-dev \
   libudunits2-dev \
@@ -35,13 +19,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   make \
   nco \
   python3 \
+  python3-distutils \
   r-base-core \
   r-base-dev \
   wget \
   && rm -rf /var/lib/apt/lists*
 
 # Make GDAL work
-ENV GDAL_DATA=/usr/share/gdal/2.1
+ENV GDAL_DATA=/usr/share/gdal
 
 # Set locale to C.UTF-8. This avoids R CMD check failures with a locale error
 ENV LANG C.UTF-8
@@ -83,6 +68,8 @@ RUN Rscript -e 'for (package in c( \
   "sf" \
 )) tryCatch(install.packages(package, dependencies = NA, repos="http://cran.rstudio.com", Ncpus=parallel::detectCores()), warning=function() quit(status=1))'
 
+RUN Rscript -e 'devtools::install_github("tidyverse/tidyr")'
+
 # Add wgrib2 for converting CFS forecast data
 # We need to compile it ourselves because the packaged version
 # doesn't have support for regridding.
@@ -106,6 +93,10 @@ RUN wget -P /tmp https://bootstrap.pypa.io/get-pip.py && \
       sphinx_rtd_theme \
       sphinxcontrib.spelling \
       sphinxcontrib.bibtex
+ 
+RUN wget -O /tmp/cmake.tar.gz https://github.com/Kitware/CMake/releases/download/v3.14.1/cmake-3.14.1-Linux-x86_64.tar.gz --progress=dot:giga && \
+    tar --strip-components=1 -xzvf /tmp/cmake.tar.gz -C /usr && \
+    rm /tmp/cmake.tar.gz
 
 # Install exactextract
 RUN wget -P /tmp https://github.com/isciences/exactextract/archive/master.zip && \
