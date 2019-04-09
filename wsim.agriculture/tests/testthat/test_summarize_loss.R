@@ -100,8 +100,8 @@ test_that('overall loss can be formatted for writing to disk (with quantiles)', 
                c('id', 'loss_overall_q25', 'loss_overall_q50', 'loss_overall_q75'))
   
   # spot-check a value
-  expect_equal(dplyr::filter(formatted, id==2)$loss_q25,
-               dplyr::filter(summarized$overall, id==2 & quantile==0.25)$loss_overall)
+  expect_equal(dplyr::filter(formatted, id==2)$loss_overall_q25,
+               dplyr::filter(summarized$overall, id==2 & quantile==0.25)$loss)
 })
 
 test_that('overall loss can be formatted for writing to disk (without quantiles)', {
@@ -113,8 +113,8 @@ test_that('overall loss can be formatted for writing to disk (without quantiles)
                c('id', 'loss_overall'))
   
   # spot-check a value
-  expect_equal(dplyr::filter(formatted, id==2)$loss,
-               dplyr::filter(to_format, id==2)$loss_overall)
+  expect_equal(dplyr::filter(formatted, id==2)$loss_overall,
+               dplyr::filter(to_format, id==2)$loss)
 })
 
 test_that('loss by crop type can be formatted for writing to disk (with quantiles)', {
