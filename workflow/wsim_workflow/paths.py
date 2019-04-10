@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -15,6 +15,7 @@ import os
 import re
 
 from abc import ABCMeta, abstractmethod
+from enum import Enum
 from typing import Union, List, Optional
 
 from . import dates
@@ -22,6 +23,23 @@ from . import dates
 
 RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
 RE_GDAL_DATASET = re.compile('^(?P<driver>\w+:)?(?P<filename>[^:]+)(?P<dataset>:\w+)?$')
+
+
+class Basis(Enum):
+    BASIN = 'basin'
+    COUNTRY = 'country'
+    POWER_PLANT = 'power_plant'
+    PROVINCE = 'province'
+
+
+class Method(Enum):
+    RAINFED = 'rainfed'
+    IRRIGATED = 'irrigated'
+
+
+class Sector(Enum):
+    AGRICULTURE = 'agriculture'
+    ELECTRIC_POWER = 'electric_power'
 
 
 def gdaldataset2filename(dataset: str) -> str:
@@ -229,7 +247,7 @@ class AgricultureStatic(metaclass=ABCMeta):
     def __init__(self, source):
         self.source = source
 
-    def crop_calendar(self, method: str) -> str:
+    def crop_calendar(self, method: Method) -> str:
         pass
 
     def dam_locations(self) -> Vardef:
@@ -247,7 +265,7 @@ class AgricultureStatic(metaclass=ABCMeta):
     def provinces(self) -> Vardef:
         pass
 
-    def production(self, method: str) -> Vardef:
+    def production(self, method: Method) -> Vardef:
         pass
 
 
@@ -270,10 +288,10 @@ class DefaultWorkspace:
                   target: str=None,
                   member: str=None,
                   temporary: bool=False,
-                  basis: str=None,
+                  basis: Optional[Basis]=None,
                   summary: bool=False,
-                  sector: Optional[str]=None,
-                  method: Optional[str]=None) -> str:
+                  sector: Optional[Sector]=None,
+                  method: Optional[Method]=None) -> str:
 
         assert (year is None) != (yearmon is None)
 
@@ -289,7 +307,7 @@ class DefaultWorkspace:
             root = self.outputs
 
         if sector:
-            root = os.path.join(root, sector)
+            root = os.path.join(root, sector.value)
 
         return os.path.join(root,
                             self.make_dirname(thing, window, basis, summary, year is not None, method),
@@ -302,14 +320,14 @@ class DefaultWorkspace:
                                                summary=summary))
 
     @staticmethod
-    def make_stem(thing: str, basis: Optional[str], method: Optional[str], summary: Optional[bool]) -> str:
-        return '_'.join(filter(None, (basis, thing, method, 'summary' if summary else None)))
+    def make_stem(thing: str, basis: Optional[Basis], method: Optional[str], summary: Optional[bool]) -> str:
+        return '_'.join(filter(None, (basis.value if basis else None, thing, method, 'summary' if summary else None)))
 
     @staticmethod
-    def make_dirname(thing, window: int, basis: str, summary: bool, annual: bool, method) -> str:
-        return '_'.join(filter(None, (basis,
+    def make_dirname(thing, window: int, basis: Basis, summary: bool, annual: bool, method: Method) -> str:
+        return '_'.join(filter(None, (basis.value if basis else None,
                                       thing,
-                                      method,
+                                      method.value if method else None,
                                       'integrated' if window and window > 1 else None,
                                       'summary' if summary else None,
                                       'annual' if annual else None
@@ -318,11 +336,11 @@ class DefaultWorkspace:
     @staticmethod
     def make_filename(thing: str, *,
                       time: Union[int, str]=None,
-                      window: int=None,
-                      target: str=None,
-                      member: str=None,
-                      basis: str=None,
-                      method: str=None,
+                      window: Optional[int]=None,
+                      target: Optional[str]=None,
+                      member: Optional[str]=None,
+                      basis: Optional[Basis]=None,
+                      method: Optional[str]=None,
                       summary: bool=False) -> str:
         filename = DefaultWorkspace.make_stem(thing, basis, method, summary)
 
@@ -339,7 +357,7 @@ class DefaultWorkspace:
 
         filename += '.nc'
 
-        return filename.format(thing=thing, method=method, window=window, time=time, target=target, member=member, basis=basis)
+        return filename.format(thing=thing, method=method, window=window, time=time, target=target, member=member, basis=basis.value if basis else None)
 
     # Summaries of data from multi-member forecast ensembles
     def composite_summary(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
@@ -356,7 +374,6 @@ class DefaultWorkspace:
                               summary=target is not None,
                               window=window,
                               target=target).replace('composite_adjusted_integrated', 'composite_adjusted').replace('_summary', '')
-
 
     def composite_anomaly(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('composite_anom',
@@ -396,12 +413,12 @@ class DefaultWorkspace:
 
     # Individual model inputs, outputs, and derivatives
     def state(self, *,
-              sector: Optional[str]=None,
+              sector: Optional[Sector]=None,
               yearmon: str,
               member: Optional[str]=None,
               target: Optional[str]=None,
-              method: Optional[str]=None) -> str:
-        assert (sector == 'agriculture') == (method is not None)
+              method: Optional[Method]=None) -> str:
+        assert (sector == Sector.AGRICULTURE) == (method is not None)
 
         return self.make_path('state', sector=sector, yearmon=yearmon, member=member, target=target, window=None, method=method)
 
@@ -409,20 +426,20 @@ class DefaultWorkspace:
         return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=None)
 
     def results(self, *,
-                sector: Optional[str]=None,
+                sector: Optional[Sector]=None,
                 year: Optional[int]=None,
                 yearmon: Optional[str]=None,
                 window: int,
                 member: Optional[str]=None,
                 target: Optional[str]=None,
                 temporary: bool=False,
-                basis: Optional[str]=None,
-                method: Optional[str]=None,
+                basis: Optional[Basis]=None,
+                method: Optional[Method]=None,
                 summary: Optional[bool]=False) -> str:
 
         assert window is not None
 
-        if sector == 'agriculture':
+        if sector == Sector.AGRICULTURE:
             # Polygon-aggregated results don't distinguish between cultivation methods but raster results do
             assert (method is None) != (basis is None)
 
@@ -449,7 +466,7 @@ class DefaultWorkspace:
                       member: Optional[str]=None,
                       target: Optional[str]=None,
                       temporary: bool=False,
-                      basis: Optional[str]=None) -> str:
+                      basis: Optional[Basis]=None) -> str:
 
         assert window is not None
 
@@ -467,7 +484,7 @@ class DefaultWorkspace:
                          member: Optional[str]=None,
                          target: Optional[str]=None,
                          temporary: bool=False,
-                         basis: Optional[str]=None) -> str:
+                         basis: Optional[Basis]=None) -> str:
 
         assert window is not None
 
@@ -505,41 +522,34 @@ class DefaultWorkspace:
 
     # Electricity assessment misc
     def basin_loss_factors(self, *, yearmon: str, target: Optional[str], member: Optional[str]) -> str:
-        return self.make_path('loss_factors', sector='electricity', yearmon=yearmon, window=1, target=target, member=member, basis='basin')
+        return self.make_path('loss_factors', sector=Sector.ELECTRIC_POWER, yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
 
-    def basin_upstream_storage(self, sector: str) -> str:
-        return os.path.join(self.outputs, sector, 'spinup', 'basin_upstream_storage.nc')
+    def basin_upstream_storage(self, sector: Sector) -> str:
+        return os.path.join(self.outputs, sector.value, 'spinup', 'basin_upstream_storage.nc')
 
     def basin_water_stress(self) -> str:
-        return os.path.join(self.outputs, 'electricity', 'spinup', 'basin_baseline_water_stress.nc')
+        return os.path.join(self.outputs, Sector.ELECTRIC_POWER.value, 'basin_baseline_water_stress.nc')
 
     def power_plants(self) -> str:
-        return os.path.join(self.outputs, 'electricity', 'spinup', 'power_plants.nc')
-
-    def electric_loss_risk(self, *, yearmon: str, target: Optional[str]=None, member: Optional[str]=None, basis: str, summary: bool=False):
-        return self.make_path('loss_risk', sector='electricity', yearmon=yearmon, window=1, target=target, member=member, basis=basis, summary=summary)
+        return os.path.join(self.outputs, Sector.ELECTRIC_POWER.value, 'spinup', 'power_plants.nc')
 
     # Ag assessment misc
     def agriculture_bt_ro_rp(self, *, yearmon: str, target: Optional[str]=None, member: Optional[str]=None):
-        return self.make_path('bt_ro_rp', sector='agriculture', yearmon=yearmon, target=target, member=member)
+        return self.make_path('bt_ro_rp', sector=Sector.AGRICULTURE, yearmon=yearmon, target=target, member=member)
 
-    def agriculture_loss_risk(self, *, yearmon: str, target: Optional[str]=None, member: Optional[str]=None, basis: str, summary: bool=False):
-        return self.make_path('loss_risk', sector='agriculture', yearmon=yearmon, window=1, target=target, member=member, basis=basis, summary=summary)
+    def loss_params(self, *, sector: Sector, method: Method):
+        assert sector == Sector.AGRICULTURE
 
-    def loss_params(self, *, sector: str, method: str):
-        assert sector == 'agriculture'
-        assert method in { 'rainfed', 'irrigated' }
-
-        return os.path.join(self.outputs, sector, 'spinup', 'loss_params_{}.csv'.format(method))
+        return os.path.join(self.outputs, sector.value, 'spinup', 'loss_params_{}.csv'.format(method))
 
     # Distribution fit files. Must provide either a numeric month, or an annual_stat
     def fit_obs(self, *,
                 var: str,
-                month: int=None,
+                month: Optional[int]=None,
                 window: int,
-                stat: str=None,
-                basis: str=None,
-                annual_stat: str=None) -> str:
+                stat: Optional[str]=None,
+                basis: Optional[Basis]=None,
+                annual_stat: Optional[str]=None) -> str:
         assert window is not None
         assert (annual_stat is None) != (month is None)
 

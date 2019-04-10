@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Union
 
 from . import attributes as attrs
 
-from .paths import read_vars, Vardef, DefaultWorkspace, ObservedForcing, ForecastForcing, ElectricityStatic, Static
+from .paths import read_vars, Basis, Vardef, DefaultWorkspace, ObservedForcing, ForecastForcing, ElectricityStatic, Static
 from .commands import \
     exact_extract, \
     wsim_anom, \
@@ -72,7 +72,7 @@ def compute_basin_results(workspace: DefaultWorkspace,
                           member: Optional[str]=None) -> List[Step]:
     pixel_forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
     pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
-    basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis='basin')
+    basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
 
     return [
         exact_extract(
@@ -141,7 +141,7 @@ def time_integrate(workspace: DefaultWorkspace,
                    target: Optional[str]=None,
                    window: Optional[int]=None,
                    member: Optional[str]=None,
-                   basis: Optional[str]=None):
+                   basis: Optional[Basis]=None):
     months = rolling_window(target if target else yearmon, window)
 
     lead_months = get_lead_months(yearmon, target) if target else 0
@@ -179,7 +179,7 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
                            window: int,
                            target: Optional[str]=None,
                            member: Optional[str]=None,
-                           basis: Optional[str]=None) -> List[Step]:
+                           basis: Optional[Basis]=None) -> List[Step]:
     if target:
         month = int(target[-2:])
     else:
@@ -351,7 +351,7 @@ def fit_var(config: ConfigBase,
             month: int,
             stat: Optional[str]=None,
             window: int=1,
-            basis: Optional[str]=None) -> List[Step]:
+            basis: Optional[Basis]=None) -> List[Step]:
     """
     Compute fits for param in given month over fitting period
     """

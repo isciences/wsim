@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -14,7 +14,8 @@
 import unittest
 from os.path import join
 
-from wsim_workflow.paths import DefaultWorkspace
+from wsim_workflow.paths import Basis, DefaultWorkspace
+
 
 class TestWorkspacePaths(unittest.TestCase):
     root = '/tmp'
@@ -86,13 +87,13 @@ class TestWorkspacePaths(unittest.TestCase):
         # Observed data (basins)
         self.assertEqual(
             join(self.root, 'basin_rp', 'basin_rp_1mo_201612.nc'),
-            self.ws.return_period(yearmon='201612', window=1, basis='basin')
+            self.ws.return_period(yearmon='201612', window=1, basis=Basis.BASIN)
         )
 
         # Observed data (basins)
         self.assertEqual(
             join(self.root, 'basin_rp_integrated', 'basin_rp_24mo_201612.nc'),
-            self.ws.return_period(yearmon='201612', window=24, basis='basin')
+            self.ws.return_period(yearmon='201612', window=24, basis=Basis.BASIN)
         )
 
         # Forecast data
@@ -276,7 +277,7 @@ class TestWorkspacePaths(unittest.TestCase):
     def test_results_annual(self):
         self.assertEqual(
             join(self.root, 'basin_results_annual', 'basin_results_1mo_1950.nc'),
-                 self.ws.results(year=1950, window=1, basis='basin')
+                 self.ws.results(year=1950, window=1, basis=Basis.BASIN)
         )
 
         self.assertEqual(

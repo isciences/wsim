@@ -24,6 +24,7 @@ from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gadm, gmted, gppd, stn30, natural_earth, mirca2000, spam2010
+from wsim_workflow.paths import Method
 from wsim_workflow.step import Step
 
 
@@ -46,13 +47,13 @@ class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
             mirca2000.crop_calendars(source_dir=self.source) + \
             spam2010.production(source_dir=self.source) + \
             spam2010.allocate_spam_production(spam_zip = spam2010.spam_zip(self.source),
-                                     method = 'irrigated',
-                                     area_fractions = self.crop_calendar(method='irrigated'),
-                                     output = self.production(method='irrigated').file) + \
+                                     method = Method.IRRIGATED,
+                                     area_fractions = self.crop_calendar(method=Method.IRRIGATED),
+                                     output = self.production(method=Method.IRRIGATED).file) + \
             spam2010.allocate_spam_production(spam_zip = spam2010.spam_zip(self.source),
-                                              method = 'rainfed',
-                                              area_fractions = self.crop_calendar(method='rainfed'),
-                                              output = self.production(method='rainfed').file)
+                                              method = Method.RAINFED,
+                                              area_fractions = self.crop_calendar(method=Method.RAINFED),
+                                              output = self.production(method=Method.RAINFED).file)
 
 
     # Static inputs
@@ -86,11 +87,12 @@ class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
     def provinces(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36_level_1.gpkg'), None)
 
-    def crop_calendar(self, method: str) -> str:
-        return os.path.join(self.source, 'MIRCA2000', 'crop_calendar_{}.nc'.format(method))
+    def crop_calendar(self, method: Method) -> str:
+        return os.path.join(self.source, 'MIRCA2000', 'crop_calendar_{}.nc'.format(method.value))
 
-    def production(self, method: str) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, spam2010.SUBDIR, 'production_{}.nc'.format(method)), 'production')
+    def production(self, method: Method) -> paths.Vardef:
+        return paths.Vardef(os.path.join(self.source, spam2010.SUBDIR, 'production_{}.nc'.format(method.value)),
+                            'production')
 
 
 class NCEP(paths.ObservedForcing):

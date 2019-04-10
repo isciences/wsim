@@ -16,6 +16,7 @@ import os
 from typing import List
 
 from ..step import Step
+from ..paths import Method
 
 SUBDIR = 'SPAM2010'
 
@@ -45,7 +46,7 @@ def spam_zip(source_dir: str) -> str:
     return os.path.join(source_dir, SUBDIR, 'spam2010v1r0_global_prod.geotiff.zip')
 
 
-def allocate_spam_production(*, method: str, spam_zip: str, area_fractions: str, output: str) -> List[Step]:
+def allocate_spam_production(*, method: Method, spam_zip: str, area_fractions: str, output: str) -> List[Step]:
 
     return [
         Step(
@@ -56,7 +57,7 @@ def allocate_spam_production(*, method: str, spam_zip: str, area_fractions: str,
                     os.path.join('{BINDIR}', 'utils', 'spam2010', 'allocate_spam_production.R'),
                     '--spam_zip', spam_zip,
                     '--area_fractions', area_fractions,
-                    '--method', method,
+                    '--method', method.value,
                     '--output', output
                 ]
             ]

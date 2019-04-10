@@ -17,12 +17,12 @@ from typing import List, Mapping, Optional, Union
 
 from .config_base import ConfigBase
 from .dates import get_lead_months, get_next_yearmon, parse_yearmon
-from .paths import AgricultureStatic, DefaultWorkspace, read_vars, Vardef
+from .paths import AgricultureStatic, DefaultWorkspace, read_vars, Basis, Method, Sector, Vardef
 from .step import Step
 from . import commands
 
-AGGREGATION_POLYGONS = ('country', 'province', 'basin')
-CULTIVATION_METHODS = ('rainfed', 'irrigated')
+AGGREGATION_POLYGONS = (Basis.COUNTRY, Basis.PROVINCE, Basis.BASIN)
+CULTIVATION_METHODS = (Method.RAINFED, Method.IRRIGATED)
 DAWN_OF_AGRICULTURE = '200001'
 
 
@@ -99,7 +99,7 @@ def compute_loss_summary(workspace: DefaultWorkspace,
                          ensemble_members: List[str], *,
                          yearmon: str,
                          target: str,
-                         method: str) -> List[Step]:
+                         method: Method) -> List[Step]:
 
     loss_vars = ('loss',
                  'cumulative_loss_current_year',
@@ -107,7 +107,7 @@ def compute_loss_summary(workspace: DefaultWorkspace,
 
     return [
         commands.wsim_integrate(
-            inputs=[workspace.results(sector='agriculture',
+            inputs=[workspace.results(sector=Sector.AGRICULTURE,
                                       yearmon=yearmon,
                                       target=target,
                                       member=member,
@@ -115,7 +115,7 @@ def compute_loss_summary(workspace: DefaultWorkspace,
                                       window=1)
                     for member in ensemble_members],
             stats=['q{}::{}'.format(q, ','.join(loss_vars)) for q in (25, 50, 75)],
-            output=workspace.results(sector='agriculture',
+            output=workspace.results(sector=Sector.AGRICULTURE,
                                      yearmon=yearmon,
                                      target=target,
                                      method=method,
@@ -126,7 +126,7 @@ def compute_loss_summary(workspace: DefaultWorkspace,
 
 
 def compute_expected_losses(workspace: DefaultWorkspace):
-    outputs = [workspace.loss_params(sector='agriculture', method=method) for method in CULTIVATION_METHODS]
+    outputs = [workspace.loss_params(sector=Sector.AGRICULTURE, method=method) for method in CULTIVATION_METHODS]
 
     return [
         Step(
@@ -144,28 +144,28 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
                               yearmon: str,
                               target: Optional[str]=None,
                               member: Optional[str]=None,
-                              basis: str,
+                              basis: Basis,
                               summary: Optional[bool]=False
                               ) -> List[Step]:
 
     # FIXME get id_field from somewhere
-    if basis == 'country':
+    if basis == Basis.COUNTRY:
         boundaries = static.countries().file
         id_field = 'GID'
-    elif basis == 'province':
+    elif basis == Basis.PROVINCE:
         boundaries = static.provinces().file
         id_field = 'GID'
-    elif basis == 'basin':
+    elif basis == Basis.BASIN:
         boundaries = static.basins().file
         id_field = 'HYBAS_ID'
     else:
         raise Exception("Not yet.")
 
     aggregated_results = workspace.results(
-        sector='agriculture', basis=basis,
+        sector=Sector.AGRICULTURE, basis=basis,
         yearmon=yearmon, window=1, member=member, target=target, summary=summary)
 
-    loss = {method: workspace.results(sector='agriculture', method=method,
+    loss = {method: workspace.results(sector=Sector.AGRICULTURE, method=method,
                                       yearmon=yearmon, window=1, member=member, target=target, summary=summary)
             for method in CULTIVATION_METHODS}
     prod = {method: static.production(method).file for method in CULTIVATION_METHODS}
@@ -179,10 +179,10 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
                     '{BINDIR}/wsim_ag_aggregate.R',
                     '--boundaries', boundaries,
                     '--id_field', id_field,
-                    '--prod_i', prod['irrigated'],
-                    '--loss_i', loss['irrigated'],
-                    '--prod_r', prod['rainfed'],
-                    '--loss_r', loss['rainfed'],
+                    '--prod_i', prod[Method.IRRIGATED],
+                    '--loss_i', loss[Method.IRRIGATED],
+                    '--prod_r', prod[Method.RAINFED],
+                    '--loss_r', loss[Method.RAINFED],
                     '--output', aggregated_results
                 ]
             ]
@@ -190,8 +190,8 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
     ]
 
 
-def make_initial_state(workspace: DefaultWorkspace, method: str, yearmon: str) -> List[Step]:
-    state = workspace.state(sector='agriculture', method=method, yearmon=yearmon)
+def make_initial_state(workspace: DefaultWorkspace, method: Method, yearmon: str) -> List[Step]:
+    state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon)
 
     return [
         Step(targets=state,
@@ -205,11 +205,11 @@ def make_initial_state(workspace: DefaultWorkspace, method: str, yearmon: str) -
 
 
 def compute_basin_integration_windows(workspace: DefaultWorkspace, static: AgricultureStatic) -> List[Step]:
-    annual_flow_fit = workspace.fit_obs(var='Bt_RO', month=12, window=12, stat='sum', basis='basin')
+    annual_flow_fit = workspace.fit_obs(var='Bt_RO', month=12, window=12, stat='sum', basis=Basis.BASIN)
 
     return [
         Step(
-            targets=workspace.basin_upstream_storage(sector='agriculture'),
+            targets=workspace.basin_upstream_storage(sector=Sector.AGRICULTURE),
             dependencies=[static.basins(), static.dam_locations(), annual_flow_fit],
             commands=[
                 [
@@ -218,7 +218,7 @@ def compute_basin_integration_windows(workspace: DefaultWorkspace, static: Agric
                     '--dams', static.dam_locations().file,
                     '--basins', static.basins().file,
                     '--sector', 'agriculture',
-                    '--output', workspace.basin_upstream_storage(sector='agriculture'),
+                    '--output', workspace.basin_upstream_storage(sector=Sector.AGRICULTURE),
                 ]
             ]
         )
@@ -238,10 +238,10 @@ def compute_gridded_b2b_btro(workspace: DefaultWorkspace,
     year, month = parse_yearmon(yearmon)
 
     for w in windows:
-        bt_ro.append(Vardef(workspace.results(basis='basin', yearmon=yearmon, window=w, target=target, member=member),
+        bt_ro.append(Vardef(workspace.results(basis=Basis.BASIN, yearmon=yearmon, window=w, target=target, member=member),
                             'Bt_RO' if w == 1 else 'Bt_RO_sum'))
 
-        bt_ro_fits.append(workspace.fit_obs(basis='basin',
+        bt_ro_fits.append(workspace.fit_obs(basis=Basis.BASIN,
                                             var='Bt_RO',
                                             stat='sum' if w != 1 else None,
                                             window=w,
@@ -254,13 +254,13 @@ def compute_gridded_b2b_btro(workspace: DefaultWorkspace,
             targets=[outfile],
             dependencies=[v.file for v in bt_ro] +
                          bt_ro_fits +
-                         [workspace.basin_upstream_storage(sector='agriculture')],
+                         [workspace.basin_upstream_storage(sector=Sector.AGRICULTURE)],
             commands=[
                 wsim_ag_b2b_rasterize(
                     basins=static.basins().file,
                     bt_ro=bt_ro,
                     fits=bt_ro_fits,
-                    windows=workspace.basin_upstream_storage(sector='agriculture'),
+                    windows=workspace.basin_upstream_storage(sector=Sector.AGRICULTURE),
                     res=0.5,
                     output=outfile
                 )
@@ -295,40 +295,40 @@ def wsim_ag_b2b_rasterize(basins: List[str],
 def compute_loss_risk(workspace: DefaultWorkspace,
                       static: AgricultureStatic,
                       *,
-                      method: str,
+                      method: Method,
                       yearmon: str,
                       target: Optional[str] = None,
                       member: Optional[str] = None) -> List[Step]:
     if member:
         if get_lead_months(yearmon, target) > 1:
-            current_state = workspace.state(sector='agriculture', method=method, yearmon=yearmon, target=target,
+            current_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon, target=target,
                                             member=member)
         else:
-            current_state = workspace.state(sector='agriculture', method=method, yearmon=target)
+            current_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=target)
 
-        next_state = workspace.state(sector='agriculture', method=method, yearmon=yearmon,
+        next_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon,
                                      target=get_next_yearmon(target), member=member)
     else:
-        current_state = workspace.state(sector='agriculture', method=method, yearmon=yearmon)
-        next_state = workspace.state(sector='agriculture', method=method, yearmon=get_next_yearmon(yearmon))
+        current_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon)
+        next_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=get_next_yearmon(yearmon))
 
-    results = workspace.results(sector='agriculture', method=method, yearmon=yearmon, window=1, target=target,
+    results = workspace.results(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon, window=1, target=target,
                                 member=member)
 
     temperature_rp = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'T_rp')
 
     calendar = static.crop_calendar(method)
-    loss_params = workspace.loss_params(sector='agriculture', method=method)
+    loss_params = workspace.loss_params(sector=Sector.AGRICULTURE, method=method)
 
     surplus = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'RO_mm_rp')
-    if method == 'irrigated':
+    if method == Method.IRRIGATED:
         deficit = workspace.agriculture_bt_ro_rp(yearmon=yearmon, member=member, target=target)
-    elif method == 'rainfed':
+    elif method == Method.RAINFED:
         deficit = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target),
                             'PETmE_rp@negate',
                             'Ws_rp')
     else:
-        raise Exception('Unknown cultivation method:', method)
+        raise Exception('Unknown cultivation method:', method.value)
 
     return [
         Step(
