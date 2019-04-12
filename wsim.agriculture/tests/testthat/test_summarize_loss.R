@@ -49,7 +49,7 @@ loss <- dplyr::select(
   id, method, crop, subcrop, quantile, loss
 )
 
-summarized <- summarize_loss(prod, loss)
+summarized <- summarize_loss(prod, loss, 'loss')
 
 test_that('whenever there is production, the aggregated loss is finite', {
   for (method in names(summarized)) {
@@ -69,74 +69,74 @@ test_that('correct number of rows output', {
 })
 
 test_that('per-crop loss can be formatted for writing to disk (with quantiles)', {
-  formatted <- format_loss_by_crop(summarized$by_crop)
+  formatted <- format_loss_by_crop(dplyr::rename(summarized$by_crop, lost_opportunities=loss), 'lost_opportunities')
   
   expect_named(formatted,
-               c('id', 'crop', 'loss_q25', 'loss_q50', 'loss_q75'))
+               c('id', 'crop', 'lost_opportunities_q25', 'lost_opportunities_q50', 'lost_opportunities_q75'))
   
   # spot-check a value
-  expect_equal(dplyr::filter(formatted, id==2 & crop=='cotton')$loss_q75,
+  expect_equal(dplyr::filter(formatted, id==2 & crop=='cotton')$lost_opportunities_q75,
                dplyr::filter(summarized$by_crop, id==2 & quantile==0.75 & crop=='cotton')$loss)
   
 })
 
 test_that('per-crop loss can be formatted for writing to disk (without quantiles)', {
-  to_format <- dplyr::mutate(dplyr::filter(summarized$by_crop, quantile==0.50), quantile=NA)
-  formatted <- format_loss_by_crop(to_format)
+  to_format <- dplyr::rename(dplyr::mutate(dplyr::filter(summarized$by_crop, quantile==0.50), quantile=NA), perte=loss)
+  formatted <- format_loss_by_crop(to_format, 'perte')
   
   expect_named(formatted,
-               c('id', 'crop', 'loss'))
+               c('id', 'crop', 'perte'))
   
   # spot-check a value
-  expect_equal(dplyr::filter(formatted, id==2 & crop=='cotton')$loss,
+  expect_equal(dplyr::filter(formatted, id==2 & crop=='cotton')$perte,
                dplyr::filter(summarized$by_crop, id==2 & quantile==0.5 & crop=='cotton')$loss)
   
 })
 
 test_that('overall loss can be formatted for writing to disk (with quantiles)', {
-  formatted <- format_overall_loss(summarized$overall)
+  formatted <- format_overall_loss(dplyr::rename(summarized$overall, lozz=loss), 'lozz')
   
   expect_named(formatted,
-               c('id', 'loss_overall_q25', 'loss_overall_q50', 'loss_overall_q75'))
+               c('id', 'lozz_overall_q25', 'lozz_overall_q50', 'lozz_overall_q75'))
   
   # spot-check a value
-  expect_equal(dplyr::filter(formatted, id==2)$loss_overall_q25,
+  expect_equal(dplyr::filter(formatted, id==2)$lozz_overall_q25,
                dplyr::filter(summarized$overall, id==2 & quantile==0.25)$loss)
 })
 
 test_that('overall loss can be formatted for writing to disk (without quantiles)', {
-  to_format <- dplyr::mutate(dplyr::filter(summarized$overall, quantile==0.50), quantile=NA)
+  to_format <- dplyr::rename(dplyr::mutate(dplyr::filter(summarized$overall, quantile==0.50), quantile=NA), lox=loss)
   
-  formatted <- format_overall_loss(to_format)
+  formatted <- format_overall_loss(to_format, 'lox')
   
   expect_named(formatted,
-               c('id', 'loss_overall'))
+               c('id', 'lox_overall'))
   
   # spot-check a value
-  expect_equal(dplyr::filter(formatted, id==2)$loss_overall,
-               dplyr::filter(to_format, id==2)$loss)
+  expect_equal(dplyr::filter(formatted, id==2)$lox_overall,
+               dplyr::filter(to_format, id==2)$lox)
 })
 
 test_that('loss by crop type can be formatted for writing to disk (with quantiles)', {
-  formatted <- format_loss_by_type(summarized$by_type)
+  formatted <- format_loss_by_type(dplyr::rename(summarized$by_type, Z=loss), 'Z')
     
   expect_named(formatted,
-               c('id', 'loss_non_food_q25', 'loss_non_food_q50', 'loss_non_food_q75', 'loss_food_q25', 'loss_food_q50', 'loss_food_q75'))
+               c('id', 'Z_non_food_q25', 'Z_non_food_q50', 'Z_non_food_q75', 'Z_food_q25', 'Z_food_q50', 'Z_food_q75'))
   
   # spot-check a value
-  expect_equal(dplyr::filter(formatted, id==2)$loss_non_food_q75,
+  expect_equal(dplyr::filter(formatted, id==2)$Z_non_food_q75,
                dplyr::filter(summarized$by_type, id==2 & quantile==0.75 & !food)$loss)
 })
 
 test_that('loss by crop_type can be formatted for writing to disk (without quantiles)', {
-  to_format <- dplyr::mutate(dplyr::filter(summarized$by_type, quantile==0.50), quantile=NA)
+  to_format <- dplyr::rename(dplyr::mutate(dplyr::filter(summarized$by_type, quantile==0.50), quantile=NA), Y=loss)
   
-  formatted <- format_loss_by_type(to_format)
+  formatted <- format_loss_by_type(to_format, 'Y')
   
   expect_named(formatted,
-               c('id', 'loss_non_food', 'loss_food'))
+               c('id', 'Y_non_food', 'Y_food'))
   
   # spot-check a value
-  expect_equal(dplyr::filter(formatted, id==2)$loss_non_food,
-               dplyr::filter(to_format, id==2 & !food)$loss)
+  expect_equal(dplyr::filter(formatted, id==2)$Y_non_food,
+               dplyr::filter(to_format, id==2 & !food)$Y)
 })

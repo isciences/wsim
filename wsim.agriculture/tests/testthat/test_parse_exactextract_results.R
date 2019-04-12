@@ -15,12 +15,12 @@ context('Parsing exactextract results')
 
 dat <- data.frame(
   HYBAS_ID=1:5,
-  loss_rainfed_cassava_q75=runif(5),
-  loss_rainfed_cassava_q25=runif(5),
-  loss_irrigated_maize_1_q25=runif(5),
-  loss_irrigated_maize_2_q25=runif(5),
-  loss_irrigated_rice_1=runif(5),
-  loss_rainfed_rice_1=runif(5),
+  loss_current_year_rainfed_cassava_q75=runif(5),
+  loss_current_year_rainfed_cassava_q25=runif(5),
+  loss_current_year_irrigated_maize_1_q25=runif(5),
+  loss_current_year_irrigated_maize_2_q25=runif(5),
+  loss_next_year_irrigated_rice_1=runif(5),
+  loss_next_year_rainfed_rice_1=runif(5),
   production_rainfed_rice_1=runif(5),
   production_irrigated_rice_1=runif(5),
   production_irrigated_maize_1=runif(5),
@@ -28,15 +28,16 @@ dat <- data.frame(
   production_rainfed_cassava=runif(5)
 )
 
-test_that('column names and types are correct', {
-  parsed <- parse_exactextract_results(dat)
-  types <- sapply(parsed, mode)
+varnames <- c('production', 'loss_current_year', 'loss_next_year')
 
-  expect_named(parsed$production,                c('id',      'method',    'crop',      'subcrop',   'production'))
-  expect_equal(sapply(parsed$production, mode),  c('numeric', 'character', 'character', 'character', 'numeric'), check.attributes=FALSE)
+test_that('column names and types are correct', {
+  parsed <- parse_exactextract_results(dat, varnames)
+  types <- sapply(parsed, mode)
   
-  expect_named(parsed$loss,                c('id',      'method',    'crop',      'subcrop',   'quantile', 'loss'))
-  expect_equal(sapply(parsed$loss, mode),  c('numeric', 'character', 'character', 'character', 'numeric',  'numeric'), check.attributes=FALSE)
+  for (varname in varnames) {
+    expect_named(parsed[[varname]],               c('id',      'method',    'crop',      'subcrop',   'quantile', varname))
+    expect_equal(sapply(parsed[[varname]], mode), c('numeric', 'character', 'character', 'character', 'numeric',  'numeric'), check.attributes=FALSE)
+  }
 })
 
 
@@ -45,8 +46,8 @@ test_that('results can be read from a csv', {
 
   write.csv(dat, fname, row.names=FALSE)
 
-  expect_equal(parse_exactextract_results(dat),
-               parse_exactextract_results(fname))
+  expect_equal(parse_exactextract_results(dat, varnames),
+               parse_exactextract_results(fname, varnames))
 
   file.remove(fname)
 })

@@ -45,13 +45,18 @@ parse_quantiles <- function(varnames) {
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args)
 
+  argfile <- tempfile()
   outfile <- tempfile(fileext='.csv')
   idcol <- args$id_field
 
   xx_cmd <- "exactextract"
-  xx_args <- c("-p", args$boundaries,
-            "-f", args$id_field,
-            "-o", outfile)
+  xx_args <- list(
+    polygons= args$boundaries,
+    fid= args$id_field,
+    output= outfile,
+    raster= NULL,
+    stat=NULL
+  )
 
   crops <- wsim.agriculture::wsim_subcrop_names()
   
@@ -70,57 +75,93 @@ main <- function(raw_args) {
     rainfed= args$loss_r,
     irrigated= args$loss_i
   )
-
+  
+  loss_vars <-c('cumulative_loss_current_year', 'cumulative_loss_next_year', 'loss') 
+  
   for (method in c('rainfed', 'irrigated')) {
     for (band in seq_along(crops)) {
-      xx_args  <- c(xx_args,
-                 "-r", sprintf("\"production_%s_%s:NETCDF:%s:production[%d]\"",
-                               method, crops[band], prod_rasters[[method]], band),
-                 "-s", sprintf("\"production_%s_%s=sum(production_%s_%s)\"",
-                               method, crops[band], method, crops[band]))
-
-      if (length(loss_quantiles) == 0) {
-        xx_args <- c(xx_args,
-                 "-r", sprintf("\"loss_%s_%s:NETCDF:%s:cumulative_loss_current_year[%d]\"",
-                               method, crops[band], loss_rasters[[method]], band),
-                 "-s", sprintf("\"loss_%s_%s=weighted_sum(loss_%s_%s,production_%s_%s)\"",
-                               method, crops[band], method, crops[band], method, crops[band]))
-      } else {
-        for (q in loss_quantiles) {
-          xx_args <- c(xx_args,
-                   "-r", sprintf("\"loss_%s_%s_q%d:NETCDF:%s:cumulative_loss_current_year_q%d[%d]\"",
-                                 method, crops[band], q, loss_rasters[[method]], q, band),
-                   "-s", sprintf("\"loss_%s_%s_q%d=weighted_sum(loss_%s_%s_q%d,production_%s_%s)\"",
-                                 method, crops[band], q, method, crops[band], q, method, crops[band]))
+      xx_args$raster <- c(xx_args$raster,
+                          sprintf("\"production_%s_%s:NETCDF:%s:production[%d]\"",
+                                  method, crops[band], prod_rasters[[method]], band))
+      xx_args$stat <- c(xx_args$stat,
+                        sprintf("\"production_%s_%s=sum(production_%s_%s)\"",
+                                method, crops[band], method, crops[band]))
+      
+      for (varname in loss_vars) {
+        if (length(loss_quantiles) == 0) {
+          xx_args$raster <- c(xx_args$raster,
+                              sprintf("\"%s_%s_%s:NETCDF:%s:%s[%d]\"",
+                                      varname, method, crops[band], # raster name
+                                      loss_rasters[[method]],       # raster filename
+                                      varname, band))               # netCDF variable name and crop band
+          xx_args$stat <- c(xx_args$stat,
+                            sprintf("\"%s_%s_%s=weighted_sum(%s_%s_%s,production_%s_%s)\"",
+                                    varname, method, crops[band], # output variable name
+                                    varname, method, crops[band], # input loss variable (first stat arg)
+                                    method, crops[band]))         # input production variable (second stat arg)
+        } else {
+          for (q in loss_quantiles) {
+            xx_args$raster <- c(xx_args$raster,
+                                sprintf("\"%s_%s_%s_q%d:NETCDF:%s:%s_q%d[%d]\"",
+                                        varname, method, crops[band], q, # raster name
+                                        loss_rasters[[method]],          # raster filename
+                                        varname, q, band))               # netCDF variable name and crop band
+            xx_args$stat <- c(xx_args$stat,
+                              sprintf("\"%s_%s_%s_q%d=weighted_sum(%s_%s_%s_q%d,production_%s_%s)\"",
+                                      varname, method, crops[band], q, # output variable name
+                                      varname, method, crops[band], q, # input loss variable (first stat arg)
+                                      method, crops[band]))            # input production variable (second stat arg)
+          }
         }
       }
     }
   }
+  
+  # Write arguments to a file and direct exactextract to read configuration from this file.
+  # This is to work around an apparent limitation (maybe with system2?) on command-line length that is lower than the OS limitation.
+  writeLines(sapply(names(xx_args), function(arg)
+    sprintf('%s = %s', arg, paste(xx_args[[arg]], collapse=' '))), 
+    argfile)
 
   info('Computing zonal statistics')
-  ret_code <- system2(xx_cmd, xx_args)
+  ret_code <- system2(xx_cmd,
+                      args=c('--config', argfile),
+                      env=c('GDAL_NETCDF_VERIFY_DIMS=NO', # Disable warning that "crop" dimension is not a time or vertical dimension
+                            'CPL_LOG=NO'))                # Disable _ALL_ GDAL warnings/errors. Unfortunately there doesn't seem to be
+                                                          # a way to disable only warnings, or the spurious warning produced by having a 
+                                                          # character-array dimension variable.
   if (ret_code != 0) {
-    die_with_message('exactextract command failed.')
+    die_with_message('exactextract command failed with return code', ret_code)
   }
   info('Finished computing zonal statistics')
   
-  dat <- wsim.agriculture::parse_exactextract_results(outfile)
+  dat <- wsim.agriculture::parse_exactextract_results(outfile, c('production', loss_vars))
   file.remove(outfile)
+  file.remove(argfile)
   
-  system.time(summarized <- wsim.agriculture::summarize_loss(dat$production, dat$loss))
+  # why rename cumulative loss to "loss" here? that's pretty confusing.
+  # parse should return all of the loss columns together; since 'summarize_loss' accepts a column name we can
+  # pass in the same loss df to summarize each different type of loss
+  # might as well bring in monthly loss here, someone will ask for it sooner or later
   
-  wsim.io::write_vars_to_cdf(wsim.agriculture::format_loss_by_crop(summarized$by_crop),
+  summarized <- lapply(loss_vars, function(v)
+    wsim.agriculture::summarize_loss(dplyr::select(dat$production, -quantile), dat[[v]], v))
+  names(summarized) <- loss_vars
+  
+  by_crop <- Reduce(function(x, y) dplyr::inner_join(x, y, by=c('id', 'crop')),
+                    lapply(loss_vars, function(v) wsim.agriculture::format_loss_by_crop(summarized[[v]]$by_crop, v)))
+    
+  wsim.io::write_vars_to_cdf(by_crop,
                              args$output,
-                             ids=sort(unique(summarized$by_crop$id)),
-                             extra_dims=list(crop=sort(unique(summarized$by_crop$crop))),
+                             ids=sort(unique(by_crop$id)),
+                             extra_dims=list(crop=sort(unique(by_crop$crop))),
                              prec='single')
   infof('Wrote per-crop aggregated results to %s', args$output)
   
-  the_rest <- dplyr::inner_join(
-    wsim.agriculture::format_loss_by_type(summarized$by_type),
-    wsim.agriculture::format_overall_loss(summarized$overall),
-    by='id')
-  
+  the_rest <- Reduce(function(x, y) dplyr::inner_join(x, y, b='id'),
+                     c(lapply(loss_vars, function(v) wsim.agriculture::format_loss_by_type(summarized[[v]]$by_type, v)),
+                       lapply(loss_vars, function(v) wsim.agriculture::format_overall_loss(summarized[[v]]$overall, v))))
+    
   wsim.io::write_vars_to_cdf(the_rest,
                              args$output,
                              ids=sort(unique(the_rest$id)),
@@ -130,7 +171,7 @@ main <- function(raw_args) {
 }
 
 if (!interactive()) {
-  tryCatch(
+#  tryCatch(
     main(commandArgs(trailingOnly=TRUE))
-  ,error=wsim.io::die_with_message)
+#  ,error=wsim.io::die_with_message)
 }

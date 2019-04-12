@@ -14,10 +14,11 @@
 #' Parse a data frame representing
 #'
 #' @param dat a data frame or CSV filename
+#' @param varnames variable names that form the root of column names
 #' @return a list with data frames of parsed production and loss data
 #'
 #' @export
-parse_exactextract_results <- function(dat) {
+parse_exactextract_results <- function(dat, varnames) {
   if (is.character(dat)) {
     dat <- utils::read.csv(dat, stringsAsFactors=FALSE)
   }
@@ -26,19 +27,21 @@ parse_exactextract_results <- function(dat) {
   # Instead, parse them all once and store the results in lookup vectors.
   colname <- names(dat)[-1]
   
-  lookup_what <- regmatches(colname, regexpr('[a-z]+', colname))
+  lookup_what <- regmatches(colname, regexpr(sprintf('^(%s)', paste(varnames, collapse='|')), colname))
   names(lookup_what) <- colname
   
-  lookup_method <- sapply(regmatches(colname, gregexpr('[a-z]+', colname)), function(m) m[2])
+  remainder <- sub(sprintf('^(%s)_', paste(varnames, collapse='|')), '', colname)
+  
+  lookup_method <- sapply(regmatches(remainder, gregexpr('[a-z]+', remainder, perl=TRUE)), function(m) m[1])
   names(lookup_method) <- colname
   
-  lookup_crop <- sapply(regmatches(colname, gregexpr('[a-z]+', colname)), function(m) m[3])
+  lookup_crop <- sapply(regmatches(remainder, gregexpr('[a-z]+', remainder)), function(m) m[2])
   names(lookup_crop) <- colname 
   
-  lookup_subcrop <- sapply(regmatches(colname, gregexpr('[a-z]+(_[0-9]+)?', colname)), function(m) m[3])
+  lookup_subcrop <- sapply(regmatches(remainder, gregexpr('[a-z]+(_[0-9]+)?', remainder)), function(m) m[2])
   names(lookup_subcrop) <- colname 
   
-  lookup_quantile <- sapply(regmatches(colname, gregexpr('(?<=q)[0-9]+', colname, perl=TRUE)), function(m) ifelse(length(m) == 0, NA_integer_, 0.01*as.integer(m)))
+  lookup_quantile <- sapply(regmatches(remainder, gregexpr('(?<=q)[0-9]+', remainder, perl=TRUE)), function(m) ifelse(length(m) == 0, NA_integer_, 0.01*as.integer(m)))
   names(lookup_quantile) <- colname
   
   dat <- dplyr::rename(dat, id=1)
@@ -51,11 +54,11 @@ parse_exactextract_results <- function(dat) {
                           quantile=lookup_quantile[colname],
                           value)
   
-  list(
-    production=dplyr::select(dplyr::filter(dat, what == 'production'),
-                             id, method, crop, subcrop, production=value),
+  ret <-lapply(varnames, function(var) {
+    dplyr::select(dplyr::filter(dat, what == var),
+                  id, method, crop, subcrop, quantile, !!rlang::sym(var) := value)
+  })
     
-    loss=dplyr::select(dplyr::filter(dat, what == 'loss'),
-                       id, method, crop, subcrop, quantile, loss=value)
-  )
+  names(ret) <- varnames
+  ret
 }
