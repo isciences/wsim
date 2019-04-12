@@ -554,6 +554,7 @@ class DefaultWorkspace:
         assert (annual_stat is None) != (month is None)
 
         if basis:
+            basis = basis.value
             filename = '{basis}_{var}'
         else:
             filename = '{var}'
