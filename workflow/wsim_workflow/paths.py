@@ -540,7 +540,7 @@ class DefaultWorkspace:
     def loss_params(self, *, sector: Sector, method: Method):
         assert sector == Sector.AGRICULTURE
 
-        return os.path.join(self.outputs, sector.value, 'spinup', 'loss_params_{}.csv'.format(method))
+        return os.path.join(self.outputs, sector.value, 'spinup', 'loss_params_{}.csv'.format(method.value))
 
     # Distribution fit files. Must provide either a numeric month, or an annual_stat
     def fit_obs(self, *,
