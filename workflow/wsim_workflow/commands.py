@@ -126,9 +126,9 @@ def exact_extract(*,
     ]
 
     if id_name:
-        cmd += ['--id_name', id_name]
+        cmd += ['--id-name', id_name]
     if id_type:
-        cmd += ['--id_type', id_type]
+        cmd += ['--id-type', id_type]
 
     for name, path in rasters.items():
         cmd += ['-r', '"{}:{}"'.format(name, path)]
