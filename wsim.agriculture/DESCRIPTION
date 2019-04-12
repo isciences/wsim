@@ -15,6 +15,7 @@ Imports:
     Rcpp,
     abind,
     dplyr,
+    rlang,
     tidyr,
     wsim.distributions,
     wsim.io,

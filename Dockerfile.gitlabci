@@ -64,6 +64,7 @@ RUN Rscript -e 'for (package in c( \
   "raster", \
   "readr", \
   "rgdal", \
+  "rlang", \
   "roxygen2", \
   "sf" \
 )) tryCatch(install.packages(package, dependencies = NA, repos="http://cran.rstudio.com", Ncpus=parallel::detectCores()), warning=function() quit(status=1))'
