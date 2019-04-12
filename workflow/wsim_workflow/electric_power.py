@@ -332,31 +332,27 @@ def compute_plant_losses(workspace: DefaultWorkspace,
                                 window=1,
                                 basis=Basis.POWER_PLANT)
 
+    basin_results = workspace.results(yearmon=yearmon, window=1, basis=Basis.BASIN, target=target, member=member)
+    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
+    rp = workspace.return_period(yearmon=yearmon, target=target, member=member, window=1)
+    loss_factors = workspace.basin_loss_factors(yearmon=yearmon, target=target, member=member)
+
     return [
         Step(
             targets=results,
             dependencies=[
                 workspace.power_plants(),
-                workspace.basin_loss_factors(yearmon=yearmon, target=target, member=member),
-                workspace.results(yearmon=yearmon, window=1, basis=Basis.BASIN, target=target, member=member),
-                workspace.forcing(yearmon=yearmon, target=target, member=member),
-                workspace.return_period(yearmon=yearmon, target=target, member=member, window=1)
+                basin_results,
+                forcing,
+                loss_factors,
+                rp
             ],
             commands=[
                 wsim_plant_losses(plants=workspace.power_plants(),
-                                  basin_losses=read_vars(workspace.basin_loss_factors(yearmon=yearmon,
-                                                                                      target=target,
-                                                                                      member=member),
-                                                         'water_cooled_loss',
-                                                         'hydropower_loss'),
-                                  basin_temp=Vardef(results, 'T_Bt_RO'),
-                                  temperature=Vardef(
-                                      workspace.forcing(yearmon=yearmon, target=target, member=member),
-                                      'T'),
-                                  temperature_rp=Vardef(
-                                      workspace.return_period(yearmon=yearmon, window=1, target=target, member=member),
-                                      'T_rp'
-                                  ),
+                                  basin_losses=read_vars(loss_factors, 'water_cooled_loss', 'hydropower_loss'),
+                                  basin_temp=Vardef(basin_results, 'T_Bt_RO'),
+                                  temperature=Vardef(forcing, 'T'),
+                                  temperature_rp=Vardef(rp, 'T_rp'),
                                   output=results)
             ]
         )
