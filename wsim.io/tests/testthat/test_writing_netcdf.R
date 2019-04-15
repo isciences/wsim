@@ -466,7 +466,7 @@ test_that('we can write multidimensional id-based data', {
                     fname,
                     ids=sort(unique(data$id)),
                     extra_dims=list(
-                      crop=sort(unique(data$crop)),
+                      crop=c('corn', 'wheat', 'maize'),
                       quantile=sort(unique(data$quantile))
                     ))
 

@@ -3,7 +3,7 @@
 #' @param ... one or more named arguments
 #' @return a data frame
 combos <- function(...) {
-  args <- list(...)
+  args <- rev(list(...))
 
   lens <- sapply(args, length)
 
@@ -20,5 +20,5 @@ combos <- function(...) {
   names(repeated) <- names(args)
 
   repeated$stringsAsFactors <- FALSE
-  do.call(data.frame, repeated)
+  do.call(data.frame, rev(repeated))
 }

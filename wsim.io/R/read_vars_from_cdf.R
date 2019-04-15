@@ -141,7 +141,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
         d <- rbind(d[wrap_rows, ], d[-wrap_rows, ])
       }
 
-      if (is_spatial) {
+      if (is_spatial && !as.data.frame) {
         d <- t(d)
         if (flip_latitudes) {
           d <- apply(d, 2, rev)
@@ -179,6 +179,10 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     }
 
     dim_df_cols <- do.call(combos, dimension_vals)
+    # Sort dim columns to correspond to the order in which values are written to disk
+    dim_df_cols <- dim_df_cols[do.call(order,
+                                       lapply(rev(names(dimension_vals)), function(d)
+                                         match(dim_df_cols[[d]], dimension_vals[[d]]))), names(dimension_vals), drop=FALSE]
 
     # Prevent recyling in cbind if subsetting went awry
     stopifnot(all(sapply(data, length) == nrow(dim_df_cols)))
@@ -186,6 +190,13 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     df <- cbind(dim_df_cols,
                 lapply(data, as.vector),
                 stringsAsFactors=FALSE)
+
+    # Sort left-right
+    df <- df[do.call(order,
+                     lapply(names(dimension_vals), function(d)
+                       match(dim_df_cols[[d]], dimension_vals[[d]]))), , drop=FALSE]
+
+    row.names(df) <- NULL
 
     # Copy global attributes over to data frame
     for (attrname in names(global_attrs)) {

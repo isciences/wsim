@@ -428,12 +428,12 @@ test_that("we can read multidimensional tabular data", {
     stringsAsFactors=FALSE
   )
 
-  id_dim <- ncdf4::ncdim_def('id', units='', vals=1:4, create_dimvar=TRUE)
-  crop_dim <- ncdf4::ncdim_def('crop', units='', vals=c(13,21), create_dimvar=TRUE)
+  id_dim   <- ncdf4::ncdim_def('id',   units='', vals=1:4,          create_dimvar=TRUE)
+  crop_dim <- ncdf4::ncdim_def('crop', units='', vals=c(13,21),     create_dimvar=TRUE)
   plot_dim <- ncdf4::ncdim_def('plot', units='', vals=c(15,19,7,3), create_dimvar=TRUE)
 
-  yield_var <- ncdf4::ncvar_def('yield', units='kg', dim=list(id_dim, crop_dim, plot_dim), prec='double')
-  fertilizer_var <- ncdf4::ncvar_def('fertilizer', units='kg', dim=list(id_dim, crop_dim, plot_dim), prec='double')
+  yield_var      <- ncdf4::ncvar_def('yield',      units='kg', dim=list(plot_dim, crop_dim, id_dim), prec='double')
+  fertilizer_var <- ncdf4::ncvar_def('fertilizer', units='kg', dim=list(plot_dim, crop_dim, id_dim), prec='double')
 
   cdf <- ncdf4::nc_create(fname, vars=list(yield_var, fertilizer_var))
   ncdf4::ncvar_put(cdf, yield_var, data$yield)
@@ -441,7 +441,11 @@ test_that("we can read multidimensional tabular data", {
   ncdf4::nc_close(cdf)
 
   data2 <- read_vars(fname, as.data.frame=TRUE)
-  expect_equal(data, data2, check.attributes=FALSE)
+
+  data2 <- data2[names(data)]
+
+  expect_equal(data[with(data, order(id, crop, plot)), ],
+               data2[with(data2, order(id, crop, plot)), ], check.attributes=FALSE)
 
   file.remove(fname)
 })
@@ -449,20 +453,21 @@ test_that("we can read multidimensional tabular data", {
 test_that("multidimensional tabular round-trip is successful when extra_dims specified out-of-order", {
   fname <- tempfile(fileext='.nc')
 
-  data <- merge(
-   data.frame(id=24:37),
-   data.frame(crop=c('maize', 'sugarcane', 'salsify'), stringsAsFactors=FALSE)
+  data <- data.frame(
+   id=rep(24:37, each=3),
+   crop=rep(c('maize', 'sugarcane', 'salsify'), times=14),
+   stringsAsFactors=FALSE
   )
   data$yield_2018 <- runif(nrow(data))
   data$yield_2017 <- runif(nrow(data))
-  data <- data[with(data, order(id, crop)), ]
 
-  write_vars_to_cdf(data, fname, ids=sort(unique(data$id)), extra_dims=list(crop=c('maize', 'sugarcane', 'salsify')))
+  write_vars_to_cdf(data, fname, ids=24:37, extra_dims=list(crop=c('maize', 'sugarcane', 'salsify')))
 
   data2 <- read_vars_from_cdf(fname, as.data.frame=TRUE)
 
+  data <- data[with(data, order(id, crop)), ]
   data2 <- data2[with(data2, order(id, crop)), ]
-#
+
   expect_equal(data, data2, check.attributes=FALSE)
 
   file.remove(fname)

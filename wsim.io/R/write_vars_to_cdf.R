@@ -157,10 +157,6 @@ write_vars_to_cdf <- function(vars,
         verify_var_size(vars, length(ids)*prod(sapply(extra_dims, length)))
       }
 
-      if (!is.null(extra_dims)) {
-        extra_dims <- lapply(extra_dims, sort)
-      }
-
       if (character_ids) {
         # The R ncdf4 library does not support proper netCDF 4 strings. So we do it the
         # old-school way, with fixed-length character arrays. Data written in this
@@ -293,6 +289,8 @@ write_vars_to_cdf <- function(vars,
 
   if (put_data) {
     for (param in regular_var_names) {
+      dimnames <- sapply(ncout$var[[param]]$dim, function(d) d$name)
+
       if (is_spatial) {
         ndim <- length(dim(vars[[param]]))
         if (ndim > 2) {
@@ -310,7 +308,7 @@ write_vars_to_cdf <- function(vars,
                        vars,
                        by=names(cmbn),
                        all.x=TRUE)
-          dat <- dat[do.call(order, dat[, c('id', names(cmbn))]), ][[param]]
+          dat <- dat[do.call(order, lapply(rev(dimnames), function(d) match(dat[[d]], ncdf4::ncvar_get(ncout, d)))), param]
         }
       }
 
@@ -320,8 +318,6 @@ write_vars_to_cdf <- function(vars,
         start <- NA
         count <- NA
       } else {
-        dimnames <- sapply(ncout$var[[param]]$dim, function(d) d$name)
-
         start <- find_offset(ncout, dimnames, write_slice)
         count <- find_count(dimnames, write_slice)
       }
