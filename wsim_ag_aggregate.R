@@ -59,7 +59,7 @@ main <- function(raw_args) {
   )
 
   crops <- wsim.agriculture::wsim_subcrop_names()
-  
+
   # Probe the loss files to see if losses are expressed as quantiles
   loss_quantiles <- parse_quantiles(wsim.io::read_varnames(args$loss_i))
   if (length(loss_quantiles) > 0) {
@@ -75,9 +75,9 @@ main <- function(raw_args) {
     rainfed= args$loss_r,
     irrigated= args$loss_i
   )
-  
-  loss_vars <-c('cumulative_loss_current_year', 'cumulative_loss_next_year', 'loss') 
-  
+
+  loss_vars <-c('cumulative_loss_current_year', 'cumulative_loss_next_year', 'loss')
+
   for (method in c('rainfed', 'irrigated')) {
     for (band in seq_along(crops)) {
       xx_args$raster <- c(xx_args$raster,
@@ -86,7 +86,7 @@ main <- function(raw_args) {
       xx_args$stat <- c(xx_args$stat,
                         sprintf("\"production_%s_%s=sum(production_%s_%s)\"",
                                 method, crops[band], method, crops[band]))
-      
+
       for (varname in loss_vars) {
         if (length(loss_quantiles) == 0) {
           xx_args$raster <- c(xx_args$raster,
@@ -116,11 +116,11 @@ main <- function(raw_args) {
       }
     }
   }
-  
+
   # Write arguments to a file and direct exactextract to read configuration from this file.
   # This is to work around an apparent limitation (maybe with system2?) on command-line length that is lower than the OS limitation.
   writeLines(sapply(names(xx_args), function(arg)
-    sprintf('%s = %s', arg, paste(xx_args[[arg]], collapse=' '))), 
+    sprintf('%s = %s', arg, paste(xx_args[[arg]], collapse=' '))),
     argfile)
 
   info('Computing zonal statistics')
@@ -128,40 +128,35 @@ main <- function(raw_args) {
                       args=c('--config', argfile),
                       env=c('GDAL_NETCDF_VERIFY_DIMS=NO', # Disable warning that "crop" dimension is not a time or vertical dimension
                             'CPL_LOG=NO'))                # Disable _ALL_ GDAL warnings/errors. Unfortunately there doesn't seem to be
-                                                          # a way to disable only warnings, or the spurious warning produced by having a 
+                                                          # a way to disable only warnings, or the spurious warning produced by having a
                                                           # character-array dimension variable.
   if (ret_code != 0) {
     die_with_message('exactextract command failed with return code', ret_code)
   }
   info('Finished computing zonal statistics')
-  
+
   dat <- wsim.agriculture::parse_exactextract_results(outfile, c('production', loss_vars))
   file.remove(outfile)
   file.remove(argfile)
-  
-  # why rename cumulative loss to "loss" here? that's pretty confusing.
-  # parse should return all of the loss columns together; since 'summarize_loss' accepts a column name we can
-  # pass in the same loss df to summarize each different type of loss
-  # might as well bring in monthly loss here, someone will ask for it sooner or later
-  
+
   summarized <- lapply(loss_vars, function(v)
     wsim.agriculture::summarize_loss(dplyr::select(dat$production, -quantile), dat[[v]], v))
   names(summarized) <- loss_vars
-  
+
   by_crop <- Reduce(function(x, y) dplyr::inner_join(x, y, by=c('id', 'crop')),
                     lapply(loss_vars, function(v) wsim.agriculture::format_loss_by_crop(summarized[[v]]$by_crop, v)))
-    
+
   wsim.io::write_vars_to_cdf(by_crop,
                              args$output,
                              ids=sort(unique(by_crop$id)),
                              extra_dims=list(crop=sort(unique(by_crop$crop))),
                              prec='single')
   infof('Wrote per-crop aggregated results to %s', args$output)
-  
-  the_rest <- Reduce(function(x, y) dplyr::inner_join(x, y, b='id'),
+
+  the_rest <- Reduce(function(x, y) dplyr::inner_join(x, y, by='id'),
                      c(lapply(loss_vars, function(v) wsim.agriculture::format_loss_by_type(summarized[[v]]$by_type, v)),
                        lapply(loss_vars, function(v) wsim.agriculture::format_overall_loss(summarized[[v]]$overall, v))))
-    
+
   wsim.io::write_vars_to_cdf(the_rest,
                              args$output,
                              ids=sort(unique(the_rest$id)),
