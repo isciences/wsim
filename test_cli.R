@@ -286,6 +286,35 @@ test_that("wsim_integrate can apply stats to specific variables", {
   file.remove(output)
 })
 
+test_that("wsim_integrate appends to files instead of overwriting them", {
+  # this behavior doesn't seem especially desirable, but the spinup steps that
+  # build the climate norm forcing depend on it.
+
+  output <- tempfile(fileext='.nc')
+
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--stat',  'min::data',
+    '--input', '/tmp/constant_2.nc',
+    '--input', '/tmp/constant_4.nc',
+    '--output', output
+  ))
+
+  expect_equal(return_code, 0)
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--stat',  'max::data',
+    '--input', '/tmp/constant_2.nc',
+    '--input', '/tmp/constant_4.nc',
+    '--output', output
+  ))
+
+  nc <- ncdf4::nc_open(output)
+  expect_setequal(sapply(nc$var, function(v) v$name),
+                  c('data_min', 'crs', 'data_max'))
+  ncdf4::nc_close(nc)
+
+  file.remove(output)
+})
+
 test_that("wsim_merge can merge datasets without attaching attributes", {
   output <- paste0(tempfile(), '.nc')
 

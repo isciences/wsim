@@ -250,7 +250,7 @@ main <- function(raw_args) {
                                    prec='single',
                                    extra_dims=to_list(extra_dim_name, extra_dim_vals),
                                    write_slice=to_list(extra_dim_name, extra_dim_vals[z]),
-                                   append=(z>1))
+                                   append=TRUE)
         outfile_number <- outfile_number+1
       }
 
