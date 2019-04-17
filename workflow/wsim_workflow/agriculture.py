@@ -58,11 +58,11 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
         for method in CULTIVATION_METHODS:
             steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
 
-        # Compute aggregated losses
-        for basis in AGGREGATION_POLYGONS:
-            steps += meta_steps['agriculture_assessment'].require(
-                compute_aggregated_losses(config.workspace(), config.static_data(), yearmon=yearmon, basis=basis)
-            )
+    # Compute aggregated losses
+    for basis in AGGREGATION_POLYGONS:
+        steps += meta_steps['agriculture_assessment'].require(
+            compute_aggregated_losses(config.workspace(), config.static_data(), yearmon=yearmon, basis=basis)
+        )
 
     return steps
 
