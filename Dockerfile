@@ -33,7 +33,7 @@ RUN sed -i 's/Version:.*/Version: '"$WSIM_VERSION"'/' DESCRIPTION
 RUN make install
 
 COPY wsim.agriculture /wsim/wsim.agriculture
-WORKDIR /wsim/wsim.electricity
+WORKDIR /wsim/wsim.agriculture
 RUN sed -i 's/Version:.*/Version: '"$WSIM_VERSION"'/' DESCRIPTION
 RUN make install
 
