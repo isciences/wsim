@@ -19,7 +19,7 @@
 read_loss_parameters <- function(fname) {
   params <- utils::read.csv(fname, header=TRUE, colClasses='character', stringsAsFactors=FALSE)
   
-  list(
+  ret <-list(
     mean_loss_fit_a= as.numeric(read_key(params, 'mean_loss_fit_a')),
     mean_loss_fit_b= as.numeric(read_key(params, 'mean_loss_fit_b')),
     loss_initial= as.numeric(read_key(params, 'loss_initial')),
@@ -27,6 +27,10 @@ read_loss_parameters <- function(fname) {
     loss_power= as.numeric(read_key(params, 'loss_power')),
     loss_method= as.character(read_key(params, 'loss_method'))
   )
+  
+  stopifnot(!any(sapply(ret, is.na)))
+    
+  return(ret)
 }
 
 read_key <- function(df, param) {

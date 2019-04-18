@@ -52,7 +52,6 @@ test_that('Error raised if header incorrect', {
 test_that('Types read correctly', {
   fname <- tempfile(fileext='.csv')
   
-  fileConn <- file(fname, 'w')
   writeLines(
     c('param,value',
       'mean_loss_fit_a,2.34e-3',
@@ -60,11 +59,29 @@ test_that('Types read correctly', {
       'loss_initial,12',
       'loss_total,80',
       'loss_power,2',
-      'loss_method,sum'), fileConn)
-  close(fileConn)
+      'loss_method,sum'), fname)
   
   params <- read_loss_parameters(fname)
   expect_true(all(sapply(params[names(params) != 'loss_method'], is.numeric)))
+  
+  file.remove(fname)
+})
+
+test_that('Error thrown on incorrectly formatted file', {
+  fname <- tempfile(fileext='.csv')
+  
+  writeLines(
+    c(
+      "param,value",
+      "mean_loss_fit_a,c(season_length = 0.00169936592043705)",
+      "mean_loss_fit_b,c(season_length2 = -5.43435181268705e-07)",
+      "loss_initial,12",
+      "loss_total,80",
+      "loss_power,2",
+      "loss_method,max"
+    ), fname)
+  
+  expect_error(read_loss_parameters(fname))
   
   file.remove(fname)
 })
