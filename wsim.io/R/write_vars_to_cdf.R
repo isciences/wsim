@@ -478,7 +478,7 @@ create_char_dimension_variable <- function(dim, varname, vals) {
 #' @param var  name of the variable
 #' @param vars list containing data for vars
 #' @param prec precision argument as described in write_vars_to_cdf
-#' @param text representation of precision for variable
+#' @return text representation of precision for variable
 var_prec <- function(var, vars, prec) {
   if (is.character(prec)) {
     return(prec)
