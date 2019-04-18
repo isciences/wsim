@@ -29,7 +29,7 @@
 Rcpp::DataFrame parse_mirca_condensed_crop_calendar(std::string filename, int header_lines=4) {
   std::ifstream infile(filename);
   
-  for (size_t i = 0; i < header_lines; i++) {
+  for (int i = 0; i < header_lines; i++) {
     std::string header_line;
     getline(infile, header_line);  
   }
