@@ -25,7 +25,7 @@ suppressMessages({
 '
 Aggregate agricultural losses to polygonal boundaries
 
-Usage: wsim_ag_aggregate [options]
+Usage: wsim_ag_aggregate --boundaries <file> --id_field <name> --prod_i <file> --prod_r <file> --loss_i <file> --loss_r <file> --output <file>
 
 Options:
 --boundaries <file>   Boundaries over which to aggregate
@@ -166,7 +166,7 @@ main <- function(raw_args) {
 }
 
 if (!interactive()) {
-#  tryCatch(
+  tryCatch(
     main(commandArgs(trailingOnly=TRUE))
-#  ,error=wsim.io::die_with_message)
+    ,error=wsim.io::die_with_message)
 }
