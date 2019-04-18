@@ -473,7 +473,8 @@ create_char_dimension_variable <- function(dim, varname, vals) {
   ncdf4::ncvar_def(name=dim$name, units="", dim=list(nchar_dim, dim), missval=NULL, prec='char')
 }
 
-# Return the data precision for variable named var
+#' Return the data precision for variable named var
+
 #' @param var  name of the variable
 #' @param vars list containing data for vars
 #' @param prec precision argument as described in write_vars_to_cdf
