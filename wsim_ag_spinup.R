@@ -32,16 +32,16 @@ Options:
 
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args)
-  
+
   rp_onset <- 12
   rp_total <- 80
   rp_power <- 2
-  
+
   num_iterations = 10000
-  
+
   infof("Performing expected loss simulations (N=%d, combining losses using %s)", num_iterations, args$loss_method)
   simulation_results <- simulate_expected_loss(N=num_iterations, combine_with=args$loss_method, rp_onset, rp_total, rp_power)
-  
+
   write_list <- function(dat, fname) {
     write.csv(data.frame(param=names(dat),
                          value=as.character(dat),
@@ -49,7 +49,7 @@ main <- function(raw_args) {
               fname,
               row.names=FALSE)
   }
-  
+
   for (m in unique(simulation_results$method)) {
     inputs <- simulation_results %>%
       filter(method==m) %>%
@@ -58,13 +58,13 @@ main <- function(raw_args) {
       transmute(season_length = 30.42*season_length_months,
                 season_length2 = season_length*season_length,
                 expected_loss)
-    
+
     fit <- lm(expected_loss ~ season_length + season_length2 + 0, inputs)
-    
+
     infof("Writing loss function params for method: %s", m)
     write_list(list(
-      mean_loss_fit_a= fit$coefficients[1],
-      mean_loss_fit_b= fit$coefficients[2],
+      mean_loss_fit_a= fit$coefficients[[1]],
+      mean_loss_fit_b= fit$coefficients[[2]],
       loss_initial= rp_onset,
       loss_total= rp_total,
       loss_power= rp_power,
