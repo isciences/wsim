@@ -41,26 +41,27 @@ def _condensed_crop_calendar(*, source_dir: str) -> List[Step]:
     ]
 
     for method in ('irrigated', 'rainfed'):
-        gz_file = os.path.join(dirname, 'cropping_calendar_{}.txt.gz'.format(method))
-        txt_file = gz_file.strip('.gz')
+        gz_file = 'cropping_calendar_{}.txt.gz'.format(method)
+        gz_path = os.path.join(dirname, gz_file)
+        txt_path = gz_path.strip('.gz')
 
         steps += [
             # Unzip data
             Step(
-                targets=gz_file,
+                targets=gz_path,
                 dependencies=zip_path,
                 commands=[
                     [
-                        'unzip', '-D', '-j', zip_path, '-d', dirname
+                        'unzip', '-D', '-j', zip_path, '-d', dirname, gz_file
                     ],
                 ]
             ),
 
             # Unzip data (again)
             Step(
-                targets=txt_file,
-                dependencies=gz_file,
-                commands=[['gunzip', gz_file]]
+                targets=txt_path,
+                dependencies=gz_path,
+                commands=[['gunzip', gz_path]]
             )
         ]
 
