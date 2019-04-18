@@ -54,6 +54,7 @@ RUN Rscript -e 'for (package in c( \
   "devtools", \
   "docopt", \
   "dplyr", \
+  "fasterize", \
   "futile.logger", \
   "geosphere", \
   "lmom", \
