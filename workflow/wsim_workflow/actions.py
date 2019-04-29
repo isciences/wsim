@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -12,16 +12,14 @@
 # limitations under the License.
 
 import itertools
-import tempfile
 
 from typing import Dict, List, Optional, Union
 
 from . import attributes as attrs
 
-from .paths import read_vars, Vardef, DefaultWorkspace, ObservedForcing, ForecastForcing, ElectricityStatic, Static
+from .paths import read_vars, Basis, Vardef, DefaultWorkspace, ObservedForcing, ForecastForcing, ElectricityStatic, Static
 from .commands import \
     exact_extract, \
-    table2nc, \
     wsim_anom, \
     wsim_composite, \
     wsim_correct, \
@@ -74,51 +72,24 @@ def compute_basin_results(workspace: DefaultWorkspace,
                           member: Optional[str]=None) -> List[Step]:
     pixel_forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
     pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
-    basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis='basin')
-
-    temp_csv_t = tempfile.mktemp(suffix='.csv')
-    temp_nc_t = tempfile.mktemp(suffix='.nc')
-    temp_csv_btro = tempfile.mktemp(suffix='.csv')
-    temp_nc_btro = tempfile.mktemp(suffix='.nc')
+    basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
 
     return [
         exact_extract(
             boundaries=static.basins().file,
             fid="HYBAS_ID",
-            input='NETCDF:{}:RO_m3'.format(pixel_results),
-            output=temp_csv_btro,
-            stats=['sum']
-        ).merge(
-            exact_extract(
-                boundaries=static.basins().file,
-                fid="HYBAS_ID",
-                input='NETCDF:{}:T'.format(pixel_forcing),
-                weights='NETCDF:{}:Bt_RO'.format(pixel_results),
-                output=temp_csv_t,
-                stats='weighted mean'
-            )
-        ).merge(
-            table2nc(
-                input=temp_csv_btro,
-                fid="HYBAS_ID",
-                column="sum",
-                output=temp_nc_btro
-            )
-        ).merge(
-            table2nc(
-                input=temp_csv_t,
-                fid="HYBAS_ID",
-                column="weighted_mean",
-                output=temp_nc_t
-            )
-        ).merge(
-            wsim_merge(
-                inputs=[
-                    Vardef(temp_nc_btro, 'sum').read_as('RO_m3'),
-                    Vardef(temp_nc_t, 'weighted_mean').read_as('T_Bt_RO')
-                ],
-                output=basin_results
-            )
+            id_name="id",
+            id_type="int32",
+            rasters={
+                'Bt_RO': 'NETCDF:{}:Bt_RO'.format(pixel_results),
+                'RO_m3': 'NETCDF:{}:RO_m3'.format(pixel_results),
+                'T': 'NETCDF:{}:T'.format(pixel_forcing)
+            },
+            stats=[
+                'RO_m3=sum(RO_m3)',
+                'T_Bt_RO=weighted_mean(RO_m3,Bt_RO)'
+            ],
+            output=basin_results
         ).merge(
             wsim_flow(
                 input=read_vars(basin_results, 'RO_m3'),
@@ -170,7 +141,7 @@ def time_integrate(workspace: DefaultWorkspace,
                    target: Optional[str]=None,
                    window: Optional[int]=None,
                    member: Optional[str]=None,
-                   basis: Optional[str]=None):
+                   basis: Optional[Basis]=None):
     months = rolling_window(target if target else yearmon, window)
 
     lead_months = get_lead_months(yearmon, target) if target else 0
@@ -208,7 +179,7 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
                            window: int,
                            target: Optional[str]=None,
                            member: Optional[str]=None,
-                           basis: Optional[str]=None) -> List[Step]:
+                           basis: Optional[Basis]=None) -> List[Step]:
     if target:
         month = int(target[-2:])
     else:
@@ -380,7 +351,7 @@ def fit_var(config: ConfigBase,
             month: int,
             stat: Optional[str]=None,
             window: int=1,
-            basis: Optional[str]=None) -> List[Step]:
+            basis: Optional[Basis]=None) -> List[Step]:
     """
     Compute fits for param in given month over fitting period
     """

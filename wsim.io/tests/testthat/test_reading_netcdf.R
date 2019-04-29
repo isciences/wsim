@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -99,8 +99,6 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
   expect_equal(v$var_b, var_b, check.attributes=FALSE)
   expect_equal(v$var_c, var_c, check.attributes=FALSE)
 
-  expect_equal(v$id, 2:5, check.attributes=FALSE)
-
   # No extent for non-spatial data
   expect_null(attr(v, 'extent'))
 
@@ -117,7 +115,7 @@ test_that("we can read attributes and variables from a non-spatial netCDF file i
   file.remove(fname)
 })
 
-test_that("we get an error trying to read a spatial netCDF file into a data frame", {
+test_that("we can read a spatial netCDF file into a data frame", {
   fname <- tempfile(fileext='.nc')
   data <- matrix(runif(4), nrow=2)
 
@@ -130,8 +128,14 @@ test_that("we get an error trying to read a spatial netCDF file into a data fram
                     attrs=list(list(var="my_data", key="station", val="a"),
                                list(key="yearmon", val="201702")))
 
-  expect_error(v <- read_vars(fname, as.data.frame=TRUE),
-               'Only ID-based data can be converted to a data frame')
+  v <- read_vars(fname, as.data.frame=TRUE)
+
+  expect_equal(v, rbind(
+    data.frame(lon=-30, lat=57.5, my_data=data[1,1]),
+    data.frame(lon=-30, lat=32.5, my_data=data[2,1]),
+    data.frame(lon=-10, lat=57.5, my_data=data[1,2]),
+    data.frame(lon=-10, lat=32.5, my_data=data[2,2])
+  ), check.attributes=FALSE)
 
   file.remove(fname)
 })
@@ -409,5 +413,62 @@ test_that("we can read multiple variables from a netCDF into a RasterBrick", {
   expect_s4_class(brick, "RasterBrick")
   expect_equal(raster::metadata(brick)$distribution, "fake")
   expect_equal(names(brick), c("location", "scale"))
+  file.remove(fname)
+})
+
+test_that("we can read multidimensional tabular data", {
+  fname <- tempfile(fileext='.nc')
+
+  data <- data.frame(
+    id=rep(1:4, each=8, times=1),
+    crop=rep(c(13,21), each=4, times=2),
+    plot=rep(c(15,19,7,3), each=1, times=4),
+    yield=sqrt(1:32),
+    fertilizer=(1:32)*0.1,
+    stringsAsFactors=FALSE
+  )
+
+  id_dim   <- ncdf4::ncdim_def('id',   units='', vals=1:4,          create_dimvar=TRUE)
+  crop_dim <- ncdf4::ncdim_def('crop', units='', vals=c(13,21),     create_dimvar=TRUE)
+  plot_dim <- ncdf4::ncdim_def('plot', units='', vals=c(15,19,7,3), create_dimvar=TRUE)
+
+  yield_var      <- ncdf4::ncvar_def('yield',      units='kg', dim=list(plot_dim, crop_dim, id_dim), prec='double')
+  fertilizer_var <- ncdf4::ncvar_def('fertilizer', units='kg', dim=list(plot_dim, crop_dim, id_dim), prec='double')
+
+  cdf <- ncdf4::nc_create(fname, vars=list(yield_var, fertilizer_var))
+  ncdf4::ncvar_put(cdf, yield_var, data$yield)
+  ncdf4::ncvar_put(cdf, fertilizer_var, data$fertilizer)
+  ncdf4::nc_close(cdf)
+
+  data2 <- read_vars(fname, as.data.frame=TRUE)
+
+  data2 <- data2[names(data)]
+
+  expect_equal(data[with(data, order(id, crop, plot)), ],
+               data2[with(data2, order(id, crop, plot)), ], check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
+test_that("multidimensional tabular round-trip is successful when extra_dims specified out-of-order", {
+  fname <- tempfile(fileext='.nc')
+
+  data <- data.frame(
+   id=rep(24:37, each=3),
+   crop=rep(c('maize', 'sugarcane', 'salsify'), times=14),
+   stringsAsFactors=FALSE
+  )
+  data$yield_2018 <- runif(nrow(data))
+  data$yield_2017 <- runif(nrow(data))
+
+  write_vars_to_cdf(data, fname, ids=24:37, extra_dims=list(crop=c('maize', 'sugarcane', 'salsify')))
+
+  data2 <- read_vars_from_cdf(fname, as.data.frame=TRUE)
+
+  data <- data[with(data, order(id, crop)), ]
+  data2 <- data2[with(data2, order(id, crop)), ]
+
+  expect_equal(data, data2, check.attributes=FALSE)
+
   file.remove(fname)
 })

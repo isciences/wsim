@@ -167,7 +167,7 @@ test_that("wsim_integrate can attch arbitrary attributes to outputs", {
   input1 <- tempfile(fileext='.nc')
   input2 <- tempfile(fileext='.nc')
   output <- tempfile(fileext='.nc')
-  
+
   for (f in c(input1, input2)) {
     write_vars_to_cdf(list(data=runif(10)), f, ids=14:23)
   }
@@ -179,7 +179,7 @@ test_that("wsim_integrate can attch arbitrary attributes to outputs", {
     '--input',  input2,
     '--output', output,
     '--attr',   'data_min:window_months=6',
-    '--attr',   'output_type=integrated' 
+    '--attr',   'output_type=integrated'
   ))
 
   expect_equal(return_code, 0)
@@ -191,7 +191,7 @@ test_that("wsim_integrate can attch arbitrary attributes to outputs", {
   expect_null(ncdf4::ncatt_get(cdf, 'data_max')$window_months)
 
   ncdf4::nc_close(cdf)
-  
+
   file.remove(input1)
   file.remove(input2)
   file.remove(output)
@@ -282,6 +282,35 @@ test_that("wsim_integrate can apply stats to specific variables", {
                    'data_b_max',
                    'data_c_min',
                    'data_c_max')))
+
+  file.remove(output)
+})
+
+test_that("wsim_integrate appends to files instead of overwriting them", {
+  # this behavior doesn't seem especially desirable, but the spinup steps that
+  # build the climate norm forcing depend on it.
+
+  output <- tempfile(fileext='.nc')
+
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--stat',  'min::data',
+    '--input', '/tmp/constant_2.nc',
+    '--input', '/tmp/constant_4.nc',
+    '--output', output
+  ))
+
+  expect_equal(return_code, 0)
+  return_code <- system2('./wsim_integrate.R', args=c(
+    '--stat',  'max::data',
+    '--input', '/tmp/constant_2.nc',
+    '--input', '/tmp/constant_4.nc',
+    '--output', output
+  ))
+
+  nc <- ncdf4::nc_open(output)
+  expect_setequal(sapply(nc$var, function(v) v$name),
+                  c('data_min', 'crs', 'data_max'))
+  ncdf4::nc_close(nc)
 
   file.remove(output)
 })
@@ -391,7 +420,7 @@ test_that("wsim_merge works with ID-based data", {
   output <- tempfile(fileext='.nc')
 
   ids <- 5:16
-  
+
   wsim.io::write_vars_to_cdf(list(a=runif(12)), ids=ids, filename=input_1)
   wsim.io::write_vars_to_cdf(list(b=runif(12)), ids=ids, filename=input_2)
 
@@ -487,7 +516,7 @@ test_that("wsim_fit saves the distribution, input variable name, and arbitrary a
   cdf <- ncdf4::nc_open(output)
   expect_equal('pe3', ncdf4::ncatt_get(cdf, 0, 'distribution')$value)
   expect_equal('data', ncdf4::ncatt_get(cdf, 0, 'variable')$value)
-  
+
   expect_equal('6', ncdf4::ncatt_get(cdf, 0, 'integration_window')$value)
   expect_equal('loc', ncdf4::ncatt_get(cdf, 'location', 'abbrev_name')$value)
 
@@ -596,7 +625,7 @@ test_that('wsim_flow accumulates flow based on downstream id linkage (basin-to-b
 
   output <- wsim.io::read_vars(accumulated)
 
-  expect_equal(output$data$Bt_RO, matrix(c(16, 10, 5, 7), nrow=1), check.attributes=FALSE)
+  expect_equal(output$data$Bt_RO, c(16, 10, 5, 7), check.attributes=FALSE)
 
   # use same inputs but get downstream flow
   return_code <- system2('./wsim_flow.R', args=c(
@@ -611,7 +640,7 @@ test_that('wsim_flow accumulates flow based on downstream id linkage (basin-to-b
 
   output <- wsim.io::read_vars(accumulated)
 
-  expect_equal(output$data$Bt_RO, matrix(c(0, 1, 1, 4), nrow=1), check.attributes=FALSE)
+  expect_equal(output$data$Bt_RO, c(0, 1, 1, 4), check.attributes=FALSE)
 
   file.remove(flows)
   file.remove(downstream)
@@ -660,25 +689,25 @@ test_that('wsim_electricity_plant_losses.R functionality works', {
   temperature <- tempfile(fileext='.nc')
   temperature_rp <- tempfile(fileext='.nc')
   output <- tempfile(fileext='.nc')
-  
+
   test_plants <- rbind(
     data.frame(id=1, basin_id=4, longitude=-10, latitude=40, fuel="Hydro", water_cooled=FALSE, seawater_cooled=FALSE, once_through=FALSE),
     data.frame(id=3, basin_id=4, longitude=-20, latitude=30, fuel="Coal",  water_cooled=TRUE,  seawater_cooled=FALSE, once_through=TRUE)
   )
   wsim.io::write_vars_to_cdf(test_plants[, -1], plants, ids=test_plants[, 1])
-  
+
   test_basin_loss_factors <- data.frame(id=1:10, hydropower_loss=0.1*(1:10), water_cooled_loss=0.03*(1:10))
   wsim.io::write_vars_to_cdf(test_basin_loss_factors[, -1], basin_loss_factors, ids=test_basin_loss_factors[, 1])
-  
+
   test_basin_temperature <- data.frame(id=1:10, T_Bt_RO=sqrt(1:10))
   wsim.io::write_vars_to_cdf(test_basin_temperature[, -1, drop=FALSE], basin_temp, ids=test_basin_temperature[, 1])
-  
+
   test_temperature <- matrix(1:24, nrow=4, byrow=TRUE)
   wsim.io::write_vars_to_cdf(list(T=test_temperature), temperature, extent=c(-30, 30, 0, 80))
-  
+
   test_temperature_rp <- matrix(5, nrow=4, ncol=6)
   wsim.io::write_vars_to_cdf(list(T_rp=test_temperature_rp), temperature_rp, extent=c(-30, 30, 0, 80))
-  
+
   return_code <- system2('./wsim_electricity_plant_losses.R', args=c(
     '--basin_losses',   basin_loss_factors,
     '--basin_temp',     basin_temp,
@@ -687,15 +716,15 @@ test_that('wsim_electricity_plant_losses.R functionality works', {
     '--temperature_rp', temperature_rp,
     '--output',         output
   ))
-  
+
   expect_equal(return_code, 0)
-  
+
   losses <- wsim.io::read_vars(output, as.data.frame=TRUE)
-  
+
   expect_equal(losses$id, c(1,3), check.attributes=FALSE)
   expect_equal(losses[1, 'loss_risk'], 0.4)
   expect_equal(losses[2, 'loss_risk'], 0.12)
-  
+
   file.remove(basin_loss_factors)
   file.remove(basin_temp)
   file.remove(plants)
@@ -708,23 +737,23 @@ test_that('wsim_electricity_aggregate_losses.R functionality works', {
   plants <- tempfile(fileext='.nc')
   plant_losses <- tempfile(fileext='.nc')
   output <- tempfile(fileext='.nc')
-  
+
   test_plants <- rbind(
     data.frame(id=1, kingdom_id=3, capacity_mw=10, generation_mw=8, fuel="Hydro", water_cooled=FALSE, once_through=FALSE, seawater_cooled=FALSE),
     data.frame(id=2, kingdom_id=3, capacity_mw=5,  generation_mw=4, fuel="Coal",  water_cooled=TRUE,  once_through=FALSE, seawater_cooled=FALSE),
     data.frame(id=3, kingdom_id=7, capacity_mw=8,  generation_mw=6, fuel="Hydro", water_cooled=FALSE, once_through=FALSE, seawater_cooled=FALSE)
   )
-  
+
   wsim.io::write_vars_to_cdf(test_plants[, -1], plants, ids=test_plants[, 1])
-  
+
   test_losses <- rbind(
     data.frame(list(id=1, loss_risk=0.6)),
     data.frame(list(id=2, loss_risk=0.2)),
     data.frame(list(id=3, loss_risk=0.4))
   )
-  
+
   wsim.io::write_vars_to_cdf(test_losses[, -1, drop=FALSE], plant_losses, ids=test_losses[, 1])
-  
+
   return_code <- system2('./wsim_electricity_aggregate_losses.R', args=c(
     '--plants',       plants,
     '--plant_losses', plant_losses,
@@ -732,15 +761,15 @@ test_that('wsim_electricity_aggregate_losses.R functionality works', {
     '--yearmon',      '202002',
     '--output',       output
   ))
-  
+
   expect_equal(return_code, 0)
-  
+
   aggregated <- wsim.io::read_vars(output, as.data.frame=TRUE)
-  
+
   hours <- 29*24 # leap-year
-  
+
   expect_equal(aggregated$id, c(3, 7), check.attributes=FALSE)
-  
+
   expect_equal(aggregated[1, ],
                data.frame(id=3,
                           capacity_tot_mw=10+5,
@@ -758,7 +787,7 @@ test_that('wsim_electricity_aggregate_losses.R functionality works', {
                           reserve_utilization_pct=NA_real_),
                check.attributes=FALSE
   )
-    
+
   file.remove(plants)
   file.remove(plant_losses)
   file.remove(output)

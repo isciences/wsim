@@ -56,7 +56,7 @@ ncwa --no_tmp_fl -h -a time $TEMP_NC1 $TEMP_NC2
 # Drop the time variable
 ncks --no_tmp_fl -h -C -O -x -v time $TEMP_NC2 $TEMP_NC3
 # Add a CRS variable
-ncap --no_tmp_fl -h -O -s 'crs=-9999' $TEMP_NC3 $2
+ncap2 --no_tmp_fl -h -O -s 'crs=-9999' $TEMP_NC3 $2
 ncatted -h -O \
 	-a spatial_ref,crs,c,c,'GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]' \
 	-a grid_mapping_name,crs,c,c,'latitude_longitude' \

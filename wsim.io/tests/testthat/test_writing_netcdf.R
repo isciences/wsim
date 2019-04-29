@@ -173,7 +173,7 @@ test_that("we cannot write if variable and id dimensions do not match", {
 
   expect_error(
     write_vars_to_cdf(data[-1, -1], fname, ids=data$id),
-    "Variable .* has .* values but we have .*"
+    "Variable .* has .* values but we expected .*"
   )
 })
 
@@ -383,6 +383,138 @@ test_that('factors are converted to text when writing to netCDF', {
   expect_equal(as.character(data$fuel),
                ncdf4::ncvar_get(cdf, 'fuel'),
                check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
+test_that('we get a useful error message if we forget to provide variable names', {
+  expect_error(write_vars_to_cdf(list(1:8), '', ids=2:9),
+               'must be .* a named list')
+})
+
+test_that('we can write multidimensional spatial data', {
+  fname <- tempfile(fileext='.nc')
+
+  data <- array(1:120, dim=c(5,8,3))
+  crops <- c('maize', 'corn', 'wheat')
+  quantiles <- c(25, 50, 75)
+
+  write_vars_to_cdf(list(yield=abind::abind(data-0.1,
+                                            data,
+                                            data+0.1,
+                                            rev.along=0)),
+                         fname,
+                         extent=c(-180, 180, -90, 90),
+                         extra_dims=list(
+                           crop=crops,
+                           quantile=quantiles
+                         ))
+
+  nc <- ncdf4::nc_open(fname)
+  ncdat <- ncdf4::ncvar_get(nc, 'yield')
+
+  expect_equal(ncdat[,,which(crops=='wheat'), which(quantiles==50)],
+               t(data[,,which(crops=='wheat')]))
+  expect_equal(ncdat[,,which(crops=='wheat'), which(quantiles==75)],
+               0.1+t(data[,,which(crops=='wheat')]))
+
+  file.remove(fname)
+})
+
+test_that('we can write data where different variables have different numbers of dimensions', {
+  fname <- tempfile(fileext='.nc')
+
+  crops <- c('wheat', 'maize')
+  stresses <- c('heat', 'cold', 'hail')
+
+  write_vars_to_cdf(list(months_stress=array(0L, dim=c(5,8,2,3))),
+                    fname,
+                    extent=c(-180, 180, -90, 90),
+                    extra_dims=list(
+                      crop=crops,
+                      stress=stresses
+                    ),
+                    prec='byte')
+
+  write_vars_to_cdf(list(cumulative_stress=array(0L, dim=c(5,8,2))),
+                    fname,
+                    extent=c(-180, 180, -90, 90),
+                    extra_dims=list(
+                      crop=crops
+                    ),
+                    prec='double',
+                    append=TRUE)
+
+  file.remove(fname)
+})
+
+test_that('we can write multidimensional id-based data', {
+  fname <- tempfile(fileext='.nc')
+
+  # 4 regions
+  # 3 crops
+  # 3 quantiles
+  data <- data.frame(
+    id=rep(1:4, each=9),
+    crop=rep.int(rep(c('corn', 'wheat', 'maize'), each=3), 4),
+    quantile=rep.int(c(0.25, 0.5, 0.75), 12),
+    yield=1:36,
+    stringsAsFactors = FALSE
+  )
+
+  write_vars_to_cdf(data,
+                    fname,
+                    ids=sort(unique(data$id)),
+                    extra_dims=list(
+                      crop=c('corn', 'wheat', 'maize'),
+                      quantile=sort(unique(data$quantile))
+                    ))
+
+  cdf <- ncdf4::nc_open(fname)
+
+  real_dims <- Filter(function(n) {
+    !endsWith(n, '_nchar')
+  }, names(cdf$dim))
+
+  real_vars <- names(cdf$var)
+
+  data_reconstructed <- cbind(
+    do.call(combos,
+            sapply(real_dims, function(dimname) {
+              cdf$dim[[dimname]]$vals
+            })
+
+    ),
+    sapply(real_vars, function(n) ncdf4::ncvar_get(cdf, varid=n))
+  )
+
+  expect_equal(
+    data[with(data, order(id, crop, quantile)), ],
+    data_reconstructed[with(data_reconstructed, order(id, crop, quantile)), ],
+    check.attributes=FALSE
+  )
+
+  file.remove(fname)
+})
+
+test_that('We can pass an array that has dimnames instead of a named list of variables', {
+  fname <- tempfile(fileext='.nc')
+
+  dat <- array(runif(120), dim=c(5, 8, 3))
+
+  expect_error(
+    write_vars_to_cdf(dat, fname, extent=c(0,1,0,1)),
+    'must be an array with dimnames, or a named list'
+  )
+
+  dimnames(dat)[[3]] <- c('location', 'scale', 'shape')
+
+  write_vars_to_cdf(dat, fname, extent=c(0,1,0,1))
+
+  cdf <- ncdf4::nc_open(fname)
+  varnames <- sapply(cdf$var, function(v) v$name)
+
+  expect_true(all(c('location', 'scale', 'shape') %in% varnames))
 
   file.remove(fname)
 })

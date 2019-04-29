@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import os
-from typing import Union, Iterable, Optional, List
+from typing import Union, Iterable, Optional, List, Mapping
 
 from .paths import Vardef, gdaldataset2filename
 from .step import Step
@@ -108,39 +108,45 @@ def wsim_anom(*,
 def exact_extract(*,
                   boundaries: str,
                   fid: str,
-                  input: str,
-                  output: str,
-                  weights: Union[str, List[str], None]=None,
+                  rasters: Mapping[str, str],
                   stats: Union[str, List[str]],
-                  comment: Optional[str]=None):
+                  output: str,
+                  id_name: Optional[str]=None,
+                  id_type: Optional[str]=None,
+                  comment: Optional[str]=None) -> Step:
 
     if isinstance(stats, str):
         stats = [stats]
-
-    if isinstance(weights, str):
-        weights = [weights]
-    elif weights is None:
-        weights = []
 
     cmd = [
         'exactextract',
         '-p', q(boundaries),
         '-f', q(fid),
-        '-r', q(input),
         '-o', q(output)
     ]
 
-    if weights:
-        for w in weights:
-            cmd += ['-w', q(w)]
+    if id_name:
+        cmd += ['--id-name', id_name]
+    if id_type:
+        cmd += ['--id-type', id_type]
 
+    for name, path in rasters.items():
+        cmd += ['-r', '"{}:{}"'.format(name, path)]
     for stat in stats:
         cmd += ['-s', q(stat)]
 
     return Step(
         targets=output,
-        dependencies=[gdaldataset2filename(ds) for ds in weights + [input] + [boundaries]],
-        commands=[cmd],
+        dependencies=[gdaldataset2filename(ds) for ds in rasters.values()] + [boundaries],
+        commands=[
+            cmd,
+            ['ncks',
+             '-O',   # overwrite
+             '-L0',  # enable level-0 compression
+             '-4',   # convert to netCDF4. exactextract writes NC3 and then R ncdf4 library will refuse to append to it.
+             '--fix_rec_dmn', 'id',  # convert unlimited id dim to fixed dim. Without this R ncdf4 will not append.
+             output, output]
+        ],
         comment=comment
     )
 

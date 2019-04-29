@@ -97,7 +97,8 @@ def main(raw_args):
                                     stop=args.stop,
                                     no_spinup=args.nospinup,
                                     forecasts=args.forecasts,
-                                    run_electric_power=not(args.noelectric))
+                                    run_electric_power=not(args.noelectric),
+                                    run_agriculture=True)
 
     duplicate_targets = workflow.find_duplicate_targets(steps)
     if duplicate_targets:

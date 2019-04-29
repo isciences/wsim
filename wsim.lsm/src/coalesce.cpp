@@ -1,4 +1,4 @@
-// Copyright (c) 2018 ISciences, LLC.
+// Copyright (c) 2018-2019 ISciences, LLC.
 // All rights reserved.
 //
 // WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -26,16 +26,25 @@ using namespace Rcpp;
 //'         \code{replacement_value}
 //' @export
 // [[Rcpp::export]]
-NumericVector coalesce(const NumericVector & v, double replacement_value) {
+NumericVector coalesce(const NumericVector & v, const NumericVector & replacement_value) {
   NumericVector res = no_init(v.size());
   res.attr("dim") = v.attr("dim");
 
-  std::replace_copy_if(v.begin(),
-                       v.end(),
-                       res.begin(),
-                       [](double x) { return std::isnan(x); },
-                       replacement_value
-                       );
+  if (replacement_value.size() == 1) {
+    std::replace_copy_if(v.begin(),
+                         v.end(),
+                         res.begin(),
+                         [](double x) { return std::isnan(x); },
+                         replacement_value[0]
+                         );
+  } else if (replacement_value.size() == v.size()) {
+    auto sz = v.size();
+    for (decltype(sz) i = 0; i < sz; i++) {
+      res[i] = std::isnan(v[i]) ? replacement_value[i] : v[i];
+    }
+  } else {
+    Rcpp::stop("replacement value must be a constant or of the same size as input");
+  }
 
   return res;
 }

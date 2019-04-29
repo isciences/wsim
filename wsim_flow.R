@@ -34,7 +34,7 @@ Options:
                     When input is a feature dataset, flowdir should be a list of downstream
                     feature IDs.
 --varname <varname> output variable name for accumulated values
---output <file>     file to which accumulated values will be written/appendej
+--output <file>     file to which accumulated values will be written/appended
 --wrapx             wrap flow in the x-dimension (during pixel-based accumulation)
 --wrapy             wrap flow in the y-dimension (during pixel-based accumulation)
 --invert            output flow originating downstream of each basin

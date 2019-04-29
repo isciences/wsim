@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -16,6 +16,7 @@ from typing import Dict, List, Optional, Iterable
 import abc
 from . import dates
 from . import paths
+from .paths import Basis
 from .step import Step
 
 
@@ -60,7 +61,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def workspace(self):
+    def workspace(self) -> paths.DefaultWorkspace:
         pass
 
     @abc.abstractmethod
@@ -124,7 +125,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         return [3, 6, 12, 24, 36, 60]
 
     @staticmethod
-    def forcing_rp_vars(*, basis: Optional[str]=None) -> List[str]:
+    def forcing_rp_vars(*, basis: Optional[Basis]=None) -> List[str]:
         """
         Provides a list of forcing variables for which return periods should be calculated
         """
@@ -134,13 +135,13 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'Pr'
             ]
 
-        if basis == 'basin':
+        if basis == Basis.BASIN:
             return []
 
         assert False
 
     @staticmethod
-    def lsm_rp_vars(*, basis: Optional[str]=None) -> List[str]:
+    def lsm_rp_vars(*, basis: Optional[Basis]=None) -> List[str]:
         """
         Provides a list of LSM output variables for which return periods should be calculated
         """
@@ -157,7 +158,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'Ws'
             ]
 
-        if basis == 'basin':
+        if basis == Basis.BASIN:
             return [
                 'Bt_RO'
             ]
@@ -165,7 +166,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         assert False
 
     @classmethod
-    def lsm_integrated_vars(cls, basis: Optional[str]=None) -> Dict[str, List[str]]:
+    def lsm_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
         """
         Provides a dictionary whose keys are LSM output variables to be time-integrated, and whose
         values are lists of stats to apply to each of those variables (min, max, ave, etc.)
@@ -181,7 +182,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'Ws': ['ave']
             }
 
-        if basis == 'basin':
+        if basis == Basis.BASIN:
             return {
                 'Bt_RO': ['sum']
             }
@@ -189,7 +190,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         assert False
 
     @classmethod
-    def lsm_integrated_stats(cls, basis: Optional[str]=None) -> Dict[str, List[str]]:
+    def lsm_integrated_stats(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
         """
         Provides a dictionary whose keys are stat names and whose values are a list of variables
         two which that stat should be applied. It can be thought of as the inverse of lsm_integrated_vars()
@@ -205,7 +206,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         return integrated_stats
 
     @classmethod
-    def lsm_integrated_var_names(cls, basis: Optional[str]=None) -> List[str]:
+    def lsm_integrated_var_names(cls, basis: Optional[Basis]=None) -> List[str]:
         """
         Provides a flat list of time-integrated variable names
         """

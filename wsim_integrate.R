@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -42,7 +42,7 @@ attrs_for_stat <- function(var_attrs, var, stat, stat_var) {
 
   Filter(Negate(is.null), lapply(names(var_attrs[[var]]), function(field) {
     # Don't pass "dim" R attr, or _FillValue/missing_data netCDF attr through
-    if (field %in% c('dim', '_FillValue', 'missing_data')) {
+    if (field %in% c('dim', 'dimnames', '_FillValue', 'missing_data')) {
       return(NULL)
     }
 
@@ -87,6 +87,15 @@ validate_stats <- function(parsed_stats) {
   }
 }
 
+to_list <- function(dimname, dimval) {
+  if (is.null(dimname))
+    return(NULL)
+
+  ret <- list()
+  ret[[dimname]] <- dimval
+  return(ret)
+}
+
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args, list(window="integer"))
 
@@ -103,11 +112,28 @@ main <- function(raw_args) {
   parsed_inputs <- lapply(inputs, wsim.io::parse_vardef)
   output_attrs <- lapply(args$attr, wsim.io::parse_attr)
 
-  first_input <- wsim.io::read_vars(inputs[[1]])
+  # Probe for extra dimensions
+  extra_dims_found <- wsim.io::read_dimension_values(inputs[[1]], exclude.dims=c('lat', 'lon', 'id', 'latitude', 'longitude'))
+  if (length(extra_dims_found) == 0) {
+    extra_dim_name <- NULL
+    extra_dim_vals <- list(NULL)
+  } else if (length(extra_dims_found) == 1) {
+    extra_dim_name <- names(extra_dims_found)[1]
+    extra_dim_vals <- extra_dims_found[[1]]
+    wsim.io::infof("Discovered dimension %s with %d values.", extra_dim_name, length(extra_dim_vals))
+  } else  {
+    stop("Don't know how to handle more than one extra dimension. Found " + paste(names(extra_dims_found), collapse=', '))
+  }
+
+  first_input <- wsim.io::read_vars(inputs[[1]], extra_dims=to_list(extra_dim_name, extra_dim_vals[1]))
   extent <- first_input$extent
   ids <- first_input$ids
   dims <- dim(first_input$data[[1]])
   var_attrs <- lapply(first_input$data, attributes)
+
+  if (length(dims) == 1) {
+    dims <- c(1, dims)
+  }
 
   # Validate configuration
   validate_stats(parsed_stats)
@@ -130,7 +156,7 @@ main <- function(raw_args) {
   }
 
   if (length(outfiles) != frames) {
-    die_with_message("Given", length(inputs), "inputs and window size ",
+    die_with_message("Given", length(inputs), "inputs and window size",
                      window, ", expected ", frames, "output files",
                      "but got", length(outfiles), ".")
   }
@@ -158,70 +184,83 @@ main <- function(raw_args) {
     var_names <- names(first_input$data)
   }
 
-  outfile_number <- 1
+  for (z in seq_along(extra_dim_vals)) {
+    outfile_number <- 1
 
-  data <- list()
-  for (var_name in var_names) {
-    # Create an empty array to hold <window> time slices of data
-    data[[var_name]] <- provideDimnames(array(dim = c(dims, window)))
-  }
-
-  for (i in seq_along(inputs)) {
-    slice <- i %% window + 1 # We recycle space in the array. This is the index we should load into.
-
-    if (i > window) {
-      source_file_for_data_to_overwrite <- dimnames(data[[1]])[[3]][slice]
-      wsim.io::info('Dropping data from', source_file_for_data_to_overwrite)
-    }
-
-    vars_to_read <- lapply(var_names, function(var_name) get_var_to_read(var_name, i))
-    wsim.io::info('Loading variables', var_names, 'from', parsed_inputs[[i]]$filename, '( from', sapply(vars_to_read, function(v) v$var_in), ')')
-    dimnames(data[[1]])[[3]][slice] <- parsed_inputs[[i]]$filename
-
-    data_slice <- wsim.io::read_vars(make_vardef(filename=parsed_inputs[[i]]$filename,
-                                                 vars=vars_to_read),
-                                     expect.extent=extent,
-                                     expect.ids=ids)$data
-
+    data <- list()
     for (var_name in var_names) {
-      data[[var_name]][,,slice] <- data_slice[[var_name]]
+      # Create an empty array to hold <window> time slices of data
+      data[[var_name]] <- provideDimnames(array(dim = c(dims, window)))
     }
 
-    if (i >= window) {
-      integrated <- list()
-      attrs <- output_attrs
+    for (i in seq_along(inputs)) {
+      slice <- i %% window + 1 # We recycle space in the array. This is the index we should load into.
 
-      for (stat in parsed_stats) {
-        for (var_name in var_names) {
-          if (length(stat$vars) == 0 || var_name %in% stat$vars) {
-            if (args$keepvarnames) {
-              stat_var <- var_name
-            } else {
-              stat_var <- paste0(var_name, '_', tolower(stat$stat))
-            }
-            stat_fn <- wsim.distributions::find_stat(stat$stat)
-            wsim.io::info('Computing', stat_var, '...')
-
-            integrated[[stat_var]] <- stat_fn(data[[var_name]])
-
-            attrs <- c(attrs, attrs_for_stat(var_attrs, var_name, stat$stat, stat_var))
-
-            wsim.io::info('done')
-          }
-        }
+      if (i > window) {
+        source_file_for_data_to_overwrite <- dimnames(data[[1]])[[3]][slice]
+        wsim.io::infof('Dropping data from %s', source_file_for_data_to_overwrite)
       }
 
-      wsim.io::info("Writing to", outfiles[outfile_number])
-      wsim.io::write_vars_to_cdf(integrated, outfiles[outfile_number], extent=extent, ids=ids, attrs=attrs, prec='single', append=TRUE)
-      outfile_number <- outfile_number+1
-    }
+      vars_to_read <- lapply(var_names, function(var_name) get_var_to_read(var_name, i))
+      wsim.io::infof('Loading variables %s from %s (from %s)', paste(var_names, collapse=', '), parsed_inputs[[i]]$filename, paste(sapply(vars_to_read, function(v) v$var_in), collapse=', '))
+      dimnames(data[[1]])[[3]][slice] <- parsed_inputs[[i]]$filename
 
-    gc()
+      data_slice <- wsim.io::read_vars(make_vardef(filename=parsed_inputs[[i]]$filename,
+                                                   vars=vars_to_read),
+                                       expect.extent=extent,
+                                       expect.ids=ids,
+                                       extra_dims=to_list(extra_dim_name, extra_dim_vals[z]))$data
+
+      for (var_name in var_names) {
+        data[[var_name]][,,slice] <- as.matrix(data_slice[[var_name]])
+      }
+
+      if (i >= window) {
+        integrated <- list()
+        attrs <- output_attrs
+
+        for (stat in parsed_stats) {
+          for (var_name in var_names) {
+            if (length(stat$vars) == 0 || var_name %in% stat$vars) {
+              if (args$keepvarnames) {
+                stat_var <- var_name
+              } else {
+                stat_var <- paste0(var_name, '_', tolower(stat$stat))
+              }
+              stat_fn <- wsim.distributions::find_stat(stat$stat)
+              wsim.io::infof('Computing %s', stat_var)
+
+              integrated[[stat_var]] <- stat_fn(data[[var_name]])
+
+              attrs <- c(attrs, attrs_for_stat(var_attrs, var_name, stat$stat, stat_var))
+            }
+          }
+        }
+
+        if (is.null(extra_dim_name)) {
+          wsim.io::infof("Writing to %s", outfiles[outfile_number])
+        } else {
+          wsim.io::infof("Writing to %s (%s)", outfiles[outfile_number], extra_dim_vals[z])
+        }
+        wsim.io::write_vars_to_cdf(integrated,
+                                   outfiles[outfile_number],
+                                   extent=extent,
+                                   ids=ids,
+                                   attrs=attrs,
+                                   prec='single',
+                                   extra_dims=to_list(extra_dim_name, extra_dim_vals),
+                                   write_slice=to_list(extra_dim_name, extra_dim_vals[z]),
+                                   append=TRUE)
+        outfile_number <- outfile_number+1
+      }
+
+      gc()
+    }
   }
 
-  wsim.io::info("Finished writing integrated variables to", outfile)
+  wsim.io::infof("Finished writing integrated variables to %s", outfile)
 }
 
 tryCatch(
   main(commandArgs(trailingOnly=TRUE))
-  ,error=wsim.io::die_with_message)
+,error=wsim.io::die_with_message)

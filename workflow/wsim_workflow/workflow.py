@@ -17,10 +17,11 @@ import os
 
 from typing import List
 
+from . import agriculture
 from . import dates
+from . import electric_power
 from . import monthly
 from . import spinup
-from . import electric_power
 
 from .config_base import ConfigBase
 from .step import Step
@@ -44,7 +45,8 @@ def generate_steps(config: ConfigBase, *,
                    stop: str,
                    no_spinup: bool,
                    forecasts: str,
-                   run_electric_power: bool) -> List[Step]:
+                   run_electric_power: bool,
+                   run_agriculture: bool) -> List[Step]:
     steps = []
 
     steps += config.global_prep()
@@ -57,25 +59,32 @@ def generate_steps(config: ConfigBase, *,
         'all_adjusted_monthly_composites',
         'forcing_summaries',
         'results_summaries',
-        'electric_power_assessment'
+        'electric_power_assessment',
+        'agriculture_assessment'
     )}
 
     if config.should_run_spinup() and not no_spinup:
         steps += spinup.spinup(config, meta_steps)
         if run_electric_power:
             steps += electric_power.spinup(config, meta_steps)
+        if run_agriculture:
+            steps += agriculture.spinup(config, meta_steps)
 
     for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop)))):
         steps += monthly.monthly_observed(config, yearmon, meta_steps)
 
         if run_electric_power:
             steps += electric_power.monthly_observed(config, yearmon, meta_steps)
+        if run_agriculture:
+            steps += agriculture.monthly_observed(config, yearmon, meta_steps)
 
         if forecasts == 'all' or (forecasts == 'latest' and i == 0):
             steps += monthly.monthly_forecast(config, yearmon, meta_steps)
 
             if run_electric_power:
                 steps += electric_power.monthly_forecast(config, yearmon, meta_steps)
+            if run_agriculture:
+                steps += agriculture.monthly_forecast(config, yearmon, meta_steps)
 
     steps += meta_steps.values()
 
@@ -131,4 +140,10 @@ def unbuildable_targets(steps) -> List[Step]:
 
     print('Maximum dependency tree depth:', max_depth)
 
-    return [step for step in steps if step.depth == float('inf')]
+    unbuildable = [step for step in steps if step.depth == float('inf')]
+
+    if unbuildable:
+        pass  # Convenient breakpoint
+        print('xox')
+
+    return unbuildable

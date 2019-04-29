@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -18,7 +18,7 @@ from . import attributes as attrs
 from .config_base import ConfigBase as Config
 from .commands import *
 from .dates import format_yearmon, all_months, get_next_yearmon
-from .paths import read_vars, date_range
+from .paths import read_vars, date_range, Basis
 
 from .actions import create_forcing_file, compute_return_periods, composite_anomalies, fit_var
 
@@ -77,7 +77,7 @@ def spinup(config, meta_steps):
 
     # Steps for anomalies and composite anomalies
     for window in [1] + config.integration_windows():
-        for yearmon in config.result_fit_yearmons()[window-1:]:
+        for yearmon in config.historical_yearmons()[window-1:]:
             steps += compute_return_periods(config.workspace(),
                                             result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
                                             forcing_vars=config.forcing_rp_vars() if window == 1 else None,
@@ -288,11 +288,11 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
     ]
 
 
-def time_integrate_results(config: Config, window: int, *, basis: Optional[str]=None) -> List[Step]:
+def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
     """
     Integrate all LSM results with the given time window
     """
-    yearmons_in = config.result_fit_yearmons()
+    yearmons_in = config.historical_yearmons()
     yearmons_out = yearmons_in[window-1:]
 
     integrate = wsim_integrate(
@@ -306,13 +306,13 @@ def time_integrate_results(config: Config, window: int, *, basis: Optional[str]=
                                           basis=basis)
     )
 
-    tag_name = config.workspace().tag('{}spinup_{}mo_results'.format((basis + '_' if basis else ''), window))
+    tag_name = config.workspace().tag('{}spinup_{}mo_results'.format((basis.value + '_' if basis else ''), window))
 
     tag_steps = create_tag(name=tag_name, dependencies=integrate.targets)
 
     integrate.replace_targets_with_tag_file(tag_name)
     integrate.replace_dependencies(
-        config.workspace().tag('{}spinup_1mo_results'.format((basis + '_') if basis else '')))
+        config.workspace().tag('{}spinup_1mo_results'.format((basis.value + '_') if basis else '')))
 
     return [
         integrate,

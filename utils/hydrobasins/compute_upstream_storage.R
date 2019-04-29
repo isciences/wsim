@@ -10,9 +10,9 @@ suppressMessages({
 })
 
 '
-Compute an upstream hydroelectric storage capacity for each basin
+Compute an upstream storage capacity for each basin
 
-Usage: compute_upstream_storage --flow <file> --dams <file> --basins <file> --output <file>
+Usage: compute_upstream_storage --flow <file> --dams <file> --basins <file> --sector <sector> --output <file>
 
 Options:
 --flow <file>     A fitted distribution of annual total blue water
@@ -21,6 +21,8 @@ Options:
 --basins <file>   A polygon shapefile providing basin boundaries, used to associate
                   each dam with a basin. Must provide a HYBAS_ID id field and a
                   NEXT_DOWN field indicating the HYBAS_ID of the downstream basin.
+--sector <sector> Usage sector for which dams should be filtered.
+                  Accepted values: electric_power, agriculture
 --output <file>   A netCDF file with a "months_capacity" variable
 '->usage
 
@@ -44,13 +46,19 @@ main <- function(raw_args) {
   medians <- apply(params, 1, function(p) if (any(is.na(p))) { p[1] } else { qua(0.5, p) })
   flow_df <- as.tbl(data.frame(basin_id=fit$ids, flow_12mo=medians))
 
-  # Remove dams that are used for irrigation, water supply, or flood control, unless they're
-  # explicitly noted as being used for electricity production
-  hydro_dams <- filter(dams, !is.na(use_elec) | (is.na(use_irri) & is.na(use_supp) & is.na(use_fcon)))
+  if (args$sector == 'electric_power') {
+    # Remove dams that are used for irrigation, water supply, or flood control, unless they're
+    # explicitly noted as being used for electricity production
+    dams <- filter(dams, !is.na(use_elec) | (is.na(use_irri) & is.na(use_supp) & is.na(use_fcon)))
+  } else if (args$sector == 'agriculture') {
+    dams <- filter(dams, !is.na(use_irri))
+  } else {
+    stop('Unknown sector: ', sector)
+  }
 
   basin_capacity <- wsim.electricity::basin_upstream_capacity(
     select(basins, basin_id=hybas_id, downstream_id=next_down),
-    select(hydro_dams, capacity=cap_mcm))
+    select(dams, capacity=cap_mcm))
 
   basin_months_storage <- left_join(flow_df, basin_capacity, by='basin_id') %>%
     mutate(months_storage=ifelse(is.na(flow_12mo) | flow_12mo <= 0, 0, (capacity+capacity_upstream)*1e6/flow_12mo))

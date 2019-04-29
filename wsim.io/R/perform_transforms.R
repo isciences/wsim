@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# !diagnostics suppress=body
+
 #' Apply named transformations to data
 #'
 #' @param data       a numeric vector or matrix

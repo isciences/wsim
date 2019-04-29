@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -18,6 +18,11 @@
 #' @param expect.nvars  If specified, \code{read_vars} will throw an
 #'                      error unless exactly \code{expect.nvars}
 #'                      variables are read from the file.
+#' @param expect.vars   If specified, \code{read_vars} will throw an
+#'                      error if the list of variables read from the
+#'                      file (after renaming transformations) does not
+#'                      match \code{expect.vars}, irrespective of
+#'                      order.
 #' @param expect.dims   If specified, \code{read_vars} will throw an
 #'                      error if dimensions of read data are not
 #'                      equal to \code{expect.dims}.
@@ -43,7 +48,11 @@
 #'                      \code{origin} must also be specified.
 #' @param as.data.frame If \code{TRUE}, \code{read_vars} will return a
 #'                      data frame
-#'
+#' @param extra_dims list containing names and values of extra dimensions
+#'        along which a values at a single point should be extracted, e.g.
+#'        \code{extra_dims=list(crop='maize', quantile=0.50)}. It provides
+#'        a higher-abstraction alternative to the use of \code{offset} and
+#'        \code{count}.
 #' @return A list having the following structure:
 #' \describe{
 #' \item{attrs}{a list of global attributes in the file}
@@ -62,7 +71,8 @@
 #' }
 #'
 #' @export
-read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL, as.data.frame=FALSE) {
+read_vars <- function(vardef, expect.nvars=NULL, expect.vars=NULL, expect.dims=NULL, expect.extent=NULL, expect.ids=NULL, offset=NULL, count=NULL, as.data.frame=FALSE,
+                      extra_dims=NULL) {
   stopifnot(
     (is.character(vardef) && length(vardef) == 1)
     || is.wsim.io.vardef(vardef))
@@ -79,17 +89,18 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
   }
 
   if(endsWith(def$filename, '.nc')) {
-    loaded <- read_vars_from_cdf(vardef, offset=offset, count=count)
-    check_nvars(def, loaded, expect.nvars)
+    loaded <- read_vars_from_cdf(vardef, offset=offset, count=count, as.data.frame=as.data.frame, extra_dims=extra_dims)
+
     check_extent(def, loaded, expect.extent)
     check_ids(def, loaded, expect.ids)
     check_dims(def, loaded, expect.dims)
-
-    if (as.data.frame)
-      return(to_data_frame(loaded))
+    check_nvars(def, loaded, expect.nvars)
+    check_vars(def, loaded, expect.vars)
 
     return(loaded)
   }
+
+  stopifnot(is.null(extra_dims))
 
   if (length(def$vars) == 0) {
     def$vars <- list(make_var("1"))
@@ -176,20 +187,46 @@ read_vars <- function(vardef, expect.nvars=NULL, expect.dims=NULL, expect.extent
   }
 
   check_nvars(def, loaded, expect.nvars)
+  check_vars(def, loaded, expect.vars)
   check_extent(def, loaded, expect.extent)
   check_dims(def, loaded, expect.dims)
   return(loaded)
 }
 
 check_nvars <- function(def, data, nvars) {
-  if (is.null(nvars) || length(data$data) == nvars) {
-    return()
-  }
+  if (!is.null(nvars)) {
+    if (class(data) == 'data.frame') {
+      actual_nvars = length(Filter(function(n) { !(n %in% attr(data, 'dimvars')) },
+                            names(data)))
+    } else {
+      actual_nvars = length(data$data)
+    }
 
-  stop("Expected to read exactly ",
-       nvars, " variable", ifelse(nvars==1, "", "s"),
-       " from ", def$filename,
-       " (got ", length(data$data), ")")
+    if (any(nvars != actual_nvars)) {
+      stop("Expected to read exactly ",
+           nvars, " variable", ifelse(nvars==1, "", "s"),
+           " from ", def$filename,
+           " (got ", length(data$data), ")")
+    }
+  }
+}
+
+check_vars <- function(def, data, vars) {
+  if (!is.null(vars)) {
+    if (as.data.frame) {
+      varnames <- Filter(function(v) { !(v %in% attr('loaded', 'dimvars')) },
+                         names(data))
+    } else {
+      varnames <- names(data$data)
+    }
+
+    if (sort(varnames) != sort(vars)) {
+      stop("Expected to read %s from %s but got %s.",
+           paste(sort(vars), collapse=','),
+           def$filename,
+           paste(sort(varnames), collapse=','))
+    }
+  }
 }
 
 check_extent <- function(def, data, extent) {
@@ -221,13 +258,17 @@ format_ids <- function(ids, n) {
 }
 
 check_dims <- function(def, data, dims) {
-  if (is.null(dims) || length(data$data) == 0 || all(dim(data$data[[1]]) == dims)) {
-    return()
-  }
+  if (!is.null(dims)) {
+    if(class(data) == 'data.frame') {
+      stop("Can't check dimensions of data loaded to data frame.")
+    }
 
-  stop("Unexpected dimensions of ", def$filename,
-       " (expected [", paste(dims, collapse=", "), "]",
-       ", got [", paste(dim(data$data[[1]]), collapse=", "), "])")
+    if (length(data$data) > 0 && !all(dim(data$data[[1]]) == dims)) {
+      stop("Unexpected dimensions of ", def$filename,
+           " (expected [", paste(dims, collapse=", "), "]",
+           ", got [", paste(dim(data$data[[1]]), collapse=", "), "])")
+    }
+  }
 }
 
 is_mon <- function(fname) {
@@ -238,30 +279,4 @@ is_ncep_daily_precip <- function(fname) {
   grepl(
     '^PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.\\d{8}([.]?RT)?([.]gz)?$',
     basename(fname))
-}
-
-to_data_frame <- function(dataset) {
-  if (is.null(dataset$ids))
-    stop("Only ID-based data can be converted to a data frame")
-
-  df <- data.frame(c(list(id=dataset$ids),
-                      lapply(dataset$data, as.vector)),
-                   stringsAsFactors=FALSE)
-
-  # Copy global attributes over to data frame
-  for (attrname in names(dataset$attrs)) {
-    if (!(attrname %in% c('ids', 'class', 'names')))
-      attr(df, attrname) <- dataset$attrs[[attrname]]
-  }
-
-  # Copy variable attributes over to data frame
-  for (varname in names(dataset$data)) {
-    for (attrname in names(attributes(dataset$data[[varname]]))) {
-      if (!(attrname %in% c('dim'))) {
-        attr(df[[varname]], attrname) <- attr(dataset$data[[varname]], attrname)
-      }
-    }
-  }
-
-  return(df)
 }
