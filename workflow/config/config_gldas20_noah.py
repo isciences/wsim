@@ -77,7 +77,7 @@ class GLDAS20_NoahConfig(ConfigBase):
         return False
 
     def historical_years(self):
-        return range(1948, 2011)
+        return range(1948, 2010)
 
     def result_fit_years(self):
         return range(1950, 2010) # 1950-2009 gives even 60-year period
@@ -93,11 +93,19 @@ class GLDAS20_NoahConfig(ConfigBase):
 
     @staticmethod
     def integration_windows():
-        return [ 12 ]
+        return [ 3, 6, 12 ]
 
     @classmethod
     def forcing_rp_vars(cls, basis=None):
-        return []
+        return [
+                'Bt_RO',
+                'PETmE',
+                'RO_mm',
+                'Ws',
+                'T',
+                'Pr'
+            ]
+        #return []
 
     @classmethod
     def lsm_rp_vars(cls, basis=None):
@@ -106,7 +114,9 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'Bt_RO',
                 'PETmE',
                 'RO_mm',
-                'Ws'
+                'Ws',
+                'T',
+                'Pr'
             ]
 
         if basis == 'basin':
@@ -123,7 +133,9 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'Bt_RO'     : [ 'min', 'max', 'sum' ],
                 'PETmE'     : [ 'sum' ],
                 'RO_mm'     : [ 'sum' ],
-                'Ws'        : [ 'ave' ]
+                'Ws'        : [ 'ave' ]#,
+                #'T'         : [ 'ave' ],
+                #'Pr'        : [ 'sum' ]
             }
 
         if basis == 'basin':
@@ -137,8 +149,8 @@ class GLDAS20_NoahConfig(ConfigBase):
         year, mon =  dates.parse_yearmon(yearmon)
 
         input_file = os.path.join(self._source,
-                                  'GLDAS20',
-                                  '{:04d}'.format(year),
+                                  #'GLDAS20',
+                                  #'{:04d}'.format(year),
                                   'GLDAS_NOAH025_M.A{}.020.nc4'.format(yearmon))
 
         output_file = self.workspace().results(yearmon=yearmon, window=1)

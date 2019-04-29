@@ -51,6 +51,9 @@ def parse_args(args):
     parser.add_argument('--nospinup',
                         help='Skip model spin-up steps',
                         action='store_true')
+    parser.add_argument('--noelectric',
+                        help='Do not run electricity assessment',
+                        action='store_true')
     parser.add_argument('--module',
                         help="Name of output module",
                         default='gnu_make')
@@ -94,7 +97,7 @@ def main(raw_args):
                                     stop=args.stop,
                                     no_spinup=args.nospinup,
                                     forecasts=args.forecasts,
-                                    run_electric_power=True)
+                                    run_electric_power=not(args.noelectric))
 
     duplicate_targets = workflow.find_duplicate_targets(steps)
     if duplicate_targets:

@@ -28,7 +28,8 @@ fi
 
 TMP=`mktemp --suffix ".nc"`
 
-ncap2 -O -v -s "PETmE=(PotEvap_tavg-Evap_tavg);Ws=(0.1*SoilMoi0_10cm_inst+0.3*SoilMoi10_40cm_inst+0.6*SoilMoi40_100cm_inst);RO_mm=Qs_acc+Qsb_acc+Qsm_acc" $1 $TMP
+#ncap2 -O -v -s "PETmE=(PotEvap_tavg-Evap_tavg);Ws=(0.1*SoilMoi0_10cm_inst+0.3*SoilMoi10_40cm_inst+0.6*SoilMoi40_100cm_inst);RO_mm=Qs_acc+Qsb_acc+Qsm_acc" $1 $TMP
+ncap2 -O -v -s "PETmE=(PotEvap_tavg-Evap_tavg);Ws=(0.1*SoilMoi0_10cm_inst+0.3*SoilMoi10_40cm_inst+0.6*SoilMoi40_100cm_inst);RO_mm=Qs_acc+Qsb_acc+Qsm_acc;T=Tair_f_inst-273.15;Pr=Rainf_f_tavg*10800/3*8*3*30" $1 $TMP
 ncpdq -O -a -lat $TMP $TMP # Flip latitudes to get North -> South ordering
 ncatted -h -O \
 	-a long_name,PETmE,o,c,'Potential minus Actual Evapotranspiration' \
@@ -49,7 +50,8 @@ ncwa -h -O -a time $TMP $TMP
 ncks -h -C -O -x -v time $TMP $TMP
 
 # Add a CRS variable
-ncap -h -O -s 'crs=-9999' $TMP $TMP
+#ncap -h -O -s 'crs=-9999' $TMP $TMP
+ncap2 -h -O -s 'crs=-9999' $TMP $TMP
 ncatted -h -O \
 	-a spatial_ref,crs,c,c,'GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]' \
 	-a grid_mapping_name,crs,c,c,'latitude_longitude' \
