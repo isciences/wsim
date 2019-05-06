@@ -72,6 +72,7 @@ def spinup(config, meta_steps):
     for param in config.lsm_integrated_vars().keys():
         for stat in config.lsm_integrated_vars()[param]:
             for window in config.integration_windows():
+                assert window > 1
                 for month in all_months:
                     steps += all_fits.require(fit_var(config, param=param, stat=stat, month=month, window=window))
 
