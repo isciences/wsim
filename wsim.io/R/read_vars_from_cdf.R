@@ -107,7 +107,22 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   # Make sure right number of extra dimensions were specified. For spatial data we require all
   # extra dimensions to be constrained, so that we read in a matrix no matter what. For non-spatial
   # data we don't care; it all just ends up in a data frame anyway.
+
   if (is.null(offset) & is_spatial) {
+
+    # If any dims are constant (and not a single line of lat or single meridian of lon),
+    # then count those as extra dims
+    dims_lengths    <- sapply(names(cdf$dim), function(x) length(cdf$dim[[x]]$vals), simplify = TRUE)
+    potential_degen <- which(dims_lengths == 1)
+    extra_dim_names <- names(potential_degen)[which(! names(potential_degen) %in% c(latname, lonname))]
+
+    if(!identical(extra_dim_names, character(0))){
+      extra_dim_vals    <- cdf$dim[[extra_dim_names]]$vals
+      # get extra_dims = list([name]=[value])
+      extra_dims        <- list(extra_dim_vals)
+      names(extra_dims) <- extra_dim_names
+    }
+
     expected_extra_dims <- length(real_dims) - 2
     if (length(extra_dims) != expected_extra_dims) {
       stop(sprintf("Expected %d extra dimensions but got %d.", expected_extra_dims, length(extra_dims)))
@@ -120,10 +135,11 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   }
 
   for (var in cdf$var) {
-    if (var$name %in% vars_to_read) {
+    var_name <- ifelse(!is.null(var$name), var$name, names(var))
+    if(var_name %in% vars_to_read){
       # Read this as a regular variable
       if (is.null(offset)) {
-        d <- ncdf4::ncvar_get(cdf, var$name)
+        d <- ncdf4::ncvar_get(cdf, var_name)#var$name)
       } else {
         # Collapse 3D array to 2D array, but don't
         # collapse a column (e.g., single meridian of longitude)
@@ -131,7 +147,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
         collapse <- !is.na(count[3]) && count[3] == 1
 
         d <- ncdf4::ncvar_get(cdf,
-                              var$name,
+                              var_name,
                               start=offset,
                               count=count,
                               collapse_degen=collapse)
