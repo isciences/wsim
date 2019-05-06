@@ -54,6 +54,9 @@ def parse_args(args):
     parser.add_argument('--noelectric',
                         help='Do not run electricity assessment',
                         action='store_true')
+    parser.add_argument('--noagriculture',
+                        help='Do not run agriculture assessment',
+                        action='store_true')
     parser.add_argument('--module',
                         help="Name of output module",
                         default='gnu_make')
@@ -98,7 +101,8 @@ def main(raw_args):
                                     no_spinup=args.nospinup,
                                     forecasts=args.forecasts,
                                     run_electric_power=not(args.noelectric),
-                                    run_agriculture=True)
+                                    #run_agriculture=True
+                                    run_agriculture=not(args.noagriculture))
 
     duplicate_targets = workflow.find_duplicate_targets(steps)
     if duplicate_targets:
