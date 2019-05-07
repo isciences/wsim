@@ -85,6 +85,12 @@ class ConfigBase(metaclass=abc.ABCMeta):
         :return:
         """
         return []
+        
+    def integrate_TP(self) -> bool:
+        """
+        Indicates whether or not to integrate temperature and precipitation to periods > 1 month.
+        """
+        return False
 
     def should_run_spinup(self) -> bool:
         """

@@ -69,6 +69,9 @@ class GLDAS20_NoahConfig(ConfigBase):
 
     def global_prep(self):
         return self._static.global_prep_steps()
+        
+    def integrate_TP(self):
+        return True
 
     def should_run_spinup(self):
         return True
@@ -77,7 +80,7 @@ class GLDAS20_NoahConfig(ConfigBase):
         return False
 
     def historical_years(self):
-        return range(1948, 2010)
+        return range(1948, 2011)
 
     def result_fit_years(self):
         return range(1950, 2010) # 1950-2009 gives even 60-year period
@@ -95,17 +98,10 @@ class GLDAS20_NoahConfig(ConfigBase):
     def integration_windows():
         return [ 3, 6, 12 ]
 
+
     @classmethod
     def forcing_rp_vars(cls, basis=None):
-        return [
-                'Bt_RO',
-                'PETmE',
-                'RO_mm',
-                'Ws',
-                'T',
-                'Pr'
-            ]
-        #return []
+        return []
 
     @classmethod
     def lsm_rp_vars(cls, basis=None):
@@ -130,12 +126,14 @@ class GLDAS20_NoahConfig(ConfigBase):
     def lsm_integrated_vars(cls, basis=None):
         if not basis:
             return {
-                'Bt_RO'     : [ 'min', 'max', 'sum' ],
-                'PETmE'     : [ 'sum' ],
-                'RO_mm'     : [ 'sum' ],
-                'Ws'        : [ 'ave' ]#,
-                #'T'         : [ 'ave' ],
-                #'Pr'        : [ 'sum' ]
+                'Bt_RO': ['min', 'max', 'sum'],
+                #'E': ['sum'],
+                'PETmE': ['sum'],
+               #'P_net': ['sum'],
+                'RO_mm': ['sum'],
+                'Ws': ['ave'],
+                'T'         : [ 'ave' ],
+                'Pr'        : [ 'sum' ]
             }
 
         if basis == 'basin':
@@ -161,9 +159,9 @@ class GLDAS20_NoahConfig(ConfigBase):
                 dependencies=[input_file, self.static_data().flowdir().file],
                 commands=[
                     [
-                        os.path.join('{BINDIR}', 'utils', 'gldas_noah_extract.sh'),
-                        input_file,
-                        output_file
+                        os.path.join('{BINDIR}', 'utils', 'gldas_noah_extract.R'),#'gldas_noah_extract.sh'),
+                        '--input', input_file,
+                        '--output', output_file
                     ],
                     [
                         os.path.join('{BINDIR}', 'wsim_flow.R'),
