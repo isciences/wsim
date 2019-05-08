@@ -24,8 +24,8 @@
 standard_anomaly <- function(distribution, dist_params, obs, min.sa=-100, max.sa=100) {
 
   quantile_fn <- switch(distribution,
-                        gev= gev_quantiles,
-                        pe3= pe3_quantiles,
+                        gev= cdfgev,
+                        pe3= cdfpe3,
                         NULL)
 
   if (is.null(quantile_fn)) {

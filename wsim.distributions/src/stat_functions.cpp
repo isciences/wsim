@@ -1,4 +1,4 @@
-// Copyright (c) 2018 ISciences, LLC.
+// Copyright (c) 2018-2019 ISciences, LLC.
 // All rights reserved.
 //
 // WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -27,29 +27,51 @@ double qua(double f, double location, double scale, double shape);
 template<typename T>
 double cdf(double x, double location, double scale, double shape);
 
-// Define a family of functions that computes the quantiles at each location of
-// a matrix.
 template<typename distribution>
-NumericVector quantiles(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
+NumericVector quaxxx(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
   auto n = data.size();
-  NumericVector quantiles = no_init(n);
-  quantiles.attr("dim") = data.attr("dim");
+  NumericVector ret = no_init(n);
+  ret.attr("dim") = data.attr("dim");
 
   if (n == location.size() && n == scale.size() && n == shape.size()) {
     // One set of distribution parameters for each observation.
     for (decltype(n) i = 0; i < n; i++) {
-      quantiles[i] = cdf<distribution>(data[i], location[i], scale[i], shape[i]);
+      ret[i] = qua<distribution>(data[i], location[i], scale[i], shape[i]);
     }
   } else if (location.size() == 1 && scale.size() == 1 && shape.size() == 1) {
     // Constant distribution parameters with multiple observations.
     for (decltype(n) i = 0; i < n; i++) {
-      quantiles[i] = cdf<distribution>(data[i], location[0], scale[0], shape[0]);
+      ret[i] = qua<distribution>(data[i], location[0], scale[0], shape[0]);
     }
   } else {
     stop("Unexpected vector lengths.");
   }
 
-  return quantiles;
+  return ret;
+}
+
+// Define a family of functions that computes the quantiles at each location of a vector
+template<typename distribution>
+NumericVector cdfxxx(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
+  auto n = data.size();
+  NumericVector ret = no_init(n);
+  ret.attr("dim") = data.attr("dim");
+
+  if (n == location.size() && n == scale.size() && n == shape.size()) {
+    // One set of distribution parameters for each observation.
+    for (decltype(n) i = 0; i < n; i++) {
+      ret[i] = cdf<distribution>(data[i], location[i], scale[i], shape[i]);
+    }
+  } else if (location.size() == 1 && scale.size() == 1 && shape.size() == 1) {
+    // Constant distribution parameters with multiple observations.
+    for (decltype(n) i = 0; i < n; i++) {
+      ret[i] = cdf<distribution>(data[i], location[0], scale[0], shape[0]);
+    }
+  } else {
+    stop("Unexpected vector lengths.");
+  }
+
+  return ret;
 }
 
 // Define a family of functions that bias-corrects a forecast given distributions
@@ -165,47 +187,62 @@ double cdf<pe3_tag>(double x, double location, double scale, double shape) {
   return result;
 }
 
-// [[Rcpp::export]]
-double wsim_quape3(double x, double location, double scale, double shape) {
-  return qua<pe3_tag>(x, location, scale, shape);
-}
-
-// [[Rcpp::export]]
-double wsim_quagev(double x, double location, double scale, double shape) {
-  return qua<gev_tag>(x, location, scale, shape);
-}
-
-// [[Rcpp::export]]
-double wsim_cdfpe3(double x, double location, double scale, double shape) {
-  return cdf<pe3_tag>(x, location, scale, shape);
-}
-
-// [[Rcpp::export]]
-double wsim_cdfgev(double x, double location, double scale, double shape) {
-  return cdf<gev_tag>(x, location, scale, shape);
-}
-
-//' Compute the quantile of each observation in a matrix using the GEV distribution
+//' Quantile function for the Pearson Type-III distribution
 //'
-//' @param data a matrix of observations
-//' @param location location parameter from distribution fit
-//' @param scale    scale parameter from distribution fit
-//' @param shape    shape parameter from distribution fit
+//' @param x        vector of probabilities
+//' @param location location parameters of distribution
+//' @param scale    scale parameters of distribution
+//' @param shape    shape parameters of distribution
+//' @return quantiles associated with each probability \code{x}
 //'
-//' @return a vector of computed quantiles
 //' @export
 // [[Rcpp::export]]
-NumericVector gev_quantiles(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
-  return quantiles<gev_tag>(data, location, scale, shape);
+NumericVector quape3(const NumericVector & x,
+                     const NumericVector & location,
+                     const NumericVector & scale,
+                     const NumericVector & shape) {
+  return quaxxx<pe3_tag>(x, location, scale, shape);
 }
 
-//' Compute the quantile of each observation in a matrix using the Pearson Type-III distribution
-//' @inheritParams gev_quantiles
-//' @return a vector of computed quantiles
+//' Quantile function for the generalized extreme value (GEV) distribution
+//'
+//' @inheritParams quape3
 //' @export
 // [[Rcpp::export]]
-NumericVector pe3_quantiles(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
-  return quantiles<pe3_tag>(data, location, scale, shape);
+NumericVector quagev(const NumericVector & x,
+                     const NumericVector & location,
+                     const NumericVector & scale,
+                     const NumericVector & shape) {
+  return quaxxx<gev_tag>(x, location, scale, shape);
+}
+
+//' Cumulative distribution function for the Pearson Type-III distribution
+//'
+//' @param x        vector of quantiles
+//' @param location location parameters of distribution
+//' @param scale    scale parameters of distribution
+//' @param shape    shape parameters of distribution
+//' @return probability assocated with each quantile \code{x}
+//'
+//' @export
+// [[Rcpp::export]]
+NumericVector cdfpe3(const NumericVector & x,
+                     const NumericVector & location,
+                     const NumericVector & scale,
+                     const NumericVector & shape) {
+  return cdfxxx<pe3_tag>(x, location, scale, shape);
+}
+
+//' Cumulative distribution function for the generalized extreme value (GEV) distribution
+//'
+//' @inheritParams cdfpe3
+//' @export
+// [[Rcpp::export]]
+NumericVector cdfgev(const NumericVector & x,
+                     const NumericVector & location,
+                     const NumericVector & scale,
+                     const NumericVector & shape) {
+  return cdfxxx<gev_tag>(x, location, scale, shape);
 }
 
 //' Bias-correct a forecast using GEV distribution
