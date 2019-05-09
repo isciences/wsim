@@ -189,10 +189,14 @@ double cdf<pe3_tag>(double x, double location, double scale, double shape) {
 
 //' Quantile function for the Pearson Type-III distribution
 //'
+//' The provided distribution parameters (\code{location}, \code{scale},
+//' \code{shape}) must have either a length of \code{1}, or the same length
+//' as \code{x}.
+//'
 //' @param x        vector of probabilities
-//' @param location location parameters of distribution
-//' @param scale    scale parameters of distribution
-//' @param shape    shape parameters of distribution
+//' @param location vector of location parameters
+//' @param scale    vector of scale
+//' @param shape    vector of shape parameters
 //' @return quantiles associated with each probability \code{x}
 //'
 //' @export
@@ -218,10 +222,14 @@ NumericVector quagev(const NumericVector & x,
 
 //' Cumulative distribution function for the Pearson Type-III distribution
 //'
+//' The provided distribution parameters (\code{location}, \code{scale},
+//' \code{shape}) must have either a length of \code{1}, or the same length
+//' as \code{x}.
+//'
 //' @param x        vector of quantiles
-//' @param location location parameters of distribution
-//' @param scale    scale parameters of distribution
-//' @param shape    shape parameters of distribution
+//' @param location vector of location parameters
+//' @param scale    vector of scale
+//' @param shape    vector of shape parameters
 //' @return probability assocated with each quantile \code{x}
 //'
 //' @export
