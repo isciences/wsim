@@ -3,7 +3,7 @@
 '
 Process GLDAS NOAH monthly land surface model results to input to WSIM.
 
-Usage: gldas_noah_extract (--input=<file>) (--output=<file>) [--cores=<num>]...
+Usage: gldas_noah_extract (--input=<file>) (--output=<file>)
 
 --input <file>        GLDAS NOAH source file (netCDF)
 --output <file>       Output netCDF file with WSIM-friendly parameters
@@ -13,16 +13,10 @@ Usage: gldas_noah_extract (--input=<file>) (--output=<file>) [--cores=<num>]...
 
 # *** Note that kg/m2 of water is equivalent to mm of water ***
 #   #   kg      1000g       cm^3       m^2         10mm
-#   # ----- X ---------- X ----- X ------------ X ------
+#   # ----- X ---------- X ----- X ------------ X ------ = mm
 #   #  m^2       kg          g      10000 cm^2     1cm
 
-n_days_in_month <- function(month_num){
-  days <- c(31, 28, 31, 30, # jan, feb, mar, apr
-            31, 30, 31, 31, # may, jun, jul, aug
-            30, 31, 30, 31  # sep, oct, nov, dec
-            )
-  return(days[month_num])
-}
+
 
 convert_w_msquared2mm_d <- function(watts_per_m2){
   # converts from  W m-2 to mm day-1
@@ -71,11 +65,12 @@ converth20_kg_msquared_3hour2mm_day <- function(kg_per_m2_per_3hr){
 get_ndays_from_fname <- function(raster_fname){
   fname_regex <- regexpr('[0-9]{6}', raster_fname)
   yearmon <- substr(raster_fname, start = fname_regex[1], stop = fname_regex[1] + attr(fname_regex, 'match.length') - 1)
-  # Kind of interesting that this works:
-  stopifnot(substr(yearmon, 1, 2) %in% 19:20 & substr(yearmon, 5,6) %in% sprintf("%02d",1:12))
+  if(!(substr(yearmon, 1, 2) %in% 19:20 & substr(yearmon, 5,6) %in% sprintf("%02d",1:12))){
+    stop("Failed to detect date from filename; cannot determine number of days in month for file ", raster_fname)
+  }
   monthnum <- as.integer(substr(yearmon, 5, 6))
 
-  return(n_days_in_month(monthnum))
+  return(wsim.lsm::days_in_yyymm(yearmon))
 }
 
 
