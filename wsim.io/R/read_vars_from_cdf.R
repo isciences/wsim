@@ -112,14 +112,13 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
 
     # If any dims are constant (and not a single line of lat or single meridian of lon),
     # then count those as extra dims
-    dims_lengths    <- sapply(names(cdf$dim), function(x) length(cdf$dim[[x]]$vals), simplify = TRUE)
+    dims_lengths    <- sapply(names(cdf$dim), function(x) length(ncdf4::ncvar_get(cdf, x)), simplify = TRUE)
     potential_degen <- which(dims_lengths == 1)
-    extra_dim_names <- names(potential_degen)[which(! names(potential_degen) %in% c(latname, lonname))]
+    extra_dim_names <- c(names(extra_dims), names(potential_degen)[!names(potential_degen) %in% c(latname, lonname)])
 
-    if(!identical(extra_dim_names, character(0))){
-      extra_dim_vals    <- cdf$dim[[extra_dim_names]]$vals
-      # get extra_dims = list([name]=[value])
-      extra_dims        <- list(extra_dim_vals)
+    if(length(extra_dim_names) > 0){
+      # get extra_dims = list(<name>=<values>)
+      extra_dims        <- lapply(extra_dim_names, function(varname) ncdf4::ncvar_get(cdf, varname))
       names(extra_dims) <- extra_dim_names
     }
 
@@ -135,11 +134,11 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   }
 
   for (var in cdf$var) {
-    var_name <- ifelse(!is.null(var$name), var$name, names(var))
+    var_name <- var$name
     if(var_name %in% vars_to_read){
       # Read this as a regular variable
       if (is.null(offset)) {
-        d <- ncdf4::ncvar_get(cdf, var_name)#var$name)
+        d <- ncdf4::ncvar_get(cdf, var_name)
       } else {
         # Collapse 3D array to 2D array, but don't
         # collapse a column (e.g., single meridian of longitude)
