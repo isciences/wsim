@@ -85,7 +85,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
         :return:
         """
         return []
-        
+
     def integrate_TP(self) -> bool:
         """
         Indicates whether or not to integrate temperature and precipitation to periods > 1 month.
@@ -168,6 +168,18 @@ class ConfigBase(metaclass=abc.ABCMeta):
             return [
                 'Bt_RO'
             ]
+
+        assert False
+
+    @classmethod
+    def forcing_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are forcing variables to be time-integrated, and whose values
+        are lists of stats to apply to each of those variables (e.g., sum, ave)
+        """
+
+        if not basis:
+            return{}
 
         assert False
 

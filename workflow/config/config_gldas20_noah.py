@@ -69,7 +69,7 @@ class GLDAS20_NoahConfig(ConfigBase):
 
     def global_prep(self):
         return self._static.global_prep_steps()
-        
+
     def integrate_TP(self):
         return True
 
@@ -98,6 +98,13 @@ class GLDAS20_NoahConfig(ConfigBase):
     def integration_windows():
         return [ 3, 6, 12 ]
 
+    @classmethod
+    def forcing_integrated_vars(cls, basis=None):
+        if not basis:
+            return[
+                'T' : ['ave']
+                'Pr': ['sum']
+            ]
 
     @classmethod
     def forcing_rp_vars(cls, basis=None):
@@ -123,17 +130,21 @@ class GLDAS20_NoahConfig(ConfigBase):
         assert False
 
     @classmethod
+    def forcing_integrated_vars(cls, basis=None):
+        if not basis:
+            return{
+                'T' : ['ave'],
+                'Pr': ['sum']
+            }
+
+    @classmethod
     def lsm_integrated_vars(cls, basis=None):
         if not basis:
             return {
                 'Bt_RO': ['min', 'max', 'sum'],
-                #'E': ['sum'],
                 'PETmE': ['sum'],
-               #'P_net': ['sum'],
                 'RO_mm': ['sum'],
-                'Ws': ['ave'],
-                'T'         : [ 'ave' ],
-                'Pr'        : [ 'sum' ]
+                'Ws'   : ['ave'],
             }
 
         if basis == 'basin':
@@ -147,8 +158,6 @@ class GLDAS20_NoahConfig(ConfigBase):
         year, mon =  dates.parse_yearmon(yearmon)
 
         input_file = os.path.join(self._source,
-                                  #'GLDAS20',
-                                  #'{:04d}'.format(year),
                                   'GLDAS_NOAH025_M.A{}.020.nc4'.format(yearmon))
 
         output_file = self.workspace().results(yearmon=yearmon, window=1)
@@ -159,7 +168,7 @@ class GLDAS20_NoahConfig(ConfigBase):
                 dependencies=[input_file, self.static_data().flowdir().file],
                 commands=[
                     [
-                        os.path.join('{BINDIR}', 'utils', 'gldas_noah_extract.R'),#'gldas_noah_extract.sh'),
+                        os.path.join('{BINDIR}', 'utils', 'gldas_noah_extract.R'),
                         '--input', input_file,
                         '--output', output_file
                     ],

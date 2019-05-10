@@ -365,14 +365,14 @@ def fit_var(config: ConfigBase,
     else:
         param_to_read = param
 
-    if param in ('T', 'Pr') and not config.integrate_TP:
+    if param in forcing_rp_vars() and param not in config.forcing_integrated_vars():
         assert window == 1
         assert basis is None
 
         infile = config.workspace().forcing(yearmon=input_range)
     else:
         infile = config.workspace().results(yearmon=input_range, window=window, basis=basis)
-    
+
 
     # Step for fits
     return [
