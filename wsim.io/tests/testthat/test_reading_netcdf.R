@@ -25,6 +25,7 @@ test_that("we can read attributes and variables from a spatial netCDF file into 
                     xmax=0,
                     ymin=20,
                     ymax=70,
+                    extra_dims=list(time = 00000),
                     attrs=list(list(var="my_data", key="station", val="A"),
                                list(key="yearmon", val="201702")))
 
