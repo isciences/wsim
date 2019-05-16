@@ -102,7 +102,7 @@ class GLDAS20_NoahConfig(ConfigBase):
     def forcing_integrated_vars(cls, basis=None):
         if not basis:
             return[
-                'T' : ['ave']
+                'T' : ['ave'],
                 'Pr': ['sum']
             ]
 
