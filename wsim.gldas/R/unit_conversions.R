@@ -1,3 +1,8 @@
+#' Convert from watts per meter squared to mm per day
+#'
+#' @param watts_per_m2 A numeric vector of values to be converted
+#' @return A numeric vector in units of mm per day
+
 convert_w_msquared2mm_d <- function(watts_per_m2){
   # converts from  W m-2 to mm day-1
   #
@@ -46,14 +51,4 @@ converth20_kg_msquared_3hour2mm_day <- function(kg_per_m2_per_3hr){
 }
 
 
-get_ndays_from_fname <- function(raster_fname){
-  fname_regex <- regexpr('[0-9]{6}', raster_fname)
-  yyyymm       <- substr(raster_fname,
-                         start = fname_regex[1],
-                         stop = fname_regex[1] + attr(fname_regex, 'match.length') - 1)
-  if(!(substr(yyyymm, 1, 2) %in% 19:20) | !(substr(yyyymm, 5,6) %in% sprintf("%02d",1:12))){
-    stop("Failed to detect date from filename; cannot determine number of days in month for file ", raster_fname)
-  }
 
-  return(wsim.lsm::days_in_yyyymm(yyyymm))
-}
