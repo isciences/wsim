@@ -1,5 +1,5 @@
 install:
-	for s in wsim.io wsim.distributions wsim.lsm wsim.electricity wsim.agriculture; do \
+	for s in wsim.io wsim.distributions wsim.lsm wsim.electricity wsim.agriculture wsim.gldas; do \
 		$(MAKE) -C $${s} $@ || exit 1; \
 	done;
 check:
