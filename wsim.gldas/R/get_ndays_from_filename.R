@@ -7,7 +7,7 @@
 #' get_ndays_from_fname('~/Documents/wsim/source/GLDAS_NOAH025_M.A194801.020.nc4')
 get_ndays_from_fname <- function(raster_fname){
   # searches for year in 19** - 20**, month in 01-19:
-  fname_regex <- gregexpr('[12]{1}[90]{1}[0-9]{2}[01]{1}[1-9]{1}', raster_fname)
+  fname_regex <- gregexpr('[1,2]{1}[9,0]{1}[0-9]{2}[0-1]{1}[0-9]{1}', raster_fname)
   if(length(fname_regex[[1]]) > 1){
     stop('Multiple dates found in filename: ', raster_fname )
   }
