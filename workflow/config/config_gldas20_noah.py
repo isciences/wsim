@@ -108,7 +108,16 @@ class GLDAS20_NoahConfig(ConfigBase):
 
     @classmethod
     def forcing_rp_vars(cls, basis=None):
-        return []
+        if not basis:
+            return [
+                'T',
+                'Pr'
+            ]
+
+        if basis == Basis.BASIN:
+            return []
+
+        assert False
 
     @classmethod
     def lsm_rp_vars(cls, basis=None):
@@ -117,9 +126,7 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'Bt_RO',
                 'PETmE',
                 'RO_mm',
-                'Ws',
-                'T',
-                'Pr'
+                'Ws'
             ]
 
         if basis == 'basin':
@@ -153,6 +160,7 @@ class GLDAS20_NoahConfig(ConfigBase):
             }
 
         assert False
+
 
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
         year, mon =  dates.parse_yearmon(yearmon)
