@@ -53,17 +53,17 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
         # Do time integration
         for window in config.integration_windows():
-            steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), yearmon=yearmon, window=window)
+            steps += time_integrate(config.workspace(), config.all_integrated_stats(), yearmon=yearmon, window=window)
 
         # Compute return periods
         steps += compute_return_periods(config.workspace(),
-                                        result_vars=config.lsm_rp_vars(),
+                                        result_vars=config.lsm_rp_vars() + config.forcing_rp_vars(),
                                         forcing_vars=config.forcing_rp_vars(),
                                         yearmon=yearmon,
                                         window=1)
         for window in config.integration_windows():
             steps += compute_return_periods(config.workspace(),
-                                            result_vars=config.lsm_integrated_var_names(),
+                                            result_vars=config.lsm_integrated_var_names() + config.forcing_integrated_var_names(),
                                             yearmon=yearmon,
                                             window=window)
 
@@ -122,16 +122,16 @@ def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
             for window in config.integration_windows():
                 # Time integrate the results
-                steps += time_integrate(config.workspace(), config.lsm_integrated_stats(),
+                steps += time_integrate(config.workspace(), config.all_integrated_stats(),
                                         window=window, yearmon=yearmon, target=target,
                                         member=member)
 
             # Compute return periods
-            steps += compute_return_periods(config.workspace(), result_vars=config.lsm_rp_vars(),
+            steps += compute_return_periods(config.workspace(), result_vars=config.lsm_rp_vars() + config.forcing_rp_vars(),
                                             forcing_vars=config.forcing_rp_vars(), yearmon=yearmon,
                                             window=1, target=target, member=member)
             for window in config.integration_windows():
-                steps += compute_return_periods(config.workspace(), result_vars=config.lsm_integrated_var_names(),
+                steps += compute_return_periods(config.workspace(), result_vars=config.lsm_integrated_var_names() + config.forcing_var_names(),
                                                 yearmon=yearmon, window=window, target=target, member=member)
 
         steps += meta_steps['forcing_summaries'].require(forcing_summary(config.workspace(),

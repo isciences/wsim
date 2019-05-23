@@ -69,8 +69,8 @@ def spinup(config, meta_steps):
             steps += all_fits.require(fit_var(config, param=param, month=month))
 
     # Compute fits for time-integrated parameters
-    for param in config.lsm_integrated_vars().keys():
-        for stat in config.lsm_integrated_vars()[param]:
+    for param in {**config.lsm_integrated_vars(), **config.forcing_integrated_vars()}.keys():
+        for stat in {**config.lsm_integrated_vars(), **config.forcing_integrated_vars()}[param]:
             for window in config.integration_windows():
                 assert window > 1
                 for month in all_months:
@@ -80,7 +80,7 @@ def spinup(config, meta_steps):
     for window in [1] + config.integration_windows():
         for yearmon in config.historical_yearmons()[window-1:]:
             steps += compute_return_periods(config.workspace(),
-                                            result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
+                                            result_vars=config.lsm_rp_vars()+config.forcing_rp_vars() if window == 1 else config.lsm_integrated_var_names()+config.forcing_integrated_var_names(),
                                             forcing_vars=config.forcing_rp_vars() if window == 1 else None,
                                             yearmon=yearmon,
                                             window=window)
@@ -291,16 +291,17 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
 
 def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
     """
-    Integrate all LSM results with the given time window
+    Integrate all LSM results and any specified forcing variables with the given time window
     """
     yearmons_in = config.historical_yearmons()
     yearmons_out = yearmons_in[window-1:]
 
     integrate = wsim_integrate(
         inputs=read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
-                         *config.lsm_integrated_vars(basis=basis).keys()),
+        #TODO: Can this just be config.lsm_integrated_var_names() + config.forcing_var_names()?
+                         *{**config.lsm_integrated_vars(basis=basis), **config.forcing_integrated_vars(basis=basis)}.keys()),
         window=window,
-        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats(basis=basis).items()],
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.all_integrated_stats().items()],
         attrs=[attrs.integration_window(var='*', months=window)],
         output=config.workspace().results(yearmon=date_range(yearmons_out),
                                           window=window,

@@ -229,3 +229,43 @@ class ConfigBase(metaclass=abc.ABCMeta):
         Provides a flat list of time-integrated variable names
         """
         return [var + '_' + stat for var, stats in cls.lsm_integrated_vars(basis=basis).items() for stat in stats]
+
+    @classmethod
+    def forcing_integrated_stats(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are stat names and whose values are a list of variables
+        two which that stat should be applied. It can be thought of as the inverse of forcing_integrated_vars()
+        """
+        integrated_stats = {}
+
+        for var, varstats in cls.forcing_integrated_vars(basis=basis).items():
+            for stat in varstats:
+                if stat not in integrated_stats:
+                    integrated_stats[stat] = []
+                integrated_stats[stat].append(var)
+
+        return integrated_stats
+
+    @classmethod
+    def all_integrated_stats(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary that is the union of all key-value pairs
+        in lsm_integrated_stats and forcing_integrated_stats
+        """
+        integrated_stats=cls.lsm_integrated_stats(basis=basis)
+
+        # Add forcing stats:vars to lsm stats:vars
+        for stat, statvars in cls.forcing_integrated_stats(basis=basis).items():
+            if stat not in integrated_stats:
+                integrated_stats[stat]=[]
+            for var in statvars:
+                integrated_stats[stat].append(var)
+
+        return integrated_stats
+
+    @classmethod
+    def forcing_integrated_var_names(cls, basis: Optional[Basis]=None) -> List[str]:
+        """
+        Provides a flat list of time-integrated forcing variable names
+        """
+        return [var + '_' + stat for var, stats in cls.forcing_integrated_vars(basis=basis).items() for stat in stats]
