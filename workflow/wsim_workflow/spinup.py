@@ -69,8 +69,8 @@ def spinup(config, meta_steps):
             steps += all_fits.require(fit_var(config, param=param, month=month))
 
     # Compute fits for time-integrated parameters
-    for param in {**config.lsm_integrated_vars(), **config.forcing_integrated_vars()}.keys():
-        for stat in {**config.lsm_integrated_vars(), **config.forcing_integrated_vars()}[param]:
+    for param in config.lsm_integrated_vars().keys():
+        for stat in config.lsm_integrated_vars()[param]:
             for window in config.integration_windows():
                 assert window > 1
                 for month in all_months:
@@ -78,21 +78,10 @@ def spinup(config, meta_steps):
 
     # Steps for anomalies and composite anomalies
     for window in [1] + config.integration_windows():
-        # import pdb
-        # pdb.set_trace()
         for yearmon in config.historical_yearmons()[window-1:]:
             steps += compute_return_periods(config.workspace(),
-                                            # Doesn't work:
-                                            result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names() + config.forcing_integrated_var_names(),
+                                            result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
                                             forcing_vars=config.forcing_rp_vars() if window == 1 else None,
-                                            
-                                            # Works:
-                                            #result_vars=config.lsm_rp_vars() + config.forcing_rp_vars() if window == 1 else config.lsm_integrated_var_names() + config.forcing_integrated_var_names(),
-                                            #forcing_vars=None,
-                                            
-                                            # Doesn't work -- due to typo only?:
-                                            #forcing_vars=config.forcing_rp_vars() if window == 1 else None, 
-                                            #result_vars= config.lsm_rp_vars() + config.forcing_rp_vars if window == 1 else config.lsm_integrated_var_names() + config.forcing_integrated_var_names(),
                                             yearmon=yearmon,
                                             window=window)
 
@@ -309,10 +298,9 @@ def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis
 
     integrate = wsim_integrate(
         inputs=read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
-        #TODO: Can this just be config.lsm_integrated_var_names() + config.forcing_var_names()?
-                         *{**config.lsm_integrated_vars(basis=basis), **config.forcing_integrated_vars(basis=basis)}.keys()),
+                         *config.lsm_integrated_vars(basis=basis).keys()),
         window=window,
-        stats=[stat + '::' + ','.join(varname) for stat, varname in config.all_integrated_stats().items()],
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats().items()],
         attrs=[attrs.integration_window(var='*', months=window)],
         output=config.workspace().results(yearmon=date_range(yearmons_out),
                                           window=window,
