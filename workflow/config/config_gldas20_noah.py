@@ -54,10 +54,10 @@ class GLDAS20_NoahStatic(paths.Static):
         return paths.Vardef(os.path.join(self.source, 'NTSG_DRT', 'drt_flow_directions_025deg_gldas.tif'), var='1')
 
     def basins(self):
-        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05.shp'), '1')
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07.shp'), '1')
 
     def basin_downstream(self):
-        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07_downstream.nc'), 'next_down')
 
 
 class GLDAS20_NoahConfig(ConfigBase):
