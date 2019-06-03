@@ -80,11 +80,10 @@ class GLDAS20_NoahConfig(ConfigBase):
         return False
 
     def historical_years(self):
-        return range(1948, 1951)#range(1948, 2011)
+        return range(1948, 2011)
 
     def result_fit_years(self):
-        return range(1948, 1951)
-        #return range(1950, 2010) # 1950-2009 gives even 60-year period
+        return range(1950, 2010) # 1950-2009 gives even 60-year period
 
     def static_data(self):
         return self._static
@@ -99,20 +98,10 @@ class GLDAS20_NoahConfig(ConfigBase):
     def integration_windows():
         return [ 3, 6, 12 ]
 
-    @classmethod
-    def forcing_integrated_vars(cls, basis=None):
-        if not basis:
-            return{
-                'T' : ['ave'],
-                'Pr': ['sum']
-            }
 
     @classmethod
     def forcing_rp_vars(cls, basis=None):
-            return [
-                'T',
-                'Pr'
-            ]
+            return []
 
 
     @classmethod
@@ -122,7 +111,9 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'Bt_RO',
                 'PETmE',
                 'RO_mm',
-                'Ws'
+                'Ws',
+                'T',
+                'Pr'
             ]
 
         if basis == 'basin':
@@ -132,13 +123,6 @@ class GLDAS20_NoahConfig(ConfigBase):
 
         assert False
 
-    @classmethod
-    def forcing_integrated_vars(cls, basis=None):
-        if not basis:
-            return{
-                'T' : ['ave'],
-                'Pr': ['sum']
-            }
 
     @classmethod
     def lsm_integrated_vars(cls, basis=None):
@@ -148,6 +132,8 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'PETmE': ['sum'],
                 'RO_mm': ['sum'],
                 'Ws'   : ['ave'],
+                'T'    : ['ave'],
+                'Pr'   : ['sum']
             }
 
         if basis == 'basin':
@@ -157,13 +143,7 @@ class GLDAS20_NoahConfig(ConfigBase):
 
         assert False
 
-    @classmethod
-    def forcing_integrated_var_names(cls, basis=None):
-        """
-        Provides a flat list of time-integrated forcing variable names
-        """
-        return [var + '_' + stat for var, stats in cls.forcing_integrated_vars(basis=basis).items() for stat in stats]
-        
+
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
         year, mon =  dates.parse_yearmon(yearmon)
 
