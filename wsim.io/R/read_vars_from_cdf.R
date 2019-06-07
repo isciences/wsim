@@ -119,10 +119,9 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
 
     if(length(additional_extra_dim_names) > 0){
       # get extra_dims = list(<name>=<values>)
-      extra_dims        <- list(extra_dims,
-                                lapply(additional_extra_dim_names, function(varname) ncdf4::ncvar_get(cdf, varname))
-      )
-      names(extra_dims) <- extra_dim_names
+      additional_extra_dims <- lapply(additional_extra_dim_names, function(varname) ncdf4::ncvar_get(cdf, varname))
+      names(additional_extra_dims)     <- additional_extra_dim_names
+      extra_dims <- c(extra_dims, additional_extra_dims)
     }
 
     expected_extra_dims <- length(real_dims) - 2
