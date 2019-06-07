@@ -55,8 +55,8 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     lats <- ncdf4::ncvar_get(cdf, latname)
     lons <- ncdf4::ncvar_get(cdf, lonname)
 
-    dlat <- abs(lats[2] - lats[1])
-    dlon <- abs(lons[2] - lons[1])
+    dlat <- abs(lats[length(lats)] - lats[1])
+    dlon <- abs(lons[length(lons)] - lons[1])
 
     if (!is.null(offset)) {
       # We want to interpret the offset and count relative to the final arrangement,
@@ -114,11 +114,13 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     # then count those as extra dims
     dims_lengths    <- sapply(names(cdf$dim), function(x) length(ncdf4::ncvar_get(cdf, x)), simplify = TRUE)
     potential_degen <- which(dims_lengths == 1)
-    extra_dim_names <- c(names(extra_dims), names(potential_degen)[!names(potential_degen) %in% c(latname, lonname)])
+    additional_extra_dim_names <- c(names(potential_degen)[!names(potential_degen) %in% c(latname, lonname)])
 
-    if(length(extra_dim_names) > 0){
+    if(length(additional_extra_dim_names) > 0){
       # get extra_dims = list(<name>=<values>)
-      extra_dims        <- lapply(extra_dim_names, function(varname) ncdf4::ncvar_get(cdf, varname))
+      extra_dims        <- list(extra_dims,
+                                lapply(additional_extra_dim_names, function(varname) ncdf4::ncvar_get(cdf, varname))
+      )
       names(extra_dims) <- extra_dim_names
     }
 
@@ -328,7 +330,7 @@ find_offset <- function(cdf, real_dims, dim_values) {
     } else {
       return(1)
     }
-  })
+  }, simplify=TRUE)
 }
 
 #' Compute the count vector for specified valuws of dimensions
