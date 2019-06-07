@@ -65,7 +65,9 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
     # Compute composite indicators
     for window in [1] + config.integration_windows():
-        if yearmon in config.historical_yearmons()[window-1:]:
+
+        # Don't write composite steps for a window that extends back too early.
+        if yearmon > config.historical_yearmons()[window-1]:
             composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon)
             steps += composite_indicator_steps
 
