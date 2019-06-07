@@ -300,7 +300,7 @@ def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis
         inputs=read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
                          *config.lsm_integrated_vars(basis=basis).keys()),
         window=window,
-        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats().items()],
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats(basis=basis).items()],
         attrs=[attrs.integration_window(var='*', months=window)],
         output=config.workspace().results(yearmon=date_range(yearmons_out),
                                           window=window,
