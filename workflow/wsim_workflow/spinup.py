@@ -291,7 +291,7 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
 
 def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
     """
-    Integrate all LSM results with the given time window
+    Integrate all LSM results and any specified forcing variables with the given time window
     """
     yearmons_in = config.historical_yearmons()
     yearmons_out = yearmons_in[window-1:]

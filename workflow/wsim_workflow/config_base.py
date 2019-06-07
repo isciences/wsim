@@ -86,12 +86,6 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return []
 
-    def integrate_TP(self) -> bool:
-        """
-        Indicates whether or not to integrate temperature and precipitation to periods > 1 month.
-        """
-        return False
-
     def should_run_spinup(self) -> bool:
         """
         Indicates whether this configuration requires a spinup phase.
@@ -171,17 +165,6 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
         assert False
 
-    @classmethod
-    def forcing_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
-        """
-        Provides a dictionary whose keys are forcing variables to be time-integrated, and whose values
-        are lists of stats to apply to each of those variables (e.g., sum, ave)
-        """
-
-        if not basis:
-            return{}
-
-        assert False
 
     @classmethod
     def lsm_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
@@ -229,3 +212,5 @@ class ConfigBase(metaclass=abc.ABCMeta):
         Provides a flat list of time-integrated variable names
         """
         return [var + '_' + stat for var, stats in cls.lsm_integrated_vars(basis=basis).items() for stat in stats]
+
+

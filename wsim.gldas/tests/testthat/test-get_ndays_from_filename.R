@@ -1,6 +1,9 @@
 test_that("we can extract the number of days in a month pertaining to a particular file", {
   expect_equal(get_ndays_from_fname('~/mnt2/WSIM/wsim_gldas/source/GLDAS_NOAH025_M.A194801.020.nc4'),
                31)
+  # leap year case:
+  expect_equal(get_ndays_from_fname('GLDAS_NOAH025_M.A200802.nc'),
+               28)
   expect_error(get_ndays_from_fname('194801194802'),
                "Multiple dates found in filename: ")
   expect_error(get_ndays_from_fname('194801_asldfk_194802.nc'),

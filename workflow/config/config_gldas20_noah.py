@@ -98,17 +98,11 @@ class GLDAS20_NoahConfig(ConfigBase):
     def integration_windows():
         return [ 3, 6, 12 ]
 
-    @classmethod
-    def forcing_integrated_vars(cls, basis=None):
-        if not basis:
-            return{
-                'T' : ['ave'],
-                'Pr': ['sum']
-            }
 
     @classmethod
     def forcing_rp_vars(cls, basis=None):
-        return []
+            return []
+
 
     @classmethod
     def lsm_rp_vars(cls, basis=None):
@@ -129,13 +123,6 @@ class GLDAS20_NoahConfig(ConfigBase):
 
         assert False
 
-    @classmethod
-    def forcing_integrated_vars(cls, basis=None):
-        if not basis:
-            return{
-                'T' : ['ave'],
-                'Pr': ['sum']
-            }
 
     @classmethod
     def lsm_integrated_vars(cls, basis=None):
@@ -145,6 +132,8 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'PETmE': ['sum'],
                 'RO_mm': ['sum'],
                 'Ws'   : ['ave'],
+                'T'    : ['ave'],
+                'Pr'   : ['sum']
             }
 
         if basis == 'basin':
@@ -153,6 +142,7 @@ class GLDAS20_NoahConfig(ConfigBase):
             }
 
         assert False
+
 
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
         year, mon =  dates.parse_yearmon(yearmon)
