@@ -55,8 +55,9 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     lats <- ncdf4::ncvar_get(cdf, latname)
     lons <- ncdf4::ncvar_get(cdf, lonname)
 
-    dlat <- abs(lats[length(lats)] - lats[1])
-    dlon <- abs(lons[length(lons)] - lons[1])
+
+    dlat <- ifelse(length(lats) >=2, abs(lats[2] - lats[1]), 0)
+    dlon <- ifelse(length(lons) >=2, abs(lons[2] - lons[1]), 0)
 
     if (!is.null(offset)) {
       # We want to interpret the offset and count relative to the final arrangement,
