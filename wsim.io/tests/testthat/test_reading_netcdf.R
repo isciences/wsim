@@ -17,8 +17,9 @@ context("Reading netCDF files")
 
 test_that("we can read attributes and variables from a spatial netCDF file into matrices", {
   fname <- tempfile(fileext='.nc')
-  data <- matrix(runif(4), nrow=2)
+  data  <- matrix(runif(4), nrow=2)
 
+  # Case 1: extra_dim has single value for all cells
   write_vars_to_cdf(list(my_data=data),
                     fname,
                     xmin=-40,
@@ -48,6 +49,67 @@ test_that("we can read attributes and variables from a spatial netCDF file into 
 
   file.remove(fname)
 })
+
+test_that("we can read specified non-constant extra_dims"){
+  fname <- tempfile(fileext='.nc')
+  data  <- array(1:8, dim=c(2,2,2))
+
+  write_vars_to_cdf(list(my_data=data),
+                    fname,
+                    xmin=-40,
+                    xmax=0,
+                    ymin=20,
+                    ymax=70,
+                    extra_dims=list(time=c(1, 2)),
+                    attrs=list(list(var="my_data", key="station", val="A"),
+                               list(key="yearmon", val="201702")))
+
+  v <- read_vars_from_cdf(fname, extra_dims=list(time=2))
+
+  # Make sure it picked the second slice:
+  expect_equal(v$data$my_data, matrix(5:8, nrow=2, ncol=2), check.attributes=FALSE)
+
+  file.remove(fname)
+}
+
+test_that("unspecified, non-constant extra_dims can't be read in"){
+  fname <- tempfile(fileext='.nc')
+  data  <- array(1:8, dim=c(2,2,2))
+
+  write_vars_to_cdf(list(my_data=data),
+                    fname,
+                    xmin=-40,
+                    xmax=0,
+                    ymin=20,
+                    ymax=70,
+                    extra_dims=list(time=c(1, 2)),
+                    attrs=list(list(var="my_data", key="station", val="A"),
+                               list(key="yearmon", val="201702")))
+
+  expect_error(read_vars_from_cdf(fname))
+  file.remove(fname)
+}
+
+test_that("lat/lon don't get counted as extra dims when constant across cells"){
+  fname <- tempfile(fileext='.nc')
+  data  <- matrix(runif(4), nrow=1, ncol=4)
+
+  write_vars_to_cdf(list(my_data=data),
+                    fname,
+                    xmin=-40,
+                    xmax=70,
+                    ymin=20,
+                    ymax=20,
+                    attrs=list(list(var="my_data", key="station", val="A"),
+                               list(key="yearmon", val="201702")))
+
+  v <- read_vars_from_cdf(fname)
+
+  # Grid extent is returned as xmin, xmax, ymin, ymax
+  expect_equal(v$extent, c(-40, 70, 20, 20))
+
+  file.remove(fname)
+}
 
 test_that("we can read attributes and variables from a non-spatial netCDF file into matrices", {
   fname <- tempfile(fileext='.nc')
