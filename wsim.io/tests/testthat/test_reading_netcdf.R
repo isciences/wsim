@@ -50,7 +50,7 @@ test_that("we can read attributes and variables from a spatial netCDF file into 
   file.remove(fname)
 })
 
-test_that("we can read specified non-constant extra_dims"){
+test_that("we can read specified non-constant extra_dims", {
   fname <- tempfile(fileext='.nc')
   data  <- array(1:8, dim=c(2,2,2))
 
@@ -70,9 +70,9 @@ test_that("we can read specified non-constant extra_dims"){
   expect_equal(v$data$my_data, matrix(5:8, nrow=2, ncol=2), check.attributes=FALSE)
 
   file.remove(fname)
-}
+})
 
-test_that("unspecified, non-constant extra_dims can't be read in"){
+test_that("unspecified, non-constant extra_dims can't be read in", {
   fname <- tempfile(fileext='.nc')
   data  <- array(1:8, dim=c(2,2,2))
 
@@ -88,9 +88,9 @@ test_that("unspecified, non-constant extra_dims can't be read in"){
 
   expect_error(read_vars_from_cdf(fname))
   file.remove(fname)
-}
+})
 
-test_that("lat/lon don't get counted as extra dims when constant across cells"){
+test_that("lat/lon don't get counted as extra dims when constant across cells", {
   fname <- tempfile(fileext='.nc')
   data  <- matrix(runif(4), nrow=1, ncol=4)
 
@@ -109,7 +109,7 @@ test_that("lat/lon don't get counted as extra dims when constant across cells"){
   expect_equal(v$extent, c(-40, 70, 20, 20))
 
   file.remove(fname)
-}
+})
 
 test_that("we can read attributes and variables from a non-spatial netCDF file into matrices", {
   fname <- tempfile(fileext='.nc')
