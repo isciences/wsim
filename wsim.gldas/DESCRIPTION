@@ -2,8 +2,7 @@ Package: wsim.gldas
 Type: Package
 Title: Process GLDAS land surface model data for WSIM
 Version: 0.1.0
-Author: Cynthia Crowley
-Maintainer: Cynthia Crowley crowley@isciences.com
+Authors@R: person("Cynthia", "Crowley", email = "crowley@isciences.com", role = c('aut', 'cre'))
 Description: The wsim.gldas package provides utilities to download and pre-process, and pass to WSIM the land surface model outputs from NASA's Global Land Data Assimilation System (GLDAS).
 Imports:
     wsim.io,
