@@ -365,7 +365,7 @@ def fit_var(config: ConfigBase,
     else:
         param_to_read = param
 
-    if param in config.forcing_rp_vars()
+    if param in config.forcing_rp_vars():
         assert window == 1
         assert basis is None
 
