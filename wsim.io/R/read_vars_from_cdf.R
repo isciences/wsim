@@ -113,7 +113,9 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
 
     # If any dims are constant (and not a single line of lat or single meridian of lon),
     # then count those as extra dims
-    dims_lengths    <- sapply(names(cdf$dim), function(x) length(ncdf4::ncvar_get(cdf, x)), simplify = TRUE)
+    dims_lengths    <- sapply(names(cdf$dim), function(x){
+      length(cdf$dim[[x]]$vals)
+    })
     potential_degen <- which(dims_lengths == 1)
     additional_extra_dim_names <- c(names(potential_degen)[!names(potential_degen) %in% c(latname, lonname)])
 
