@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -46,14 +46,17 @@ def parse_args(args):
 def download(url, output_dir):
     fname = url.rsplit('/', 1)[-1]
 
-    with open(os.path.join(output_dir, fname), 'wb') as outfile:
-        sys.stdout.write(url)
-        res = urlopen(url)
-        for chunk in iter(lambda : res.read(1024 * 256), b''):
-            sys.stdout.write('.')
-            sys.stdout.flush()
-            outfile.write(chunk)
+    try:
+        with open(os.path.join(output_dir, fname), 'wb') as outfile:
+            sys.stdout.write(url)
+            res = urlopen(url)
+            for chunk in iter(lambda : res.read(1024 * 256), b''):
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                outfile.write(chunk)
+    finally:
         sys.stdout.write('\n')
+
 
 def main(raw_args):
     args = parse_args(raw_args)
@@ -71,19 +74,32 @@ def main(raw_args):
 
     if timestamp_datetime > start_of_rolling_archive:
         print("Using rolling archive URL")
-        url_pattern = 'http://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}'
+        url_patterns = (
+            'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}',
+        )
     else:
         print("Using long-term archive URL")
-        url_pattern = 'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}'
+        url_patterns = (
+            'ftp://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
+            'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
+        )
 
-    url = url_pattern.format(YEAR=year,
-                             MONTH=month,
-                             DAY=day,
-                             HOUR=hour,
-                             TIMESTAMP=args.timestamp,
-                             GRIBFILE=gribfile)
+    for url_pattern in url_patterns:
+        url = url_pattern.format(YEAR=year,
+                                 MONTH=month,
+                                 DAY=day,
+                                 HOUR=hour,
+                                 TIMESTAMP=args.timestamp,
+                                 GRIBFILE=gribfile)
 
-    download(url, args.output_dir)
+        try:
+            download(url, args.output_dir)
+            sys.exit(0)
+        except Exception as e:
+            print("Failed to download from " + url + " with error: ", file=sys.stderr)
+            print(e, file=sys.stderr)
+    sys.exit(1)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
