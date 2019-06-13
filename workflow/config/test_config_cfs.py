@@ -148,6 +148,87 @@ class TestCFSConfig(unittest.TestCase):
 
         self.fail()
 
+    def test_expected_outputs_created(self):
+        config = CFSConfig(self.source, self.derived)
+        yearmon = '201901'
+        target = '201904'
+        member = config.forecast_ensemble_members(yearmon)[0]
+
+        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=True, forecasts='latest', run_electric_power=False, run_agriculture=False)
+
+        ws = config.workspace()
+
+        def assertBuilt(fname):
+            self.assertIsNotNone(step_for_target(steps, fname))
+
+        # forcing
+        assertBuilt(ws.forcing(yearmon=yearmon))
+        assertBuilt(ws.forcing_summary(yearmon=yearmon, target=target))
+
+        # results
+        assertBuilt(ws.results(yearmon=yearmon, window=1))
+        assertBuilt(ws.results(yearmon=yearmon, target=target, summary=True, window=1))
+        assertBuilt(ws.results(yearmon=yearmon, target=target, member=member, window=1))
+
+        # integrated results
+        assertBuilt(ws.results(yearmon=yearmon, window=3))
+        assertBuilt(ws.results(yearmon=yearmon, target=target, summary=True, window=3))
+        assertBuilt(ws.results(yearmon=yearmon, target=target, member=member, window=3))
+
+        # return periods
+        assertBuilt(ws.return_period(yearmon=yearmon, window=1))
+        assertBuilt(ws.return_period_summary(yearmon=yearmon, target=target, window=1))
+        assertBuilt(ws.return_period(yearmon=yearmon, target=target, member=member, window=1))
+
+        # integrated return periods
+        assertBuilt(ws.return_period(yearmon=yearmon, window=3))
+        assertBuilt(ws.return_period_summary(yearmon=yearmon, target=target, window=3))
+        assertBuilt(ws.return_period(yearmon=yearmon, target=target, member=member, window=3))
+
+        # composites
+        assertBuilt(ws.composite_summary(yearmon=yearmon, window=1))
+        assertBuilt(ws.composite_summary(yearmon=yearmon, target=target, window=1))
+
+        # integrated composites
+        assertBuilt(ws.composite_summary(yearmon=yearmon, window=3))
+        assertBuilt(ws.composite_summary(yearmon=yearmon, target=target, window=3))
+
+    def test_rp_calculated_for_all_necessary_vars(self):
+        config = CFSConfig(self.source, self.derived)
+        yearmon = '201901'
+        target = '201904'
+        member = config.forecast_ensemble_members(yearmon)[0]
+
+        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=True, forecasts='latest', run_electric_power=False, run_agriculture=False)
+
+        ws = config.workspace()
+
+        # 1-month observed rp
+        rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, window=1))
+        for v in config.lsm_rp_vars() + config.forcing_rp_vars():
+            self.assertIn(ws.fit_obs(var=v, window=1, month=dates.parse_yearmon(yearmon)[1]),
+                          rp_step.dependencies)
+
+        # 1-month forecast rp
+        rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, target=target, member=member, window=1))
+        for v in config.lsm_rp_vars() + config.forcing_rp_vars():
+            self.assertIn(ws.fit_obs(var=v, window=1, month=dates.parse_yearmon(target)[1]),
+                          rp_step.dependencies)
+
+        # 3-month observed rp
+        rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, window=3))
+        for v, stats in config.lsm_integrated_vars().items():
+            for stat in stats:
+                self.assertIn(ws.fit_obs(var=v, window=3, stat=stat, month=dates.parse_yearmon(yearmon)[1]),
+                              rp_step.dependencies)
+
+        ## 3-month forecast rp
+        rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, target=target, member=member, window=3))
+        for v in config.lsm_integrated_var_names():
+            self.assertTrue(ws.fit_obs(var=v, window=3, month=dates.parse_yearmon(target)[1])
+                            in rp_step.dependencies)
+
+
     @unittest.skip
     def test_makefile_readable(self):
         import wsim_workflow.output.gnu_make
@@ -171,9 +252,16 @@ class TestCFSConfig(unittest.TestCase):
 
         print('Makefile validated in', end-start)
 
+
 def get_arg(command, arg):
     for i, token in enumerate(command):
         if command[i-1] == arg:
             return token
+
+
+def step_for_target(steps, target):
+    for step in steps:
+        if target in step.targets:
+            return step
 
 
