@@ -128,6 +128,7 @@ def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
             # Compute return periods
             for window in [1] + config.integration_windows():
                 steps += compute_return_periods(config.workspace(),
+                                                forcing_vars=config.forcing_rp_vars() if window==1 else None,
                                                 result_vars=config.lsm_rp_vars() if window==1 else config.lsm_integrated_var_names(),
                                                 yearmon=yearmon,
                                                 window=window,
