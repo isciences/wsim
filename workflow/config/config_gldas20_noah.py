@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -13,7 +13,6 @@
 
 from wsim_workflow.step import Step
 from wsim_workflow import paths
-from wsim_workflow import dates
 from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.data_sources import ntsg_drt, hydrobasins
 
@@ -60,6 +59,7 @@ class GLDAS20_NoahStatic(paths.Static):
     def basin_downstream(self):
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
 
+
 class GLDAS20_NoahConfig(ConfigBase):
 
     def __init__(self, source, derived):
@@ -69,9 +69,6 @@ class GLDAS20_NoahConfig(ConfigBase):
 
     def global_prep(self):
         return self._static.global_prep_steps()
-
-    def integrate_TP(self):
-        return True
 
     def should_run_spinup(self):
         return True
@@ -83,7 +80,7 @@ class GLDAS20_NoahConfig(ConfigBase):
         return range(1948, 2011)
 
     def result_fit_years(self):
-        return range(1950, 2010) # 1950-2009 gives even 60-year period
+        return range(1950, 2010)  # 1950-2009 gives even 60-year period
 
     def static_data(self):
         return self._static
@@ -96,13 +93,11 @@ class GLDAS20_NoahConfig(ConfigBase):
 
     @staticmethod
     def integration_windows():
-        return [ 3, 6, 12 ]
-
+        return [3, 6, 12]
 
     @classmethod
     def forcing_rp_vars(cls, basis=None):
-            return []
-
+        return []
 
     @classmethod
     def lsm_rp_vars(cls, basis=None):
@@ -123,7 +118,6 @@ class GLDAS20_NoahConfig(ConfigBase):
 
         assert False
 
-
     @classmethod
     def lsm_integrated_vars(cls, basis=None):
         if not basis:
@@ -138,15 +132,12 @@ class GLDAS20_NoahConfig(ConfigBase):
 
         if basis == 'basin':
             return {
-                'Bt_RO_m3' : [ 'sum' ]
+                'Bt_RO_m3' : ['sum']
             }
 
         assert False
 
-
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
-        year, mon =  dates.parse_yearmon(yearmon)
-
         input_file = os.path.join(self._source,
                                   'GLDAS_NOAH025_M.A{}.020.nc4'.format(yearmon))
 
@@ -173,5 +164,6 @@ class GLDAS20_NoahConfig(ConfigBase):
                 ]
             )
         ]
+
 
 config = GLDAS20_NoahConfig
