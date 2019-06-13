@@ -31,6 +31,29 @@ class TestCFSConfig(unittest.TestCase):
     source = '/tmp/source'
     derived = '/tmp/derived'
 
+    @classmethod
+    def setUpClass(cls):
+        #  create a shared config that can be used for multiple tests
+        cls.config = CFSConfig(cls.source, cls.derived)
+
+        # create a shared dictionary for generated steps that can be used for multiple tests
+        cls.steps = {}
+
+    @classmethod
+    def get_steps(cls, start, stop):
+        key = '{}_{}'.format(start, stop)
+
+        if key not in cls.steps:
+            cls.steps[key] = generate_steps(cls.config,
+                                            start=start,
+                                            stop=stop,
+                                            no_spinup=False,
+                                            forecasts='latest',
+                                            run_electric_power=True,
+                                            run_agriculture=True)
+
+        return cls.steps[key]
+
     def fail_on_duplicate_targets(self, steps):
         duplicate_targets = find_duplicate_targets(steps)
 
@@ -40,28 +63,22 @@ class TestCFSConfig(unittest.TestCase):
             self.fail('Duplicate targets found')
 
     def test_ensemble_selection(self):
-        config = CFSConfig(self.source, self.derived)
-
-        members = config.forecast_ensemble_members('201701')
+        members = self.config.forecast_ensemble_members('201701')
         member_dates = set(m[:8] for m in members)
 
         self.assertEqual(28, len(members))
         self.assertSetEqual(member_dates, {'20170125', '20170126', '20170127', '20170128', '20170129', '20170130', '20170131'})
 
     def test_history_length(self):
-        config = CFSConfig(self.source, self.derived)
-
-        self.assertEqual(60, len(config.result_fit_years()))
+        self.assertEqual(60, len(self.config.result_fit_years()))
 
     def test_all_steps_buildable(self):
-        config = CFSConfig(self.source, self.derived)
-
         # Find the timestep that's one month beyond our historical period
-        yearmon_after_historical = '{year:04d}{month:02d}'.format(year=1 + config.historical_years()[-1], month=1)
-        yearmon_within_historical = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=4)
+        yearmon_after_historical = '{year:04d}{month:02d}'.format(year=1 + self.config.historical_years()[-1], month=1)
+        yearmon_within_historical = '{year:04d}{month:02d}'.format(year=self.config.historical_years()[-1], month=4)
 
         for yearmon in (yearmon_within_historical, yearmon_after_historical):
-            steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='latest', run_electric_power=True, run_agriculture=True)
+            steps = self.get_steps(yearmon, yearmon)
 
             print('Number of steps:', len([step for step in steps if step.commands]))
 
@@ -84,12 +101,11 @@ class TestCFSConfig(unittest.TestCase):
                 self.fail('Unbuildable targets found')
 
     def test_complex_rules(self):
-        config = CFSConfig(self.source, self.derived)
         warnings.simplefilter("always")
 
-        yearmon = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=1)
+        yearmon = '{year:04d}{month:02d}'.format(year=self.config.historical_years()[-1], month=1)
 
-        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='latest', run_electric_power=True, run_agriculture=True)
+        steps = self.get_steps(yearmon, yearmon)
 
         targets_threshold = 2
         dependencies_threshold = 100
@@ -103,27 +119,23 @@ class TestCFSConfig(unittest.TestCase):
                 print(step.targets)
 
     def test_no_duplicate_targets(self):
-        config = CFSConfig(self.source, self.derived)
-
         # Shouldn't get duplicate steps within fit period
-        self.fail_on_duplicate_targets(generate_steps(config, start='196404', stop='196404', no_spinup=False, forecasts='latest', run_electric_power=True, run_agriculture=True))
+        self.fail_on_duplicate_targets(self.get_steps('196404', '196404'))
 
         # Or after fit period, but still within historical period
-        self.fail_on_duplicate_targets(generate_steps(config, start='201504', stop='201504', no_spinup=False, forecasts='latest', run_electric_power=True, run_agriculture=True))
+        self.fail_on_duplicate_targets(self.get_steps('201504', '201504'))
 
         # Or after historical period
-        self.fail_on_duplicate_targets(generate_steps(config, start='201801', stop='201801', no_spinup=False, forecasts='latest', run_electric_power=True, run_agriculture=True))
+        self.fail_on_duplicate_targets(self.get_steps('201801', '201801'))
 
     def test_var_fitting_years(self):
         # Check that, when fitting time-integrated variables, we correctly truncate the historical range to
         # account for the integration period
-        config = CFSConfig(self.source, self.derived)
-
-        fit_step = spinup.fit_var(config, param='RO_mm', stat='ave', window=24, month=6)[0]
+        fit_step = spinup.fit_var(self.config, param='RO_mm', stat='ave', window=24, month=6)[0]
         input_results = get_arg(fit_step.commands[0], '--input').split('/')[-1]
 
-        start_year = list(config.result_fit_years())[0] + 2
-        stop_year = list(config.result_fit_years())[-1]
+        start_year = list(self.config.result_fit_years())[0] + 2
+        stop_year = list(self.config.result_fit_years())[-1]
 
         self.assertTupleEqual(
             (dates.format_yearmon(start_year, 6), dates.format_yearmon(stop_year, 6), '12'),
@@ -133,14 +145,12 @@ class TestCFSConfig(unittest.TestCase):
     def test_adjusted_composites(self):
         # Adjusted composites are tricky, because we can't produce them during result_fit_years.
 
-        config = CFSConfig(self.source, self.derived)
-
         # Get a timestep that is within the historical period but not the result fit period
-        yearmon = next(iter(set(config.historical_yearmons()) ^ set(config.result_fit_yearmons())))
+        yearmon = next(iter(set(self.config.historical_yearmons()) ^ set(self.config.result_fit_yearmons())))
 
-        expected_filename = config.workspace().composite_summary_adjusted(yearmon=yearmon, window=1)
+        expected_filename = self.config.workspace().composite_summary_adjusted(yearmon=yearmon, window=1)
 
-        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='latest', run_electric_power=True, run_agriculture=True)
+        steps = self.get_steps(yearmon, yearmon)
 
         for step in steps:
             if expected_filename in step.targets:
@@ -149,14 +159,13 @@ class TestCFSConfig(unittest.TestCase):
         self.fail()
 
     def test_expected_outputs_created(self):
-        config = CFSConfig(self.source, self.derived)
         yearmon = '201901'
         target = '201904'
-        member = config.forecast_ensemble_members(yearmon)[0]
+        member = self.config.forecast_ensemble_members(yearmon)[0]
 
-        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=True, forecasts='latest', run_electric_power=False, run_agriculture=False)
+        steps = self.get_steps(yearmon, yearmon)
 
-        ws = config.workspace()
+        ws = self.config.workspace()
 
         def assertBuilt(fname):
             self.assertIsNotNone(step_for_target(steps, fname))
@@ -194,37 +203,36 @@ class TestCFSConfig(unittest.TestCase):
         assertBuilt(ws.composite_summary(yearmon=yearmon, target=target, window=3))
 
     def test_rp_calculated_for_all_necessary_vars(self):
-        config = CFSConfig(self.source, self.derived)
         yearmon = '201901'
         target = '201904'
-        member = config.forecast_ensemble_members(yearmon)[0]
+        member = self.config.forecast_ensemble_members(yearmon)[0]
 
-        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=True, forecasts='latest', run_electric_power=False, run_agriculture=False)
+        steps = self.get_steps(yearmon, yearmon)
 
-        ws = config.workspace()
+        ws = self.config.workspace()
 
         # 1-month observed rp
         rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, window=1))
-        for v in config.lsm_rp_vars() + config.forcing_rp_vars():
+        for v in self.config.lsm_rp_vars() + self.config.forcing_rp_vars():
             self.assertIn(ws.fit_obs(var=v, window=1, month=dates.parse_yearmon(yearmon)[1]),
                           rp_step.dependencies)
 
         # 1-month forecast rp
         rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, target=target, member=member, window=1))
-        for v in config.lsm_rp_vars() + config.forcing_rp_vars():
+        for v in self.config.lsm_rp_vars() + self.config.forcing_rp_vars():
             self.assertIn(ws.fit_obs(var=v, window=1, month=dates.parse_yearmon(target)[1]),
                           rp_step.dependencies)
 
         # 3-month observed rp
         rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, window=3))
-        for v, stats in config.lsm_integrated_vars().items():
+        for v, stats in self.config.lsm_integrated_vars().items():
             for stat in stats:
                 self.assertIn(ws.fit_obs(var=v, window=3, stat=stat, month=dates.parse_yearmon(yearmon)[1]),
                               rp_step.dependencies)
 
         ## 3-month forecast rp
         rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, target=target, member=member, window=3))
-        for v in config.lsm_integrated_var_names():
+        for v in self.config.lsm_integrated_var_names():
             self.assertTrue(ws.fit_obs(var=v, window=3, month=dates.parse_yearmon(target)[1])
                             in rp_step.dependencies)
 
@@ -232,11 +240,9 @@ class TestCFSConfig(unittest.TestCase):
     @unittest.skip
     def test_makefile_readable(self):
         import wsim_workflow.output.gnu_make
-        config = CFSConfig(self.source, self.derived)
-
         bindir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
 
-        steps = generate_steps(config, start='201701', stop='201701', no_spinup=False, forecasts='latest', run_electric_power=True, run_agriculture=True)
+        steps = self.get_steps('201701', '201701')
 
         filename = tempfile.mkstemp()[-1]
 
