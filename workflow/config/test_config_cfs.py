@@ -203,8 +203,8 @@ class TestCFSConfig(unittest.TestCase):
         assertBuilt(ws.composite_summary(yearmon=yearmon, target=target, window=3))
 
     def test_rp_calculated_for_all_necessary_vars(self):
-        yearmon = '201901'
-        target = '201904'
+        yearmon = dates.get_next_yearmon(self.config.historical_yearmons()[-1])
+        target = dates.add_months(yearmon, 3)
         member = self.config.forecast_ensemble_members(yearmon)[0]
 
         steps = self.get_steps(yearmon, yearmon)
@@ -230,12 +230,38 @@ class TestCFSConfig(unittest.TestCase):
                 self.assertIn(ws.fit_obs(var=v, window=3, stat=stat, month=dates.parse_yearmon(yearmon)[1]),
                               rp_step.dependencies)
 
-        ## 3-month forecast rp
+        # 3-month forecast rp
         rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, target=target, member=member, window=3))
         for v in self.config.lsm_integrated_var_names():
             self.assertTrue(ws.fit_obs(var=v, window=3, month=dates.parse_yearmon(target)[1])
                             in rp_step.dependencies)
 
+    def test_meta_steps_populated(self):
+        yearmon = dates.get_next_yearmon(self.config.historical_yearmons()[-1])
+        steps = self.get_steps(yearmon, yearmon)
+
+        num_monthly_outputs = 1 + len(self.config.forecast_targets(yearmon))
+        num_outputs = num_monthly_outputs * (1 + len(self.config.integration_windows()))
+
+        all_composites = step_for_target(steps, 'all_composites')
+        self.assertEqual(len(all_composites.dependencies), num_outputs)
+
+        all_monthly_composites = step_for_target(steps, 'all_composites')
+        self.assertEqual(len(all_monthly_composites.dependencies), num_outputs)
+
+        all_adjusted_composites = step_for_target(steps, 'all_adjusted_composites')
+        self.assertEqual(len(all_adjusted_composites.dependencies), num_outputs)
+
+        all_adjusted_monthly_composites = step_for_target(steps, 'all_adjusted_composites')
+        self.assertEqual(len(all_adjusted_monthly_composites.dependencies), num_outputs)
+
+        # a forcing summary is produced for each forecast month
+        forcing_summaries = step_for_target(steps, 'forcing_summaries')
+        self.assertEqual(len(forcing_summaries.dependencies), len(self.config.forecast_targets(yearmon)))
+
+        # a results summary is produced for each forecast month / integration period
+        results_summaries = step_for_target(steps, 'results_summaries')
+        self.assertEqual(len(results_summaries.dependencies), len(self.config.forecast_targets(yearmon))*(1 + len(self.config.integration_windows())))
 
     @unittest.skip
     def test_makefile_readable(self):
