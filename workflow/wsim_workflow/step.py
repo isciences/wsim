@@ -47,7 +47,6 @@ class Step:
                  comment: Optional[str]=None,
                  consumes: ZeroOrMoreStrings=None,
                  working_directories: ZeroOrMoreStrings=None):
-        #TODO: Describe what commands are in the docstring below
         """
         Initialize a workflow step
 
@@ -59,7 +58,7 @@ class Step:
                              created, if not already present, before this step executes. Any directory
                              included in a target is implied and does not need to be specified.
 
-        :param commands:     a list of
+        :param commands:     a list of commands, where each command is represented as a list of tokens
         :param comment:      an optional text comment to be associated with the step
         """
 
