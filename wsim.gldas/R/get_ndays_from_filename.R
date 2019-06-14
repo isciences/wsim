@@ -22,6 +22,12 @@ get_ndays_from_fname <- function(raster_fname){
   yyyymm       <- substr(raster_fname,
                          start = fname_regex[[1]][[1]],
                          stop = fname_regex[[1]][[1]] + attributes(fname_regex[[1]])$match.length - 1)
+  ndays_in_month <- wsim.lsm::days_in_yyyymm(yyyymm)
 
-  return(wsim.lsm::days_in_yyyymm(yyyymm))
+  # Override if leap year:
+  if(ndays_in_month == 29 & substr(yyyymm, 5, 6) == '02'){
+    ndays_in_month <- 28
+  }
+
+  return(ndays_in_month)
 }
