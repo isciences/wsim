@@ -17,19 +17,19 @@ publish-docs:
 	docs/_publish.sh
 
 build-ci:
-	docker build -t isciences/wsim-gitlabci:latest - < Dockerfile.gitlabci
+	docker build --pull -t isciences/wsim-gitlabci:latest - < Dockerfile.gitlabci
 
 push-ci:
 	docker push isciences/wsim-gitlabci:latest
 
 build-dev:
-	docker build --build-arg WSIM_VERSION=0.0 -t isciences/wsim:dev .
+	docker build --pull --build-arg WSIM_VERSION=0.0 -t isciences/wsim:dev .
 
 push-dev:
 	docker push isciences/wsim:dev
 
 build:
-	docker build -t isciences/wsim:latest .
+	docker build --pull -t isciences/wsim:latest .
 
 push:
 	docker push isciences/wsim:latest
