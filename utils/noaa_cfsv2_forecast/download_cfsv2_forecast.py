@@ -71,21 +71,23 @@ def main(raw_args):
     gribfile = "flxf.01.{TIMESTAMP}.{TARGET}.avrg.grib.grb2".format(TIMESTAMP=args.timestamp,
                                                                     TARGET=args.target)
 
-    start_of_rolling_archive = datetime.datetime.now() - datetime.timedelta(days=6) # should have 7 days but doesn't always
+    start_of_rolling_archive = datetime.datetime.now() - datetime.timedelta(days=8) # should have 7 days but could have more or less
     timestamp_datetime = datetime.datetime(year, month, day, hour)
 
     if timestamp_datetime > datetime.datetime.utcnow():
         print("Can't download forecast with timestamp in the future.", file=sys.stderr)
         sys.exit(1)
 
+    url_patterns = []
+
     if timestamp_datetime > start_of_rolling_archive:
-        print("Using rolling archive URL")
-        url_patterns = (
+        print("Attempting rolling archive URL")
+        url_patterns += (
             'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}',
         )
     else:
-        print("Using long-term archive URL")
-        url_patterns = (
+        print("Attempting long-term archive URL")
+        url_patterns += (
             'ftp://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
             'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
         )
