@@ -26,6 +26,7 @@ import datetime
 import os
 from urllib.request import urlopen
 
+
 def parse_args(args):
     parser = argparse.ArgumentParser('Download a CFSv2 forecast GRIB file')
 
@@ -42,6 +43,7 @@ def parse_args(args):
     parsed = parser.parse_args(args)
 
     return parsed
+
 
 def download(url, output_dir):
     fname = url.rsplit('/', 1)[-1]
@@ -71,6 +73,10 @@ def main(raw_args):
 
     start_of_rolling_archive = datetime.datetime.now() - datetime.timedelta(days=6) # should have 7 days but doesn't always
     timestamp_datetime = datetime.datetime(year, month, day, hour)
+
+    if timestamp_datetime > datetime.datetime.utcnow():
+        print("Can't download forecast with timestamp in the future.", file=sys.stderr)
+        sys.exit(1)
 
     if timestamp_datetime > start_of_rolling_archive:
         print("Using rolling archive URL")
