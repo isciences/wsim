@@ -57,7 +57,8 @@ class Step:
         :param working_directories a string or list of strings indicating directories that should be
                              created, if not already present, before this step executes. Any directory
                              included in a target is implied and does not need to be specified.
-        :param commands:     a list of
+
+        :param commands:     a list of commands, where each command is represented as a list of tokens
         :param comment:      an optional text comment to be associated with the step
         """
 

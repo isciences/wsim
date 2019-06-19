@@ -449,7 +449,7 @@ class CFSConfig(ConfigBase):
     def static_data(self):
         return self._static
 
-    def workspace(self):
+    def workspace(self) -> paths.DefaultWorkspace:
         return self._workspace
 
 

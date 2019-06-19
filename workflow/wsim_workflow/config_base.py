@@ -165,6 +165,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
         assert False
 
+
     @classmethod
     def lsm_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
         """
@@ -211,3 +212,5 @@ class ConfigBase(metaclass=abc.ABCMeta):
         Provides a flat list of time-integrated variable names
         """
         return [var + '_' + stat for var, stats in cls.lsm_integrated_vars(basis=basis).items() for stat in stats]
+
+

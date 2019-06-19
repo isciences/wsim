@@ -83,7 +83,7 @@ seek_to_month <- function(fh, init_yearmon, yearmon, nx, ny) {
 #' @param nx           number of columns in each grid
 #' @param ny           number of rows in each grid
 get_last_month <- function(filename, init_yearmon, nx, ny) {
-  n_months <- file.size(filename) / grid_size_with_padding(nx, ny)
+  n_months <- floor(file.size(filename) / grid_size_with_padding(nx, ny))
 
   year <- as.integer(substr(init_yearmon, 1, 4))
   month <- as.integer(substr(init_yearmon, 5, 6)) + (n_months - 1)

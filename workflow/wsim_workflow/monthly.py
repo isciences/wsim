@@ -56,41 +56,40 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
             steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), yearmon=yearmon, window=window)
 
         # Compute return periods
-        steps += compute_return_periods(config.workspace(),
-                                        result_vars=config.lsm_rp_vars(),
-                                        forcing_vars=config.forcing_rp_vars(),
-                                        yearmon=yearmon,
-                                        window=1)
-        for window in config.integration_windows():
+        for window in [1] + config.integration_windows():
             steps += compute_return_periods(config.workspace(),
-                                            result_vars=config.lsm_integrated_var_names(),
+                                            result_vars=config.lsm_rp_vars() if window==1 else config.lsm_integrated_var_names(),
+                                            forcing_vars=config.forcing_rp_vars() if window==1 else None,
                                             yearmon=yearmon,
                                             window=window)
 
     # Compute composite indicators
     for window in [1] + config.integration_windows():
-        composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon)
-        steps += composite_indicator_steps
 
-        meta_steps['all_composites'].require(composite_indicator_steps)
-        if window == 1:
-            meta_steps['all_monthly_composites'].require(composite_indicator_steps)
+        # Don't write composite steps for a window that extends back too early.
+        if yearmon > config.historical_yearmons()[window-1]:
+            composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon)
+            steps += composite_indicator_steps
 
-        if yearmon not in config.historical_yearmons():
-            steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
+            meta_steps['all_composites'].require(composite_indicator_steps)
+            if window == 1:
+                meta_steps['all_monthly_composites'].require(composite_indicator_steps)
 
-        # Express composite anomalies in terms of a return period
-        # (relative to historical composite anomalies)
-        steps += composite_indicator_return_periods(config.workspace(), yearmon=yearmon, window=window)
+            if yearmon not in config.historical_yearmons():
+                steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
 
-        # Produce an "adjusted" composite based on the return periods
-        # of the composite surface anomaly and composite deficit anomaly
-        adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window)
-        steps += adjusted_indicator_steps
+            # Express composite anomalies in terms of a return period
+            # (relative to historical composite anomalies)
+            steps += composite_indicator_return_periods(config.workspace(), yearmon=yearmon, window=window)
 
-        meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
-        if window == 1:
-            meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+            # Produce an "adjusted" composite based on the return periods
+            # of the composite surface anomaly and composite deficit anomaly
+            adjusted_indicator_steps = composite_indicator_adjusted(config.workspace(), yearmon=yearmon, window=window)
+            steps += adjusted_indicator_steps
+
+            meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
+            if window == 1:
+                meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
 
     return steps
 
@@ -127,12 +126,14 @@ def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
                                         member=member)
 
             # Compute return periods
-            steps += compute_return_periods(config.workspace(), result_vars=config.lsm_rp_vars(),
-                                            forcing_vars=config.forcing_rp_vars(), yearmon=yearmon,
-                                            window=1, target=target, member=member)
-            for window in config.integration_windows():
-                steps += compute_return_periods(config.workspace(), result_vars=config.lsm_integrated_var_names(),
-                                                yearmon=yearmon, window=window, target=target, member=member)
+            for window in [1] + config.integration_windows():
+                steps += compute_return_periods(config.workspace(),
+                                                forcing_vars=config.forcing_rp_vars() if window==1 else None,
+                                                result_vars=config.lsm_rp_vars() if window==1 else config.lsm_integrated_var_names(),
+                                                yearmon=yearmon,
+                                                window=window,
+                                                target=target,
+                                                member=member)
 
         steps += meta_steps['forcing_summaries'].require(forcing_summary(config.workspace(),
                                                                          config.forecast_ensemble_members(yearmon),

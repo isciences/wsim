@@ -55,8 +55,9 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     lats <- ncdf4::ncvar_get(cdf, latname)
     lons <- ncdf4::ncvar_get(cdf, lonname)
 
-    dlat <- abs(lats[2] - lats[1])
-    dlon <- abs(lons[2] - lons[1])
+
+    dlat <- ifelse(length(lats) >=2, abs(lats[2] - lats[1]), 0)
+    dlon <- ifelse(length(lons) >=2, abs(lons[2] - lons[1]), 0)
 
     if (!is.null(offset)) {
       # We want to interpret the offset and count relative to the final arrangement,
@@ -107,7 +108,24 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   # Make sure right number of extra dimensions were specified. For spatial data we require all
   # extra dimensions to be constrained, so that we read in a matrix no matter what. For non-spatial
   # data we don't care; it all just ends up in a data frame anyway.
+
   if (is.null(offset) & is_spatial) {
+
+    # If any dims are constant (and not a single line of lat or single meridian of lon),
+    # then count those as extra dims
+    dims_lengths    <- sapply(names(cdf$dim), function(x){
+      length(cdf$dim[[x]]$vals)
+    })
+    potential_degen <- which(dims_lengths == 1)
+    additional_extra_dim_names <- c(names(potential_degen)[!names(potential_degen) %in% c(latname, lonname)])
+
+    if(length(additional_extra_dim_names) > 0){
+      # get extra_dims = list(<name>=<values>)
+      additional_extra_dims <- lapply(additional_extra_dim_names, function(varname) ncdf4::ncvar_get(cdf, varname))
+      names(additional_extra_dims)     <- additional_extra_dim_names
+      extra_dims <- c(extra_dims, additional_extra_dims)
+    }
+
     expected_extra_dims <- length(real_dims) - 2
     if (length(extra_dims) != expected_extra_dims) {
       stop(sprintf("Expected %d extra dimensions but got %d.", expected_extra_dims, length(extra_dims)))
@@ -120,10 +138,11 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   }
 
   for (var in cdf$var) {
-    if (var$name %in% vars_to_read) {
+    var_name <- var$name
+    if(var_name %in% vars_to_read){
       # Read this as a regular variable
       if (is.null(offset)) {
-        d <- ncdf4::ncvar_get(cdf, var$name)
+        d <- ncdf4::ncvar_get(cdf, var_name)
       } else {
         # Collapse 3D array to 2D array, but don't
         # collapse a column (e.g., single meridian of longitude)
@@ -131,7 +150,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
         collapse <- !is.na(count[3]) && count[3] == 1
 
         d <- ncdf4::ncvar_get(cdf,
-                              var$name,
+                              var_name,
                               start=offset,
                               count=count,
                               collapse_degen=collapse)
@@ -313,7 +332,7 @@ find_offset <- function(cdf, real_dims, dim_values) {
     } else {
       return(1)
     }
-  })
+  }, simplify=TRUE)
 }
 
 #' Compute the count vector for specified valuws of dimensions

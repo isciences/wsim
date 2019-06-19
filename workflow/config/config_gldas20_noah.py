@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -13,7 +13,6 @@
 
 from wsim_workflow.step import Step
 from wsim_workflow import paths
-from wsim_workflow import dates
 from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.data_sources import ntsg_drt, hydrobasins
 
@@ -60,6 +59,7 @@ class GLDAS20_NoahStatic(paths.Static):
     def basin_downstream(self):
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
 
+
 class GLDAS20_NoahConfig(ConfigBase):
 
     def __init__(self, source, derived):
@@ -80,7 +80,7 @@ class GLDAS20_NoahConfig(ConfigBase):
         return range(1948, 2011)
 
     def result_fit_years(self):
-        return range(1950, 2010) # 1950-2009 gives even 60-year period
+        return range(1950, 2010)  # 1950-2009 gives even 60-year period
 
     def static_data(self):
         return self._static
@@ -93,7 +93,7 @@ class GLDAS20_NoahConfig(ConfigBase):
 
     @staticmethod
     def integration_windows():
-        return [ 12 ]
+        return [3, 6, 12]
 
     @classmethod
     def forcing_rp_vars(cls, basis=None):
@@ -106,7 +106,9 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'Bt_RO',
                 'PETmE',
                 'RO_mm',
-                'Ws'
+                'Ws',
+                'T',
+                'Pr'
             ]
 
         if basis == 'basin':
@@ -120,25 +122,23 @@ class GLDAS20_NoahConfig(ConfigBase):
     def lsm_integrated_vars(cls, basis=None):
         if not basis:
             return {
-                'Bt_RO'     : [ 'min', 'max', 'sum' ],
-                'PETmE'     : [ 'sum' ],
-                'RO_mm'     : [ 'sum' ],
-                'Ws'        : [ 'ave' ]
+                'Bt_RO': ['min', 'max', 'sum'],
+                'PETmE': ['sum'],
+                'RO_mm': ['sum'],
+                'Ws'   : ['ave'],
+                'T'    : ['ave'],
+                'Pr'   : ['sum']
             }
 
         if basis == 'basin':
             return {
-                'Bt_RO_m3' : [ 'sum' ]
+                'Bt_RO_m3' : ['sum']
             }
 
         assert False
 
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
-        year, mon =  dates.parse_yearmon(yearmon)
-
         input_file = os.path.join(self._source,
-                                  'GLDAS20',
-                                  '{:04d}'.format(year),
                                   'GLDAS_NOAH025_M.A{}.020.nc4'.format(yearmon))
 
         output_file = self.workspace().results(yearmon=yearmon, window=1)
@@ -149,9 +149,9 @@ class GLDAS20_NoahConfig(ConfigBase):
                 dependencies=[input_file, self.static_data().flowdir().file],
                 commands=[
                     [
-                        os.path.join('{BINDIR}', 'utils', 'gldas_noah_extract.sh'),
-                        input_file,
-                        output_file
+                        os.path.join('{BINDIR}', 'utils', 'gldas_noah_extract.R'),
+                        '--input', input_file,
+                        '--output', output_file
                     ],
                     [
                         os.path.join('{BINDIR}', 'wsim_flow.R'),
@@ -164,5 +164,6 @@ class GLDAS20_NoahConfig(ConfigBase):
                 ]
             )
         ]
+
 
 config = GLDAS20_NoahConfig

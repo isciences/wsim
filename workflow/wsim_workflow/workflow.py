@@ -70,6 +70,7 @@ def generate_steps(config: ConfigBase, *,
         if run_agriculture:
             steps += agriculture.spinup(config, meta_steps)
 
+
     for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop)))):
         steps += monthly.monthly_observed(config, yearmon, meta_steps)
 
