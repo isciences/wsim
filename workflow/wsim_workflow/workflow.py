@@ -15,7 +15,7 @@
 
 import os
 
-from typing import List
+from typing import List, Optional
 
 from . import agriculture
 from . import dates
@@ -45,6 +45,7 @@ def generate_steps(config: ConfigBase, *,
                    stop: str,
                    no_spinup: bool,
                    forecasts: str,
+                   forecast_lag_hours: Optional[int] = None,
                    run_electric_power: bool,
                    run_agriculture: bool) -> List[Step]:
     steps = []
@@ -81,7 +82,7 @@ def generate_steps(config: ConfigBase, *,
             steps += agriculture.monthly_observed(config, yearmon, meta_steps)
 
         if forecasts == 'all' or (forecasts == 'latest' and i == 0):
-            steps += monthly.monthly_forecast(config, yearmon, meta_steps)
+            steps += monthly.monthly_forecast(config, yearmon, meta_steps, forecast_lag_hours=forecast_lag_hours)
 
             if run_electric_power:
                 steps += electric_power.monthly_forecast(config, yearmon, meta_steps)

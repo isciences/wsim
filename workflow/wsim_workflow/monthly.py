@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, List
+import datetime
+
+from typing import Dict, List, Optional
 
 from .actions import \
     composite_anomalies, \
@@ -94,13 +96,26 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
     return steps
 
 
-def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) -> List[Step]:
+def monthly_forecast(config: Config,
+                     yearmon: str,
+                     meta_steps: Dict[str, Step],
+                     *, forecast_lag_hours: Optional[int] = None) -> List[Step]:
     steps = []
+
+    if forecast_lag_hours is not None:
+        available = len(config.forecast_ensemble_members(yearmon, lag_hours=forecast_lag_hours))
+        total = len(config.forecast_ensemble_members(yearmon))
+
+        if total - available > 0:
+            print('Omitting prep steps for {} forecasts generated after {}'.format(
+                total-available,
+                (datetime.datetime.utcnow() - datetime.timedelta(hours=forecast_lag_hours)).strftime('%Y%m%d%H')))
 
     for target in config.forecast_targets(yearmon):
         lead_months = get_lead_months(yearmon, target)
         print('Generating steps for', yearmon, 'forecast target', target)
-        for member in config.forecast_ensemble_members(yearmon):
+
+        for member in config.forecast_ensemble_members(yearmon, lag_hours=forecast_lag_hours):
             if config.should_run_lsm(yearmon):
                 # Prepare the dataset for use (convert from GRIB to netCDF, etc.)
                 steps += meta_steps['prepare_forecasts'].require(
@@ -115,6 +130,8 @@ def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
                     create_forcing_file(config.workspace(), config.forecast_data(),
                                         yearmon=yearmon, target=target, member=member))
 
+        for member in config.forecast_ensemble_members(yearmon):
+            if config.should_run_lsm(yearmon):
                 # Run LSM with forecast data
                 steps += run_lsm(config.workspace(), config.static_data(),
                                  yearmon=yearmon, target=target, member=member, lead_months=lead_months)
