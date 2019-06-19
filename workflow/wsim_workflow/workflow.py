@@ -58,6 +58,7 @@ def generate_steps(config: ConfigBase, *,
         'all_adjusted_composites',
         'all_adjusted_monthly_composites',
         'forcing_summaries',
+        'prepare_forecasts',
         'results_summaries',
         'electric_power_assessment',
         'agriculture_assessment'

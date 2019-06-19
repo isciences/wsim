@@ -103,15 +103,17 @@ def monthly_forecast(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
         for member in config.forecast_ensemble_members(yearmon):
             if config.should_run_lsm(yearmon):
                 # Prepare the dataset for use (convert from GRIB to netCDF, etc.)
-                steps += config.forecast_data().prep_steps(yearmon=yearmon, target=target, member=member)
+                steps += meta_steps['prepare_forecasts'].require(
+                    config.forecast_data().prep_steps(yearmon=yearmon, target=target, member=member))
 
                 # Bias-correct the forecast
-                steps += correct_forecast(config.forecast_data(),
-                                          member=member, target=target, lead_months=lead_months)
+                steps += meta_steps['prepare_forecasts'].require(
+                    correct_forecast(config.forecast_data(), member=member, target=target, lead_months=lead_months))
 
                 # Assemble forcing inputs for forecast
-                steps += create_forcing_file(config.workspace(), config.forecast_data(),
-                                             yearmon=yearmon, target=target, member=member)
+                steps += meta_steps['prepare_forecasts'].require(
+                    create_forcing_file(config.workspace(), config.forecast_data(),
+                                        yearmon=yearmon, target=target, member=member))
 
                 # Run LSM with forecast data
                 steps += run_lsm(config.workspace(), config.static_data(),
