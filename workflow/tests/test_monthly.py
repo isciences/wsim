@@ -46,8 +46,10 @@ class TestMonthly(unittest.TestCase):
 
     def test_monthly_observed(self):
         meta_steps = get_meta_steps()
+        ws = self.cfg.workspace()
 
         steps = monthly_observed(config=self.cfg, yearmon='194801', meta_steps=meta_steps)
+        self.assertTrue(any(ws.composite_summary(yearmon='194801', window=1) in step.targets for step in steps))
         self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
         self.assertTrue('composite_3mo_194801' not in step.targets for step in steps)
 
