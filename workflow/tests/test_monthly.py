@@ -44,14 +44,19 @@ class TestMonthly(unittest.TestCase):
     def setUpClass(cls):
         cls.cfg = BasicConfig() #CFSConfig(source='/tmp/source', derived='/tmp/derived')
 
+    def assertProduced(self, target, steps):
+        self.assertTrue(any(target in step.targets for step in steps))
+
+    def assertNotProduced(self, target, steps):
+        self.assertTrue(not any(target in step.targets for step in steps))
+
     def test_monthly_observed(self):
         meta_steps = get_meta_steps()
         ws = self.cfg.workspace()
 
         steps = monthly_observed(config=self.cfg, yearmon='194801', meta_steps=meta_steps)
-        self.assertTrue(any(ws.composite_summary(yearmon='194801', window=1) in step.targets for step in steps))
-        self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
-        self.assertTrue('composite_3mo_194801' not in step.targets for step in steps)
+        self.assertProduced(ws.composite_summary(yearmon='194801', window=1), steps)
+        self.assertNotProduced(ws.composite_summary(yearmon='194801', window=3), steps)
 
         steps = monthly_observed(config=self.cfg, yearmon='194802', meta_steps=meta_steps)
         self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
