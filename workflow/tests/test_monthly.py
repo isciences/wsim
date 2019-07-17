@@ -59,10 +59,11 @@ class TestMonthly(unittest.TestCase):
         self.assertNotProduced(ws.composite_summary(yearmon='194801', window=3), steps)
 
         steps = monthly_observed(config=self.cfg, yearmon='194802', meta_steps=meta_steps)
-        self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
-        self.assertTrue('composite_3mo_194801' not in step.targets for step in steps)
+        self.assertProduced(ws.composite_summary(yearmon='194802', window=1), steps)
+        self.assertNotProduced(ws.composite_summary(yearmon='194802', window=3), steps)
+
 
         steps = monthly_observed(config=self.cfg, yearmon='194803', meta_steps=meta_steps)
-        self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
-        self.assertTrue('composite_3mo_194803' in step.targets for step in steps)
-        self.assertTrue('composite_6mo_194803' not in step.targets for step in steps)
+        self.assertProduced(ws.composite_summary(yearmon='194803', window=1), steps)
+        self.assertProduced(ws.composite_summary(yearmon='194803', window=3), steps)
+        self.assertNotProduced(ws.composite_summary(yearmon='194803', window=6), steps)
