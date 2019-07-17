@@ -15,8 +15,9 @@ import unittest
 
 from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.spinup import *
-from wsim_workflow.dates import parse_yearmon
 from wsim_workflow.paths import Vardef, DefaultWorkspace, ObservedForcing, Static
+from wsim_workflow.step import Step
+from wsim_workflow.monthly import monthly_observed
 
 class BasicConfig(ConfigBase):
 
@@ -35,7 +36,7 @@ class BasicConfig(ConfigBase):
     def workspace(self):
         return DefaultWorkspace('tmp')
 
-class TestSpinup(unittest.TestCase):
+class TestMonthly(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -53,9 +54,16 @@ class TestSpinup(unittest.TestCase):
         'agriculture_assessment'
     )}
 
-    def test_monthly_observed(self):
+    def test_monthly_observed(self, meta_steps=meta_steps):
         steps = monthly_observed(config=self.cfg, yearmon='194801', meta_steps=meta_steps)
-        self.assert('composite_3mo_194801' not in steps)
-        self.assert('composite_3mo_194802' not in steps)
-        self.assert('composite_3mo_194803' in steps)
+        self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
+        self.assertTrue('composite_3mo_194801' not in step.targets for step in steps)
 
+        steps = monthly_observed(config=self.cfg, yearmon='194802', meta_steps=meta_steps)
+        self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
+        self.assertTrue('composite_3mo_194801' not in step.targets for step in steps)
+
+        steps = monthly_observed(config=self.cfg, yearmon='194803', meta_steps=meta_steps)
+        self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
+        self.assertTrue('composite_3mo_194803' in step.targets for step in steps)
+        self.assertTrue('composite_6mo_194803' not in step.targets for step in steps)
