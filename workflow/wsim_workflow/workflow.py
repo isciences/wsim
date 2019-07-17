@@ -40,6 +40,20 @@ def find_duplicate_targets(steps: List[Step]) -> List[Step]:
     return sorted(list(duplicates))
 
 
+def get_meta_steps():
+    return {name: Step.create_meta(name) for name in (
+        'all_fits',
+        'all_composites',
+        'all_monthly_composites',
+        'all_adjusted_composites',
+        'all_adjusted_monthly_composites',
+        'forcing_summaries',
+        'results_summaries',
+        'electric_power_assessment',
+        'agriculture_assessment'
+    )}
+
+
 def generate_steps(config: ConfigBase, *,
                    start: str,
                    stop: str,
@@ -51,17 +65,7 @@ def generate_steps(config: ConfigBase, *,
 
     steps += config.global_prep()
 
-    meta_steps = {name: Step.create_meta(name) for name in (
-        'all_fits',
-        'all_composites',
-        'all_monthly_composites',
-        'all_adjusted_composites',
-        'all_adjusted_monthly_composites',
-        'forcing_summaries',
-        'results_summaries',
-        'electric_power_assessment',
-        'agriculture_assessment'
-    )}
+    meta_steps = get_meta_steps()
 
     if config.should_run_spinup() and not no_spinup:
         steps += spinup.spinup(config, meta_steps)

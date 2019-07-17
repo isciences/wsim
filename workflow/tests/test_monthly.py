@@ -18,6 +18,7 @@ from wsim_workflow.spinup import *
 from wsim_workflow.paths import Vardef, DefaultWorkspace, ObservedForcing, Static
 from wsim_workflow.step import Step
 from wsim_workflow.monthly import monthly_observed
+from wsim_workflow.workflow import get_meta_steps
 
 class BasicConfig(ConfigBase):
 
@@ -36,25 +37,16 @@ class BasicConfig(ConfigBase):
     def workspace(self):
         return DefaultWorkspace('tmp')
 
+
 class TestMonthly(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.cfg = BasicConfig() #CFSConfig(source='/tmp/source', derived='/tmp/derived')
 
-    meta_steps = {name: Step.create_meta(name) for name in (
-        'all_fits',
-        'all_composites',
-        'all_monthly_composites',
-        'all_adjusted_composites',
-        'all_adjusted_monthly_composites',
-        'forcing_summaries',
-        'results_summaries',
-        'electric_power_assessment',
-        'agriculture_assessment'
-    )}
+    def test_monthly_observed(self):
+        meta_steps = get_meta_steps()
 
-    def test_monthly_observed(self, meta_steps=meta_steps):
         steps = monthly_observed(config=self.cfg, yearmon='194801', meta_steps=meta_steps)
         self.assertTrue('composite_1mo_194801' in step.targets for step in steps)
         self.assertTrue('composite_3mo_194801' not in step.targets for step in steps)
