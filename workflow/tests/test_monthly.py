@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -14,22 +14,21 @@
 import unittest
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.spinup import *
-from wsim_workflow.paths import Vardef, DefaultWorkspace, ObservedForcing, Static
-from wsim_workflow.step import Step
+from wsim_workflow.paths import DefaultWorkspace, Static
 from wsim_workflow.monthly import monthly_observed
 from wsim_workflow.workflow import get_meta_steps
+
 
 class BasicConfig(ConfigBase):
 
     def historical_years(self):
-        return range(1948, 2018) # 1948-2017
+        return range(1948, 2018)  # 1948-2017
 
     def result_fit_years(self):
-        return range(1950, 2010) # 1950-2009
+        return range(1950, 2010)  # 1950-2009
 
     def observed_data(self):
-        return FakeForcing()
+        pass
 
     def static_data(self):
         return Static('fake')
@@ -42,7 +41,7 @@ class TestMonthly(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.cfg = BasicConfig() #CFSConfig(source='/tmp/source', derived='/tmp/derived')
+        cls.cfg = BasicConfig()
 
     def assertProduced(self, target, steps):
         self.assertTrue(any(target in step.targets for step in steps))
@@ -61,7 +60,6 @@ class TestMonthly(unittest.TestCase):
         steps = monthly_observed(config=self.cfg, yearmon='194802', meta_steps=meta_steps)
         self.assertProduced(ws.composite_summary(yearmon='194802', window=1), steps)
         self.assertNotProduced(ws.composite_summary(yearmon='194802', window=3), steps)
-
 
         steps = monthly_observed(config=self.cfg, yearmon='194803', meta_steps=meta_steps)
         self.assertProduced(ws.composite_summary(yearmon='194803', window=1), steps)
