@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -40,6 +40,21 @@ def find_duplicate_targets(steps: List[Step]) -> List[Step]:
     return sorted(list(duplicates))
 
 
+def get_meta_steps():
+    return {name: Step.create_meta(name) for name in (
+        'agriculture_assessment',
+        'all_adjusted_composites',
+        'all_adjusted_monthly_composites',
+        'all_composites',
+        'all_fits',
+        'all_monthly_composites',
+        'electric_power_assessment',
+        'forcing_summaries',
+        'prepare_forecasts',
+        'results_summaries',
+    )}
+
+
 def generate_steps(config: ConfigBase, *,
                    start: str,
                    stop: str,
@@ -52,18 +67,7 @@ def generate_steps(config: ConfigBase, *,
 
     steps += config.global_prep()
 
-    meta_steps = {name: Step.create_meta(name) for name in (
-        'all_fits',
-        'all_composites',
-        'all_monthly_composites',
-        'all_adjusted_composites',
-        'all_adjusted_monthly_composites',
-        'forcing_summaries',
-        'prepare_forecasts',
-        'results_summaries',
-        'electric_power_assessment',
-        'agriculture_assessment'
-    )}
+    meta_steps = get_meta_steps()
 
     if config.should_run_spinup() and not no_spinup:
         steps += spinup.spinup(config, meta_steps)
