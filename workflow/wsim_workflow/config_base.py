@@ -154,9 +154,12 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'PETmE',
                 'PET',
                 'P_net',
+                'Pr',
                 'RO_mm',
                 'Sa',
                 'Sm',
+                'Sw',
+                'T',
                 'Ws'
             ]
 
@@ -181,8 +184,11 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'E': ['sum'],
                 'PETmE': ['sum'],
                 'P_net': ['sum'],
+                'Pr'   : ['sum'],
                 'RO_mm': ['sum'],
-                'Ws': ['ave']
+                'Sa'   : ['sum'],
+                'T'    : ['ave'],
+                'Ws': ['ave'],
             }
 
         if basis == Basis.BASIN:
