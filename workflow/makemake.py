@@ -75,6 +75,9 @@ def parse_args(args):
     parser.add_argument('--stop',
                         help='End date in YYYYMM format',
                         required=False)
+    parser.add_argument('--forecast-lag-hours',
+                        type=int,
+                        help="Only attempt to download forecasts issued within the specified number of hours")
 
     parsed = parser.parse_args(args)
 
@@ -101,7 +104,8 @@ def main(raw_args):
                                     no_spinup=args.nospinup,
                                     forecasts=args.forecasts,
                                     run_electric_power=not args.noelectric,
-                                    run_agriculture=not args.noagriculture)
+                                    run_agriculture=not args.noagriculture,
+                                    forecast_lag_hours=args.forecast_lag_hours)
 
     duplicate_targets = workflow.find_duplicate_targets(steps)
     if duplicate_targets:

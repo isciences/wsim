@@ -110,10 +110,12 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return []
 
-    def forecast_ensemble_members(self, yearmon: str) -> List[str]:
+    def forecast_ensemble_members(self, yearmon: str, *, lag_hours: Optional[int] = None) -> List[str]:
         """
         Provides a list of forecast ensemble members for a given YYYYMM, or
         an empty list if the configuration does not contain forecasts.
+        If `lag_hours` is provided, only return ensemble members generated
+        within more than `lag_hours` from present time.
         """
         return []
 

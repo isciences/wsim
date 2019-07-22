@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -13,10 +13,11 @@
 
 # This configuration file is provided as an example of an automated operational WSIM workflow.
 
+import datetime
 import os
 import re
 
-from typing import List
+from typing import List, Optional
 
 from wsim_workflow import commands
 from wsim_workflow import dates
@@ -428,14 +429,21 @@ class CFSConfig(ConfigBase):
     def result_fit_years(self):
         return range(1950, 2010)  # 1950-2009
 
-    def forecast_ensemble_members(self, yearmon):
+    def forecast_ensemble_members(self, yearmon, *, lag_hours: Optional[int] = None):
         # Build an ensemble of 28 forecasts by taking the four
         # forecasts issued on each of the last 7 days of the month.
         last_day = dates.get_last_day_of_month(yearmon)
 
-        return ['{}{:02d}{:02d}'.format(yearmon, day, hour)
-                for day in range(last_day - 6, last_day + 1)
-                for hour in (0, 6, 12, 18)]
+        year, month = dates.parse_yearmon(yearmon)
+
+        members = [datetime.datetime(year, month, day, hour)
+                   for day in range(last_day - 6, last_day + 1)
+                   for hour in (0, 6, 12, 18)]
+
+        if lag_hours is not None:
+            members = [m for m in members if datetime.datetime.utcnow() - m > datetime.timedelta(hours=lag_hours)]
+
+        return [m.strftime('%Y%m%d%H') for m in members]
 
     def forecast_targets(self, yearmon):
         return dates.get_next_yearmons(yearmon, 9)

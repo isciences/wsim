@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -15,7 +15,7 @@
 
 import os
 
-from typing import List
+from typing import List, Optional
 
 from . import agriculture
 from . import dates
@@ -42,15 +42,16 @@ def find_duplicate_targets(steps: List[Step]) -> List[Step]:
 
 def get_meta_steps():
     return {name: Step.create_meta(name) for name in (
-        'all_fits',
-        'all_composites',
-        'all_monthly_composites',
+        'agriculture_assessment',
         'all_adjusted_composites',
         'all_adjusted_monthly_composites',
-        'forcing_summaries',
-        'results_summaries',
+        'all_composites',
+        'all_fits',
+        'all_monthly_composites',
         'electric_power_assessment',
-        'agriculture_assessment'
+        'forcing_summaries',
+        'prepare_forecasts',
+        'results_summaries',
     )}
 
 
@@ -59,6 +60,7 @@ def generate_steps(config: ConfigBase, *,
                    stop: str,
                    no_spinup: bool,
                    forecasts: str,
+                   forecast_lag_hours: Optional[int] = None,
                    run_electric_power: bool,
                    run_agriculture: bool) -> List[Step]:
     steps = []
@@ -84,7 +86,7 @@ def generate_steps(config: ConfigBase, *,
             steps += agriculture.monthly_observed(config, yearmon, meta_steps)
 
         if forecasts == 'all' or (forecasts == 'latest' and i == 0):
-            steps += monthly.monthly_forecast(config, yearmon, meta_steps)
+            steps += monthly.monthly_forecast(config, yearmon, meta_steps, forecast_lag_hours=forecast_lag_hours)
 
             if run_electric_power:
                 steps += electric_power.monthly_forecast(config, yearmon, meta_steps)
