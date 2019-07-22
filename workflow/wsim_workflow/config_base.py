@@ -186,7 +186,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'P_net': ['sum'],
                 'Pr'   : ['sum'],
                 'RO_mm': ['sum'],
-                'Sa'   : ['sum'],
+                #'Sa'   : ['sum'],
                 'T'    : ['ave'],
                 'Ws': ['ave'],
             }
