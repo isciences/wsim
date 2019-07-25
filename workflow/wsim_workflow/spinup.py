@@ -69,8 +69,8 @@ def spinup(config, meta_steps):
             steps += all_fits.require(fit_var(config, param=param, month=month))
 
     # Compute fits for time-integrated parameters
-    for param in config.lsm_integrated_vars().keys():
-        for stat in config.lsm_integrated_vars()[param]:
+    for param in {**config.lsm_integrated_vars(), **config.forcing_integrated_vars()}.keys():
+        for stat in {**config.lsm_integrated_vars(), **config.forcing_integrated_vars()}[param]:
             for window in config.integration_windows():
                 assert window > 1
                 for month in all_months:
@@ -248,7 +248,6 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
     first_month = int(first_timestep[4:])
     postprocess_steps = list(itertools.chain(*[config.result_postprocess_steps(yearmon=yearmon)
                                                for yearmon in config.historical_yearmons()]))
-
     make_initial_state = Step(
         comment="Create initial state file",
         targets=config.workspace().state(yearmon=first_timestep),
@@ -291,16 +290,17 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
 
 def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
     """
-    Integrate all LSM results and any specified forcing variables with the given time window
+    Integrate specified LSM results (and any included forcing variables) over the given time window
     """
     yearmons_in = config.historical_yearmons()
     yearmons_out = yearmons_in[window-1:]
 
     integrate = wsim_integrate(
-        inputs=read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
-                         *config.lsm_integrated_vars(basis=basis).keys()),
+        inputs=[read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
+                         *{**config.lsm_integrated_vars(basis=basis), **config.forcing_integrated_vars(basis=basis)}.keys())
+                         ],
         window=window,
-        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats(basis=basis).items()],
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.all_integrated_stats(basis=basis).items()],
         attrs=[attrs.integration_window(var='*', months=window)],
         output=config.workspace().results(yearmon=date_range(yearmons_out),
                                           window=window,

@@ -154,12 +154,9 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'PETmE',
                 'PET',
                 'P_net',
-                'Pr',
                 'RO_mm',
                 'Sa',
                 'Sm',
-                'Sw',
-                'T',
                 'Ws'
             ]
 
@@ -184,10 +181,8 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'E': ['sum'],
                 'PETmE': ['sum'],
                 'P_net': ['sum'],
-                'Pr'   : ['sum'],
                 'RO_mm': ['sum'],
-                #'Sa'   : ['sum'],
-                'T'    : ['ave'],
+                'Sa'   : ['sum'],
                 'Ws': ['ave'],
             }
 
@@ -220,5 +215,44 @@ class ConfigBase(metaclass=abc.ABCMeta):
         Provides a flat list of time-integrated variable names
         """
         return [var + '_' + stat for var, stats in cls.lsm_integrated_vars(basis=basis).items() for stat in stats]
+
+    @classmethod
+    def forcing_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are forcing variables to be time-integrated, and whose
+        values are lists of stats to apply to each of those variables (min, max, ave, etc.)
+        """
+
+        if not basis:
+            return {
+                'Pr'   : ['sum'],
+                'T'    : ['ave'],
+            }
+
+        assert False
+
+    @classmethod
+    def forcing_integrated_var_names(cls, basis: Optional[Basis]=None) -> List[str]:
+        """
+        Provides a flat list of time-integrated variable names
+        """
+        return [var + '_' + stat for var, stats in cls.forcing_integrated_vars(basis=basis).items() for stat in stats]
+
+    @classmethod
+    def all_integrated_stats(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are stat names and whose values are a list of variables
+        two which that stat should be applied. This combines the inverse of forcing_integrated_vars()
+        and lsm_integrated_vars().
+        """
+        integrated_stats = cls.lsm_integrated_stats(basis=basis)
+
+        for var, varstats in cls.forcing_integrated_vars(basis=basis).items():
+            for stat in varstats:
+                if stat not in integrated_stats:
+                    integrated_stats[stat] = []
+                integrated_stats[stat].append(var)
+
+        return integrated_stats
 
 

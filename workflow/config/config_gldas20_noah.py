@@ -98,6 +98,10 @@ class GLDAS20_NoahConfig(ConfigBase):
     @classmethod
     def forcing_rp_vars(cls, basis=None):
         return []
+    
+    @classmethod
+    def forcing_integrated_vars(cls, basis=None):
+        return []
 
     @classmethod
     def lsm_rp_vars(cls, basis=None):
