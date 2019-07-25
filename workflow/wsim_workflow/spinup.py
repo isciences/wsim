@@ -80,7 +80,7 @@ def spinup(config, meta_steps):
     for window in [1] + config.integration_windows():
         for yearmon in config.historical_yearmons()[window-1:]:
             steps += compute_return_periods(config.workspace(),
-                                            result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
+                                            result_vars=config.lsm_rp_vars() + config.forcing_rp_vars() if window == 1 else config.lsm_integrated_var_names() + config.forcing_integrated_var_names(),
                                             forcing_vars=config.forcing_rp_vars() if window == 1 else None,
                                             yearmon=yearmon,
                                             window=window)
