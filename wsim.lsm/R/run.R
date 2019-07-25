@@ -103,6 +103,7 @@ run <- function(static, state, forcing) {
     Runoff_m3= R*area_m2/1000,
     Sa= Sa,
     Sm= ifelse(is.na(Sa), NA, Sm),
+    Snowpack= state$Snowpack,
     T= forcing$T,
     Ws= Ws_ave
   )

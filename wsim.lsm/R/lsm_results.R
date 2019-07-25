@@ -48,6 +48,7 @@ make_results <- function(
   Runoff_mm,
   Sa,
   Sm,
+  Snowpack,
   T,
   Ws,
   dWdt,
@@ -69,6 +70,7 @@ make_results <- function(
     Runoff_mm= Runoff_mm,
     Sa= Sa,
     Sm= Sm,
+    Snowpack=Snowpack,
     T= T,
     Ws= Ws,
     dWdt= dWdt
