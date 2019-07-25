@@ -55,12 +55,12 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
         # Do time integration
         for window in config.integration_windows():
-            steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), yearmon=yearmon, window=window)
+            steps += time_integrate(config.workspace(), config.all_integrated_stats(), yearmon=yearmon, window=window)
 
         # Compute return periods
         for window in [1] + config.integration_windows():
             steps += compute_return_periods(config.workspace(),
-                                            result_vars=config.lsm_rp_vars() if window==1 else config.lsm_integrated_var_names(),
+                                            result_vars=config.lsm_rp_vars() + config.forcing_rp_vars() if window == 1 else config.lsm_integrated_var_names() + config.forcing_integrated_var_names(),
                                             forcing_vars=config.forcing_rp_vars() if window==1 else None,
                                             yearmon=yearmon,
                                             window=window)
