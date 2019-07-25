@@ -157,6 +157,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'RO_mm',
                 'Sa',
                 'Sm',
+                'Snowpack',
                 'Ws'
             ]
 
