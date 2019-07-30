@@ -29,6 +29,10 @@
 #' @param Ws average soil moisture [mm]
 #' @param dWdt change in soil moisture [mm]
 #' @param extent spatial extent of input matrices \code{(xmin, xmax, ymin, ymax)}
+#' @param digits_mm number of digits after decimal point to which parameters in
+#'                  mm will be rounded
+#' @param digits_m3 number of digits after decimal point to which parameters in
+#'                  m3 will be rounded
 #'
 #' @return \code{wsim.lsm.results} object containing supplied variables
 #'
