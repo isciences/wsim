@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -13,8 +13,8 @@
 
 #' Create a set of WSIM LSM results
 #'
-#' @param Bt_RO accumulated total blue water runoff (taking account of detention) [mm]
-#' @param Bt_Runoff accumulated total blue water runoff (not taking account of detention) [mm]
+#' @param Bt_RO accumulated total blue water runoff (taking account of detention) [m^3]
+#' @param Bt_Runoff accumulated total blue water runoff (not taking account of detention) [m^3]
 #' @param E evapotranspiration [mm]
 #' @param EmPET actual minus potential evapotranspiration [mm]
 #' @param PET potential evapotranspiration [mm]
@@ -49,25 +49,28 @@ make_results <- function(
   Sm,
   Ws,
   dWdt,
-  extent
+  extent,
+  digits_mm,
+  digits_m3
 ) {
+  stopifnot(!is.null(digits_mm) && !is.null(digits_m3))
 
   results <- list(
-    Bt_RO= Bt_RO,
-    Bt_Runoff= Bt_Runoff,
-    E= E,
-    EmPET= EmPET,
-    PET= PET,
-    PETmE= PETmE,
-    P_net= P_net,
-    RO_m3= RO_m3,
-    RO_mm= RO_mm,
-    Runoff_m3= Runoff_m3,
-    Runoff_mm= Runoff_mm,
-    Sa= Sa,
-    Sm= Sm,
-    Ws= Ws,
-    dWdt= dWdt
+    Bt_RO= round(Bt_RO, digits_m3),
+    Bt_Runoff= round(Bt_Runoff, digits_m3),
+    E= round(E, digits_mm),
+    EmPET= round(EmPET, digits_mm),
+    PET= round(PET, digits_mm),
+    PETmE= round(PETmE, digits_mm),
+    P_net= round(P_net, digits_mm),
+    RO_m3= round(RO_m3, digits_m3),
+    RO_mm= round(RO_mm, digits_mm),
+    Runoff_m3= round(Runoff_m3, digits_m3),
+    Runoff_mm= round(Runoff_mm, digits_mm),
+    Sa= round(Sa, digits_mm),
+    Sm= round(Sm, digits_mm),
+    Ws= round(Ws, digits_mm),
+    dWdt= round(dWdt, digits_mm)
   )
 
   if (!all(sapply(results, is.matrix)))
