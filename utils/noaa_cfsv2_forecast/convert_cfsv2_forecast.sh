@@ -32,9 +32,17 @@ TEMP_NC2=/tmp/`basename $2`.tmp2.$$.nc
 TEMP_NC3=/tmp/`basename $2`.tmp3.$$.nc
 TEMP_NC4=/tmp/`basename $2`.tmp4.$$.nc
 
+function cleanup {
+  rm -f $TEMP_GRB2
+  rm -f $TEMP_NC1
+  rm -f $TEMP_NC2
+  rm -f $TEMP_NC3
+  rm -f $TEMP_NC4
+}
+trap cleanup EXIT
+
 wgrib2 $1 -match "PRATE:surface|TMP:2 m" -new_grid latlon -179.75:720:0.5 -89.75:360:0.5 $TEMP_GRB2
 wgrib2 $TEMP_GRB2 -nc_grads -netcdf $TEMP_NC1
-rm $TEMP_GRB2
 
 # Rename each variable in separate commands
 # Some versions of NCO fail to find variables
@@ -69,8 +77,3 @@ ncatted -h -O \
 
 # Compress the netCDF
 ncks $TEMP_NC4 -L1 -7 $2
-
-rm $TEMP_NC1
-rm $TEMP_NC2
-rm $TEMP_NC3
-rm $TEMP_NC4
