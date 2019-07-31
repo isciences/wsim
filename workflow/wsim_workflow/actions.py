@@ -60,7 +60,7 @@ def create_forcing_file(workspace: DefaultWorkspace,
                 'Pr:units',
                 'Pr:standard_name'
             ])),
-            output=workspace.forcing(yearmon=yearmon, target=target, member=member)
+            output=workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
         )
     ]
 
@@ -204,7 +204,7 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
             obs=[
                 read_vars(workspace.results(**args), *result_vars)
                 if result_vars else None,
-                read_vars(workspace.forcing(yearmon=yearmon, target=target, member=member), *forcing_vars)
+                read_vars(workspace.forcing(yearmon=yearmon, target=target, window=window, member=member), *forcing_vars)
                 if forcing_vars else None
             ],
             rp=workspace.return_period(**args),
@@ -366,11 +366,11 @@ def fit_var(config: ConfigBase,
         param_to_read = param
 
     # Don't look for Pr_sum and T_ave in forcing directory.
-    if param in config.forcing_rp_vars() and stat is None: 
-        assert window == 1 
+    if param in config.forcing_rp_vars() and stat is None:
+        assert window == 1
         assert basis is None
 
-        infile = config.workspace().forcing(yearmon=input_range)
+        infile = config.workspace().forcing(yearmon=input_range, window=window)
     else:
         infile = config.workspace().results(yearmon=input_range, window=window, basis=basis)
 

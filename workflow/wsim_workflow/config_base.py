@@ -157,7 +157,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'RO_mm',
                 'Sa',
                 'Sm',
-                'Snowpack',
+                #'Snowpack',
                 'Ws'
             ]
 
@@ -165,6 +165,21 @@ class ConfigBase(metaclass=abc.ABCMeta):
             return [
                 'Bt_RO'
             ]
+
+        assert False
+
+
+    @classmethod
+    def state_vars(*, basis: Optional[Basis]=None) -> List[str]:
+        """
+        Provides a list of state variables for which return periods should be calculated
+        """
+
+        if not basis:
+            return['Snowpack']
+
+        if basis==Basis.BASIN:
+            return['Bt_RO']
 
         assert False
 
@@ -231,6 +246,22 @@ class ConfigBase(metaclass=abc.ABCMeta):
             }
 
         assert False
+
+    @classmethod
+    def forcing_integrated_stats(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are stat names and whose values are a list of variables
+        two which that stat should be applied. It can be thought of as the inverse of forcing_integrated_vars()
+        """
+        integrated_stats = {}
+
+        for var, varstats in cls.forcing_integrated_vars(basis=basis).items():
+            for stat in varstats:
+                if stat not in integrated_stats:
+                    integrated_stats[stat] = []
+                integrated_stats[stat].append(var)
+
+        return integrated_stats
 
     @classmethod
     def forcing_integrated_var_names(cls, basis: Optional[Basis]=None) -> List[str]:

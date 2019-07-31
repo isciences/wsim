@@ -141,6 +141,11 @@ class GLDAS20_NoahConfig(ConfigBase):
 
         assert False
 
+    @classmethod
+    def forcing_integrated_vars(cls, basis=None):
+            return {}
+
+
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
         input_file = os.path.join(self._source,
                                   'GLDAS_NOAH025_M.A{}.020.nc4'.format(yearmon))

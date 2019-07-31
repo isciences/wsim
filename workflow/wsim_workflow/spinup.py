@@ -61,7 +61,9 @@ def spinup(config, meta_steps):
 
     # Time-integrate the variables
     for window in config.integration_windows():
+        steps += time_integrate_forcing(config, window)
         steps += time_integrate_results(config, window)
+
 
     # Compute monthly fits (and then anomalies) over the fit period
     for param in config.lsm_rp_vars() + config.forcing_rp_vars():
@@ -209,7 +211,7 @@ def run_lsm_from_final_norm_state(config: Config) -> List[Step]:
     # allow restarting in case of failure. But the runtime becomes dominated by the
     # R startup and I/O, and takes about 5 seconds / iteration instead of 1 second /iteration.
     run_lsm = wsim_lsm(
-        forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()))],
+        forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()), window=1)],
         state=config.workspace().spinup_state(yearmon=initial_yearmon),
         elevation=config.static_data().elevation(),
         flowdir=config.static_data().flowdir(),
@@ -265,7 +267,7 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
 
     run_lsm = wsim_lsm(
         comment="LSM run from mean spinup state",
-        forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()))],
+        forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()), window=1)],
         state=config.workspace().state(yearmon=first_timestep),
         elevation=config.static_data().elevation(),
         flowdir=config.static_data().flowdir(),
@@ -288,6 +290,38 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
     ]
 
 
+def time_integrate_forcing(config:Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
+    """
+    Integrate forcing variables over the given time window
+    """
+    yearmons_in = config.historical_yearmons()
+    yearmons_out = yearmons_in[window-1:]
+
+    integrate = wsim_integrate(
+        inputs= [read_vars(config.workspace().forcing(window=1, yearmon=date_range(yearmons_in)),
+        *config.forcing_integrated_vars(basis=basis).keys())
+        ],
+        window=window,
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.forcing_integrated_stats(basis=basis).items()],
+        attrs=[attrs.integration_window(var='*', months=window)],
+        output=config.workspace().forcing(yearmon=date_range(yearmons_out),
+                                          window=window)
+    )
+
+    tag_name = config.workspace().tag('{}spinup_{}mo_forcing'.format((basis.value + '_' if basis else ''), window))
+
+    tag_steps = create_tag(name=tag_name, dependencies=integrate.targets)
+
+    integrate.replace_targets_with_tag_file(tag_name)
+    integrate.replace_dependencies(
+        config.workspace().tag('{}spinup_1mo_forcing'.format((basis.value + '_') if basis else '')))
+
+    return [
+        integrate,
+        *tag_steps
+    ]
+
+
 def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
     """
     Integrate specified LSM results (and any included forcing variables) over the given time window
@@ -297,10 +331,10 @@ def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis
 
     integrate = wsim_integrate(
         inputs=[read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
-                         *{**config.lsm_integrated_vars(basis=basis), **config.forcing_integrated_vars(basis=basis)}.keys())
+                         *config.lsm_integrated_vars(basis=basis).keys())
                          ],
         window=window,
-        stats=[stat + '::' + ','.join(varname) for stat, varname in config.all_integrated_stats(basis=basis).items()],
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats(basis=basis).items()],
         attrs=[attrs.integration_window(var='*', months=window)],
         output=config.workspace().results(yearmon=date_range(yearmons_out),
                                           window=window,
