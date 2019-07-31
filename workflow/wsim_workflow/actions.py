@@ -371,6 +371,13 @@ def fit_var(config: ConfigBase,
         assert basis is None
 
         infile = config.workspace().forcing(yearmon=input_range, window=window)
+
+    elif param in config.state_rp_vars():
+        assert window == 1
+        assert basis is None
+
+        infile = config.workspace().state(yearmon=input_range)
+
     else:
         infile = config.workspace().results(yearmon=input_range, window=window, basis=basis)
 

@@ -169,8 +169,8 @@ class ConfigBase(metaclass=abc.ABCMeta):
         assert False
 
 
-    @classmethod
-    def state_vars(*, basis: Optional[Basis]=None) -> List[str]:
+    @staticmethod
+    def state_rp_vars(*, basis: Optional[Basis]=None) -> List[str]:
         """
         Provides a list of state variables for which return periods should be calculated
         """
@@ -178,11 +178,8 @@ class ConfigBase(metaclass=abc.ABCMeta):
         if not basis:
             return['Snowpack']
 
-        if basis==Basis.BASIN:
-            return['Bt_RO']
-
-        assert False
-
+        if basis == Basis.BASIN:
+            return []
 
     @classmethod
     def lsm_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:

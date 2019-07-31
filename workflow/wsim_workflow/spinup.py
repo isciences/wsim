@@ -66,7 +66,7 @@ def spinup(config, meta_steps):
 
 
     # Compute monthly fits (and then anomalies) over the fit period
-    for param in config.lsm_rp_vars() + config.forcing_rp_vars():
+    for param in config.lsm_rp_vars() + config.forcing_rp_vars() + config.state_rp_vars():
         for month in all_months:
             steps += all_fits.require(fit_var(config, param=param, month=month))
 
