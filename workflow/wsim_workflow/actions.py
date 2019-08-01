@@ -372,9 +372,7 @@ def fit_var(config: ConfigBase,
     else:
         param_to_read = param
 
-    # Don't look for Pr_sum and T_ave in forcing directory.
-    if param in config.forcing_rp_vars() and stat is None:
-        assert window == 1
+    if param in config.forcing_rp_vars():
         assert basis is None
 
         infile = config.workspace().forcing(yearmon=input_range, window=window)
