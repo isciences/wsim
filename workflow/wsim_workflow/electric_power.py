@@ -333,7 +333,7 @@ def compute_plant_losses(workspace: DefaultWorkspace,
                                 basis=Basis.POWER_PLANT)
 
     basin_results = workspace.results(yearmon=yearmon, window=1, basis=Basis.BASIN, target=target, member=member)
-    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
+    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
     rp = workspace.return_period(yearmon=yearmon, target=target, member=member, window=1)
     loss_factors = workspace.basin_loss_factors(yearmon=yearmon, target=target, member=member)
 

@@ -128,7 +128,7 @@ def monthly_forecast(config: Config,
                 # Assemble forcing inputs for forecast
                 steps += meta_steps['prepare_forecasts'].require(
                     create_forcing_file(config.workspace(), config.forecast_data(),
-                                        yearmon=yearmon, target=target, member=member))
+                                        yearmon=yearmon, target=target, member=member, window=1))
 
         for member in config.forecast_ensemble_members(yearmon):
             if config.should_run_lsm(yearmon):

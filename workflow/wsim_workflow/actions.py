@@ -72,7 +72,7 @@ def compute_basin_results(workspace: DefaultWorkspace,
                           yearmon: str,
                           target: Optional[str]=None,
                           member: Optional[str]=None) -> List[Step]:
-    pixel_forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
+    pixel_forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
     pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
     basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
 
@@ -121,7 +121,7 @@ def run_lsm(workspace: DefaultWorkspace, static: Static, *,
         next_state = workspace.state(yearmon=get_next_yearmon(yearmon))
 
     results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
-    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
+    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
 
     return [
         wsim_lsm(
@@ -402,7 +402,7 @@ def forcing_summary(workspace: DefaultWorkspace, ensemble_members: List[str], *,
         -> List[Step]:
     return [
         wsim_integrate(
-            inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member) for member in ensemble_members],
+            inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member, window=1) for member in ensemble_members],
             stats=['q25', 'q50', 'q75'],
             output=workspace.forcing_summary(yearmon=yearmon, target=target)
         )
