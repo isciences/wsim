@@ -37,9 +37,11 @@ from .step import Step
 def create_forcing_file(workspace: DefaultWorkspace,
                         data: Union[ObservedForcing, ForecastForcing],
                         *,
+                        window: int,
                         yearmon: str,
                         target: Optional[str]=None,
-                        member: Optional[str]=None) -> List[Step]:
+                        member: Optional[str]=None,
+                        ) -> List[Step]:
 
     precip = data.precip_monthly(yearmon=yearmon, target=target, member=member)
     temp = data.temp_monthly(yearmon=yearmon, target=target, member=member)
@@ -60,7 +62,7 @@ def create_forcing_file(workspace: DefaultWorkspace,
                 'Pr:units',
                 'Pr:standard_name'
             ])),
-            output=workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
+            output=workspace.forcing(yearmon=yearmon, target=target, member=member, window=window)
         )
     ]
 
@@ -175,6 +177,7 @@ def time_integrate(workspace: DefaultWorkspace,
 def compute_return_periods(workspace: DefaultWorkspace, *,
                            forcing_vars: Optional[List[str]]=None,
                            result_vars: Optional[List[str]]=None,
+                           state_vars: Optional[List[str]]=None,
                            yearmon: str,
                            window: int,
                            target: Optional[str]=None,
@@ -195,6 +198,9 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
     if basis:
         assert not forcing_vars
 
+    if state_vars:
+        assert window==1
+
     return [
         wsim_anom(
             fits=[workspace.fit_obs(var=var,
@@ -205,7 +211,8 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
                 read_vars(workspace.results(**args), *result_vars)
                 if result_vars else None,
                 read_vars(workspace.forcing(yearmon=yearmon, target=target, window=window, member=member), *forcing_vars)
-                if forcing_vars else None
+                if forcing_vars else None,
+                read_vars(workspace.state(yearmon=yearmon), *state_vars) if state_vars else None
             ],
             rp=workspace.return_period(**args),
             sa=workspace.standard_anomaly(**args)

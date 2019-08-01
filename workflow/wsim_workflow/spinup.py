@@ -40,7 +40,7 @@ def spinup(config, meta_steps):
 
         for yearmon in config.historical_yearmons():
             steps += config.observed_data().prep_steps(yearmon=yearmon)
-            steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon)
+            steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon, window=1)
 
         steps += run_lsm_from_final_norm_state(config)
 
@@ -82,8 +82,8 @@ def spinup(config, meta_steps):
     for window in [1] + config.integration_windows():
         for yearmon in config.historical_yearmons()[window-1:]:
             steps += compute_return_periods(config.workspace(),
-                                            result_vars=config.lsm_rp_vars() + config.forcing_rp_vars() if window == 1 else config.lsm_integrated_var_names() + config.forcing_integrated_var_names(),
-                                            forcing_vars=config.forcing_rp_vars() if window == 1 else None,
+                                            result_vars=config.lsm_rp_vars() + config.forcing_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
+                                            forcing_vars=config.forcing_rp_vars() if window == 1 else config.forcing_integrated_var_names(),
                                             yearmon=yearmon,
                                             window=window)
 
@@ -317,8 +317,7 @@ def time_integrate_forcing(config:Config, window: int, *, basis: Optional[Basis]
         config.workspace().tag('{}spinup_1mo_forcing'.format((basis.value + '_') if basis else '')))
 
     return [
-        integrate,
-        *tag_steps
+        integrate
     ]
 
 

@@ -427,7 +427,7 @@ class DefaultWorkspace:
                 window: int,
                 member: Optional[str]=None,
                 target: Optional[str]=None) -> str:
-        return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=None)
+        return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=window)
 
     def results(self, *,
                 sector: Optional[Sector]=None,
