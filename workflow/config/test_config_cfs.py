@@ -171,7 +171,7 @@ class TestCFSConfig(unittest.TestCase):
             self.assertIsNotNone(step_for_target(steps, fname))
 
         # forcing
-        assertBuilt(ws.forcing(yearmon=yearmon))
+        assertBuilt(ws.forcing(yearmon=yearmon, window=1))
         assertBuilt(ws.forcing_summary(yearmon=yearmon, target=target))
 
         # results
