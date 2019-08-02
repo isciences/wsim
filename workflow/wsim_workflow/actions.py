@@ -154,9 +154,11 @@ def time_integrate(workspace: DefaultWorkspace,
         window_observed = months
         window_forecast = []
 
-    prev_results = [workspace.results(yearmon=x, window=1, basis=basis) + [workspace.forcing(yearmon=x, window=1)] for x in window_observed] + \
+    prev_results = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
+                   [workspace.forcing(yearmon=x, window=1) for x in window_observed] + \
                    [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis)
-                    for x in window_forecast]
+                    for x in window_forecast] + \
+                   [workspace.forcing(yearmon=yearmon, member=member, target=x, window=1) for x in window_forecast]
 
     return [
         wsim_integrate(
