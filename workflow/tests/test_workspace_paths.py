@@ -37,15 +37,16 @@ class TestWorkspacePaths(unittest.TestCase):
     def test_forcing(self):
         # Observed data
         self.assertEqual(
-            join(self.root, 'forcing', 'forcing_201612.nc'),
-            self.ws.forcing(yearmon='201612')
+            join(self.root, 'forcing', 'forcing_1mo_201612.nc'),
+            self.ws.forcing(yearmon='201612', window=1)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'forcing', 'forcing_201612_trgt201703_fcstCFS13.nc'),
-            self.ws.forcing(yearmon='201612', target='201703', member='CFS13')
+            join(self.root, 'forcing', 'forcing_1mo_201612_trgt201703_fcstCFS13.nc'),
+            self.ws.forcing(yearmon='201612', target='201703', member='CFS13', window=1)
         )
+
 
     def test_results(self):
         # Observed data
