@@ -46,7 +46,7 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
             steps += config.observed_data().prep_steps(yearmon=yearmon)
 
             # Combine forcing data for LSM run
-            steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon)
+            steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon, window=1)
 
             # Run the LSM
             steps += run_lsm(config.workspace(), config.static_data(), yearmon=yearmon)
