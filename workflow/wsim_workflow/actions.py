@@ -40,8 +40,7 @@ def create_forcing_file(workspace: DefaultWorkspace,
                         window: int,
                         yearmon: str,
                         target: Optional[str]=None,
-                        member: Optional[str]=None,
-                        ) -> List[Step]:
+                        member: Optional[str]=None) -> List[Step]:
 
     precip = data.precip_monthly(yearmon=yearmon, target=target, member=member)
     temp = data.temp_monthly(yearmon=yearmon, target=target, member=member)
@@ -155,7 +154,7 @@ def time_integrate(workspace: DefaultWorkspace,
         window_observed = months
         window_forecast = []
 
-    prev_results = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
+    prev_results = [workspace.results(yearmon=x, window=1, basis=basis) + [workspace.forcing(yearmon=x, window=1)] for x in window_observed] + \
                    [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis)
                     for x in window_forecast]
 
