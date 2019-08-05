@@ -55,7 +55,8 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
         # Do time integration
         for window in config.integration_windows():
-            steps += time_integrate(config.workspace(), config.all_integrated_stats(), yearmon=yearmon, window=window)
+            steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), forcing = False, yearmon=yearmon, window=window)
+            steps += time_integrate(config.workspace(), config.forcing_integrated_stats(), forcing = True, yearmon=yearmon, window=window)
 
         # Compute return periods
         for window in [1] + config.integration_windows():
@@ -140,9 +141,11 @@ def monthly_forecast(config: Config,
 
             for window in config.integration_windows():
                 # Time integrate the results
-                steps += time_integrate(config.workspace(), config.lsm_integrated_stats(),
-                                        window=window, yearmon=yearmon, target=target,
-                                        member=member)
+                # steps += time_integrate(config.workspace(), config.lsm_integrated_stats(),
+                #                         window=window, yearmon=yearmon, target=target,
+                #                         member=member)
+                steps += time_integrate(config.workspace(), config.lsm_integrated_stats(), forcing = False, yearmon=yearmon, window=window, member=member, target=target)
+                steps += time_integrate(config.workspace(), config.forcing_integrated_stats(), forcing = True, yearmon=yearmon, window=window, member=member, target=target)
 
             # Compute return periods
             for window in [1] + config.integration_windows():

@@ -137,6 +137,7 @@ def run_lsm(workspace: DefaultWorkspace, static: Static, *,
 
 def time_integrate(workspace: DefaultWorkspace,
                    integrated_stats: Dict[str, List[str]],
+                   forcing: bool,
                    *,
                    yearmon: str,
                    target: Optional[str]=None,
@@ -154,23 +155,34 @@ def time_integrate(workspace: DefaultWorkspace,
         window_observed = months
         window_forecast = []
 
-    prev_results = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
-                   [workspace.forcing(yearmon=x, window=1) for x in window_observed] + \
-                   [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis)
-                    for x in window_forecast] + \
-                   [workspace.forcing(yearmon=yearmon, member=member, target=x, window=1) for x in window_forecast]
+    prev = [workspace.forcing(yearmon=x, window=1) for x in window_observed] + \
+           [workspace.forcing(yearmon=yearmon, 
+                              member=member, 
+                              target=x, 
+                              window=1) for x in window_forecast] if forcing else [workspace.results(yearmon=x, 
+                                                                                                        window=1, 
+                                                                                                        basis=basis) for x in window_observed] + \
+                                                                                  [workspace.results(yearmon=yearmon, 
+                                                                                                     member=member, 
+                                                                                                     target=x, 
+                                                                                                     window=1, 
+                                                                                                     basis=basis) for x in window_forecast]
+
 
     return [
         wsim_integrate(
-            inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev_results],
+            inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev], 
             stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
             attrs=[attrs.integration_window(var='*', months=window)],
-            output=workspace.results(yearmon=yearmon,
+            output= workspace.results(yearmon=yearmon,
                                      window=window,
                                      target=target,
                                      member=member,
                                      temporary=False,
-                                     basis=basis)
+                                     basis=basis) if not forcing else workspace.forcing(yearmon=yearmon, 
+                                                                                        window=window, 
+                                                                                        member=member, 
+                                                                                        target=target)
         )
     ]
 

@@ -134,6 +134,7 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                             config.lsm_integrated_stats(basis=Basis.BASIN),
                                             yearmon=yearmon,
                                             window=window,
+                                            forcing=False,
                                             basis=Basis.BASIN)
 
     if yearmon not in config.result_fit_yearmons():
@@ -185,7 +186,8 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                                 target=target,
                                                 member=member,
                                                 window=window,
-                                                basis=Basis.BASIN)
+                                                basis=Basis.BASIN,
+                                                forcing=False)
 
             steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon, target=target, member=member)
             steps += compute_plant_losses(config.workspace(), yearmon=yearmon, target=target, member=member)
