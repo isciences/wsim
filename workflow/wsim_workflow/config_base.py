@@ -99,7 +99,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
     def result_postprocess_steps(self, yearmon=None, target=None, member=None) -> List[Step]:
         """
         Provides a list of one or more postprocessing steps to be applied to LSM results
-        for a givem YYYYMM/forecast target/ensemble member
+        for a given YYYYMM/forecast target/ensemble member
         """
         return []
 
