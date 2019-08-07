@@ -103,57 +103,25 @@ write_vars_to_cdf <- function(vars,
                               put_data=TRUE,
                               quick_append=FALSE) {
   # TODO allow implicit id definition with 'id' col in vars
-  is_spatial <- is.null(ids) # !(is.null(extent) && is.null(xmin) && is.null(xmax) && is.null(ymin) && is.null(ymax))
+  is_spatial <- is.null(ids)
   character_ids <- !is_spatial && mode(ids) == 'character'
 
-  if (is.array(vars)) {
-    vars <- cube_to_matrices(vars)
-  }
+  vars <- standardize_vars(vars)
+  extent <- standardize_extent(extent, xmin, xmax, ymin, ymax)
+  ids <- standardize_ids(ids)
 
-  if (is.null(names(vars)) || length(vars) != length(names(vars))) {
-    stop("vars must be an array with dimnames, or a named list of variables.")
-  }
-
-  for (varname in names(vars)) {
-    if(class(vars[[varname]]) == 'factor') {
-      vars[[varname]] <- as.character(vars[[varname]])
-    }
+  if (is.null(extent) && is.null(ids)) {
+    stop("Must provide either extent or ids")
   }
 
   if (!append || !quick_append) {
-    if (is_spatial) {
-      extent <- validate_extent(extent, xmin, xmax, ymin, ymax)
+    dims <- make_netcdf_dims(extent, ids, dim(vars[[1]]))
 
-      lats <- lat_seq(extent, dim(vars[[1]]))
-      lons <- lon_seq(extent, dim(vars[[1]]))
-
-      dims <- list(
-        ncdf4::ncdim_def("lon", units="degrees_east", vals=lons, longname="Longitude", create_dimvar=TRUE),
-        ncdf4::ncdim_def("lat", units="degrees_north", vals=lats, longname="Latitude", create_dimvar=TRUE)
-      )
-    } else {
-      if (any(is.na(ids))) {
-        stop('All IDs must be defined.')
-      }
-
+    if (!is_spatial) {
       if (is.null(extra_dims) || !is.null(write_slice)) {
         verify_var_size(vars, length(ids))
       } else {
         verify_var_size(vars, length(ids)*prod(sapply(extra_dims, length)))
-      }
-
-      if (character_ids) {
-        # The R ncdf4 library does not support proper netCDF 4 strings. So we do it the
-        # old-school way, with fixed-length character arrays. Data written in this
-        # way seems to be interpreted correctly by software such as QGIS.
-        dims <- list(
-          ncdf4::ncdim_def("id", units="", vals=1:length(ids), create_dimvar=FALSE)
-        )
-      } else {
-        # Assume that our IDs are integers, and error out if they're not.
-        dims <- list(
-          ncdf4::ncdim_def("id", units="", vals=coerce_to_integer(ids), create_dimvar=TRUE)
-        )
       }
     }
 
@@ -226,7 +194,7 @@ write_vars_to_cdf <- function(vars,
     # Verify that our dimensions match up before writing
     if (!quick_append) {
       if (is_spatial) {
-        check_coordinate_variables(ncout, lat=lats, lon=lons)
+        check_coordinate_variables(ncout, lat=lat_seq(extent, dim(vars[[1]])), lon=lon_seq(extent, dim(vars[[1]])))
       } else {
         check_coordinate_variables(ncout, id=ids)
       }
@@ -413,19 +381,21 @@ write_wgs84_crs_attributes <- function(ncout, var_names) {
   }
 }
 
-validate_extent <- function(extent, xmin, xmax, ymin, ymax) {
-  # Must provide extent in one form or another
-  if (is.null(extent) && any(is.null(c(xmin, xmax, ymin, ymax)))) {
-      stop("Must provide either extent or xmin, xmax, ymin, ymax")
-  }
-
-  # Can't provide extent in both forms
-  if (!is.null(extent) && !all(is.null(c(xmin, xmax, ymin, ymax)))) {
-      stop("Both extent and xmin, xmax, ymin, ymax arguments provided.")
-  }
-
+standardize_extent <- function(extent, xmin, xmax, ymin, ymax) {
   if (is.null(extent)) {
     extent <- c(xmin, xmax, ymin, ymax)
+
+    if (all(is.null(extent))) {
+      return(NULL)
+    }
+
+    if (any(is.null(c(xmin, xmax, ymin, ymax)))) {
+        stop("Must provide either extent or xmin, xmax, ymin, ymax")
+    }
+  } else {
+    if (!all(is.null(c(xmin, xmax, ymin, ymax)))) {
+      stop("Both extent and xmin, xmax, ymin, ymax arguments provided.")
+    }
   }
 
   if (length(extent) != 4) {
@@ -501,5 +471,41 @@ verify_var_size <- function(vars, sz) {
                      varname, length(vars[[varname]]), sz))
       }
     }
+  }
+}
+
+standardize_vars <- function(vars) {
+  # convert 3D to list of matrices
+  if (is.array(vars)) {
+    vars <- cube_to_matrices(vars)
+  }
+
+  if (is.null(names(vars)) || length(vars) != length(names(vars))) {
+    stop("vars must be an array with dimnames, or a named list of variables.")
+  }
+
+  # convert factors to text
+  for (varname in names(vars)) {
+    if(class(vars[[varname]]) == 'factor') {
+      vars[[varname]] <- as.character(vars[[varname]])
+    }
+  }
+
+  return(vars)
+}
+
+standardize_ids <- function(ids) {
+  if (is.null(ids)) {
+    return(NULL)
+  }
+
+  if (any(is.na(ids))) {
+    stop('All IDs must be defined.')
+  }
+
+  if (mode(ids) == 'character') {
+    return(ids)
+  } else {
+    return(coerce_to_integer(ids))
   }
 }

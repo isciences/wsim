@@ -238,7 +238,7 @@ test_that('write_vars_to_cdf provides useful errors if extent is not correctly s
   )
 
   expect_error(write_vars_to_cdf(data, fname),
-               "Must provide either extent or xmin,")
+               "Must provide either extent or")
 
   expect_error(write_vars_to_cdf(data, fname, extent=c(0, 1, 0, 1), xmin=2),
                "Both extent and xmin.* provided")
