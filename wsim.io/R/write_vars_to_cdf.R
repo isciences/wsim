@@ -114,9 +114,24 @@ write_vars_to_cdf <- function(vars,
     stop("Must provide either extent or ids")
   }
 
-  if (!append || !quick_append) {
-    dims <- make_netcdf_dims(vars, extent, ids, extra_dims)
+  if (append && file.exists(filename)) {
+    ncout <- ncdf4::nc_open(filename, write=TRUE)
+  } else {
+    ncout <- NULL
+  }
 
+  read_netcdf_dims <- function(nc) {
+    stopifnot(class(nc) == 'ncdf4')
+    unique(nc$dim)
+  }
+
+  #if (is.null(ncout)) {
+    dims <- make_netcdf_dims(vars, extent, ids, extra_dims)
+  #} else {
+  #  dims <- read_netcdf_dims(ncout)
+  #}
+
+  if (!append || !quick_append) {
     if (!is_spatial) {
       if (is.null(extra_dims) || !is.null(write_slice)) {
         verify_var_size(vars, length(ids))
@@ -126,32 +141,9 @@ write_vars_to_cdf <- function(vars,
     }
   }
 
-  # Create all variables, putting in blank strings for the units.  We will
-  # overwrite this with the actual units, if they have been passed in
-  # as attributes.
-  regular_var_names <- names(vars)[(names(vars) != 'id' | is_spatial) &
-                                   !(names(vars) %in% names(extra_dims))]
+
   if (!append || !quick_append) {
-    ncvars <- sapply(regular_var_names, function(varname) {
-      create_var(dims, varname, vars[[varname]], prec)
-    }, simplify=FALSE)
-
-    if (is_spatial) {
-      # Add a CRS var
-      ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
-    }
-
-    if (character_ids) {
-      # Have to manually create dimension variable
-      ncvars$id <- create_char_dimension_variable(dims[[1]], 'id', ids)
-    }
-
-    for (dimname in names(extra_dims)) {
-      vals <- extra_dims[[dimname]]
-      if (mode(vals) == 'character') {
-        ncvars[[dimname]] <- create_char_dimension_variable(dims[[dimname]], dimname, vals)
-      }
-    }
+    ncvars <- create_vars(vars, dims, ids, prec, extra_dims)
   }
 
   # Does the file already exist?
@@ -193,7 +185,11 @@ write_vars_to_cdf <- function(vars,
   }
 
   if (put_data) {
-    for (param in regular_var_names) {
+    for (param in names(vars)) {
+      # Don't write dimension vals
+      if (!is.null(dims[[param]]))
+        next
+
       dimnames <- sapply(ncout$var[[param]]$dim, function(d) d$name)
 
       if (is_spatial) {
@@ -500,6 +496,9 @@ create_var <- function(dims, varname, vals, prec) {
     vardims <- dims
   }
 
+  # Put in blank strings for the units.  We will overwrite this
+  # later with the actual units, if they have been passed in as
+  # attributes.
   ncdf4::ncvar_def(name=varname,
                    units="",
                    dim=vardims,
@@ -507,4 +506,31 @@ create_var <- function(dims, varname, vals, prec) {
                    prec=var_prec(varname, vals, prec),
                    compression=1)
 
+}
+
+create_vars <- function(vars, dims, ids, prec, extra_dims) {
+  regular_var_names <- names(vars)[!(names(vars) %in% names(dims))]
+
+  ncvars <- sapply(regular_var_names, function(varname) {
+    create_var(dims, varname, vars[[varname]], prec)
+  }, simplify=FALSE)
+
+  # Add a CRS var
+  if (!is.null(dims$lat)) {
+    ncvars$crs <- ncdf4::ncvar_def(name="crs", units="", dim=list(), missval=NULL, prec="integer")
+  }
+
+  # Manually create dimension variable for character IDs
+  if (!is.null(dims$id) && mode(ids) == 'character') {
+    ncvars$id <- create_char_dimension_variable(dims[['id']], 'id', ids)
+  }
+
+  for (dimname in names(extra_dims)) {
+    vals <- extra_dims[[dimname]]
+    if (mode(vals) == 'character') {
+      ncvars[[dimname]] <- create_char_dimension_variable(dims[[dimname]], dimname, vals)
+    }
+  }
+
+  return(ncvars)
 }
