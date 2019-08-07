@@ -115,7 +115,7 @@ write_vars_to_cdf <- function(vars,
   }
 
   if (!append || !quick_append) {
-    dims <- make_netcdf_dims(extent, ids, dim(vars[[1]]))
+    dims <- make_netcdf_dims(vars, extent, ids, extra_dims)
 
     if (!is_spatial) {
       if (is.null(extra_dims) || !is.null(write_slice)) {
@@ -124,19 +124,6 @@ write_vars_to_cdf <- function(vars,
         verify_var_size(vars, length(ids)*prod(sapply(extra_dims, length)))
       }
     }
-
-    extra_ncdf_dims <- list()
-    for (dimname in names(extra_dims)) {
-      vals <- extra_dims[[dimname]]
-      if (mode(vals) == 'character') {
-        new_dim <- ncdf4::ncdim_def(dimname, units='', vals=1:length(vals), create_dimvar=FALSE)
-      } else {
-        new_dim <- ncdf4::ncdim_def(dimname, units='', vals=vals, create_dimvar=TRUE)
-      }
-      extra_ncdf_dims[[dimname]] <- new_dim
-    }
-
-    dims <- c(dims, extra_ncdf_dims)
   }
 
   # Create all variables, putting in blank strings for the units.  We will
@@ -182,7 +169,7 @@ write_vars_to_cdf <- function(vars,
     for (dimname in names(extra_dims)) {
       vals <- extra_dims[[dimname]]
       if (mode(vals) == 'character') {
-        ncvars[[dimname]] <- create_char_dimension_variable(extra_ncdf_dims[[dimname]], dimname, vals)
+        ncvars[[dimname]] <- create_char_dimension_variable(dims[[dimname]], dimname, vals)
       }
     }
   }
@@ -216,7 +203,7 @@ write_vars_to_cdf <- function(vars,
     }
 
     for (dimname in names(extra_dims)) {
-      ncdf4::ncvar_put(ncout, extra_ncdf_dims[[dimname]], extra_dims[[dimname]])
+      ncdf4::ncvar_put(ncout, dims[[dimname]], extra_dims[[dimname]])
     }
   }
 
