@@ -132,29 +132,9 @@ write_vars_to_cdf <- function(vars,
   regular_var_names <- names(vars)[(names(vars) != 'id' | is_spatial) &
                                    !(names(vars) %in% names(extra_dims))]
   if (!append || !quick_append) {
-    ncvars <- lapply(regular_var_names, function(param) {
-      if (mode(vars[[param]]) == "character") {
-        if (is_spatial) {
-          stop("Character data only supported for non-spatial datasets.")
-        }
-
-        nchar_dim <- ncdf4::ncdim_def(paste0(param, "_nchar"),
-                                      units="",
-                                      vals=1:max(nchar(vars[[param]]), na.rm=TRUE),
-                                      create_dimvar=FALSE)
-        vardims <- list(nchar_dim, dims[[1]])
-      } else {
-        vardims <- dims
-      }
-
-      ncdf4::ncvar_def(name=param,
-                       units="",
-                       dim=vardims,
-                       missval=var_fill(param, vars, prec),
-                       prec=var_prec(param, vars, prec),
-                       compression=1)
-    })
-    names(ncvars) <- regular_var_names
+    ncvars <- sapply(regular_var_names, function(varname) {
+      create_var(dims, varname, vars[[varname]], prec)
+    }, simplify=FALSE)
 
     if (is_spatial) {
       # Add a CRS var
@@ -413,10 +393,10 @@ create_char_dimension_variable <- function(dim, varname, vals) {
 #' Return the data precision for variable named var
 
 #' @param var  name of the variable
-#' @param vars list containing data for vars
+#' @param vals list containing data for vars
 #' @param prec precision argument as described in write_vars_to_cdf
 #' @return text representation of precision for variable
-var_prec <- function(var, vars, prec) {
+var_prec <- function(var, vals, prec) {
   if (is.character(prec)) {
     return(prec)
   }
@@ -427,14 +407,14 @@ var_prec <- function(var, vars, prec) {
   }
 
   # Guess precision
-  if (mode(vars[[var]]) == 'logical' || all(vars[[var]] %in% c(0,1)))
+  if (mode(vals) == 'logical' || all(vals %in% c(0,1)))
     return('byte') # ncdf4 library does not support bool type
 
-  if (mode(vars[[var]]) == 'character')
+  if (mode(vals) == 'character')
     return('char') # ncdf4 library does not support string type
 
   # return default floating-point type, as specified by arg
-  if (can_coerce_to_integer(vars[[var]])) {
+  if (can_coerce_to_integer(vals)) {
     return('integer')
   }
 
@@ -444,10 +424,10 @@ var_prec <- function(var, vars, prec) {
 #' Return a fill value to use for the variable named var
 #'
 #' @inheritParams var_prec
-var_fill <- function(var, vars, prec) {
-  stopifnot(var_prec(var, vars, prec) %in% names(default_netcdf_nodata))
+var_fill <- function(var, vals, prec) {
+  stopifnot(var_prec(var, vals, prec) %in% names(default_netcdf_nodata))
 
-  default_netcdf_nodata[[var_prec(var, vars, prec)]]
+  default_netcdf_nodata[[var_prec(var, vals, prec)]]
 }
 
 verify_var_size <- function(vars, sz) {
@@ -495,4 +475,36 @@ standardize_ids <- function(ids) {
   } else {
     return(coerce_to_integer(ids))
   }
+}
+
+#' Create a ncvar4 object
+#'
+#' @param dims list of \code{ncdim4} objects
+#' @param varname name of the variable
+#' @param vals values for the variable
+#' @param prec argument passed to write_vars_to_cdf
+create_var <- function(dims, varname, vals, prec) {
+  is_spatial <- is.null(dims$id)
+
+  if (mode(vals) == "character") {
+    if (is_spatial) {
+      stop("Character data only supported for non-spatial datasets.")
+    }
+
+    nchar_dim <- ncdf4::ncdim_def(paste0(varname, "_nchar"),
+                                  units="",
+                                  vals=1:max(nchar(vals), na.rm=TRUE),
+                                  create_dimvar=FALSE)
+    vardims <- list(nchar_dim, dims$id)
+  } else {
+    vardims <- dims
+  }
+
+  ncdf4::ncvar_def(name=varname,
+                   units="",
+                   dim=vardims,
+                   missval=var_fill(varname, vals, prec),
+                   prec=var_prec(varname, vals, prec),
+                   compression=1)
+
 }
