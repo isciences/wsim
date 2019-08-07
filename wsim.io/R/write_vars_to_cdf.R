@@ -210,21 +210,12 @@ write_vars_to_cdf <- function(vars,
       }
 
       verbose <- FALSE
-
-      if (is.null(write_slice)) {
-        start <- NA
-        count <- NA
-      } else {
-        start <- find_offset(ncout, dimnames, write_slice)
-        count <- find_count(dimnames, write_slice)
-      }
-
-      ncdf4::ncvar_put(nc=ncout,
-                       varid=param,
-                       vals=dat,
-                       start=start,
-                       count=count,
-                       verbose=verbose)
+      ncdf4::ncvar_put(nc = ncout,
+                       varid = param,
+                       vals = dat,
+                       start = find_offset(ncout, dimnames, write_slice),
+                       count = find_count(dimnames, write_slice),
+                       verbose = verbose)
     }
   }
 
