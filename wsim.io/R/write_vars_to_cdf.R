@@ -102,17 +102,9 @@ write_vars_to_cdf <- function(vars,
                               append=FALSE,
                               put_data=TRUE,
                               quick_append=FALSE) {
-  datestring  <- strftime(Sys.time(), '%Y-%m-%dT%H:%M%S%z')
-  history_entry <- paste0(datestring, ': ', get_command(), '\n')
-
   # TODO allow implicit id definition with 'id' col in vars
   is_spatial <- is.null(ids) # !(is.null(extent) && is.null(xmin) && is.null(xmax) && is.null(ymin) && is.null(ymax))
   character_ids <- !is_spatial && mode(ids) == 'character'
-
-  standard_attrs <- list(
-    list(key="Conventions", val="CF-1.6"),
-    list(key="wsim_version", val=wsim_version_string())
-  )
 
   if (is.array(vars)) {
     vars <- cube_to_matrices(vars)
@@ -139,13 +131,6 @@ write_vars_to_cdf <- function(vars,
         ncdf4::ncdim_def("lon", units="degrees_east", vals=lons, longname="Longitude", create_dimvar=TRUE),
         ncdf4::ncdim_def("lat", units="degrees_north", vals=lats, longname="Latitude", create_dimvar=TRUE)
       )
-
-      standard_attrs <- c(standard_attrs, list(
-        list(var="lon", key="axis", val="X"),
-        list(var="lon", key="standard_name", val="longitude"),
-        list(var="lat", key="axis", val="Y"),
-        list(var="lat", key="standard_name", val="latitude")
-      ))
     } else {
       if (any(is.na(ids))) {
         stop('All IDs must be defined.')
@@ -254,24 +239,9 @@ write_vars_to_cdf <- function(vars,
           ncout <- ncdf4::ncvar_add(ncout, var)
         }
       }
-
-      existing_history <- ncdf4::ncatt_get(ncout, 0, "history")
-      if (existing_history$hasatt) {
-        # TODO avoid pasting same command to history multiple times
-        history_entry <- paste0(existing_history$value, history_entry)
-      }
-
-      standard_attrs <- c(standard_attrs, list(
-        list(key="history", val=history_entry)
-      ))
     }
   } else {
     ncout <- ncdf4::nc_create(filename, ncvars)
-
-    standard_attrs <- c(standard_attrs, list(
-      list(key="date_created", val=datestring),
-      list(key="history", val=history_entry)
-    ))
 
     if (character_ids) {
       ncdf4::ncvar_put(ncout, ncvars$id, ids)
@@ -333,6 +303,16 @@ write_vars_to_cdf <- function(vars,
 
   # Write attributes
   if (!append || !quick_append) {
+    if (append && ncdf4::ncatt_get(ncout, 0, "history")$hasatt) {
+      existing_history <- ncdf4::ncatt_get(ncout, 0, "history")$value
+    } else {
+      existing_history <- NULL
+    }
+
+    standard_attrs <- standard_netcdf_attrs(is_new = !append,
+                                            is_spatial = is_spatial,
+                                            existing_history = existing_history)
+
     for (attr in c(standard_attrs, attrs)) {
       if (!is.null(attr$var) && attr$var == '*') {
         # Global attribute. Apply the attribute to all variables modified
