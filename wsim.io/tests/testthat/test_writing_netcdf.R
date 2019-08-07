@@ -518,3 +518,22 @@ test_that('We can pass an array that has dimnames instead of a named list of var
 
   file.remove(fname)
 })
+
+test_that('we can append to a file created with an unlimited id dim', {
+  fname <- tempfile(fileext='.nc')
+
+  ids <- 3:17
+  precip <- runif(length(ids))*10
+  runoff <- precip*runif(length(ids))
+
+  id_dim <- ncdf4::ncdim_def('id', units='', vals=ids, unlim=TRUE)
+  precip_var <- ncdf4::ncvar_def('precip', units='mm', dim=id_dim)
+
+  cdf <- ncdf4::nc_create(fname, precip_var)
+  ncdf4::ncvar_put(cdf, precip_var, precip)
+  ncdf4::nc_close(cdf)
+
+  write_vars_to_cdf(list(runoff=runoff), fname, ids=ids, append=TRUE)
+
+  file.remove(fname)
+})
