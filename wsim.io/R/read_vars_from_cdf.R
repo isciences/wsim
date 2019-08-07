@@ -328,7 +328,7 @@ find_offset <- function(cdf, real_dims, dim_values) {
 
   sapply(real_dims, function(dimname) {
     if (dimname %in% names(dim_values)) {
-      i <- which(ncdf4::ncvar_get(cdf, dimname)==dim_values[[dimname]])
+      i <- which(ncdf4::ncvar_get(cdf, dimname) == dim_values[[dimname]])
       if (length(i) == 0) {
         stop(sprintf("Invalid value \"%s\" for dimension \"%s\".", dim_values[[dimname]], dimname))
       }

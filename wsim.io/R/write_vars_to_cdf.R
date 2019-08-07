@@ -177,34 +177,32 @@ write_vars_to_cdf <- function(vars,
 
   # Write data to vars
   if (!is_spatial) {
-    cmbn <- do.call(combos, c(list(id=ids), extra_dims))
+    # Get a data frame representing the Cartesian product of all dimensions
+    # so that we can properly fill in missing values with NA
+    dimension_df <- do.call(combos, c(list(id=ids), extra_dims))
   }
 
   if (put_data) {
     for (param in names(vars)) {
       # Don't write dimension vals
-      if (!is.null(dims[[param]]))
+      if (!is.null(dims[[param]])) {
         next
+      }
 
+      # Figure out what dimensions are used for this variable
       dimnames <- sapply(ncout$var[[param]]$dim, function(d) d$name)
 
       if (is_spatial) {
-        ndim <- length(dim(vars[[param]]))
-        if (ndim > 2) {
-          permut <- c(2, 1, 3:ndim)
-        } else {
-          permut <- c(2, 1)
-        }
-
-        dat <- aperm(vars[[param]], permut)
+        dat <- flip_first_two_dims(vars[[param]])
       } else {
         if (is.null(extra_dims)) {
           dat <- vars[[param]]
         } else {
-          dat <- merge(cmbn,
-                       vars,
-                       by=names(cmbn),
-                       all.x=TRUE)
+          # Join our data to dimension_df to fill in missing values
+          dat <- merge(dimension_df, vars, by=names(dimension_df), all.x=TRUE)
+
+          # Sort the data frame according to the order of dimension values used in the netCDF file
+          # Then, drop off the dimension columns
           dat <- dat[do.call(order, lapply(rev(dimnames), function(d) match(dat[[d]], ncdf4::ncvar_get(ncout, d)))), param]
         }
       }
@@ -517,4 +515,16 @@ create_vars <- function(vars, dims, ids, prec, extra_dims) {
   }
 
   return(ncvars)
+}
+
+#' Flip the first two dimensions of a multidimensional array
+flip_first_two_dims <- function(arr) {
+  ndim <- length(dim(arr))
+  if (ndim > 2) {
+    permut <- c(2, 1, 3:ndim)
+  } else {
+    permut <- c(2, 1)
+  }
+
+  aperm(arr, permut)
 }
