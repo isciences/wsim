@@ -114,51 +114,43 @@ write_vars_to_cdf <- function(vars,
     stop("Must provide either extent or ids")
   }
 
-  if (append && file.exists(filename)) {
-    ncout <- ncdf4::nc_open(filename, write=TRUE)
+  # check size of arguments
+  # needed to prevent silent recycling?
+  # TODO move into fn
+  if (is_spatial) {
+    # TODO implement
   } else {
-    ncout <- NULL
-  }
-
-  read_netcdf_dims <- function(nc) {
-    stopifnot(class(nc) == 'ncdf4')
-    unique(nc$dim)
-  }
-
-  #if (is.null(ncout)) {
-    dims <- make_netcdf_dims(vars, extent, ids, extra_dims)
-  #} else {
-  #  dims <- read_netcdf_dims(ncout)
-  #}
-
-  if (!append || !quick_append) {
-    if (!is_spatial) {
-      if (is.null(extra_dims) || !is.null(write_slice)) {
-        verify_var_size(vars, length(ids))
-      } else {
-        verify_var_size(vars, length(ids)*prod(sapply(extra_dims, length)))
-      }
+    if (is.null(extra_dims) || !is.null(write_slice)) {
+      verify_var_size(vars, length(ids))
+    } else {
+      verify_var_size(vars, length(ids)*prod(sapply(extra_dims, length)))
     }
   }
 
-
-  if (!append || !quick_append) {
-    ncvars <- create_vars(vars, dims, ids, prec, extra_dims)
-  }
-
-  # Does the file already exist?
   if (append && file.exists(filename)) {
     ncout <- ncdf4::nc_open(filename, write=TRUE)
 
     # Verify that our dimensions match up before writing
     if (!quick_append) {
-      if (is_spatial) {
-        check_coordinate_variables(ncout, lat=lat_seq(extent, dim(vars[[1]])), lon=lon_seq(extent, dim(vars[[1]])))
-      } else {
-        check_coordinate_variables(ncout, id=ids)
+      dims <- make_netcdf_dims(vars, extent, ids, extra_dims)
+      ncvars <- create_vars(vars, dims, ids, prec, extra_dims)
+
+      # Check that the dimensions of the data to write match up
+      # with the data already in the file.
+      for (dim in names(dims)) {
+        if (dim == 'id') {
+          check_coordinate_variable(ncout, 'id', ids)
+        } else if (dim %in% names(extra_dims)) {
+          check_coordinate_variable(ncout, dim, extra_dims[[dim]])
+        } else {
+          # this only works for numeric dim values, which is why we
+          # handle extra_dims and id separately
+          check_coordinate_variable(ncout, dim, dims[[dim]]$vals)
+        }
       }
 
-      check_values_in_dimension(ncout, write_slice)
+      # Make sure the slice we're writing to actually exists
+      check_values_exist_in_dimension(ncout, write_slice)
 
       # Add any missing variable definitions
       for (var in ncvars) {
@@ -168,6 +160,10 @@ write_vars_to_cdf <- function(vars,
       }
     }
   } else {
+    # Creating a new file
+    dims <- make_netcdf_dims(vars, extent, ids, extra_dims)
+    ncvars <- create_vars(vars, dims, ids, prec, extra_dims)
+
     ncout <- ncdf4::nc_create(filename, ncvars)
 
     if (character_ids) {
@@ -267,22 +263,19 @@ write_vars_to_cdf <- function(vars,
 #' Validate coordinate variables
 #'
 #' @param ncout a netCDF file opened for writing
-#' @param ... values of any named dimension variables
-check_coordinate_variables <- function(ncout, ...) {
-  vars <- list(...)
+#' @param varname the name of a coordinate variable
+#' @param values expected values of the coodinate variable
+check_coordinate_variable <- function(ncout, varname, values) {
+  if (!is.null(ncout$dim[[varname]])) {
+    existing <- ncdf4::ncvar_get(ncout, varname)
+    current <- values
 
-  for (v in names(vars)) {
-    if (!is.null(ncout$dim[[v]])) {
-      existing <- ncdf4::ncvar_get(ncout, v)
-      current <- vars[[v]]
+    if (length(current) != length(existing)) {
+      stop("Cannot write ", varname, " of dimension ", length(current), " to existing file with dimension ", length(existing))
+    }
 
-      if (length(current) != length(existing)) {
-        stop("Cannot write ", v, " of dimension ", length(current), " to existing file with dimension ", length(existing))
-      }
-
-      if (any(current != existing)) {
-        stop("Values of dimension ", v, " do not match existing values.")
-      }
+    if (any(current != existing)) {
+      stop("Values of dimension ", varname, " do not match existing values.")
     }
   }
 }
@@ -291,7 +284,7 @@ check_coordinate_variables <- function(ncout, ...) {
 #'
 #' @param ncout a netCDF file opened for writing
 #' @param vars  list containing values of any named dimension variables
-check_values_in_dimension <- function(ncout, vars) {
+check_values_exist_in_dimension <- function(ncout, vars) {
   for (v in names(vars)) {
     if (!(vars[[v]] %in% ncout$dim[[v]]$vals)) {
       stop("Invalid value \"", vars[[v]], "\" for dimension \"", v, "\"")
