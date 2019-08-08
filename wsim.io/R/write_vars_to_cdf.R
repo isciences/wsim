@@ -130,9 +130,12 @@ write_vars_to_cdf <- function(vars,
   if (append && file.exists(filename)) {
     ncout <- ncdf4::nc_open(filename, write=TRUE)
 
+    unlimited_dims <- Filter(function(dimname) ncout$dim[[dimname]]$unlim,
+                             names(ncout$dim))
+
     # Verify that our dimensions match up before writing
     if (!quick_append) {
-      dims <- make_netcdf_dims(vars, extent, ids, extra_dims)
+      dims <- make_netcdf_dims(vars, extent, ids, extra_dims, unlimited_dims)
       ncvars <- create_vars(vars, dims, ids, prec, extra_dims)
 
       # Check that the dimensions of the data to write match up

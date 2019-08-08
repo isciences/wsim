@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -527,7 +527,7 @@ test_that('we can append to a file created with an unlimited id dim', {
   runoff <- precip*runif(length(ids))
 
   id_dim <- ncdf4::ncdim_def('id', units='', vals=ids, unlim=TRUE)
-  precip_var <- ncdf4::ncvar_def('precip', units='mm', dim=id_dim)
+  precip_var <- ncdf4::ncvar_def('precip', units='mm', dim=id_dim, compression=1)
 
   cdf <- ncdf4::nc_create(fname, precip_var)
   ncdf4::ncvar_put(cdf, precip_var, precip)
