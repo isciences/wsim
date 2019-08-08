@@ -521,6 +521,8 @@ create_vars <- function(vars, dims, ids, prec, extra_dims) {
 }
 
 #' Flip the first two dimensions of a multidimensional array
+#' @param arr an array whose dimensions should be flipped
+#' @return the transformed array
 flip_first_two_dims <- function(arr) {
   ndim <- length(dim(arr))
   if (ndim > 2) {
