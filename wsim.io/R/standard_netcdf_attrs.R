@@ -23,7 +23,11 @@ standard_netcdf_attrs <- function(is_new, is_spatial, existing_history=NULL) {
 
   if (!is.null(existing_history)) {
     if (endsWith(existing_history, history)) {
+      # skip adding history to avoid duplicate entry
       history <- existing_history
+    } else if (nchar(existing_history) > 0 && !endsWith(existing_history, '\n')) {
+      # previous history entry didn't end with a newline, so we add it here
+      history <- paste0(existing_history, '\n', history)
     } else {
       history <- paste0(existing_history, history)
     }
