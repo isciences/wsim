@@ -90,6 +90,7 @@ def spinup(config, meta_steps):
             steps += compute_return_periods(config.workspace(),
                                             result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
                                             forcing_vars=config.forcing_rp_vars() if window == 1 else config.forcing_integrated_var_names(),
+                                            state_vars=config.state_rp_vars() if window==1 else None,
                                             yearmon=yearmon,
                                             window=window)
 

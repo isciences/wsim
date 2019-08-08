@@ -63,6 +63,7 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
             steps += compute_return_periods(config.workspace(),
                                             result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
                                             forcing_vars=config.forcing_rp_vars() if window==1 else config.forcing_integrated_var_names(),
+                                            state_vars=config.state_rp_vars() if window==1 else None,
                                             yearmon=yearmon,
                                             window=window)
 
@@ -149,6 +150,7 @@ def monthly_forecast(config: Config,
                 steps += compute_return_periods(config.workspace(),
                                                 forcing_vars=config.forcing_rp_vars() if window==1 else config.forcing_integrated_var_names(),
                                                 result_vars=config.lsm_rp_vars() if window==1 else config.lsm_integrated_var_names(),
+                                                state_vars=config.state_rp_vars() if window==1 else None,
                                                 yearmon=yearmon,
                                                 window=window,
                                                 target=target,
