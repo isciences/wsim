@@ -123,6 +123,11 @@ class GLDAS20_NoahConfig(ConfigBase):
         assert False
 
     @classmethod
+    def state_rp_vars(cls, basis=None):
+        return[]
+        
+        
+    @classmethod
     def lsm_integrated_vars(cls, basis=None):
         if not basis:
             return {
