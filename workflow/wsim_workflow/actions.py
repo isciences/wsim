@@ -205,6 +205,8 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
         forcing_vars = []
     if result_vars is None:
         result_vars = []
+    if state_vars is None:
+        state_vars = []
 
     args = {'yearmon': yearmon, 'target': target, 'window': window, 'member': member, 'basis': basis}
 
