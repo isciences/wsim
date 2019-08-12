@@ -130,13 +130,15 @@ write_vars_to_cdf <- function(vars,
   if (append && file.exists(filename)) {
     ncout <- ncdf4::nc_open(filename, write=TRUE)
 
-    unlimited_dims <- Filter(function(dimname) ncout$dim[[dimname]]$unlim,
-                             names(ncout$dim))
-
     # Verify that our dimensions match up before writing
     if (!quick_append) {
+      use_compression <- (ncout$format != 'NC_FORMAT_CLASSIC')
+
+      unlimited_dims <- Filter(function(dimname) ncout$dim[[dimname]]$unlim,
+                               names(ncout$dim))
+
       dims <- make_netcdf_dims(vars, extent, ids, extra_dims, unlimited_dims)
-      ncvars <- create_vars(vars, dims, ids, prec, extra_dims)
+      ncvars <- create_vars(vars, dims, ids, prec, extra_dims, use_compression)
 
       # Check that the dimensions of the data to write match up
       # with the data already in the file.
@@ -165,7 +167,7 @@ write_vars_to_cdf <- function(vars,
   } else {
     # Creating a new file
     dims <- make_netcdf_dims(vars, extent, ids, extra_dims)
-    ncvars <- create_vars(vars, dims, ids, prec, extra_dims)
+    ncvars <- create_vars(vars, dims, ids, prec, extra_dims, compress=TRUE)
 
     ncout <- ncdf4::nc_create(filename, ncvars)
 
@@ -464,7 +466,9 @@ standardize_ids <- function(ids) {
 #' @param varname name of the variable
 #' @param vals values for the variable
 #' @param prec argument passed to write_vars_to_cdf
-create_var <- function(dims, varname, vals, prec) {
+#' @param compress should compression be enabled for the new variable?
+#' @return a \code{ncvar4} object for the variable
+create_var <- function(dims, varname, vals, prec, compress) {
   is_spatial <- is.null(dims$id)
 
   if (mode(vals) == "character") {
@@ -489,15 +493,15 @@ create_var <- function(dims, varname, vals, prec) {
                    dim=vardims,
                    missval=var_fill(varname, vals, prec),
                    prec=var_prec(varname, vals, prec),
-                   compression=1)
+                   compression=ifelse(compress, 1, NA))
 
 }
 
-create_vars <- function(vars, dims, ids, prec, extra_dims) {
+create_vars <- function(vars, dims, ids, prec, extra_dims, compress) {
   regular_var_names <- names(vars)[!(names(vars) %in% names(dims))]
 
   ncvars <- sapply(regular_var_names, function(varname) {
-    create_var(dims, varname, vars[[varname]], prec)
+    create_var(dims, varname, vars[[varname]], prec, compress)
   }, simplify=FALSE)
 
   # Add a CRS var
