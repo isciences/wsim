@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -90,7 +90,7 @@ main <- function(raw_args) {
     wsim.electricity::water_cooled_loss_onset(basins$baseline_water_stress),
     wsim.electricity::water_cooled_loss_onset(basins$baseline_water_stress) + 30)
 
-  basins$hydropower_loss <- wsim.electricity::hydropower_loss(basins$flow, basins$month_flow_median, 0.6)
+  basins$hydropower_loss <- wsim.electricity::hydropower_loss(basins$flow, basins$month_flow_median)
 
   wsim.io::write_vars_to_cdf(vars=basins[, c('annual_min_flow_quantile', 'annual_min_flow_rp', 'month_flow_median', 'water_cooled_loss', 'hydropower_loss')],
                              filename=args$output,

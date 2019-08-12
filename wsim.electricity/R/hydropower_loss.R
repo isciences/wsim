@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -13,17 +13,16 @@
 
 #' Estimate hydropowerloss based on blue water
 #'
-#' @param blue_water          observed blue water
-#' @param blue_water_expected expected value of blue water distribution
-#' @param exponent            loss function exponent
+#' @param blue_water        observed blue water
+#' @param blue_water_median median blue water
 #' @return lost fraction of expected hydropower generation
 #' @export
-hydropower_loss <- function(blue_water, blue_water_expected, exponent) {
-  stopifnot(length(blue_water_expected) %in% c(1, length(blue_water)))
+hydropower_loss <- function(blue_water, blue_water_median) {
+  stopifnot(length(blue_water_median) %in% c(1, length(blue_water)))
   
   ifelse(is.nan(blue_water),
          NA_real_,
-         ifelse(rep.int(blue_water_expected > 0, length(blue_water)),
-                1 - pmax(pmin((blue_water / blue_water_expected) ^ exponent, 1.0), 0.0), 
+         ifelse(rep.int(blue_water_median > 0, length(blue_water)),
+                1 - pmax(pmin(1.013446 + 0.281561*log(blue_water / blue_water_median), 1.0), 0.0), 
                 0))
 }
