@@ -58,7 +58,7 @@ ncks --no_tmp_fl -h -C -O -x -v time $TEMP_NC2 $TEMP_NC3
 # Add a CRS variable
 ncap2 --no_tmp_fl -h -O -s 'crs=-9999' $TEMP_NC3 $2
 ncatted -h -O \
-	-a spatial_ref,crs,c,c,'GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]' \
+	-a spatial_ref,crs,c,c,'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]' \
 	-a grid_mapping_name,crs,c,c,'latitude_longitude' \
 	-a longitude_of_prime_meridian,crs,c,d,0 \
 	-a semi_major_axis,crs,c,d,6378137 \

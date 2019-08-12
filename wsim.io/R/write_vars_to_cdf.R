@@ -324,7 +324,7 @@ write_wgs84_crs_attributes <- function(ncout, var_names) {
   ncdf4::ncatt_put(ncout, "crs", "longitude_of_prime_meridian", 0.0)
   ncdf4::ncatt_put(ncout, "crs", "semi_major_axis", 6378137.0)
   ncdf4::ncatt_put(ncout, "crs", "inverse_flattening", 298.257223563)
-  ncdf4::ncatt_put(ncout, "crs", "spatial_ref", "GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]")
+  ncdf4::ncatt_put(ncout, "crs", "spatial_ref", 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]')
 
   for (var in var_names) {
     ncdf4::ncatt_put(ncout, var, "grid_mapping", "crs")
