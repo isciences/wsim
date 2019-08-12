@@ -138,15 +138,7 @@ def exact_extract(*,
     return Step(
         targets=output,
         dependencies=[gdaldataset2filename(ds) for ds in rasters.values()] + [boundaries],
-        commands=[
-            cmd,
-            ['ncks',
-             '-O',   # overwrite
-             '-L0',  # enable level-0 compression
-             '-4',   # convert to netCDF4. exactextract writes NC3 and then R ncdf4 library will refuse to append to it.
-             '--fix_rec_dmn', 'id',  # convert unlimited id dim to fixed dim. Without this R ncdf4 will not append.
-             output, output]
-        ],
+        commands=[cmd],
         comment=comment
     )
 
