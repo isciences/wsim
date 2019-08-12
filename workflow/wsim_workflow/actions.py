@@ -156,22 +156,22 @@ def time_integrate(workspace: DefaultWorkspace,
         window_forecast = []
 
     prev = [workspace.forcing(yearmon=x, window=1) for x in window_observed] + \
-           [workspace.forcing(yearmon=yearmon, 
-                              member=member, 
-                              target=x, 
-                              window=1) for x in window_forecast] if forcing else [workspace.results(yearmon=x, 
-                                                                                                        window=1, 
+           [workspace.forcing(yearmon=yearmon,
+                              member=member,
+                              target=x,
+                              window=1) for x in window_forecast] if forcing else [workspace.results(yearmon=x,
+                                                                                                        window=1,
                                                                                                         basis=basis) for x in window_observed] + \
-                                                                                  [workspace.results(yearmon=yearmon, 
-                                                                                                     member=member, 
-                                                                                                     target=x, 
-                                                                                                     window=1, 
+                                                                                  [workspace.results(yearmon=yearmon,
+                                                                                                     member=member,
+                                                                                                     target=x,
+                                                                                                     window=1,
                                                                                                      basis=basis) for x in window_forecast]
 
 
     return [
         wsim_integrate(
-            inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev], 
+            inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev],
             stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
             attrs=[attrs.integration_window(var='*', months=window)],
             output= workspace.results(yearmon=yearmon,
@@ -179,9 +179,9 @@ def time_integrate(workspace: DefaultWorkspace,
                                      target=target,
                                      member=member,
                                      temporary=False,
-                                     basis=basis) if not forcing else workspace.forcing(yearmon=yearmon, 
-                                                                                        window=window, 
-                                                                                        member=member, 
+                                     basis=basis) if not forcing else workspace.forcing(yearmon=yearmon,
+                                                                                        window=window,
+                                                                                        member=member,
                                                                                         target=target)
         )
     ]
@@ -219,7 +219,7 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
             fits=[workspace.fit_obs(var=var,
                                     window=window,
                                     month=month,
-                                    basis=basis) for var in forcing_vars + result_vars],
+                                    basis=basis) for var in forcing_vars + result_vars + state_vars],
             obs=[
                 read_vars(workspace.results(**args), *result_vars)
                 if result_vars else None,
