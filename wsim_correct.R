@@ -91,6 +91,7 @@ main <- function(raw_args) {
                              args$output,
                              extent= extent,
                              attrs=attrs,
+                             prec='single',
                              append=args$append)
 
   wsim.io::info('Wrote corrected forecast to', args$output)
