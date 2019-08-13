@@ -26,7 +26,7 @@ The electric power assessment requires a database of power plants with the follo
 * Actual generation (where absent, this can be estimated from default factors per fuel type.)
 * Cooling type. In particular, the electric power assessment must know whether a given thermoelectic plant is water-cooled, whether the source of that water is seawater is freshwater, and whether a once-through cooling system is used.
 
-Power plant locations, fuel types, and capacities are available from the open-source `Global Power Plant Database <https://github.com/wri/global-power-plant-database>`_ (GPPD). In some cases, estimated generation is also avilable in GPPD.
+Power plant locations, fuel types, and capacities are available from the open-source `Global Power Plant Database <https://github.com/wri/global-power-plant-database>`_ (GPPD). In some cases, estimated generation is also available in GPPD.
 Cooling type and generation information can be appended to GPPD by linking against the commercial World Electric Power Plant database.
 When this information is not available, WSIM makes the following assumptions:
 
@@ -70,20 +70,18 @@ The generation loss calculations applied to hydroelectric and water-cooled power
 Hydroelectric Generation Losses from Hydrologic Anomalies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Hydropower loss risk is taken to be directly related to total blue water (:math:`\mathrm{Bt}`) expressed as a proportion of the median total blue water sum for the period ending in the current month:
+Hydropower loss is estimated over a 12-month period using a regression on total
+blue water (:math:`\mathrm{Bt}`) expressed as a proportion of the median total
+blue water sum for the period ending in the current month:
 
 .. math::
 
-   \mathrm{Bt}_{ratio} = \frac{\mathrm{Bt_{observed}}}{\mathrm{Bt}_{median}}
+   \mathrm{loss} = -0.0134 - 0.282 \mathrm{ln} \left( \frac{\mathrm{Bt}}{\mathrm{Bt}_{median}} \right)
 
-A loss model was developed based on annual hydropower generation data for California from 1983 through 2012 :cite:`California_Energy_Commission:2013`. The form of the model is described by the following equation:
+This regression is based on a fit of generation data in the United States from
+2000 to 2017, obtained using the ``eia923`` R package.
 
-.. math::
-
-   \mathrm{loss} = 1 - \left(\frac{\textrm{Bt}_{observed}}{\textrm{Bt}_{median}}\right)^{H}
-
-A value of :math:`H = 0.6` was determined based on initial applications to global data.
-The hydropower loss risk curve is illustrated in :numref:`hydropower_loss_function` below:
+This curve is illustrated in :numref:`hydropower_loss_function` below:
 
 .. figure:: /_generated/hydropower_loss_risk.svg
    :name: hydropower_loss_function
