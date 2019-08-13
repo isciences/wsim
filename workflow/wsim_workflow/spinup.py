@@ -41,13 +41,13 @@ def spinup(config, meta_steps):
         forcing_1mo = Step.make_empty()
         for yearmon in config.historical_yearmons():
             steps += config.observed_data().prep_steps(yearmon=yearmon)
-            for step in create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon, window=1):
+            for step in create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon):
                 forcing_1mo = forcing_1mo.merge(step)
-        steps += create_tag(name=config.workspace().tag('spinup_1mo_forcing'), 
+        steps += create_tag(name=config.workspace().tag('spinup_1mo_forcing'),
                             dependencies=forcing_1mo.targets)
         forcing_1mo.replace_targets_with_tag_file(config.workspace().tag('spinup_1mo_forcing'))
-        steps.append(forcing_1mo)    
-  
+        steps.append(forcing_1mo)
+
         steps += run_lsm_from_final_norm_state(config)
 
         for month in all_months:

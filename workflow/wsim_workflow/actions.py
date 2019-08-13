@@ -37,7 +37,6 @@ from .step import Step
 def create_forcing_file(workspace: DefaultWorkspace,
                         data: Union[ObservedForcing, ForecastForcing],
                         *,
-                        window: int,
                         yearmon: str,
                         target: Optional[str]=None,
                         member: Optional[str]=None) -> List[Step]:
@@ -61,7 +60,7 @@ def create_forcing_file(workspace: DefaultWorkspace,
                 'Pr:units',
                 'Pr:standard_name'
             ])),
-            output=workspace.forcing(yearmon=yearmon, target=target, member=member, window=window)
+            output=workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
         )
     ]
 
