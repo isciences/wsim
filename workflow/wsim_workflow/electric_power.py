@@ -49,7 +49,7 @@ def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
         steps += time_integrate_results(config, window, basis=Basis.BASIN)
 
     # Compute monthly fits over the fit period
-    for param in config.lsm_rp_vars(basis=Basis.BASIN):# + config.forcing_rp_vars(basis=Basis.BASIN):
+    for param in config.lsm_rp_vars(basis=Basis.BASIN):
         for month in all_months:
             steps += all_fits.require(actions.fit_var(config, param=param, month=month, basis=Basis.BASIN))
 
