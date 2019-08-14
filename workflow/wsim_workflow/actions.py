@@ -204,9 +204,6 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
 
     args = {'yearmon': yearmon, 'target': target, 'window': window, 'member': member, 'basis': basis}
 
-    if basis:
-        assert not forcing_vars
-
     if state_vars:
         assert window==1
 
