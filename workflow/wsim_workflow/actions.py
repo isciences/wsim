@@ -136,8 +136,8 @@ def run_lsm(workspace: DefaultWorkspace, static: Static, *,
 
 def time_integrate(workspace: DefaultWorkspace,
                    integrated_stats: Dict[str, List[str]],
-                   forcing: bool,
                    *,
+                   forcing: bool,
                    yearmon: str,
                    target: Optional[str]=None,
                    window: Optional[int]=None,
@@ -154,18 +154,12 @@ def time_integrate(workspace: DefaultWorkspace,
         window_observed = months
         window_forecast = []
 
-    prev = [workspace.forcing(yearmon=x, window=1) for x in window_observed] + \
-           [workspace.forcing(yearmon=yearmon,
-                              member=member,
-                              target=x,
-                              window=1) for x in window_forecast] if forcing else [workspace.results(yearmon=x,
-                                                                                                        window=1,
-                                                                                                        basis=basis) for x in window_observed] + \
-                                                                                  [workspace.results(yearmon=yearmon,
-                                                                                                     member=member,
-                                                                                                     target=x,
-                                                                                                     window=1,
-                                                                                                     basis=basis) for x in window_forecast]
+    if forcing:
+        prev = [workspace.forcing(yearmon=x, window=1) for x in window_observed] + \
+               [workspace.forcing(yearmon=yearmon, member=member, target=x, window=1) for x in window_forecast]
+    else:
+        prev = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \ 
+               [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
 
 
     return [
