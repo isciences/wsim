@@ -89,22 +89,18 @@ run <- function(static, state, forcing) {
 
   obs <- list(
     extent= state$extent,
-    #dayLength= forcing$daylength,
     dWdt= dWdt,
     E= E,
     EmPET= E - E0,
     P_net= P,
     PET= E0,
     PETmE= E0 - E,
-    #Pr= forcing$Pr,
     RO_mm= revised_runoff,
     RO_m3= revised_runoff*area_m2/1000,
     Runoff_mm= R,
     Runoff_m3= R*area_m2/1000,
     Sa= Sa,
     Sm= ifelse(is.na(Sa), NA, Sm),
-    #Snowpack= state$Snowpack,
-    #T= forcing$T,
     Ws= Ws_ave
   )
 

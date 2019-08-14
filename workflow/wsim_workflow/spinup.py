@@ -47,7 +47,6 @@ def spinup(config, meta_steps):
                             dependencies=forcing_1mo.targets)
         forcing_1mo.replace_targets_with_tag_file(config.workspace().tag('spinup_1mo_forcing'))
         steps.append(forcing_1mo)
-
         steps += run_lsm_from_final_norm_state(config)
 
         for month in all_months:
@@ -69,7 +68,6 @@ def spinup(config, meta_steps):
     for window in config.integration_windows():
         steps += time_integrate_forcing(config, window)
         steps += time_integrate_results(config, window)
-
 
     # Compute monthly fits (and then anomalies) over the fit period
     for param in config.lsm_rp_vars() + config.forcing_rp_vars() + config.state_rp_vars():
@@ -331,7 +329,7 @@ def time_integrate_forcing(config:Config, window: int, *, basis: Optional[Basis]
 
 def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
     """
-    Integrate specified LSM results (and any included forcing variables) over the given time window
+    Integrate specified LSM results over the given time window
     """
     yearmons_in = config.historical_yearmons()
     yearmons_out = yearmons_in[window-1:]

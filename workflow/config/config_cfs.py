@@ -461,5 +461,4 @@ class CFSConfig(ConfigBase):
         return self._workspace
 
 
-
 config = CFSConfig
