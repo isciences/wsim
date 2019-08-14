@@ -158,7 +158,7 @@ def time_integrate(workspace: DefaultWorkspace,
         prev = [workspace.forcing(yearmon=x, window=1, basis=basis) for x in window_observed] + \
                [workspace.forcing(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
     else:
-        prev = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \ 
+        prev = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
                [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
 
 
