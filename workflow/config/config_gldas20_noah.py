@@ -115,7 +115,7 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'Pr'
             ]
 
-        if basis == 'basin':
+        if basis == Basis.BASIN:
             return [
                 'Bt_RO_m3'
             ]
