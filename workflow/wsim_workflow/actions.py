@@ -155,8 +155,8 @@ def time_integrate(workspace: DefaultWorkspace,
         window_forecast = []
 
     if forcing:
-        prev = [workspace.forcing(yearmon=x, window=1) for x in window_observed] + \
-               [workspace.forcing(yearmon=yearmon, member=member, target=x, window=1) for x in window_forecast]
+        prev = [workspace.forcing(yearmon=x, window=1, basis=basis) for x in window_observed] + \
+               [workspace.forcing(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
     else:
         prev = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \ 
                [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
@@ -175,7 +175,8 @@ def time_integrate(workspace: DefaultWorkspace,
                                      basis=basis) if not forcing else workspace.forcing(yearmon=yearmon,
                                                                                         window=window,
                                                                                         member=member,
-                                                                                        target=target)
+                                                                                        target=target,
+                                                                                        basis=basis)
         )
     ]
 
@@ -381,9 +382,7 @@ def fit_var(config: ConfigBase,
         param_to_read = param
 
     if param in config.forcing_rp_vars():
-        assert basis is None
-
-        infile = config.workspace().forcing(yearmon=input_range, window=window)
+        infile = config.workspace().forcing(yearmon=input_range, window=window, basis=basis)
 
     elif param in config.state_rp_vars():
         assert window == 1

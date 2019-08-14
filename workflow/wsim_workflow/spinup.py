@@ -303,14 +303,14 @@ def time_integrate_forcing(config:Config, window: int, *, basis: Optional[Basis]
     yearmons_out = yearmons_in[window-1:]
 
     integrate = wsim_integrate(
-        inputs= [read_vars(config.workspace().forcing(window=1, yearmon=date_range(yearmons_in)),
+        inputs= [read_vars(config.workspace().forcing(window=1, yearmon=date_range(yearmons_in), basis=basis),
         *config.forcing_integrated_vars(basis=basis).keys())
         ],
         window=window,
         stats=[stat + '::' + ','.join(varname) for stat, varname in config.forcing_integrated_stats(basis=basis).items()],
         attrs=[attrs.integration_window(var='*', months=window)],
         output=config.workspace().forcing(yearmon=date_range(yearmons_out),
-                                          window=window)
+                                          window=window, basis=basis)
     )
 
     tag_name = config.workspace().tag('{}spinup_{}mo_forcing'.format((basis.value + '_' if basis else ''), window))

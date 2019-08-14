@@ -138,7 +138,10 @@ class ConfigBase(metaclass=abc.ABCMeta):
             ]
 
         if basis == Basis.BASIN:
-            return []
+            return [
+                'T',
+                'Pr'
+            ]
 
         assert False
 
@@ -180,6 +183,20 @@ class ConfigBase(metaclass=abc.ABCMeta):
         if basis == Basis.BASIN:
             return []
 
+    @classmethod
+    def forcing_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are forcing variables to be time-integrated, and whose
+        values are lists of stats to apply to each of those variables (min, max, ave, etc.)
+        """
+        if not basis or basis == Basis.BASIN:
+            return {
+                'Pr'   : ['sum'],
+                'T'    : ['ave']
+                }
+        
+        assert False
+            
     @classmethod
     def lsm_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
         """
@@ -228,20 +245,6 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return [var + '_' + stat for var, stats in cls.lsm_integrated_vars(basis=basis).items() for stat in stats]
 
-    @classmethod
-    def forcing_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
-        """
-        Provides a dictionary whose keys are forcing variables to be time-integrated, and whose
-        values are lists of stats to apply to each of those variables (min, max, ave, etc.)
-        """
-
-        if not basis:
-            return {
-                'Pr'   : ['sum'],
-                'T'    : ['ave'],
-            }
-
-        assert False
 
     @classmethod
     def forcing_integrated_stats(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
