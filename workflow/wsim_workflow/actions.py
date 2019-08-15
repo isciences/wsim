@@ -402,13 +402,13 @@ def fit_var(config: ConfigBase,
     ]
 
 
-def forcing_summary(workspace: DefaultWorkspace, ensemble_members: List[str], *, yearmon: str, target: str) \
+def forcing_summary(workspace: DefaultWorkspace, ensemble_members: List[str], *, yearmon: str, target: str, window: int) \
         -> List[Step]:
     return [
         wsim_integrate(
-            inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member, window=1) for member in ensemble_members],
+            inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member, window=window) for member in ensemble_members],
             stats=['q25', 'q50', 'q75'],
-            output=workspace.forcing_summary(yearmon=yearmon, target=target)
+            output=workspace.forcing_summary(yearmon=yearmon, target=target, window=window)
         )
     ]
 

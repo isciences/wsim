@@ -260,8 +260,8 @@ class TestWorkspacePaths(unittest.TestCase):
 
     def test_forcing_summary(self):
         self.assertEqual(
-            join(self.root, 'forcing_summary', 'forcing_summary_201612_trgt201708.nc'),
-            self.ws.forcing_summary(yearmon='201612', target='201708')
+            join(self.root, 'forcing_summary', 'forcing_summary_1mo_201612_trgt201708.nc'),
+            self.ws.forcing_summary(yearmon='201612', target='201708', window=1)
         )
 
     def test_fit_obs(self):

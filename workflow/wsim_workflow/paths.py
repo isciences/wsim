@@ -405,8 +405,8 @@ class DefaultWorkspace:
 
         return self.make_path('anom', yearmon=yearmon, window=window, target=target, summary=True)
 
-    def forcing_summary(self, *, yearmon: str, target: str) -> str:
-        return self.make_path('forcing', yearmon=yearmon, target=target, summary=True)
+    def forcing_summary(self, *, yearmon: str, target: str, window: int) -> str:
+        return self.make_path('forcing', yearmon=yearmon, target=target, window= window, summary=True)
 
     def results_summary(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('results', yearmon=yearmon, window=window, target=target, summary=True)
