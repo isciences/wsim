@@ -38,10 +38,15 @@ def spinup(config, meta_steps):
         steps += compute_climate_norms(config)
         steps += run_lsm_with_monthly_norms(config, years=100)
 
+        forcing_1mo = Step.make_empty()
         for yearmon in config.historical_yearmons():
             steps += config.observed_data().prep_steps(yearmon=yearmon)
-            steps += create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon)
-
+            for step in create_forcing_file(config.workspace(), config.observed_data(), yearmon=yearmon):
+                forcing_1mo = forcing_1mo.merge(step)
+        steps += create_tag(name=config.workspace().tag('spinup_1mo_forcing'),
+                            dependencies=forcing_1mo.targets)
+        forcing_1mo.replace_targets_with_tag_file(config.workspace().tag('spinup_1mo_forcing'))
+        steps.append(forcing_1mo)
         steps += run_lsm_from_final_norm_state(config)
 
         for month in all_months:
@@ -61,16 +66,17 @@ def spinup(config, meta_steps):
 
     # Time-integrate the variables
     for window in config.integration_windows():
+        steps += time_integrate_forcing(config, window)
         steps += time_integrate_results(config, window)
 
     # Compute monthly fits (and then anomalies) over the fit period
-    for param in config.lsm_rp_vars() + config.forcing_rp_vars():
+    for param in config.lsm_rp_vars() + config.forcing_rp_vars() + config.state_rp_vars():
         for month in all_months:
             steps += all_fits.require(fit_var(config, param=param, month=month))
 
     # Compute fits for time-integrated parameters
-    for param in config.lsm_integrated_vars().keys():
-        for stat in config.lsm_integrated_vars()[param]:
+    for param in {**config.lsm_integrated_vars(), **config.forcing_integrated_vars()}.keys():
+        for stat in {**config.lsm_integrated_vars(), **config.forcing_integrated_vars()}[param]:
             for window in config.integration_windows():
                 assert window > 1
                 for month in all_months:
@@ -81,7 +87,8 @@ def spinup(config, meta_steps):
         for yearmon in config.historical_yearmons()[window-1:]:
             steps += compute_return_periods(config.workspace(),
                                             result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
-                                            forcing_vars=config.forcing_rp_vars() if window == 1 else None,
+                                            forcing_vars=config.forcing_rp_vars() if window == 1 else config.forcing_integrated_var_names(),
+                                            state_vars=config.state_rp_vars() if window==1 else None,
                                             yearmon=yearmon,
                                             window=window)
 
@@ -209,7 +216,7 @@ def run_lsm_from_final_norm_state(config: Config) -> List[Step]:
     # allow restarting in case of failure. But the runtime becomes dominated by the
     # R startup and I/O, and takes about 5 seconds / iteration instead of 1 second /iteration.
     run_lsm = wsim_lsm(
-        forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()))],
+        forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()), window=1)],
         state=config.workspace().spinup_state(yearmon=initial_yearmon),
         elevation=config.static_data().elevation(),
         flowdir=config.static_data().flowdir(),
@@ -248,7 +255,6 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
     first_month = int(first_timestep[4:])
     postprocess_steps = list(itertools.chain(*[config.result_postprocess_steps(yearmon=yearmon)
                                                for yearmon in config.historical_yearmons()]))
-
     make_initial_state = Step(
         comment="Create initial state file",
         targets=config.workspace().state(yearmon=first_timestep),
@@ -266,7 +272,7 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
 
     run_lsm = wsim_lsm(
         comment="LSM run from mean spinup state",
-        forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()))],
+        forcing=[config.workspace().forcing(yearmon=date_range(config.historical_yearmons()), window=1)],
         state=config.workspace().state(yearmon=first_timestep),
         elevation=config.static_data().elevation(),
         flowdir=config.static_data().flowdir(),
@@ -289,16 +295,49 @@ def run_lsm_from_mean_spinup_state(config: Config) -> List[Step]:
     ]
 
 
-def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
+def time_integrate_forcing(config:Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
     """
-    Integrate all LSM results and any specified forcing variables with the given time window
+    Integrate forcing variables over the given time window
     """
     yearmons_in = config.historical_yearmons()
     yearmons_out = yearmons_in[window-1:]
 
     integrate = wsim_integrate(
-        inputs=read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
-                         *config.lsm_integrated_vars(basis=basis).keys()),
+        inputs= [read_vars(config.workspace().forcing(window=1, yearmon=date_range(yearmons_in), basis=basis),
+        *config.forcing_integrated_vars(basis=basis).keys())
+        ],
+        window=window,
+        stats=[stat + '::' + ','.join(varname) for stat, varname in config.forcing_integrated_stats(basis=basis).items()],
+        attrs=[attrs.integration_window(var='*', months=window)],
+        output=config.workspace().forcing(yearmon=date_range(yearmons_out),
+                                          window=window, basis=basis)
+    )
+
+    tag_name = config.workspace().tag('{}spinup_{}mo_forcing'.format((basis.value + '_' if basis else ''), window))
+
+    tag_steps = create_tag(name=tag_name, dependencies=integrate.targets)
+
+    integrate.replace_targets_with_tag_file(tag_name)
+    integrate.replace_dependencies(
+        config.workspace().tag('{}spinup_1mo_forcing'.format((basis.value + '_') if basis else '')))
+
+    return [
+        integrate,
+        *tag_steps
+    ]
+
+
+def time_integrate_results(config: Config, window: int, *, basis: Optional[Basis]=None) -> List[Step]:
+    """
+    Integrate specified LSM results over the given time window
+    """
+    yearmons_in = config.historical_yearmons()
+    yearmons_out = yearmons_in[window-1:]
+
+    integrate = wsim_integrate(
+        inputs=[read_vars(config.workspace().results(window=1, yearmon=date_range(yearmons_in), basis=basis),
+                         *config.lsm_integrated_vars(basis=basis).keys())
+                         ],
         window=window,
         stats=[stat + '::' + ','.join(varname) for stat, varname in config.lsm_integrated_stats(basis=basis).items()],
         attrs=[attrs.integration_window(var='*', months=window)],

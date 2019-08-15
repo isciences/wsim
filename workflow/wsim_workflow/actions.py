@@ -60,7 +60,7 @@ def create_forcing_file(workspace: DefaultWorkspace,
                 'Pr:units',
                 'Pr:standard_name'
             ])),
-            output=workspace.forcing(yearmon=yearmon, target=target, member=member)
+            output=workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
         )
     ]
 
@@ -70,7 +70,7 @@ def compute_basin_results(workspace: DefaultWorkspace,
                           yearmon: str,
                           target: Optional[str]=None,
                           member: Optional[str]=None) -> List[Step]:
-    pixel_forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
+    pixel_forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
     pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
     basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
 
@@ -119,7 +119,7 @@ def run_lsm(workspace: DefaultWorkspace, static: Static, *,
         next_state = workspace.state(yearmon=get_next_yearmon(yearmon))
 
     results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
-    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
+    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
 
     return [
         wsim_lsm(
@@ -137,6 +137,7 @@ def run_lsm(workspace: DefaultWorkspace, static: Static, *,
 def time_integrate(workspace: DefaultWorkspace,
                    integrated_stats: Dict[str, List[str]],
                    *,
+                   forcing: bool,
                    yearmon: str,
                    target: Optional[str]=None,
                    window: Optional[int]=None,
@@ -153,21 +154,29 @@ def time_integrate(workspace: DefaultWorkspace,
         window_observed = months
         window_forecast = []
 
-    prev_results = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
-                   [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis)
-                    for x in window_forecast]
+    if forcing:
+        prev = [workspace.forcing(yearmon=x, window=1, basis=basis) for x in window_observed] + \
+               [workspace.forcing(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
+    else:
+        prev = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
+               [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
+
 
     return [
         wsim_integrate(
-            inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev_results],
+            inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev],
             stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
             attrs=[attrs.integration_window(var='*', months=window)],
-            output=workspace.results(yearmon=yearmon,
+            output= workspace.results(yearmon=yearmon,
                                      window=window,
                                      target=target,
                                      member=member,
                                      temporary=False,
-                                     basis=basis)
+                                     basis=basis) if not forcing else workspace.forcing(yearmon=yearmon,
+                                                                                        window=window,
+                                                                                        member=member,
+                                                                                        target=target,
+                                                                                        basis=basis)
         )
     ]
 
@@ -175,6 +184,7 @@ def time_integrate(workspace: DefaultWorkspace,
 def compute_return_periods(workspace: DefaultWorkspace, *,
                            forcing_vars: Optional[List[str]]=None,
                            result_vars: Optional[List[str]]=None,
+                           state_vars: Optional[List[str]]=None,
                            yearmon: str,
                            window: int,
                            target: Optional[str]=None,
@@ -189,23 +199,26 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
         forcing_vars = []
     if result_vars is None:
         result_vars = []
+    if state_vars is None:
+        state_vars = []
 
     args = {'yearmon': yearmon, 'target': target, 'window': window, 'member': member, 'basis': basis}
 
-    if basis:
-        assert not forcing_vars
+    if state_vars:
+        assert window==1
 
     return [
         wsim_anom(
             fits=[workspace.fit_obs(var=var,
                                     window=window,
                                     month=month,
-                                    basis=basis) for var in forcing_vars + result_vars],
+                                    basis=basis) for var in forcing_vars + result_vars + state_vars],
             obs=[
                 read_vars(workspace.results(**args), *result_vars)
                 if result_vars else None,
-                read_vars(workspace.forcing(yearmon=yearmon, target=target, member=member), *forcing_vars)
-                if forcing_vars else None
+                read_vars(workspace.forcing(yearmon=yearmon, target=target, window=window, member=member), *forcing_vars)
+                if forcing_vars else None,
+                read_vars(workspace.state(yearmon=yearmon), *state_vars) if state_vars else None
             ],
             rp=workspace.return_period(**args),
             sa=workspace.standard_anomaly(**args)
@@ -366,10 +379,14 @@ def fit_var(config: ConfigBase,
         param_to_read = param
 
     if param in config.forcing_rp_vars():
+        infile = config.workspace().forcing(yearmon=input_range, window=window, basis=basis)
+
+    elif param in config.state_rp_vars():
         assert window == 1
         assert basis is None
 
-        infile = config.workspace().forcing(yearmon=input_range)
+        infile = config.workspace().state(yearmon=input_range)
+
     else:
         infile = config.workspace().results(yearmon=input_range, window=window, basis=basis)
 
@@ -389,7 +406,7 @@ def forcing_summary(workspace: DefaultWorkspace, ensemble_members: List[str], *,
         -> List[Step]:
     return [
         wsim_integrate(
-            inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member) for member in ensemble_members],
+            inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member, window=1) for member in ensemble_members],
             stats=['q25', 'q50', 'q75'],
             output=workspace.forcing_summary(yearmon=yearmon, target=target)
         )

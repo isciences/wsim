@@ -49,7 +49,7 @@ def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
         steps += time_integrate_results(config, window, basis=Basis.BASIN)
 
     # Compute monthly fits over the fit period
-    for param in config.lsm_rp_vars(basis=Basis.BASIN) + config.forcing_rp_vars(basis=Basis.BASIN):
+    for param in config.lsm_rp_vars(basis=Basis.BASIN):
         for month in all_months:
             steps += all_fits.require(actions.fit_var(config, param=param, month=month, basis=Basis.BASIN))
 
@@ -134,6 +134,7 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                             config.lsm_integrated_stats(basis=Basis.BASIN),
                                             yearmon=yearmon,
                                             window=window,
+                                            forcing=False,
                                             basis=Basis.BASIN)
 
     if yearmon not in config.result_fit_yearmons():
@@ -185,7 +186,8 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                                 target=target,
                                                 member=member,
                                                 window=window,
-                                                basis=Basis.BASIN)
+                                                basis=Basis.BASIN,
+                                                forcing=False)
 
             steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon, target=target, member=member)
             steps += compute_plant_losses(config.workspace(), yearmon=yearmon, target=target, member=member)
@@ -333,7 +335,7 @@ def compute_plant_losses(workspace: DefaultWorkspace,
                                 basis=Basis.POWER_PLANT)
 
     basin_results = workspace.results(yearmon=yearmon, window=1, basis=Basis.BASIN, target=target, member=member)
-    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member)
+    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
     rp = workspace.return_period(yearmon=yearmon, target=target, member=member, window=1)
     loss_factors = workspace.basin_loss_factors(yearmon=yearmon, target=target, member=member)
 

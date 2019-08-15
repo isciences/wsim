@@ -422,8 +422,13 @@ class DefaultWorkspace:
 
         return self.make_path('state', sector=sector, yearmon=yearmon, member=member, target=target, window=None, method=method)
 
-    def forcing(self, *, yearmon: str, member: Optional[str]=None, target: Optional[str]=None) -> str:
-        return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=None)
+    def forcing(self, *,
+                yearmon: str,
+                window: int,
+                member: Optional[str]=None,
+                target: Optional[str]=None,
+                basis: Optional[Basis]=None) -> str:
+        return self.make_path('forcing', yearmon=yearmon, member=member, target=target, window=window, basis=basis)
 
     def results(self, *,
                 sector: Optional[Sector]=None,

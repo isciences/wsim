@@ -99,7 +99,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
     def result_postprocess_steps(self, yearmon=None, target=None, member=None) -> List[Step]:
         """
         Provides a list of one or more postprocessing steps to be applied to LSM results
-        for a givem YYYYMM/forecast target/ensemble member
+        for a given YYYYMM/forecast target/ensemble member
         """
         return []
 
@@ -138,7 +138,10 @@ class ConfigBase(metaclass=abc.ABCMeta):
             ]
 
         if basis == Basis.BASIN:
-            return []
+            return [
+                'T',
+                'Pr'
+            ]
 
         assert False
 
@@ -168,6 +171,32 @@ class ConfigBase(metaclass=abc.ABCMeta):
         assert False
 
 
+    @staticmethod
+    def state_rp_vars(*, basis: Optional[Basis]=None) -> List[str]:
+        """
+        Provides a list of state variables for which return periods should be calculated
+        """
+
+        if not basis:
+            return['Snowpack']
+
+        if basis == Basis.BASIN:
+            return []
+
+    @classmethod
+    def forcing_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are forcing variables to be time-integrated, and whose
+        values are lists of stats to apply to each of those variables (min, max, ave, etc.)
+        """
+        if not basis or basis == Basis.BASIN:
+            return {
+                'Pr'   : ['sum'],
+                'T'    : ['ave']
+                }
+        
+        assert False
+            
     @classmethod
     def lsm_integrated_vars(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
         """
@@ -182,7 +211,8 @@ class ConfigBase(metaclass=abc.ABCMeta):
                 'PETmE': ['sum'],
                 'P_net': ['sum'],
                 'RO_mm': ['sum'],
-                'Ws': ['ave']
+                'Sa'   : ['sum'],
+                'Ws': ['ave'],
             }
 
         if basis == Basis.BASIN:
@@ -214,5 +244,46 @@ class ConfigBase(metaclass=abc.ABCMeta):
         Provides a flat list of time-integrated variable names
         """
         return [var + '_' + stat for var, stats in cls.lsm_integrated_vars(basis=basis).items() for stat in stats]
+
+
+    @classmethod
+    def forcing_integrated_stats(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are stat names and whose values are a list of variables
+        two which that stat should be applied. It can be thought of as the inverse of forcing_integrated_vars()
+        """
+        integrated_stats = {}
+
+        for var, varstats in cls.forcing_integrated_vars(basis=basis).items():
+            for stat in varstats:
+                if stat not in integrated_stats:
+                    integrated_stats[stat] = []
+                integrated_stats[stat].append(var)
+
+        return integrated_stats
+
+    @classmethod
+    def forcing_integrated_var_names(cls, basis: Optional[Basis]=None) -> List[str]:
+        """
+        Provides a flat list of time-integrated variable names
+        """
+        return [var + '_' + stat for var, stats in cls.forcing_integrated_vars(basis=basis).items() for stat in stats]
+
+    @classmethod
+    def all_integrated_stats(cls, basis: Optional[Basis]=None) -> Dict[str, List[str]]:
+        """
+        Provides a dictionary whose keys are stat names and whose values are a list of variables
+        two which that stat should be applied. This combines the inverse of forcing_integrated_vars()
+        and lsm_integrated_vars().
+        """
+        integrated_stats = cls.lsm_integrated_stats(basis=basis)
+
+        for var, varstats in cls.forcing_integrated_vars(basis=basis).items():
+            for stat in varstats:
+                if stat not in integrated_stats:
+                    integrated_stats[stat] = []
+                integrated_stats[stat].append(var)
+
+        return integrated_stats
 
 

@@ -100,6 +100,10 @@ class GLDAS20_NoahConfig(ConfigBase):
         return []
 
     @classmethod
+    def forcing_integrated_vars(cls, basis=None):
+        return {}
+
+    @classmethod
     def lsm_rp_vars(cls, basis=None):
         if not basis:
             return [
@@ -111,13 +115,18 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'Pr'
             ]
 
-        if basis == 'basin':
+        if basis == Basis.BASIN:
             return [
                 'Bt_RO_m3'
             ]
 
         assert False
 
+    @classmethod
+    def state_rp_vars(cls, basis=None):
+        return[]
+        
+        
     @classmethod
     def lsm_integrated_vars(cls, basis=None):
         if not basis:
@@ -136,6 +145,11 @@ class GLDAS20_NoahConfig(ConfigBase):
             }
 
         assert False
+
+    @classmethod
+    def forcing_integrated_vars(cls, basis=None):
+            return {}
+
 
     def result_postprocess_steps(self, yearmon=None, target=None, member=None):
         input_file = os.path.join(self._source,
