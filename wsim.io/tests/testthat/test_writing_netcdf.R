@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -238,7 +238,7 @@ test_that('write_vars_to_cdf provides useful errors if extent is not correctly s
   )
 
   expect_error(write_vars_to_cdf(data, fname),
-               "Must provide either extent or xmin,")
+               "Must provide either extent or")
 
   expect_error(write_vars_to_cdf(data, fname, extent=c(0, 1, 0, 1), xmin=2),
                "Both extent and xmin.* provided")
@@ -446,6 +446,7 @@ test_that('we can write data where different variables have different numbers of
                     append=TRUE)
 
   file.remove(fname)
+  succeed()
 })
 
 test_that('we can write multidimensional id-based data', {
@@ -517,4 +518,44 @@ test_that('We can pass an array that has dimnames instead of a named list of var
   expect_true(all(c('location', 'scale', 'shape') %in% varnames))
 
   file.remove(fname)
+})
+
+test_that('we can append to a file created with an unlimited id dim', {
+  fname <- tempfile(fileext='.nc')
+
+  ids <- 3:17
+  precip <- runif(length(ids))*10
+  runoff <- precip*runif(length(ids))
+
+  id_dim <- ncdf4::ncdim_def('id', units='', vals=ids, unlim=TRUE)
+  precip_var <- ncdf4::ncvar_def('precip', units='mm', dim=id_dim, compression=1)
+
+  cdf <- ncdf4::nc_create(fname, precip_var)
+  ncdf4::ncvar_put(cdf, precip_var, precip)
+  ncdf4::nc_close(cdf)
+
+  write_vars_to_cdf(list(runoff=runoff), fname, ids=ids, append=TRUE)
+
+  file.remove(fname)
+  succeed()
+})
+
+test_that('we can append to a netcdf version 3 file', {
+  fname <- tempfile(fileext='.nc')
+
+  ids <- 3:17
+  precip <- runif(length(ids))*10
+  runoff <- precip*runif(length(ids))
+
+  id_dim <- ncdf4::ncdim_def('id', units='', vals=ids)
+  precip_var <- ncdf4::ncvar_def('precip', units='mm', dim=id_dim)
+
+  cdf <- ncdf4::nc_create(fname, precip_var)
+  ncdf4::ncvar_put(cdf, precip_var, precip)
+  ncdf4::nc_close(cdf)
+
+  write_vars_to_cdf(list(runoff=runoff), fname, ids=ids, append=TRUE)
+
+  file.remove(fname)
+  succeed()
 })

@@ -322,9 +322,13 @@ check_var_list <- function(cdf, vars) {
 #' @param dim_values a list whose keys represent dimension names and values
 #'                   represent values along those dimensions
 find_offset <- function(cdf, real_dims, dim_values) {
+  if (is.null(dim_values)) {
+    return(NA_integer_)
+  }
+
   sapply(real_dims, function(dimname) {
     if (dimname %in% names(dim_values)) {
-      i <- which(ncdf4::ncvar_get(cdf, dimname)==dim_values[[dimname]])
+      i <- which(ncdf4::ncvar_get(cdf, dimname) == dim_values[[dimname]])
       if (length(i) == 0) {
         stop(sprintf("Invalid value \"%s\" for dimension \"%s\".", dim_values[[dimname]], dimname))
       }
@@ -339,5 +343,9 @@ find_offset <- function(cdf, real_dims, dim_values) {
 #'
 #' @inheritParams find_offset
 find_count <- function(real_dims, dim_values) {
+  if (is.null(dim_values)) {
+    return(NA_integer_)
+  }
+
   ifelse(real_dims %in% names(dim_values), 1, -1)
 }

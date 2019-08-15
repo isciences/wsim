@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -30,11 +30,19 @@ TEMP_GRB2=/tmp/regrid_halfdeg.$$.grb2
 TEMP_NC1=/tmp/`basename $2`.tmp1.$$.nc
 TEMP_NC2=/tmp/`basename $2`.tmp2.$$.nc
 TEMP_NC3=/tmp/`basename $2`.tmp3.$$.nc
+TEMP_NC4=/tmp/`basename $2`.tmp4.$$.nc
+
+function cleanup {
+  rm -f $TEMP_GRB2
+  rm -f $TEMP_NC1
+  rm -f $TEMP_NC2
+  rm -f $TEMP_NC3
+  rm -f $TEMP_NC4
+}
+trap cleanup EXIT
 
 wgrib2 $1 -match "PRATE:surface|TMP:2 m" -new_grid latlon -179.75:720:0.5 -89.75:360:0.5 $TEMP_GRB2
-echo "wgrib2 $TEMP_GRB2 -nc_grads -netcdf $TEMP_NC1"
 wgrib2 $TEMP_GRB2 -nc_grads -netcdf $TEMP_NC1
-rm $TEMP_GRB2
 
 # Rename each variable in separate commands
 # Some versions of NCO fail to find variables
@@ -56,18 +64,16 @@ ncwa --no_tmp_fl -h -a time $TEMP_NC1 $TEMP_NC2
 # Drop the time variable
 ncks --no_tmp_fl -h -C -O -x -v time $TEMP_NC2 $TEMP_NC3
 # Add a CRS variable
-ncap2 --no_tmp_fl -h -O -s 'crs=-9999' $TEMP_NC3 $2
+ncap2 --no_tmp_fl -h -O -s 'crs=-9999' $TEMP_NC3 $TEMP_NC4
 ncatted -h -O \
-	-a spatial_ref,crs,c,c,'GEOGCS[\"GCS_WGS_1984\",DATUM[\"WGS_1984\",SPHEROID[\"WGS_84\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.017453292519943295]]' \
+	-a spatial_ref,crs,c,c,'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]' \
 	-a grid_mapping_name,crs,c,c,'latitude_longitude' \
 	-a longitude_of_prime_meridian,crs,c,d,0 \
 	-a semi_major_axis,crs,c,d,6378137 \
         -a inverse_flattening,crs,c,d,298.257223563 \
 	-a grid_mapping,tmp2m,c,c,'crs' \
 	-a grid_mapping,prate,c,c,'crs' \
-	$2
+	$TEMP_NC4
 
-rm $TEMP_NC1
-rm $TEMP_NC2
-rm $TEMP_NC3
-
+# Compress the netCDF
+ncks $TEMP_NC4 -L1 -7 $2
