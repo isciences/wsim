@@ -156,16 +156,17 @@ def monthly_forecast(config: Config,
                                                 target=target,
                                                 member=member)
 
-        steps += meta_steps['forcing_summaries'].require(forcing_summary(config.workspace(),
-                                                                         config.forecast_ensemble_members(yearmon),
-                                                                         yearmon=yearmon,
-                                                                         target=target))
 
         for window in [1] + config.integration_windows():
             # Summarize forecast ensemble
             steps += meta_steps['results_summaries'].require(
                 result_summary(config.workspace(), config.forecast_ensemble_members(yearmon),
                                yearmon=yearmon, target=target, window=window))
+            steps += meta_steps['forcing_summaries'].require(forcing_summary(config.workspace(),
+                                                                             config.forecast_ensemble_members(yearmon),
+                                                                             yearmon=yearmon,
+                                                                             target=target,
+                                                                             window=window))
             steps += return_period_summary(config.workspace(), config.forecast_ensemble_members(yearmon),
                                            yearmon=yearmon, target=target, window=window)
             steps += standard_anomaly_summary(config.workspace(), config.forecast_ensemble_members(yearmon),

@@ -172,7 +172,11 @@ class TestCFSConfig(unittest.TestCase):
 
         # forcing
         assertBuilt(ws.forcing(yearmon=yearmon, window=1))
-        assertBuilt(ws.forcing_summary(yearmon=yearmon, target=target))
+        assertBuilt(ws.forcing_summary(yearmon=yearmon, target=target, window=1))
+
+        # integrated forcing
+        assertBuilt(ws.forcing(yearmon=yearmon, window=3))
+        assertBuilt(ws.forcing_summary(yearmon=yearmon, target=target, window=3))
 
         # results
         assertBuilt(ws.results(yearmon=yearmon, window=1))
@@ -255,9 +259,9 @@ class TestCFSConfig(unittest.TestCase):
         all_adjusted_monthly_composites = step_for_target(steps, 'all_adjusted_composites')
         self.assertEqual(len(all_adjusted_monthly_composites.dependencies), num_outputs)
 
-        # a forcing summary is produced for each forecast month
+        # a forcing summary is produced for each forecast month / integration period
         forcing_summaries = step_for_target(steps, 'forcing_summaries')
-        self.assertEqual(len(forcing_summaries.dependencies), len(self.config.forecast_targets(yearmon)))
+        self.assertEqual(len(forcing_summaries.dependencies), len(self.config.forecast_targets(yearmon))*(1 + len(self.config.integration_windows())))
 
         # a results summary is produced for each forecast month / integration period
         results_summaries = step_for_target(steps, 'results_summaries')
