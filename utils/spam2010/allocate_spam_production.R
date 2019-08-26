@@ -17,6 +17,7 @@ wsim.io::logging_init('allocate_spam_production')
 suppressMessages({
   library(Rcpp)
   library(wsim.io)
+  library(wsim.lsm)
   library(wsim.agriculture)
 })
 
@@ -67,7 +68,7 @@ main <- function(raw_args) {
       prod <- read_vars(file.path(workdir, fname))$data[[1]]
       
       if (is.null(tot)) {
-        tot <- prod
+        tot <- wsim.lsm::coalesce(prod, 0) # replace NA production (what would that mean?) with zero
       } else {
         tot <- psum(tot, prod, na.rm=TRUE)
       }
