@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -13,11 +13,23 @@
 
 import calendar
 import datetime
+import re
 
 from typing import Generator, List, Optional, Tuple, Union
 
 all_months = range(1, 13)
 
+
+def is_yearmon(s: str) -> bool:
+    """
+    Check if a string represents a valid date in YYYYMM format
+    """
+    if not re.match('^[0-9]{6}$', s):
+        return False
+
+    _, month = parse_yearmon(s)
+
+    return month >= 1 and month <= 12
 
 def parse_yearmon(yearmon: str) -> Tuple[int, int]:
     """

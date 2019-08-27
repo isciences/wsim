@@ -25,6 +25,7 @@ import os
 import argparse
 
 from wsim_workflow import workflow
+from wsim_workflow import dates
 
 import importlib
 import importlib.util
@@ -103,6 +104,12 @@ def parse_args(args):
 
     if parsed.stop is None:
         parsed.stop = parsed.start
+
+    if not dates.is_yearmon(parsed.start):
+        sys.exit('Start date {} is not in YYYYMM format.'.format(parsed.start))
+
+    if not dates.is_yearmon(parsed.stop):
+        sys.exit('Stop date {} is not in YYYYMM format.'.format(parsed.stop))
 
     if parsed.forecasts not in ('all', 'none', 'latest'):
         sys.exit('--forecasts flag must be one of: all, none, latest')
