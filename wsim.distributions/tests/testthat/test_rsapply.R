@@ -49,6 +49,17 @@ test_that('it can be called with a stack (M:1)', {
   expect_equal(raster::values(output), c(5, 5, 5, 5))
 })
 
+test_that('it can accept additional args to pass to fun', {
+  input <- raster::stack(raster::raster(matrix(c(1:3, NA), nrow=2)),
+                         raster::raster(matrix(4:1, nrow=2)), xmn=-74, xmx=-72, ymn=42, ymx=44)
+  raster::projection(input) <- '+proj=longlat +ellps=clrk66 +datum=NAD27 +no_defs'
+
+  output <- rsapply(input, sum, na.rm = TRUE)
+
+  expect_same_extent_crs(input, output)
+  expect_equal(raster::values(output), c(5, 5, 5, 1))
+})
+
 test_that('it can be called with a stack (M:M)', {
   input <- raster::stack(raster::raster(matrix(1:4, nrow=2)),
                          raster::raster(matrix(4:1, nrow=2)), xmn=-74, xmx=-72, ymn=42, ymx=44)
