@@ -25,6 +25,7 @@
 #'        will be called with a vector representing the pixel values of
 #'        each raster in the stack, at a given (x,y).
 #' @param names the names of the values returned by fun
+#' @param ... additional arguments to be passed to \code{fun}
 #' @return a new RasterLayer or RasterStack containing the values returned by
 #'         \code{fun} at each pixel.
 #'@examples
@@ -44,11 +45,11 @@
 #'}, names=c('min', 'ave', 'max'))
 #'}
 #'@export
-rsapply <- function(rast, fun, names=NULL) {
+rsapply <- function(rast, fun, names=NULL, ...) {
   # Copy our inputs to an in-memory matrix, for speed
   data <- raster::as.array(rast)
 
-  result_data <- array_apply(data, fun)
+  result_data <- array_apply(data, fun, ...)
 
   if (length(dim(result_data)) == 2) {
     # fun returned a single value, so we return a raster
