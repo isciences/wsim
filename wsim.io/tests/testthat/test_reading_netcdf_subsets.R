@@ -194,3 +194,38 @@ test_that('we can use extra_dims arg to read from a N-D array', {
 
   file.remove(fname)
 })
+
+test_that("read_vas_from_cdf tolerates degenerate dimensions that are not used by the variables being read", {
+  # create a file matching NMME climatologies supplied by NOAA. Those have a structure like this:
+  # dimensions(sizes): lon(360), lat(181), target(9), initial_time(1)
+  # variables(dimensions): float32 lon(lon),
+  #                        float32 lat(lat),
+  #                        float32 target(target),
+  #                        float32 initial_time(initial_time),
+  #                        float32 clim(target,lat,lon)
+
+  # When reading the `clim` variable, we need to make sure we ignore the degenerate dimension `initial_time`
+  fname <- tempfile(fileext='.nc')
+
+  dims <- list(
+    lon = ncdf4::ncdim_def('lon', 'degrees_east', seq(0, 360, 10)),
+    lat = ncdf4::ncdim_def('lat', 'degrees_north', seq(90, -90, -10)),
+    target = ncdf4::ncdim_def('target', 'months since 1960-01-01 00:00:00', 272:280),
+    initial_time = ncdf4::ncdim_def('initial_time', '', 1L, create_dimvar=FALSE)
+  )
+
+  vars <- list(
+    initial_time = ncdf4::ncvar_def('initial_time', 'months since 1960-01-01 00:00:00', dim=dims$initial_time),
+    clim = ncdf4::ncvar_def('clim', 'none', dim=dims[rev(c('target', 'lat', 'lon'))])
+  )
+
+  nc <- ncdf4::nc_create(fname, vars)
+  ncdf4::ncvar_put(nc, vars$initial_time, 272)
+  ncdf4::nc_close(nc)
+
+  vardef <- sprintf('%s::%s', fname, 'clim')
+
+  vals <- read_vars(vardef, extra_dims=list(target=274))
+
+  file.remove(fname)
+})
