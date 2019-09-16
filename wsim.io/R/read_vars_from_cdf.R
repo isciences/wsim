@@ -55,7 +55,6 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     lats <- ncdf4::ncvar_get(cdf, latname)
     lons <- ncdf4::ncvar_get(cdf, lonname)
 
-
     dlat <- ifelse(length(lats) >=2, abs(lats[2] - lats[1]), 0)
     dlon <- ifelse(length(lons) >=2, abs(lons[2] - lons[1]), 0)
 
@@ -110,10 +109,9 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   # data we don't care; it all just ends up in a data frame anyway.
 
   if (is.null(offset) & is_spatial) {
-
     # If any dims are constant (and not a single line of lat or single meridian of lon),
     # then count those as extra dims
-    dims_lengths    <- sapply(names(cdf$dim), function(x){
+    dims_lengths <- sapply(real_dims, function(x){
       length(cdf$dim[[x]]$vals)
     })
     potential_degen <- which(dims_lengths == 1)
@@ -144,16 +142,25 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
       if (is.null(offset)) {
         d <- ncdf4::ncvar_get(cdf, var_name)
       } else {
-        # Collapse 3D array to 2D array, but don't
-        # collapse a column (e.g., single meridian of longitude)
-        # to a vector
-        collapse <- !is.na(count[3]) && count[3] == 1
-
         d <- ncdf4::ncvar_get(cdf,
                               var_name,
                               start=offset,
                               count=count,
-                              collapse_degen=collapse)
+                              collapse_degen=FALSE)
+
+        # Drop any degenerate non-spatial dimensions. Since ncvar_get can't
+        # distinguish between spatial and non-spatial dimensions, we figure
+        # it out ourselves and use adrop after the fact.
+        # (The assumption here is that a spatial dimension would end up with
+        #  a count of -1; i.e., it wasn't passed in through extra_dims or through
+        #  the 'count' argument)
+        # We can't rely on the position of the degenerate dimension because we
+        # could end up with T,Y,X just as well as Y,X,T.
+        dims_to_drop <- which(count == 1)
+
+        if (length(dims_to_drop) > 0) {
+          d <- abind::adrop(d, dims_to_drop)
+        }
       }
 
       if (!is.null(wrap_rows)) {
