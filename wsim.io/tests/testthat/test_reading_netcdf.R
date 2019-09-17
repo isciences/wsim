@@ -535,3 +535,22 @@ test_that("multidimensional tabular round-trip is successful when extra_dims spe
 
   file.remove(fname)
 })
+
+test_that("datasets from 0-360 are wrapped to -180 to 180", {
+  fname <- tempfile(fileext='.nc')
+
+  data <- matrix(1:(36*18), nrow=18, byrow=TRUE)
+
+  write_vars_to_cdf(list(val=data),
+                    fname,
+                    extent=c(0, 360, -90, 90))
+
+  data_in <- read_vars_from_cdf(fname)
+
+  expect_equal(data_in$extent, c(-180, 180, -90, 90))
+
+  expect_equal(data, cbind(data_in$data[[1]][, -1:-18],
+                           data_in$data[[1]][,  1:18]))
+
+  file.remove(fname)
+})
