@@ -195,7 +195,7 @@ test_that('we can use extra_dims arg to read from a N-D array', {
   file.remove(fname)
 })
 
-test_that("read_vas_from_cdf tolerates degenerate dimensions that are not used by the variables being read", {
+test_that("read_vars_from_cdf tolerates degenerate dimensions that are not used by the variables being read", {
   # create a file matching NMME climatologies supplied by NOAA. Those have a structure like this:
   # dimensions(sizes): lon(360), lat(181), target(9), initial_time(1)
   # variables(dimensions): float32 lon(lon),
