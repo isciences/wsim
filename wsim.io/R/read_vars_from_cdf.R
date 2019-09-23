@@ -49,8 +49,10 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   ids <- NULL
 
   if (is_spatial) {
-    latname <- ifelse("lat" %in% names(cdf$dim), "lat", "latitude")
-    lonname <- ifelse("lon" %in% names(cdf$dim), "lon", "longitude")
+    latname <- names(cdf$dim)[which(tolower(names(cdf$dim)) %in% c('lat', 'latitude', 'y'))]
+    lonname <- names(cdf$dim)[which(tolower(names(cdf$dim)) %in% c('lon', 'longitude', 'x'))]
+    stopifnot(length(latname) == 1)
+    stopifnot(length(lonname) == 1)
 
     lats <- ncdf4::ncvar_get(cdf, latname)
     lons <- ncdf4::ncvar_get(cdf, lonname)
@@ -127,6 +129,12 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
     expected_extra_dims <- length(real_dims) - 2
     if (length(extra_dims) != expected_extra_dims) {
       stop(sprintf("Expected %d extra dimensions but got %d.", expected_extra_dims, length(extra_dims)))
+    }
+
+    for (dimname in names(extra_dims)) {
+      if (!(dimname %in% real_dims)) {
+          stop(sprintf("Unexpected specification of dimension \"%s\".", dimname))
+      }
     }
   }
 

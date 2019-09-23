@@ -225,6 +225,14 @@ test_that("read_vars_from_cdf tolerates degenerate dimensions that are not used 
 
   vardef <- sprintf('%s::%s', fname, 'clim')
 
+  # Specify non-existent dimension
+  expect_error(read_vars(vardef, extra_dims=list(cookie='chocolate')),
+               'Unexpected.*dimension "cookie"')
+
+  # Specify wrong dimension
+  expect_error(read_vars(vardef, extra_dims=list(initial_time=272)),
+               'Unexpected.*dimension "initial_time"')
+
   vals <- read_vars(vardef, extra_dims=list(target=274))
 
   file.remove(fname)
