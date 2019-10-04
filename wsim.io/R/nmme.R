@@ -90,3 +90,109 @@ nmme_to_halfdeg <- function(m) {
   m[lats, lons]
 }
 
+
+#' Read a variable from an NMME file as distributed by NOAA
+#'
+#' Data will be rotated from 0-360 to -180-180 and disaggregated to
+#' a 0.5-degree global grid.
+#'
+#' @param fname path to netCDF file
+#' @param var name of variable to read, e.g., 'fcst'
+#' @param lead_months integer number of lead months, where zero
+#'                    corresponds to the month when the forecast
+#'                    was issued
+#' @param member ensemble member for forecasts, starting with \code{1}
+#' @return data
+#' @examples
+#' \dontrun{
+#' oct_precip_anom <- read_nmme_noaa('/tmp/NASA_GEOS5v2.prate.201909.anom.nc', 'fcst', 1, 3)
+#' oct_precip_clim <- read_nmme_noaa('/tmp/NASA_GEOS5v2.tmp2m.01.mon.clim.nc', 'clim', 1)
+#' }
+read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
+  stopifnot(lead_months == as.integer(lead_months))
+
+  nc <- ncdf4::nc_open(fname)
+
+  s <- as.vector(ncdf4::ncvar_get(nc, 'initial_time'))
+
+  ncdf4::nc_close(nc)
+
+  extra_dims <- list(
+    target = s + lead_months
+  )
+  if (!is.null(member)) {
+    extra_dims$ensmem <- member
+  }
+
+  nmme <- read_vars(sprintf('%s::%s', fname, var), extra_dims=extra_dims)
+  for (var in names(nmme$data)) {
+    nmme$data[[var]] <- nmme_to_halfdeg(nmme$data[[var]])
+  }
+  nmme$extent <- c(-180, 180, -90, 90)
+
+  return(nmme)
+}
+
+#' Compute NMME variable based on forecast and climatology
+#'
+#' @param fname_anom path to file containing anomalies
+#' @param fname_clim path to file containing climatology
+#' @param lead_months number of lead months in forecast
+#' @param member ensemble member for forecast
+#'
+#' @return forecast values expressed in scientific units
+#' @examples
+#' \dontrun{
+#' oct_precip <- read_nmme_fcst_noaa('/tmp/NASA_GEOS5v2.prate.201909.anom.nc',
+#'                                   '/tmp/NASA_GEOS5v2.prate.09.mon.clim.nc', 1, 3)
+#' }
+read_nmme_fcst_noaa <- function(fname_anom, fname_clim, lead_months, member) {
+  anom <- read_nmme_noaa(fname_anom, 'fcst', lead_months, member)
+  clim <- read_nmme_noaa(fname_clim, 'clim', lead_months)
+
+  anom$data$fcst <- clim$data$clim + anom$data$fcst
+  return(anom)
+}
+
+#' Read from an NMME hindcast file distributed by IRIDL
+#'
+#' Data will be rotated from 0-360 to -180-180 and disaggregated to
+#' a 0.5-degree global grid.
+#'
+#'
+#' @param fname path to netCDF file
+#' @param var name of forecast variable (e.g., \code{tref})
+#' @param start_month month in which forecast was issues (1-12)
+#' @param lead_months integer number of lead months, where zero
+#'                    corresponds to the month when the forecast
+#'                    was issued
+#' @param members one or more ensemble members (1-indexed) to read,
+#'                or \code{NULL} to read all ensemble members
+#' @examples
+#' \dontrun{
+#'   oct_fcsts <- read_iri_hindcast('cancm4i_tref_hindcast.nc', 'tref', 9, 1)
+#' }
+read_iri_hindcast <- function(fname, var, start_month, lead_months, members=NULL) {
+  stopifnot(start_month %in% 1:12)
+  nc <- ncdf4::nc_open(fname)
+
+  svals <- forecast_times_for_month(ncdf4::ncvar_get(nc, 'S'), start_month)
+
+  if (is.null(members)) {
+    members <- ncdf4::ncvar_get(nc, 'M')
+  }
+
+  ncdf4::nc_close(nc)
+
+  v <- list()
+  i <- 1
+  for (member in members) {
+    for (s in svals) {
+      v[[i]] <- nmme_to_halfdeg(read_vars(sprintf('%s::%s', fname, var),
+                  extra_dims=list(S=s, M=member, L=lead_months+0.5))$data[[1]])
+      i <- i+1
+    }
+  }
+
+  abind::abind(v, along=3)
+}
