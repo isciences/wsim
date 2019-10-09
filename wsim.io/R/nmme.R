@@ -108,6 +108,7 @@ nmme_to_halfdeg <- function(m) {
 #' oct_precip_anom <- read_nmme_noaa('/tmp/NASA_GEOS5v2.prate.201909.anom.nc', 'fcst', 1, 3)
 #' oct_precip_clim <- read_nmme_noaa('/tmp/NASA_GEOS5v2.tmp2m.01.mon.clim.nc', 'clim', 1)
 #' }
+#' @export
 read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
   stopifnot(lead_months == as.integer(lead_months))
 
@@ -131,27 +132,6 @@ read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
   nmme$extent <- c(-180, 180, -90, 90)
 
   return(nmme)
-}
-
-#' Compute NMME variable based on forecast and climatology
-#'
-#' @param fname_anom path to file containing anomalies
-#' @param fname_clim path to file containing climatology
-#' @param lead_months number of lead months in forecast
-#' @param member ensemble member for forecast
-#'
-#' @return forecast values expressed in scientific units
-#' @examples
-#' \dontrun{
-#' oct_precip <- read_nmme_fcst_noaa('/tmp/NASA_GEOS5v2.prate.201909.anom.nc',
-#'                                   '/tmp/NASA_GEOS5v2.prate.09.mon.clim.nc', 1, 3)
-#' }
-read_nmme_fcst_noaa <- function(fname_anom, fname_clim, lead_months, member) {
-  anom <- read_nmme_noaa(fname_anom, 'fcst', lead_months, member)
-  clim <- read_nmme_noaa(fname_clim, 'clim', lead_months)
-
-  anom$data$fcst <- clim$data$clim + anom$data$fcst
-  return(anom)
 }
 
 #' Read from an NMME hindcast file distributed by IRIDL
