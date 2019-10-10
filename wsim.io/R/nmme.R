@@ -64,14 +64,16 @@ forecast_times_for_month <- function(svals, month) {
   svals[1 + svals %% 12 == month]
 }
 
-#' Disaggregate a matrix from NMME grid to 0.5-degree global grid
+#' Disaggregate a matrix or array from NMME grid to 0.5-degree global grid
 #'
-#' @param m a 181x360 matrix of values from an NMME forecast or climatology.
+#' @param m a 181x360xN array of values from an NMME forecast or climatology.
 #'          The values must have been read using \code{\link{read_vars}} so
 #'          that the longitude grid originating at -0.5 W has been wrapped to
 #'          begin at -179.5 W.
+#' @return a 360x720XN array of transformed values
+#' @export
 nmme_to_halfdeg <- function(m) {
-  stopifnot(dim(m) == c(181, 360))
+  stopifnot(dim(m)[1:2] == c(181, 360))
 
   # The top and bottom rows of the NMME grid represent 0.5 degrees of latitude,
   # while the intermediate rows represent 1.0 degrees of latitude. To get to a
@@ -87,7 +89,13 @@ nmme_to_halfdeg <- function(m) {
   # column.
   lons <- c(360, rep(1:359, each=2), 360)
 
-  m[lats, lons]
+  if (length(dim(m)) == 2) {
+    m[lats, lons]
+  } else if (length(dim(m)) == 3) {
+    m[lats, lons, , drop=FALSE]
+  } else {
+    stop("Unhandled array size")
+  }
 }
 
 
@@ -136,10 +144,6 @@ read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
 
 #' Read from an NMME hindcast file distributed by IRIDL
 #'
-#' Data will be rotated from 0-360 to -180-180 and disaggregated to
-#' a 0.5-degree global grid.
-#'
-#'
 #' @param fname path to netCDF file
 #' @param var name of forecast variable (e.g., \code{tref})
 #' @param start_month month in which forecast was issues (1-12)
@@ -152,6 +156,7 @@ read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
 #' \dontrun{
 #'   oct_fcsts <- read_iri_hindcast('cancm4i_tref_hindcast.nc', 'tref', 9, 1)
 #' }
+#' @export
 read_iri_hindcast <- function(fname, var, start_month, lead_months, members=NULL) {
   stopifnot(start_month %in% 1:12)
   nc <- ncdf4::nc_open(fname)
@@ -168,8 +173,8 @@ read_iri_hindcast <- function(fname, var, start_month, lead_months, members=NULL
   i <- 1
   for (member in members) {
     for (s in svals) {
-      v[[i]] <- nmme_to_halfdeg(read_vars(sprintf('%s::%s', fname, var),
-                  extra_dims=list(S=s, M=member, L=lead_months+0.5))$data[[1]])
+      v[[i]] <- read_vars(sprintf('%s::%s', fname, var),
+                  extra_dims=list(S=s, M=member, L=lead_months+0.5))$data[[1]]
       i <- i+1
     }
   }
