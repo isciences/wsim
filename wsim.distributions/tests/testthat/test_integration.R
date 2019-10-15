@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -16,8 +16,14 @@ require(Rcpp)
 
 context('Integration functions')
 
-integrate <- function(stat, obs) {
-  (find_stat(stat))(array(obs, dim=c(1,1,length(obs))))[1]
+integrate <- function(stat, obs, weights=NULL) {
+  fn <- find_stat(stat)
+  x <- array(obs, dim=c(1,1,length(obs)))
+  if (is.null(weights)) {
+    fn(x)[1]
+  } else {
+    fn(x, weights)[1]
+  }
 }
 
 test_that('we can calculate basic stats', {
@@ -55,4 +61,45 @@ test_that('we can figure out the number of defined values, and how many are posi
   expect_equal(integrate('fraction_defined_above_zero', c(0,1,2,3)),   3/4)  # 3 out of 4 above zero
   expect_equal(integrate('fraction_defined_above_zero', c(0,NA,2,3)),  2/3)  # 2 out of 3 above zero
   expect_na(   integrate('fraction_defined_above_zero', c(NA,NA,NA,NA)))     # no defined values, so percent is meaningless
+})
+
+test_that('weighted quantile function errors out on dimension mismatches', {
+  expect_error(integrate('weighted_q50', 1:5, 1:4), 'length of weights')
+})
+
+test_that('weighted quantile behaves the same as unweighted quantile when weights are equal', {
+  # spatstat weighted.quantile implementation fails this test
+
+  for (q in 1:100) {
+    expect_equal(
+      integrate(sprintf('q%d', q), 1:5),
+      integrate(sprintf('weighted_q%d', q), 1:5, rep.int(1, 5)))
+  }
+})
+
+test_that('weighted quantile gives increasing weight to observations with higher weights', {
+  expect_true(
+    integrate('weighted_q50', 1:5, 1:5) > 3)
+})
+
+test_that('weighted quantile results are insensitive to the absolute value of the weights', {
+  # Hmisc::wtd.quantile implementation fails this test
+
+  expect_equal(
+    integrate('weighted_q50', 1:5, rep.int(0.1, 5)),
+    integrate('weighted_q50', 1:5, rep.int(1, 5)))
+
+  expect_equal(
+    integrate('weighted_q50', 1:5, 1:5),
+    integrate('weighted_q50', 1:5, (1:5)/sqrt(2)))
+})
+
+test_that('weighted quantile results continuously increase (instead of exhibiting step-function behavior)', {
+  expect_true(
+    !is.unsorted(
+      sapply(1:100, function(q) {
+        integrate(sprintf('weighted_q%d', q), 1:5, 1:5)
+      })
+    )
+  )
 })
