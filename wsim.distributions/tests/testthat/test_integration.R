@@ -70,11 +70,9 @@ test_that('weighted quantile function errors out on dimension mismatches', {
 test_that('weighted quantile behaves the same as unweighted quantile when weights are equal', {
   # spatstat weighted.quantile implementation fails this test
 
-  for (q in 1:100) {
-    expect_equal(
-      integrate(sprintf('q%d', q), 1:5),
-      integrate(sprintf('weighted_q%d', q), 1:5, rep.int(1, 5)))
-  }
+  expect_equal(
+    sapply(1:100, function(q) integrate(sprintf('q%d', q), 1:5)),
+    sapply(1:100, function(q) integrate(sprintf('weighted_q%d', q), 1:5, rep.int(1, 5))))
 })
 
 test_that('weighted quantile gives increasing weight to observations with higher weights', {
@@ -101,5 +99,18 @@ test_that('weighted quantile results continuously increase (instead of exhibitin
         integrate(sprintf('weighted_q%d', q), 1:5, 1:5)
       })
     )
+  )
+})
+
+test_that('weighted quantile distributes weights from missing values among defined values', {
+  dat <- runif(20)
+  weights <- runif(20)
+
+  missing <- sample(1:length(dat), 4)
+  dat[missing] <- NA
+
+  expect_equal(
+    integrate('weighted_q25', dat, weights),
+    integrate('weighted_q25', dat[!is.na(dat)], weights[!is.na(dat)])
   )
 })
