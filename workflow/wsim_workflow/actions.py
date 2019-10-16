@@ -30,7 +30,7 @@ from .commands import \
     wsim_merge
 from .config_base import ConfigBase
 
-from .dates import get_next_yearmon, get_lead_months, rolling_window, available_yearmon_range
+from .dates import get_next_yearmon, get_lead_months, rolling_window, available_yearmon_range, parse_yearmon
 from .step import Step
 
 
@@ -38,6 +38,7 @@ def create_forcing_file(workspace: DefaultWorkspace,
                         data: Union[ObservedForcing, ForecastForcing],
                         *,
                         yearmon: str,
+                        model: Optional[str] = None,
                         target: Optional[str]=None,
                         member: Optional[str]=None) -> List[Step]:
 
@@ -60,7 +61,7 @@ def create_forcing_file(workspace: DefaultWorkspace,
                 'Pr:units',
                 'Pr:standard_name'
             ])),
-            output=workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
+            output=workspace.forcing(yearmon=yearmon, target=target, model=model, member=member, window=1)
         )
     ]
 
@@ -68,11 +69,12 @@ def create_forcing_file(workspace: DefaultWorkspace,
 def compute_basin_results(workspace: DefaultWorkspace,
                           static: ElectricityStatic,
                           yearmon: str,
-                          target: Optional[str]=None,
-                          member: Optional[str]=None) -> List[Step]:
-    pixel_forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
-    pixel_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
-    basin_results = workspace.results(yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
+                          target: Optional[str] = None,
+                          model: Optional[str] = None,
+                          member: Optional[str] = None) -> List[Step]:
+    pixel_forcing = workspace.forcing(model=model, yearmon=yearmon, target=target, member=member, window=1)
+    pixel_results = workspace.results(model=model, yearmon=yearmon, window=1, target=target, member=member)
+    basin_results = workspace.results(model=model, yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
 
     return [
         exact_extract(
@@ -104,22 +106,23 @@ def compute_basin_results(workspace: DefaultWorkspace,
 def run_lsm(workspace: DefaultWorkspace, static: Static, *,
             yearmon: str,
             target: Optional[str]=None,
+            model: Optional[str] = None,
             member: Optional[str]=None,
             lead_months: int=0) -> List[Step]:
 
     if member:
         if lead_months > 1:
-            current_state = workspace.state(yearmon=yearmon, target=target, member=member)
+            current_state = workspace.state(yearmon=yearmon, model=model, target=target, member=member)
         else:
             current_state = workspace.state(yearmon=target)
 
-        next_state = workspace.state(yearmon=yearmon, target=get_next_yearmon(target), member=member)
+        next_state = workspace.state(yearmon=yearmon, model=model, target=get_next_yearmon(target), member=member)
     else:
         current_state = workspace.state(yearmon=yearmon)
         next_state = workspace.state(yearmon=get_next_yearmon(yearmon))
 
-    results = workspace.results(yearmon=yearmon, window=1, target=target, member=member)
-    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
+    results = workspace.results(yearmon=yearmon, window=1, model=model, target=target, member=member)
+    forcing = workspace.forcing(yearmon=yearmon, target=target, model=model, member=member, window=1)
 
     return [
         wsim_lsm(
@@ -139,6 +142,7 @@ def time_integrate(workspace: DefaultWorkspace,
                    *,
                    forcing: bool,
                    yearmon: str,
+                   model: Optional[str] = None,
                    target: Optional[str]=None,
                    window: Optional[int]=None,
                    member: Optional[str]=None,
@@ -156,27 +160,19 @@ def time_integrate(workspace: DefaultWorkspace,
 
     if forcing:
         prev = [workspace.forcing(yearmon=x, window=1, basis=basis) for x in window_observed] + \
-               [workspace.forcing(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
+               [workspace.forcing(yearmon=yearmon, model=model, member=member, target=x, window=1, basis=basis) for x in window_forecast]
+        results = workspace.forcing(yearmon=yearmon, window=window, model=model, member=member, target=target, basis=basis)
     else:
         prev = [workspace.results(yearmon=x, window=1, basis=basis) for x in window_observed] + \
-               [workspace.results(yearmon=yearmon, member=member, target=x, window=1, basis=basis) for x in window_forecast]
-
+               [workspace.results(yearmon=yearmon, model=model, member=member, target=x, window=1, basis=basis) for x in window_forecast]
+        results = workspace.results(yearmon=yearmon, window=window, target=target, model=model, member=member, temporary=False, basis=basis)
 
     return [
         wsim_integrate(
             inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev],
             stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
             attrs=[attrs.integration_window(var='*', months=window)],
-            output= workspace.results(yearmon=yearmon,
-                                     window=window,
-                                     target=target,
-                                     member=member,
-                                     temporary=False,
-                                     basis=basis) if not forcing else workspace.forcing(yearmon=yearmon,
-                                                                                        window=window,
-                                                                                        member=member,
-                                                                                        target=target,
-                                                                                        basis=basis)
+            output=results
         )
     ]
 
@@ -187,6 +183,7 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
                            state_vars: Optional[List[str]]=None,
                            yearmon: str,
                            window: int,
+                           model: Optional[str] = None,
                            target: Optional[str]=None,
                            member: Optional[str]=None,
                            basis: Optional[Basis]=None) -> List[Step]:
@@ -202,7 +199,7 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
     if state_vars is None:
         state_vars = []
 
-    args = {'yearmon': yearmon, 'target': target, 'window': window, 'member': member, 'basis': basis}
+    args = {'yearmon': yearmon, 'target': target, 'model': model, 'window': window, 'member': member, 'basis': basis}
 
     if state_vars:
         assert window==1
@@ -216,7 +213,8 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
             obs=[
                 read_vars(workspace.results(**args), *result_vars)
                 if result_vars else None,
-                read_vars(workspace.forcing(yearmon=yearmon, target=target, window=window, member=member), *forcing_vars)
+                read_vars(workspace.forcing(yearmon=yearmon, model=model, target=target, window=window, member=member),
+                          *forcing_vars)
                 if forcing_vars else None,
                 read_vars(workspace.state(yearmon=yearmon), *state_vars) if state_vars else None
             ],
@@ -390,7 +388,6 @@ def fit_var(config: ConfigBase,
     else:
         infile = config.workspace().results(yearmon=input_range, window=window, basis=basis)
 
-
     # Step for fits
     return [
         wsim_fit(
@@ -402,67 +399,101 @@ def fit_var(config: ConfigBase,
     ]
 
 
-def forcing_summary(workspace: DefaultWorkspace, ensemble_members: List[str], *, yearmon: str, target: str, window: int) \
-        -> List[Step]:
+def forcing_summary(config: ConfigBase, *, yearmon: str, target: str, window: int) -> List[Step]:
+
+    ws = config.workspace()
+
+    inputs = []
+    weights = []
+
+    for model, member, weight in config.weighted_members(yearmon):
+        inputs.append(ws.forcing(model=model, yearmon=yearmon, window=window, target=target, member=member))
+        weights.append(weight)
+
     return [
         wsim_integrate(
-            inputs=[workspace.forcing(yearmon=yearmon, target=target, member=member, window=window) for member in ensemble_members],
+            inputs=inputs,
+            weights=weights,
             stats=['q25', 'q50', 'q75'],
-            output=workspace.forcing_summary(yearmon=yearmon, target=target, window=window)
+            output=ws.forcing_summary(yearmon=yearmon, target=target, window=window)
         )
     ]
 
 
-def result_summary(workspace: DefaultWorkspace,
-                   ensemble_members: List[str],
+def result_summary(config: ConfigBase,
                    *,
                    yearmon: str,
                    target: str,
-                   window: Optional[int]=None) -> List[Step]:
+                   window: Optional[int] = None) -> List[Step]:
+
+    ws = config.workspace()
+
+    inputs = []
+    weights = []
+
+    for model, member, weight in config.weighted_members(yearmon):
+        inputs.append(ws.results(model=model, yearmon=yearmon, window=window, target=target, member=member))
+        weights.append(weight)
+
     return [
         wsim_integrate(
-            inputs=[workspace.results(yearmon=yearmon, window=window, target=target, member=member)
-                    for member in ensemble_members],
+            inputs=inputs,
+            weights=weights,
             stats=['q25', 'q50', 'q75'],
-            output=workspace.results_summary(yearmon=yearmon, window=window, target=target)
+            output=ws.results_summary(yearmon=yearmon, window=window, target=target)
         )
     ]
 
 
-def return_period_summary(workspace: DefaultWorkspace,
-                          ensemble_members: List[str],
+def return_period_summary(config: ConfigBase,
                           *,
                           yearmon: str,
                           target: str,
-                          window: Optional[int]=None) -> List[Step]:
+                          window: Optional[int] = None) -> List[Step]:
+    ws = config.workspace()
+
+    inputs = []
+    weights = []
+
+    for model, member, weight in config.weighted_members(yearmon):
+        inputs.append(ws.return_period(model=model, yearmon=yearmon, window=window, target=target, member=member))
+        weights.append(weight)
+
     return [
         wsim_integrate(
-            inputs=[workspace.return_period(yearmon=yearmon, target=target, window=window, member=member)
-                    for member in ensemble_members],
+            inputs=inputs,
+            weights=weights,
             stats=['q25', 'q50', 'q75'],
-            output=workspace.return_period_summary(yearmon=yearmon, window=window, target=target)
+            output=ws.return_period_summary(yearmon=yearmon, window=window, target=target)
         )
     ]
 
 
-def standard_anomaly_summary(workspace: DefaultWorkspace,
-                             ensemble_members: List[str],
+def standard_anomaly_summary(config: ConfigBase,
                              *,
                              yearmon: str,
                              target: str,
-                             window: Optional[int]=None) -> List[Step]:
+                             window: Optional[int] = None) -> List[Step]:
+    ws = config.workspace()
+    inputs = []
+    weights = []
+
+    for model, member, weight in config.weighted_members(yearmon):
+        inputs.append(ws.standard_anomaly(model=model, yearmon=yearmon, window=window, target=target, member=member))
+        weights.append(weight)
+
     return [
         wsim_integrate(
-            inputs=[workspace.standard_anomaly(yearmon=yearmon, target=target, window=window, member=member)
-                    for member in ensemble_members],
+            inputs=inputs,
+            weights=weights,
             stats=['q25', 'q50', 'q75'],
-            output=workspace.standard_anomaly_summary(yearmon=yearmon, window=window, target=target)
+            output=ws.standard_anomaly_summary(yearmon=yearmon, window=window, target=target)
         )
     ]
 
 
-def correct_forecast(data: DefaultWorkspace, *, member: str, target: str, lead_months: int) -> List[Step]:
-    target_month = int(target[-2:])
+def correct_forecast(data: ForecastForcing, *, member: str, target: str, lead_months: int) -> List[Step]:
+    _, target_month = parse_yearmon(target)
 
     return [
         wsim_correct(

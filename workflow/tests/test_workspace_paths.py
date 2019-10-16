@@ -30,8 +30,8 @@ class TestWorkspacePaths(unittest.TestCase):
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'state', 'state_201612_trgt201703_fcstCFS13.nc'),
-            self.ws.state(yearmon='201612', target='201703', member='CFS13')
+            join(self.root, 'state', 'state_201612_trgt201703_fcstCFSv2_CFS13.nc'),
+            self.ws.state(yearmon='201612', target='201703', model='CFSv2', member='CFS13')
         )
 
     def test_forcing(self):
@@ -54,11 +54,10 @@ class TestWorkspacePaths(unittest.TestCase):
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'forcing', 'forcing_1mo_201612_trgt201703_fcstCFS13.nc'),
-            self.ws.forcing(yearmon='201612', target='201703', member='CFS13', window=1)
+            join(self.root, 'forcing', 'forcing_1mo_201612_trgt201703_fcstCFSv1_13.nc'),
+            self.ws.forcing(yearmon='201612', target='201703', model='CFSv1', member='13', window=1)
         )
         
-
 
     def test_results(self):
         # Observed data
@@ -75,13 +74,13 @@ class TestWorkspacePaths(unittest.TestCase):
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'results', 'results_1mo_201612_trgt201703_fcstCFS13.nc'),
-            self.ws.results(yearmon='201612', window=1, target='201703', member='CFS13')
+            join(self.root, 'results', 'results_1mo_201612_trgt201703_fcstCFSv1_13.nc'),
+            self.ws.results(yearmon='201612', window=1, target='201703', model='CFSv1', member='13')
         )
 
         self.assertEqual(
-            join(self.root, 'results_integrated', 'results_36mo_201612_trgt201703_fcstCFS13.nc'),
-            self.ws.results(yearmon='201612', target='201703', member='CFS13', window=36)
+            join(self.root, 'results_integrated', 'results_36mo_201612_trgt201703_fcstCFSv1_13.nc'),
+            self.ws.results(yearmon='201612', target='201703', member='13', model='CFSv1', window=36)
         )
 
     def test_return_period(self):
@@ -111,13 +110,13 @@ class TestWorkspacePaths(unittest.TestCase):
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'rp', 'rp_1mo_201612_trgt201703_fcstCFS13.nc'),
-            self.ws.return_period(yearmon='201612', target='201703', member='CFS13', window=1)
+            join(self.root, 'rp', 'rp_1mo_201612_trgt201703_fcstCFSv2_13.nc'),
+            self.ws.return_period(yearmon='201612', target='201703', model='CFSv2', member='13', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'rp_integrated', 'rp_36mo_201612_trgt201703_fcstCFS13.nc'),
-            self.ws.return_period(yearmon='201612', target='201703', member='CFS13', window=36)
+            join(self.root, 'rp_integrated', 'rp_36mo_201612_trgt201703_fcstCanCM4i_6.nc'),
+            self.ws.return_period(yearmon='201612', target='201703', model='CanCM4i', member='6', window=36)
         )
 
     def test_composite_anomaly(self):
@@ -238,13 +237,13 @@ class TestWorkspacePaths(unittest.TestCase):
 
     def test_standard_anomaly(self):
         self.assertEqual(
-            join(self.root, 'anom', 'anom_1mo_201612_trgt201708_fcstXYZ.nc'),
-            self.ws.standard_anomaly(yearmon='201612', target='201708', member='XYZ', window=1)
+            join(self.root, 'anom', 'anom_1mo_201612_trgt201708_fcstCFSv2_XYZ.nc'),
+            self.ws.standard_anomaly(yearmon='201612', target='201708', model='CFSv2', member='XYZ', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'anom_integrated', 'anom_13mo_201612_trgt201708_fcstXYZ.nc'),
-            self.ws.standard_anomaly(yearmon='201612', target='201708', member='XYZ', window=13)
+            join(self.root, 'anom_integrated', 'anom_13mo_201612_trgt201708_fcstCFSv2_XYZ.nc'),
+            self.ws.standard_anomaly(yearmon='201612', target='201708', model='CFSv2', member='XYZ', window=13)
         )
 
     def test_standard_anomaly_summary(self):

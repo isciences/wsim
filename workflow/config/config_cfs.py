@@ -413,15 +413,15 @@ class CFSConfig(ConfigBase):
 
     def __init__(self, source, derived):
         self._observed = NCEP(source)
-        self._forecast = CFSForecast(source, derived)
+        self._forecast = {'CFSv2' : CFSForecast(source, derived)}
         self._static = CFSStatic(source)
         self._workspace = paths.DefaultWorkspace(derived)
 
     def global_prep(self):
-        return \
-            self._static.global_prep_steps() + \
-            self._observed.global_prep_steps() + \
-            self._forecast.global_prep_steps()
+        steps = self._static.global_prep_steps() + self._observed.global_prep_steps()
+        for model in self._forecast.values():
+            steps += model.global_prep_steps()
+        return steps
 
     def historical_years(self):
         return range(1948, 2018)  # 1948-2017
@@ -429,7 +429,12 @@ class CFSConfig(ConfigBase):
     def result_fit_years(self):
         return range(1950, 2010)  # 1950-2009
 
-    def forecast_ensemble_members(self, yearmon, *, lag_hours: Optional[int] = None):
+    def models(self):
+        return ['CFSv2']
+
+    def forecast_ensemble_members(self, model, yearmon, *, lag_hours: Optional[int] = None):
+        assert model in self.models()
+
         # Build an ensemble of 28 forecasts by taking the four
         # forecasts issued on each of the last 7 days of the month.
         last_day = dates.get_last_day_of_month(yearmon)
@@ -448,8 +453,8 @@ class CFSConfig(ConfigBase):
     def forecast_targets(self, yearmon):
         return dates.get_next_yearmons(yearmon, 9)
 
-    def forecast_data(self):
-        return self._forecast
+    def forecast_data(self, model: str):
+        return self._forecast[model]
 
     def observed_data(self):
         return self._observed

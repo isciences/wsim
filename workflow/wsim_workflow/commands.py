@@ -349,6 +349,7 @@ def wsim_correct(*,
 def wsim_integrate(*,
                    stats: Union[str, List[str]],
                    inputs: Union[str, List[str]],
+                   weights: Optional[List[float]] = None,
                    output: str,
                    window: Optional[int]=None,
                    keepvarnames: bool=False,
@@ -373,6 +374,9 @@ def wsim_integrate(*,
 
     if window:
         cmd += ['--window', str(window)]
+
+    if weights:
+        cmd += ['--weights', ','.join(str(w) for w in weights)]
 
     if keepvarnames:
         cmd.append('--keepvarnames')
