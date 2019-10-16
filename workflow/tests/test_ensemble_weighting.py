@@ -15,7 +15,7 @@ import unittest
 
 from typing import Optional, List
 
-from .test_monthly import BasicConfig
+from test_monthly import BasicConfig
 
 
 class TestMonthly(unittest.TestCase):
