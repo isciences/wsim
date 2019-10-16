@@ -120,21 +120,21 @@ class Vardef:
 class ForecastForcing(metaclass=ABCMeta):
 
     @abstractmethod
-    def precip_monthly(self, *, yearmon, target, model, member):
+    def precip_monthly(self, *, yearmon, target, member):
         """
         Return a Vardef for the precipitation variable
         """
         pass
 
     @abstractmethod
-    def temp_monthly(self, *, yearmon, target, model, member):
+    def temp_monthly(self, *, yearmon, target, member):
         """
         Return a Vardef for the average monthly temperature
         """
         pass
 
     @abstractmethod
-    def p_wetdays(self, *, yearmon, target, model, member):
+    def p_wetdays(self, *, yearmon, target, member):
         """
         Return a Vardef for the percentage of wet days in a month
         """
