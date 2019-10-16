@@ -293,10 +293,10 @@ class CFSForecast(paths.ForecastForcing):
         self.derived = derived
 
     def temp_monthly(self, *, yearmon, target, member):
-        return paths.Vardef(self.forecast_corrected(target=target, member=member), 'T')
+        return paths.Vardef(self.forecast_corrected(yearmon=yearmon, target=target, member=member), 'T')
 
     def precip_monthly(self, *, yearmon, target, member):
-        return paths.Vardef(self.forecast_corrected(target=target, member=member), 'Pr')
+        return paths.Vardef(self.forecast_corrected(yearmon=yearmon, target=target, member=member), 'Pr')
 
     def p_wetdays(self, *, yearmon=None, target, member=None):
         month = int(target[4:])
@@ -321,13 +321,13 @@ class CFSForecast(paths.ForecastForcing):
                                                                                                   target_month=target_month,  # noqa
                                                                                                   lead_months=lead_months))   # noqa
 
-    def forecast_raw(self, *, target, member):
+    def forecast_raw(self, *, yearmon, target, member):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'raw_nc',
                             'cfs_trgt{target}_fcst{member}_raw.nc'.format(target=target, member=member))
 
-    def forecast_corrected(self, *, target, member):
+    def forecast_corrected(self, *, yearmon, target, member):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'corrected',
@@ -385,8 +385,8 @@ class CFSForecast(paths.ForecastForcing):
 
         return steps
 
-    def prep_steps(self, *, yearmon=None, target, member):
-        outfile = self.forecast_raw(member=member, target=target)
+    def prep_steps(self, *, yearmon: str, target: str, member: str) -> List[Step]:
+        outfile = self.forecast_raw(yearmon=yearmon, member=member, target=target)
         infile = self.forecast_grib(member=member, target=target)
 
         return [
@@ -416,12 +416,6 @@ class CFSConfig(ConfigBase):
         self._forecast = {'CFSv2' : CFSForecast(source, derived)}
         self._static = CFSStatic(source)
         self._workspace = paths.DefaultWorkspace(derived)
-
-    def global_prep(self):
-        steps = self._static.global_prep_steps() + self._observed.global_prep_steps()
-        for model in self._forecast.values():
-            steps += model.global_prep_steps()
-        return steps
 
     def historical_years(self):
         return range(1948, 2018)  # 1948-2017

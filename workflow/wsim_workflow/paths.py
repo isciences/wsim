@@ -155,11 +155,11 @@ class ForecastForcing(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def forecast_raw(self, *, target, member):
+    def forecast_raw(self, *, yearmon: str, target: str, member: str) -> str:
         pass
 
     @abstractmethod
-    def forecast_corrected(self, *, target, member):
+    def forecast_corrected(self, *, yearmon: str, target: str, member: str) -> str:
         pass
 
     def prep_steps(self, *, yearmon, target, member):

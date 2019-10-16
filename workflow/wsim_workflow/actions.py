@@ -492,7 +492,7 @@ def standard_anomaly_summary(config: ConfigBase,
     ]
 
 
-def correct_forecast(data: ForecastForcing, *, member: str, target: str, lead_months: int) -> List[Step]:
+def correct_forecast(data: ForecastForcing, *, yearmon: str, member: str, target: str, lead_months: int) -> List[Step]:
     _, target_month = parse_yearmon(target)
 
     return [
@@ -505,8 +505,8 @@ def correct_forecast(data: ForecastForcing, *, member: str, target: str, lead_mo
                 data.fit_obs(month=target_month, var='T'),
                 data.fit_obs(month=target_month, var='Pr')
             ],
-            forecast=data.forecast_raw(member=member, target=target) + '::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr',
-            output=data.forecast_corrected(member=member, target=target),
+            forecast=data.forecast_raw(yearmon=yearmon, member=member, target=target) + '::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr',
+            output=data.forecast_corrected(yearmon=yearmon, member=member, target=target),
             attrs=[
                 "Pr:standard_name=precipitation_amount",
                 "Pr:units=mm",

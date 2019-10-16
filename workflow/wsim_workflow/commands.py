@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -437,6 +437,20 @@ def move(from_path: str, to_path: str) -> Step:
                 consumes=from_path,
                 dependencies=from_path,
                 commands=[['mv', q(from_path), q(to_path)]])
+
+
+def download(url: str, to_dir: str) -> Step:
+    fname = os.path.basename(url)
+
+    return Step(
+        targets=os.path.join(to_dir, fname),
+        dependencies=[],
+        commands=[[
+            'wget',
+            '-P', to_dir,
+            url
+        ]]
+    )
 
 
 # noinspection PyShadowingBuiltins

@@ -85,7 +85,10 @@ class ConfigBase(metaclass=abc.ABCMeta):
         of which time steps/forecasts/etc. are also present in the Makefile.
         :return:
         """
-        return []
+        steps = self.static_data().global_prep_steps() + self.observed_data().global_prep_steps()
+        for model in self.models():
+            steps += self.forecast_data(model).global_prep_steps()
+        return steps
 
     def should_run_spinup(self) -> bool:
         """
