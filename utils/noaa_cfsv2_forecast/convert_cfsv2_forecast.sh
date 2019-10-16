@@ -76,4 +76,4 @@ ncatted -h -O \
 	$TEMP_NC4
 
 # Compress the netCDF
-ncks $TEMP_NC4 -L1 -7 $2
+ncks $TEMP_NC4 -O -L1 -7 $2
