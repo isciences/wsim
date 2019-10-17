@@ -18,6 +18,7 @@ import os
 
 from typing import List, Optional
 
+from wsim_workflow import actions
 from wsim_workflow import commands
 from wsim_workflow import dates
 from wsim_workflow import paths
@@ -27,13 +28,26 @@ from wsim_workflow.step import Step
 
 from config_cfs import CFSStatic, CFSForecast, NCEP
 
+NOAA_RTA_VARIABLES = ('tmp2m', 'prate')
+WSIM_FORCING_VARIABLES = ('T', 'Pr')
+NOAA_RTA_FTP_ROOT = 'ftp://ftp.cpc.ncep.noaa.gov/NMME'
+
 
 class NMMEForecast(paths.ForecastForcing):
 
-    def __init__(self, source, derived, model_name: str):
+    def __init__(self,
+                 source: str,
+                 derived: str,
+                 observed: paths.ObservedForcing,
+                 model_name: str,
+                 min_hindcast_year: int,
+                 max_hindcast_year: int):
         self.source = source
         self.derived = derived
+        self.observed = observed
         self.model_name = model_name
+        self.min_hindcast_year = min_hindcast_year
+        self.max_hindcast_year = max_hindcast_year
 
     def model_dir(self):
         return os.path.join(self.source, 'NMME', self.model_name)
@@ -54,6 +68,8 @@ class NMMEForecast(paths.ForecastForcing):
                             'pWetDays')
 
     def fit_obs(self, *, var, month):
+        assert var in WSIM_FORCING_VARIABLES
+
         return os.path.join(self.model_dir(),
                             'hindcast_fits',
                             '{model}_obs_{var}_month_{month:02d}.nc'.format(model=self.model_name,
@@ -61,6 +77,8 @@ class NMMEForecast(paths.ForecastForcing):
                                                                             month=month))
 
     def fit_retro(self, *, var, target_month, lead_months):
+        assert var in WSIM_FORCING_VARIABLES
+
         return os.path.join(self.model_dir(),
                             'hindcast_fits',
                             '{model}_retro_{var}_month_{target_month:02d}_lead_{lead_months:d}.nc'.format(
@@ -70,6 +88,8 @@ class NMMEForecast(paths.ForecastForcing):
                                 lead_months=lead_months))
 
     def forecast_clim(self, *, varname: str, month: int) -> str:
+        assert varname in NOAA_RTA_VARIABLES
+
         return os.path.join(self.model_dir(),
                             'clim',
                             '{model}.{varname}.{month:02d}.mon.clim.nc'.format(model=self.model_name,
@@ -80,12 +100,14 @@ class NMMEForecast(paths.ForecastForcing):
         return os.path.join(self.model_dir(),
                             'raw_sci',
                             yearmon,
-                            '{model}_{yearmon}_trgt{target}_fcst{member}'.format(model=self.model_name,
-                                                                                 yearmon=yearmon,
-                                                                                 target=target,
-                                                                                 member=member))
+                            '{model}_{yearmon}_trgt{target}_fcst{member}.nc'.format(model=self.model_name,
+                                                                                    yearmon=yearmon,
+                                                                                    target=target,
+                                                                                    member=member))
 
     def forecast_anom(self, *, yearmon: str, varname: str) -> str:
+        assert varname in NOAA_RTA_VARIABLES
+
         return os.path.join(self.model_dir(),
                             'raw_anom',
                             yearmon,
@@ -104,7 +126,7 @@ class NMMEForecast(paths.ForecastForcing):
                                 member=member
                             ))
 
-    def global_prep_steps(self):
+    def download_hindcasts(self):
         steps = []
 
         iri_url = 'http://iridl.ldeo.columbia.edu/SOURCES/.Models/.NMME/.{model}/.HINDCAST/.MONTHLY/.{varname}/dods'
@@ -128,40 +150,114 @@ class NMMEForecast(paths.ForecastForcing):
                 ]
             ))
 
-        # FIXME: add steps for fitting hindcast and observed distributions
+        return steps
+
+    def compute_fit_obs(self, varname: str, month: int) -> List[Step]:
+        assert varname in WSIM_FORCING_VARIABLES
+
+        # For simplicity, we want to compare all forecasts to a consistent set of observed data.
+        # In other words, we don't want to compare March lead-6 forecasts to observed data
+        # from March 1983-March 2011 and March lead-2 forecasts to observed data from March 1982-March 2010.
+        # So we restrict the range of dates.
+
+        start = dates.format_yearmon(self.min_hindcast_year + 1, month)
+        stop = dates.format_yearmon(self.max_hindcast_year - 1, month)
+
+        rng = dates.format_range(start, stop, 12)
+
+        if varname == 'Pr':
+            inputs = self.observed.precip_monthly(yearmon=rng)
+        if varname == 'T':
+            inputs = self.observed.temp_monthly(yearmon=rng)
+
+        return [
+            commands.wsim_fit(distribution='gev',
+                              inputs=[inputs],
+                              output=self.fit_obs(var=varname, month=month),
+                              window=1)
+        ]
+
+    def fit_hindcast(self, varname: str, month: int, lead: int):
+        pass
+
+    def download_realtime_anomaly_climatologies(self):
+        steps = []
+
+        # Download climatologies from NOAA. There is one file per forecast variable/forecast generation month
+        for month in range(1, 13):
+            for varname in NOAA_RTA_VARIABLES:
+                clim_path = self.forecast_clim(varname=varname, month=month)
+                clim_dirname = os.path.dirname(clim_path)
+                clim_fname = os.path.basename(clim_path)
+                clim_url = '{root}/clim/{fname}'.format(root=NOAA_RTA_FTP_ROOT, fname=clim_fname)
+
+                steps.append(
+                    commands.download(clim_url, clim_dirname)
+                )
+
+        return steps
+
+    def download_realtime_anomalies(self, yearmon: str):
+        steps = []
+
+        # Download forecasts from NOAA. There is one file per forecast variable/forecast generation month
+        for varname in NOAA_RTA_VARIABLES:
+            anom_path = self.forecast_anom(yearmon=yearmon, varname=varname)
+            anom_dirname = os.path.dirname(anom_path)
+            anom_fname = os.path.basename(anom_path)
+            anom_url = '{root}/realtime_anom/{model}/{yearmon}0800/{fname}'.format(
+                root=NOAA_RTA_FTP_ROOT,
+                model=self.model_name,
+                yearmon=yearmon,
+                fname=anom_fname
+            )
+
+            steps.append(commands.download(anom_url, anom_dirname))
+
+        return steps
+
+    def global_prep_steps(self):
+        steps = []
+
+        steps += self.download_hindcasts()
+        steps += self.download_realtime_anomaly_climatologies()
+
+        for month in dates.all_months:
+            for var in WSIM_FORCING_VARIABLES:
+                steps += self.compute_fit_obs(varname=var, month=month)
+
+        # FIXME: add steps for fitting hindcast distributions
 
         return steps
 
     def prep_steps(self, *, yearmon: str, target: str, member: str) -> List[Step]:
         steps = []
 
-        nmme_root = 'ftp://ftp.cpc.ncep.noaa.gov/NMME'
-
         _, month = dates.parse_yearmon(yearmon)
 
-        for varname in ('tmp2m', 'prate'):
-            anom_path = self.forecast_anom(yearmon=yearmon, varname=varname)
-            anom_dirname = os.path.dirname(anom_path)
-            anom_fname = os.path.basename(anom_path)
-            anom_url = '{root}/realtime_anom/{model}/{yearmon}0800/{fname}'.format(
-                root=nmme_root,
-                model=self.model_name,
-                yearmon=yearmon,
-                fname=anom_fname
-            )
+        # Hack to only download these once although they are required for
+        # all members / forecast targets
+        if int(member) == 1 and target == dates.add_months(yearmon, 1):
+            steps += self.download_realtime_anomalies(yearmon)
 
-            clim_path = self.forecast_clim(varname=varname, month=month)
-            clim_dirname = os.path.dirname(clim_path)
-            clim_fname = os.path.basename(clim_path)
-            clim_url = '{root}/clim/{fname}'.format(
-                root=nmme_root,
-                fname=clim_fname
-            )
-
-            steps += [
-                commands.download(anom_url, anom_dirname),
-                commands.download(clim_url, clim_dirname)
-            ]
+        steps.append(Step(
+            targets=self.forecast_raw(yearmon=yearmon, target=target, member=member),
+            dependencies=[self.forecast_anom(yearmon=yearmon, varname='tmp2m'),
+                          self.forecast_anom(yearmon=yearmon, varname='prate'),
+                          self.forecast_clim(month=month, varname='tmp2m'),
+                          self.forecast_clim(month=month, varname='prate')],
+            commands=[
+                [
+                    '{BINDIR}/utils/nmme/extract_nmme_forecast.R',
+                    '--clim_precip', self.forecast_clim(month=month, varname='prate'),
+                    '--clim_temp',   self.forecast_clim(month=month, varname='tmp2m'),
+                    '--anom_precip', self.forecast_anom(yearmon=yearmon, varname='prate'),
+                    '--anom_temp',   self.forecast_anom(yearmon=yearmon, varname='tmp2m'),
+                    '--member', member,
+                    '--lead', str(dates.get_lead_months(yearmon, target)),
+                    '--output', self.forecast_raw(yearmon=yearmon, target=target, member=member)
+                ]
+            ]))
 
         return steps
 
@@ -172,7 +268,7 @@ class NMMEConfig(ConfigBase):
         self._observed = NCEP(source)
         self._forecast = {
             'CFSv2':  CFSForecast(source, derived),
-            'CanCM4i': NMMEForecast(source, derived, 'CanCM4i')
+            'CanCM4i': NMMEForecast(source, derived, self._observed, 'CanCM4i', 1982, 2010)
         }
         self._static = CFSStatic(source)
         self._workspace = paths.DefaultWorkspace(derived)

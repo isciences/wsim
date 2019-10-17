@@ -157,11 +157,20 @@ read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
 #'   oct_fcsts <- read_iri_hindcast('cancm4i_tref_hindcast.nc', 'tref', 9, 1)
 #' }
 #' @export
-read_iri_hindcast <- function(fname, var, start_month, lead_months, members=NULL) {
+read_iri_hindcast <- function(fname, var, start_month, lead_months, min_target_year=NULL, max_target_year=NULL, members=NULL) {
   stopifnot(start_month %in% 1:12)
   nc <- ncdf4::nc_open(fname)
 
   svals <- forecast_times_for_month(ncdf4::ncvar_get(nc, 'S'), start_month)
+
+  if (!is.null(min_target_year)) {
+    target_years <- as.integer(substr(yearmon_from_months_since_jan_1960(svals + lead_months), 1, 4))
+    svals <- svals[target_years >= min_target_year]
+  }
+  if (!is.null(max_target_year)) {
+    target_years <- as.integer(substr(yearmon_from_months_since_jan_1960(svals + lead_months), 1, 4))
+    svals <- svals[target_years <= min_target_year]
+  }
 
   if (is.null(members)) {
     members <- ncdf4::ncvar_get(nc, 'M')
