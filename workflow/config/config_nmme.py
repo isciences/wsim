@@ -194,6 +194,19 @@ class NMMEForecast(paths.ForecastForcing):
         start = self.min_hindcast_year + 1
         stop = self.max_hindcast_year - 1
 
+        # The lead months will be computed by WSIM, based on the difference between
+        # the WSIM data version and target month. Since the NMME forecast reference
+        # time is one month greater than the WSIM data version, the hindcast fits
+        # at an N-month lead need to be computed from NMME data with an (N-1)-month
+        # lead.
+        #
+        # As an example, a WSIM workflow generated for data version 201901 will
+        # will request a corrected NMME forecast targeting 201904, which it will
+        # consider to be a 3-month lead time. The NMME forecast accessed by
+        # WSIM data version 201901 will have an NMME reference time of 201902.
+        # So for the context of the fit_nmme_hindcasts.R script, the raw
+        # forecast will have a lead time of two months.
+
         output = self.fit_retro(var=varname, target_month=month, lead_months=lead)
 
         return [
@@ -209,8 +222,10 @@ class NMMEForecast(paths.ForecastForcing):
                         '--min_year',      str(start),
                         '--max_year',      str(stop),
                         '--target_month',  str(month),
-                        '--lead',          str(lead),
-                        '--output',        output
+                        '--output',        output,
+                        '--lead',          str(lead - 1)  # <--- IMPORTANT! Subtract 1 from lead to account for
+                                                          #      difference between WSIM data version / "yearmon"
+                                                          #      and NMME forecast "reference time".
                     ]
                 ]
 

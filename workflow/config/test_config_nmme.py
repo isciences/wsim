@@ -14,8 +14,15 @@
 import os
 import unittest
 
+from typing import List
+
+from wsim_workflow.step import Step
+
 from config_cfs import NCEP
 from config_nmme import NMMEForecast
+
+def get_producing_step(target: str, steps: List[Step]) -> Step:
+    return [s for s in steps if target in s.targets][0]
 
 
 class TestNMMEConfig(unittest.TestCase):
@@ -46,7 +53,7 @@ class TestNMMEConfig(unittest.TestCase):
         self.assertTrue(raw_fcst.endswith('model3_201901_trgt201904_fcst8.nc'))
 
         # and its dependencies use the NMME month, 201902
-        anom_to_raw = [s for s in nmme.prep_steps(**params) if raw_fcst in s.targets][0]
+        anom_to_raw = get_producing_step(raw_fcst, nmme.prep_steps(**params))
 
         self.assertIn(os.path.join(nmme.model_dir(), 'clim', 'model3.prate.02.mon.clim.nc'), anom_to_raw.dependencies)
         self.assertIn(os.path.join(nmme.model_dir(), 'clim', 'model3.tmp2m.02.mon.clim.nc'), anom_to_raw.dependencies)
@@ -57,5 +64,14 @@ class TestNMMEConfig(unittest.TestCase):
         self.assertIn(os.path.join(nmme.model_dir(), 'raw_anom', 'nmme_201902', 'model3.prate.201902.anom.nc'),
                       anom_to_raw.dependencies)
 
-        # when we bias-correct it,
+    def test_hindcast_lead(self):
+        # This test checks another consequence of the offset between WSIM data version and
+        # NMME forecast reference times.
+
+        observed = NCEP(self.source)
+        nmme = NMMEForecast(self.source, self.derived, observed, 'Model3', 1969, 2008)
+        fit_command = nmme.compute_fit_hindcast(varname='Pr', month=9, lead=4)[0].commands[0]
+
+        lead_arg = fit_command.index('--lead') + 1
+        self.assertEquals(fit_command[lead_arg], '3')
 
