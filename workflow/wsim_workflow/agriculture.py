@@ -73,6 +73,7 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
     # Compute a gridded loss risk for each forecast target/ensemble member
     for target in config.forecast_targets(yearmon):
         for model in config.models():
+            print('Generating agriculture steps for', model, yearmon, 'forecast target', target)
             for member in config.forecast_ensemble_members(model, yearmon):
                 steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon, model=model, target=target, member=member)
                 for method in CULTIVATION_METHODS:

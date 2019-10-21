@@ -322,10 +322,11 @@ class CFSForecast(paths.ForecastForcing):
                                                                                                   lead_months=lead_months))   # noqa
 
     def forecast_raw(self, *, yearmon, target, member):
+        # Must provide T in degrees C, Pr in mm
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'raw_nc',
-                            'cfs_trgt{target}_fcst{member}_raw.nc'.format(target=target, member=member))
+                            'cfs_trgt{target}_fcst{member}_raw.nc::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr'.format(target=target, member=member))
 
     def forecast_corrected(self, *, yearmon, target, member):
         return os.path.join(self.source,

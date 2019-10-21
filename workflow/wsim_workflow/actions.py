@@ -505,7 +505,7 @@ def correct_forecast(data: ForecastForcing, *, yearmon: str, member: str, target
                 data.fit_obs(month=target_month, var='T'),
                 data.fit_obs(month=target_month, var='Pr')
             ],
-            forecast=data.forecast_raw(yearmon=yearmon, member=member, target=target) + '::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr',
+            forecast=data.forecast_raw(yearmon=yearmon, member=member, target=target) + '',
             output=data.forecast_corrected(yearmon=yearmon, member=member, target=target),
             attrs=[
                 "Pr:standard_name=precipitation_amount",

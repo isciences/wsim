@@ -146,20 +146,32 @@ read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
 #'
 #' @param fname path to netCDF file
 #' @param var name of forecast variable (e.g., \code{tref})
-#' @param start_month month in which forecast was issues (1-12)
+#' @param start_month month targeted by forecast (1-12)
 #' @param lead_months integer number of lead months, where zero
 #'                    corresponds to the month when the forecast
 #'                    was issued
+#' @param min_target_year only read hindcasts with a target date
+#'                        greater than or equal to specified year
+#' @param max_target_year only read hindcasts with a target date
+#'                        less than or equal to specified year
 #' @param members one or more ensemble members (1-indexed) to read,
 #'                or \code{NULL} to read all ensemble members
+#' @param return a 181x360xN array with the values from \code{N} hindcasts
 #' @examples
 #' \dontrun{
 #'   oct_fcsts <- read_iri_hindcast('cancm4i_tref_hindcast.nc', 'tref', 9, 1)
 #' }
 #' @export
-read_iri_hindcast <- function(fname, var, start_month, lead_months, min_target_year=NULL, max_target_year=NULL, members=NULL) {
-  stopifnot(start_month %in% 1:12)
+read_iri_hindcast <- function(fname, var, target_month, lead_months, min_target_year=NULL, max_target_year=NULL, members=NULL, progress=FALSE) {
+  stopifnot(target_month %in% 1:12)
+  stopifnot(lead_months == as.integer(lead_months))
+
   nc <- ncdf4::nc_open(fname)
+
+  start_month <- target_month - lead_months
+  if (start_month < 1) {
+    start_month <- start_month + 12
+  }
 
   svals <- forecast_times_for_month(ncdf4::ncvar_get(nc, 'S'), start_month)
 
@@ -169,7 +181,7 @@ read_iri_hindcast <- function(fname, var, start_month, lead_months, min_target_y
   }
   if (!is.null(max_target_year)) {
     target_years <- as.integer(substr(yearmon_from_months_since_jan_1960(svals + lead_months), 1, 4))
-    svals <- svals[target_years <= min_target_year]
+    svals <- svals[target_years <= max_target_year]
   }
 
   if (is.null(members)) {
@@ -178,6 +190,11 @@ read_iri_hindcast <- function(fname, var, start_month, lead_months, min_target_y
 
   ncdf4::nc_close(nc)
 
+  if (progress) {
+    bar <- txtProgressBar(min=0, max=length(members)*length(svals))
+  }
+
+
   v <- list()
   i <- 1
   for (member in members) {
@@ -185,7 +202,15 @@ read_iri_hindcast <- function(fname, var, start_month, lead_months, min_target_y
       v[[i]] <- read_vars(sprintf('%s::%s', fname, var),
                   extra_dims=list(S=s, M=member, L=lead_months+0.5))$data[[1]]
       i <- i+1
+
+      if (progress) {
+        setTxtProgressBar(bar, i)
+      }
     }
+  }
+
+  if (progress) {
+    close(bar)
   }
 
   abind::abind(v, along=3)
