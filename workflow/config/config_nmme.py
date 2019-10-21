@@ -36,6 +36,10 @@ NOAA_RTA_VARS = {'T' : 'tmp2m', 'Pr' : 'prate'}
 IRI_VARS = {'T' : 'tref', 'Pr': 'prec'}
 
 
+def nmme_yearmon(yearmon: str):
+    return dates.add_months(yearmon, 1)
+
+
 class NMMEForecast(paths.ForecastForcing):
 
     def __init__(self,
@@ -90,14 +94,14 @@ class NMMEForecast(paths.ForecastForcing):
                                 target_month=target_month,
                                 lead_months=lead_months))
 
-    def forecast_clim(self, *, varname: str, month: int) -> str:
+    def forecast_clim(self, *, varname: str, nmme_month: int) -> str:
         assert varname in WSIM_FORCING_VARIABLES
 
         return os.path.join(self.model_dir(),
                             'clim',
                             '{model}.{varname}.{month:02d}.mon.clim.nc'.format(model=self.model_name.lower(),
                                                                                varname=NOAA_RTA_VARS[varname],
-                                                                               month=month))
+                                                                               month=nmme_month))
 
     def forecast_raw(self, *, yearmon: str, target: str, member: str):
         return os.path.join(self.model_dir(),
@@ -108,15 +112,15 @@ class NMMEForecast(paths.ForecastForcing):
                                                                                     target=target,
                                                                                     member=member))
 
-    def forecast_anom(self, *, yearmon: str, varname: str) -> str:
+    def forecast_anom(self, *, nmme_yearmon: str, varname: str) -> str:
         assert varname in WSIM_FORCING_VARIABLES
 
         return os.path.join(self.model_dir(),
                             'raw_anom',
-                            yearmon,
+                            'nmme_{}'.format(nmme_yearmon),
                             '{model}.{varname}.{yearmon}.anom.nc'.format(model=self.model_name.lower(),
                                                                          varname=NOAA_RTA_VARS[varname],
-                                                                         yearmon=yearmon))
+                                                                         yearmon=nmme_yearmon))
 
     def forecast_corrected(self, *, yearmon: str, target: str, member: int):
         return os.path.join(self.model_dir(),
@@ -217,9 +221,9 @@ class NMMEForecast(paths.ForecastForcing):
         steps = []
 
         # Download climatologies from NOAA. There is one file per forecast variable/forecast generation month
-        for month in range(1, 13):
+        for nmme_month in range(1, 13):
             for varname in WSIM_FORCING_VARIABLES:
-                clim_path = self.forecast_clim(varname=varname, month=month)
+                clim_path = self.forecast_clim(varname=varname, nmme_month=nmme_month)
                 clim_dirname = os.path.dirname(clim_path)
                 clim_fname = os.path.basename(clim_path)
                 clim_url = '{root}/clim/{fname}'.format(root=NOAA_RTA_FTP_ROOT, fname=clim_fname)
@@ -230,18 +234,18 @@ class NMMEForecast(paths.ForecastForcing):
 
         return steps
 
-    def download_realtime_anomalies(self, yearmon: str):
+    def download_realtime_anomalies(self, *, nmme_yearmon: str):
         steps = []
 
         # Download forecasts from NOAA. There is one file per forecast variable/forecast generation month
         for varname in WSIM_FORCING_VARIABLES:
-            anom_path = self.forecast_anom(yearmon=yearmon, varname=varname)
+            anom_path = self.forecast_anom(nmme_yearmon=nmme_yearmon, varname=varname)
             anom_dirname = os.path.dirname(anom_path)
             anom_fname = os.path.basename(anom_path)
-            anom_url = '{root}/realtime_anom/{model}/{yearmon}0800/{fname}'.format(
+            anom_url = '{root}/realtime_anom/{model}/{nmme_yearmon}0800/{fname}'.format(
                 root=NOAA_RTA_FTP_ROOT,
                 model=self.model_name,
-                yearmon=yearmon,
+                nmme_yearmon=nmme_yearmon,
                 fname=anom_fname
             )
 
@@ -267,26 +271,26 @@ class NMMEForecast(paths.ForecastForcing):
     def prep_steps(self, *, yearmon: str, target: str, member: str) -> List[Step]:
         steps = []
 
-        _, month = dates.parse_yearmon(yearmon)
+        _, nmme_month = dates.parse_yearmon(nmme_yearmon(yearmon))
 
         # Hack to only download these once although they are required for
         # all members / forecast targets
         if int(member) == 1 and target == dates.add_months(yearmon, 1):
-            steps += self.download_realtime_anomalies(yearmon)
+            steps += self.download_realtime_anomalies(nmme_yearmon=nmme_yearmon(yearmon))
 
         steps.append(Step(
             targets=self.forecast_raw(yearmon=yearmon, target=target, member=member),
-            dependencies=[self.forecast_anom(yearmon=yearmon, varname='T'),
-                          self.forecast_anom(yearmon=yearmon, varname='Pr'),
-                          self.forecast_clim(month=month, varname='T'),
-                          self.forecast_clim(month=month, varname='Pr')],
+            dependencies=[self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='T'),
+                          self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='Pr'),
+                          self.forecast_clim(nmme_month=nmme_month, varname='T'),
+                          self.forecast_clim(nmme_month=nmme_month, varname='Pr')],
             commands=[
                 [
                     os.path.join('{BINDIR}', 'utils', 'nmme', 'extract_nmme_forecast.R'),
-                    '--clim_precip', self.forecast_clim(month=month, varname='Pr'),
-                    '--clim_temp',   self.forecast_clim(month=month, varname='T'),
-                    '--anom_precip', self.forecast_anom(yearmon=yearmon, varname='Pr'),
-                    '--anom_temp',   self.forecast_anom(yearmon=yearmon, varname='T'),
+                    '--clim_precip', self.forecast_clim(nmme_month=nmme_month, varname='Pr'),
+                    '--clim_temp',   self.forecast_clim(nmme_month=nmme_month, varname='T'),
+                    '--anom_precip', self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='Pr'),
+                    '--anom_temp',   self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='T'),
                     '--member', member,
                     '--lead', str(dates.get_lead_months(yearmon, target)),
                     '--output', self.forecast_raw(yearmon=yearmon, target=target, member=member)
