@@ -146,7 +146,7 @@ read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
 #'
 #' @param fname path to netCDF file
 #' @param var name of forecast variable (e.g., \code{tref})
-#' @param start_month month targeted by forecast (1-12)
+#' @param target_month month targeted by forecast (1-12)
 #' @param lead_months integer number of lead months, where zero
 #'                    corresponds to the month when the forecast
 #'                    was issued
@@ -156,7 +156,8 @@ read_nmme_noaa <- function(fname, var, lead_months, member=NULL) {
 #'                        less than or equal to specified year
 #' @param members one or more ensemble members (1-indexed) to read,
 #'                or \code{NULL} to read all ensemble members
-#' @param return a 181x360xN array with the values from \code{N} hindcasts
+#' @param progress if \code{TRUE}, show a progress bar during reading
+#' @return a 181x360xN array with the values from \code{N} hindcasts
 #' @examples
 #' \dontrun{
 #'   oct_fcsts <- read_iri_hindcast('cancm4i_tref_hindcast.nc', 'tref', 9, 1)
@@ -191,7 +192,7 @@ read_iri_hindcast <- function(fname, var, target_month, lead_months, min_target_
   ncdf4::nc_close(nc)
 
   if (progress) {
-    bar <- txtProgressBar(min=0, max=length(members)*length(svals))
+    bar <- utils::txtProgressBar(min=0, max=length(members)*length(svals))
   }
 
 
@@ -204,7 +205,7 @@ read_iri_hindcast <- function(fname, var, target_month, lead_months, min_target_
       i <- i+1
 
       if (progress) {
-        setTxtProgressBar(bar, i)
+        utils::setTxtProgressBar(bar, i)
       }
     }
   }
