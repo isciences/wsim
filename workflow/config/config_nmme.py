@@ -99,7 +99,7 @@ class NMMEForecast(paths.ForecastForcing):
 
         return os.path.join(self.model_dir(),
                             'clim',
-                            '{model}.{varname}.{month:02d}.mon.clim.nc'.format(model=self.model_name.lower(),
+                            '{model}.{varname}.{month:02d}.mon.clim.nc'.format(model=self.model_name,
                                                                                varname=NOAA_RTA_VARS[varname],
                                                                                month=nmme_month))
 
@@ -118,7 +118,7 @@ class NMMEForecast(paths.ForecastForcing):
         return os.path.join(self.model_dir(),
                             'raw_anom',
                             'nmme_{}'.format(nmme_yearmon),
-                            '{model}.{varname}.{yearmon}.anom.nc'.format(model=self.model_name.lower(),
+                            '{model}.{varname}.{yearmon}.anom.nc'.format(model=self.model_name,
                                                                          varname=NOAA_RTA_VARS[varname],
                                                                          yearmon=nmme_yearmon))
 
