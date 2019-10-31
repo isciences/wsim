@@ -56,6 +56,9 @@ def download(url, output_dir):
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 outfile.write(chunk)
+    except:
+        os.remove(os.path.join(output_dir, fname))
+        raise
     finally:
         sys.stdout.write('\n')
 
