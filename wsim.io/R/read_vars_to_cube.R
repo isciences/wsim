@@ -50,9 +50,53 @@ read_vars_to_cube <- function(vardefs, attrs_to_read=as.character(c()), offset=N
   attr(cube, 'extent') <- extent
   attr(cube, 'ids') <- ids
 
-  for (attr in attrs_to_read) {
-    attr(cube, attr) <- vars[[1]]$attrs[[attr]]
+  for (att in lapply(attrs_to_read, parse_attr)) {
+    attr(cube, att$key) <- find_attr(vars[[1]], att)
   }
 
   return(cube)
+}
+
+find_attr <- function(data, att) {
+  if (is.null(att$var)) {
+    # No source variable specified.
+    # First, try to read a global attribute.
+    val <- data$attrs[[att$key]]
+    if (!is.null(val)) {
+      return(val)
+    }
+
+    # Didn't find it as a global attribute.
+    # Start looking through the regular variables.
+    for (var in names(data$data)) {
+      val <- attr(data$data[[var]], att$key)
+      if (!is.null(val)) {
+        return(val)
+      }
+    }
+
+    # Try checking no-data variables
+    for (a in data$attrs) {
+      if (is.list(a)) {
+        val <- a[[att$key]]
+        if (!is.null(val)) {
+          return(val)
+        }
+      }
+    }
+
+    return(NULL)
+  } else {
+    # Is the variable a regular variable?
+    if (att$var %in% names(data$data)) {
+      return(attr(data$data[[att$var]], att$key))
+    }
+
+    # Is it a no-data variable?
+    if (att$var %in% names(data$attrs) && is.list(data$attrs[[att$var]])) {
+      return(data$attrs[[att$var]][[att$key]])
+    }
+
+    return(NULL)
+  }
 }
