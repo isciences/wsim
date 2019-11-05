@@ -8,6 +8,7 @@ License: file LICENSE
 Imports: 
   lubridate,
   Rcpp (>= 0.12.12),
+  units,
   wsim.io
 LinkingTo: Rcpp
 Suggests: 

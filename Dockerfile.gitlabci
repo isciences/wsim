@@ -68,10 +68,11 @@ RUN Rscript -e 'for (package in c( \
   "rgdal", \
   "rlang", \
   "roxygen2", \
-  "sf" \
+  "sf", \
+  "tidyr", \
+  "units" \
 )) tryCatch(install.packages(package, dependencies = NA, repos="http://cran.rstudio.com", Ncpus=parallel::detectCores()), warning=function() quit(status=1))'
 
-RUN Rscript -e 'devtools::install_github("tidyverse/tidyr")'
 
 # Add wgrib2 for converting CFS forecast data
 # We need to compile it ourselves because the packaged version
