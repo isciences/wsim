@@ -71,29 +71,40 @@ def main(raw_args):
     day = int(args.timestamp[6:8])
     hour = int(args.timestamp[8:10])
 
-    gribfile = "flxf.01.{TIMESTAMP}.{TARGET}.avrg.grib.grb2".format(TIMESTAMP=args.timestamp,
-                                                                    TARGET=args.target)
+    hindcast = year <= 2009
 
-    start_of_rolling_archive = datetime.datetime.now() - datetime.timedelta(days=8) # should have 7 days but could have more or less
-    timestamp_datetime = datetime.datetime(year, month, day, hour)
-
-    if timestamp_datetime > datetime.datetime.utcnow():
-        print("Can't download forecast with timestamp in the future.", file=sys.stderr)
-        sys.exit(1)
-
-    url_patterns = [
-        'ftp://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
-        'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
-    ]
-
-    rolling_url_pattern = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}'
-
-    if timestamp_datetime > start_of_rolling_archive:
-        print("Attempting rolling archive URL first")
-        url_patterns.insert(0, rolling_url_pattern)
+    if hindcast:
+        grib_pattern = "flxf{TIMESTAMP}.01.{TARGET}.avrg.grb2"
     else:
-        print("Attempting long-term archive URL first")
-        url_patterns.append(rolling_url_pattern)
+        grib_pattern = "flxf.01.{TIMESTAMP}.{TARGET}.avrg.grib.grb2"
+
+    gribfile = grib_pattern.format(TIMESTAMP=args.timestamp, TARGET=args.target)
+
+    if hindcast:
+        url_patterns = [
+            'https://nomads.ncdc.noaa.gov/modeldata/cmd_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{GRIBFILE}'
+        ]
+    else:
+        start_of_rolling_archive = datetime.datetime.now() - datetime.timedelta(days=8) # should have 7 days but could have more or less
+        timestamp_datetime = datetime.datetime(year, month, day, hour)
+
+        if timestamp_datetime > datetime.datetime.utcnow():
+            print("Can't download forecast with timestamp in the future.", file=sys.stderr)
+            sys.exit(1)
+
+        url_patterns = [
+            'ftp://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
+            'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
+        ]
+
+        rolling_url_pattern = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}'
+
+        if timestamp_datetime > start_of_rolling_archive:
+            print("Attempting rolling archive URL first")
+            url_patterns.insert(0, rolling_url_pattern)
+        else:
+            print("Attempting long-term archive URL first")
+            url_patterns.append(rolling_url_pattern)
 
     for url_pattern in url_patterns:
         url = url_pattern.format(YEAR=year,
