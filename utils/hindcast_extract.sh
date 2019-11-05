@@ -68,13 +68,8 @@ for lead in {1..9} ; do
 		wgrib2 $TEMP_GRIB -netcdf $OUTFILE_TEMP
 		rm $TEMP_GRIB
 
-		ncrename -h \
-			 -vlatitude,lat \
-			 -vlongitude,lon \
-			 -dlatitude,lat \
-			 -dlongitude,lon \
-			 "-v${GRIB_VAR},${VAR}" \
-			 $OUTFILE_TEMP
+		ncrename -h  -vlatitude,lat  -vlongitude,lon ${OUTFILE_TEMP}
+		ncrename -h "-v${GRIB_VAR},${VAR}" ${OUTFILE_TEMP}
 
 		# Drop the time dimension
 		ncwa -h -O -a time $OUTFILE_TEMP $OUTFILE_TEMP
