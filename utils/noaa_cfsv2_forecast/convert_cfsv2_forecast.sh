@@ -50,10 +50,13 @@ wgrib2 $TEMP_GRB2 -nc_grads -netcdf $TEMP_NC1
 # command.
 ncrename -h -vlatitude,lat $TEMP_NC1
 ncrename -h -vlongitude,lon $TEMP_NC1
-ncrename -h -vTMP_2maboveground,tmp2m $TEMP_NC1
-ncrename -h -vPRATE_surface,prate $TEMP_NC1
+ncrename -h -vTMP_2maboveground,T $TEMP_NC1
+ncrename -h -vPRATE_surface,Pr $TEMP_NC1
 ncrename -h -dlatitude,lat $TEMP_NC1
 ncrename -h -dlongitude,lon $TEMP_NC1
+
+ncatted -h -a standard_name,T,c,c,'surface_temperature' $TEMP_NC1
+ncatted -h -a standard_name,Pr,c,c,'precipitation_flux' $TEMP_NC1
 
 # Use the --no_tmp_fl option to NCO and manage the temp files ourselves
 # Do this to avoid "permission denied" errors when writing to CIFS shares
@@ -71,8 +74,8 @@ ncatted -h -O \
 	-a longitude_of_prime_meridian,crs,c,d,0 \
 	-a semi_major_axis,crs,c,d,6378137 \
         -a inverse_flattening,crs,c,d,298.257223563 \
-	-a grid_mapping,tmp2m,c,c,'crs' \
-	-a grid_mapping,prate,c,c,'crs' \
+	-a grid_mapping,T,c,c,'crs' \
+	-a grid_mapping,Pr,c,c,'crs' \
 	$TEMP_NC4
 
 # Compress the netCDF
