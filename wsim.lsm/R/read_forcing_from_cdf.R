@@ -55,21 +55,23 @@ temp_celsius <- function(x, u) {
 #' @param duration an optional duration over which precipitation falls
 #' @param duration_units units of \code{duration}
 #' @return precipitation amount in millimeters
-precip_mm <- function(x, u, duration, duration_units) {
+precip_mm <- function(precip, precip_units, duration, duration_units) {
   water_density <- units::set_units(1000, 'kg/m^3')
 
+  precip <- units::set_units(precip, precip_units, mode='standard')
+
   # easiest case: we were given precipitation as [L]
-  try(return(units::drop_units(units::set_units(units::set_units(x, u, mode='standard'), 'mm'))), silent=TRUE)
+  try(return(units::drop_units(units::set_units(precip, 'mm'))), silent=TRUE)
 
   if (!is.null(duration)) {
     duration <- units::set_units(duration, duration_units, mode='standard')
 
     # or maybe we were given a precipitation rate [L/T]
-    try(return(units::drop_units(units::set_units(units::set_units(x, u, mode='standard') * duration, 'mm'))), silent=TRUE)
+    try(return(units::drop_units(units::set_units(precip * duration, 'mm'))), silent=TRUE)
 
     # or maybe we were given a mass-based precipitation rate [M/L^2/T]
-    try(return(units::drop_units(units::set_units(units::set_units(x, u, mode='standard') / water_density * duration, 'mm'))), silent=TRUE)
+    try(return(units::drop_units(units::set_units(precip / water_density * duration, 'mm'))), silent=TRUE)
   }
 
-  stop(sprintf('Cannot process precipitation data with units of %s', u))
+  stop(sprintf('Cannot process precipitation data with units of %s', precip_units))
 }
