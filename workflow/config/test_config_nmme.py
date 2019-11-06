@@ -55,13 +55,13 @@ class TestNMMEConfig(unittest.TestCase):
         # and its dependencies use the NMME month, 201902
         anom_to_raw = get_producing_step(raw_fcst, nmme.prep_steps(**params))
 
-        self.assertIn(os.path.join(nmme.model_dir(), 'clim', 'model3.prate.02.mon.clim.nc'), anom_to_raw.dependencies)
-        self.assertIn(os.path.join(nmme.model_dir(), 'clim', 'model3.tmp2m.02.mon.clim.nc'), anom_to_raw.dependencies)
+        self.assertIn(os.path.join(nmme.model_dir(), 'clim', 'Model3.prate.02.mon.clim.nc'), anom_to_raw.dependencies)
+        self.assertIn(os.path.join(nmme.model_dir(), 'clim', 'Model3.tmp2m.02.mon.clim.nc'), anom_to_raw.dependencies)
 
-        self.assertIn(os.path.join(nmme.model_dir(), 'raw_anom', 'nmme_201902', 'model3.tmp2m.201902.anom.nc'),
+        self.assertIn(os.path.join(nmme.model_dir(), 'raw_anom', 'nmme_201902', 'Model3.tmp2m.201902.anom.nc'),
                       anom_to_raw.dependencies)
 
-        self.assertIn(os.path.join(nmme.model_dir(), 'raw_anom', 'nmme_201902', 'model3.prate.201902.anom.nc'),
+        self.assertIn(os.path.join(nmme.model_dir(), 'raw_anom', 'nmme_201902', 'Model3.prate.201902.anom.nc'),
                       anom_to_raw.dependencies)
 
     def test_hindcast_lead(self):
@@ -73,5 +73,5 @@ class TestNMMEConfig(unittest.TestCase):
         fit_command = nmme.compute_fit_hindcast(varname='Pr', month=9, lead=4)[0].commands[0]
 
         lead_arg = fit_command.index('--lead') + 1
-        self.assertEquals(fit_command[lead_arg], '3')
+        self.assertEqual(fit_command[lead_arg], '3')
 
