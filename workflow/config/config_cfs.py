@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.)
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -28,6 +28,47 @@ from wsim_workflow.data_sources import aqueduct, grand, hydrobasins, isric, gadm
 from wsim_workflow.paths import Method
 from wsim_workflow.step import Step
 
+WSIM_FORCING_VARIABLES = ('T', 'Pr')
+CFS_VARS = {'T': 'tmp2m', 'Pr': 'prate'}
+
+HINDCAST_DATES_FOR_MONTH = [
+    None,
+    [1, 6, 11, 16, 26, 31],  # January
+    [5, 10, 15, 20, 25],  # February
+    [2, 7, 12, 17, 22, 27],  # March
+    [1, 6, 11, 16, 26],  # April
+    [1, 6, 11, 16, 26, 31],  # May
+    [5, 10, 15, 20, 25, 30],  # June
+    [5, 10, 15, 20, 25, 30],  # July
+    [4, 9, 14, 19, 24, 29],  # August
+    [3, 8, 13, 18, 23, 28],  # September
+    [3, 8, 13, 18, 23, 28],  # October
+    [2, 7, 12, 17, 22, 27],  # November
+    [2, 7, 12, 17, 22, 27],  # December
+]
+
+MISSING_HINDCASTS = {
+    '1985092306': {'198602'},
+    '1986011618': {'198606'},
+    '1986040612': {'198606', '198609'},
+    '1986081400': {'198701'},
+    '1987072000': {'198804'},
+    '1987080906': {'198709'},
+    '1987091306': {'198710', '198804'},
+    '1987101312': {'198801'},
+    '1988011612': {'198802'},
+    '1988021000': {'198810'},
+    '1988122212': {'198905'},
+    '1989021500': {'198903', '198905', '198909'},
+    '1989061000': {'198908'},
+    '1989070500': {'198908'},
+    '1989100818': {'199004'},
+    '2004010118': {'200406'},
+}
+
+CORRUPT_HINDCASTS = {
+    '1984092800': {'198504'}
+}
 
 class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
     def __init__(self, source):
@@ -288,9 +329,13 @@ class NCEP(paths.ObservedForcing):
 
 class CFSForecast(paths.ForecastForcing):
 
-    def __init__(self, source, derived):
+    def __init__(self, source: str, derived: str, observed: paths.ObservedForcing):
         self.source = source
-        self.derived = derived
+        self.derived = derived,
+        self.observed = observed
+        self.min_fit_year = 1983 # although we have hindcasts generated in 1982, we don't have
+                                 # all month/lead time combinations until 1983.
+        self.max_fit_year = 2009
 
     def temp_monthly(self, *, yearmon, target, member):
         return paths.Vardef(self.forecast_corrected(yearmon=yearmon, target=target, member=member), 'T')
@@ -321,12 +366,19 @@ class CFSForecast(paths.ForecastForcing):
                                                                                                   target_month=target_month,  # noqa
                                                                                                   lead_months=lead_months))   # noqa
 
-    def forecast_raw(self, *, yearmon, target, member):
-        # Must provide T in degrees C, Pr in mm
+    def forecast_raw(self, *, yearmon, target, member) -> str:
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'raw_nc',
-                            'cfs_trgt{target}_fcst{member}_raw.nc::tmp2m@[x-273.15]->T,prate@[x*2628000]->Pr'.format(target=target, member=member))
+                            member[:6],
+                            'cfs_trgt{target}_fcst{member}_raw.nc'.format(target=target, member=member))
+
+    def hindcast_raw(self, *, timestamp: str, target: str) -> str:
+        return os.path.join(self.source,
+                            'NCEP_CFSv2',
+                            'hindcast_nc',
+                            timestamp[:6],
+                            'cfs_trgt{target}_fcst{timestamp}_raw.nc').format(target=target, timestamp=timestamp)
 
     def forecast_corrected(self, *, yearmon, target, member):
         return os.path.join(self.source,
@@ -334,15 +386,22 @@ class CFSForecast(paths.ForecastForcing):
                             'corrected',
                             'cfs_trgt{target}_fcst{member}_corrected.nc'.format(target=target, member=member))
 
-    def grib_dir(self, *, member):
+    def grib_dir(self, *, timestamp: str) -> str:
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'raw_grib',
-                            'cfs.{}'.format(member[:-2]))
+                            'cfs.{}'.format(timestamp[:-2]))
 
-    def forecast_grib(self, *, member, target):
-        return os.path.join(self.grib_dir(member=member),
-                            'flxf.01.{member}.{target}.avrg.grib.grb2'.format(member=member, target=target))
+    def hindcast_grib(self, *, timestamp: str, target: str) -> str:
+        return os.path.join(self.source,
+                            'NCEP_CFSv2',
+                            'hindcast_grib',
+                            'cfs.{}'.format(timestamp[:-2]),
+                            'flxf{}.01.{}.avrg.grb2'.format(timestamp, target))
+
+    def forecast_grib(self, *, timestamp, target) -> str:
+        return os.path.join(self.grib_dir(timestamp=timestamp),
+                            'flxf.01.{member}.{target}.avrg.grib.grb2'.format(member=timestamp, target=target))
 
     def global_prep_steps(self):
         tarfile_dir = os.path.join(self.source,
@@ -365,42 +424,121 @@ class CFSForecast(paths.ForecastForcing):
             )
         )
 
-        for var in ('T', 'Pr'):
-            for month in range(1, 13):
-                fitfile = self.fit_obs(var=var, month=month)
-                fitdir = os.path.dirname(fitfile)
-                fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
+        for month in dates.all_months:
+            # Compute these using our local data
+            for var in WSIM_FORCING_VARIABLES:
+                steps += self.compute_fit_obs(var, month)
 
-                steps.append(
-                    commands.extract_from_tar(tarfile, fitfile_arcname, fitdir)
-                )
+            for lead in range(1, 10):
+                steps += self.download_hindcasts(month, lead)
 
-                for lead in range(1, 10):
-                    fitfile = self.fit_retro(var=var, target_month=month, lead_months=lead)
-                    fitdir = os.path.dirname(fitfile)
-                    fitfile_arcname = re.sub('^.*(?=hindcast_fits)', '', fitfile)
-
-                    steps.append(
-                        commands.extract_from_tar(tarfile, fitfile_arcname, fitdir)
-                    )
+                for var in WSIM_FORCING_VARIABLES:
+                    steps += self.compute_fit_hindcast(var, month, lead)
 
         return steps
 
+    def compute_fit_obs(self, varname: str, month: int) -> List[Step]:
+        assert varname in {'T', 'Pr'}
+
+        start = dates.format_yearmon(self.min_fit_year, month)
+        stop = dates.format_yearmon(self.max_fit_year, month)
+
+        rng = dates.format_range(start, stop, 12)
+
+        if varname == 'Pr':
+            inputs = self.observed.precip_monthly(yearmon=rng).read_as('Pr')
+        if varname == 'T':
+            inputs = self.observed.temp_monthly(yearmon=rng)
+
+        return [
+            commands.wsim_fit(distribution='gev',
+                              inputs=[inputs],
+                              output=self.fit_obs(var=varname, month=month),
+                              window=1)
+        ]
+
+    def available_hindcasts(self, target_month: int, lead: int) -> List[str]:
+        forecast_month = target_month - lead
+        if forecast_month < 1:
+            forecast_month += 12
+
+        for forecast_year in range(self.min_fit_year - 1, self.max_fit_year + 1):
+            target = dates.add_months(dates.format_yearmon(forecast_year, forecast_month), lead)
+            target_year, _ = dates.parse_yearmon(target)
+
+            if target_year > self.max_fit_year:
+                continue
+
+            assert dates.parse_yearmon(target)[1] == target_month
+
+            for day in HINDCAST_DATES_FOR_MONTH[forecast_month]:
+                for hour in (0, 6, 12, 18):
+                    timestamp = '{:04d}{:02d}{:02d}{:02d}'.format(forecast_year, forecast_month, day, hour)
+
+                    if timestamp in MISSING_HINDCASTS and target in MISSING_HINDCASTS[timestamp]:
+                        continue
+
+                    if timestamp in CORRUPT_HINDCASTS and target in CORRUPT_HINDCASTS[timestamp]:
+                        continue
+
+                    yield timestamp, target
+
+    def download_hindcasts(self, target_month: int, lead: int) -> List[Step]:
+        steps = []
+
+        for timestamp, target in self.available_hindcasts(target_month, lead):
+            grib_file = self.hindcast_grib(timestamp=timestamp, target=target)
+            grib_dir = os.path.dirname(grib_file)
+
+            netcdf_file = self.hindcast_raw(timestamp=timestamp, target=target)
+
+            steps.append(Step(
+                targets=grib_file,
+                dependencies=[],
+                commands=[
+                    [
+                        os.path.join('{BINDIR}', 'utils', 'noaa_cfsv2_forecast', 'download_cfsv2_forecast.py'),
+                        '--timestamp', timestamp,
+                        '--target', target,
+                        '--output_dir', grib_dir
+                    ]
+                ]
+            ))
+
+            steps.append(commands.forecast_convert(grib_file, netcdf_file))
+
+        return steps
+
+    def compute_fit_hindcast(self, varname: str, target_month: int, lead: int) -> List[Step]:
+        assert varname in {'T', 'Pr'}
+
+        inputs = [str(paths.Vardef(self.hindcast_raw(timestamp=timestamp, target=target), varname))
+                  for timestamp, target in self.available_hindcasts(target_month, lead)]
+
+        return [
+            commands.wsim_fit(
+                distribution='gev',
+                inputs=inputs,
+                output=self.fit_retro(var=varname, target_month=target_month, lead_months=lead),
+                window=1
+            )
+        ]
+
     def prep_steps(self, *, yearmon: str, target: str, member: str) -> List[Step]:
-        outfile = self.forecast_raw(yearmon=yearmon, member=member, target=target)
-        infile = self.forecast_grib(member=member, target=target)
+        outfile = self.forecast_raw(yearmon=yearmon, member=member, target=target).split('::')[0]
+        infile = self.forecast_grib(timestamp=member, target=target)
 
         return [
             # Download the GRIB, if needed
             Step(
-                targets=self.forecast_grib(member=member, target=target),
+                targets=self.forecast_grib(timestamp=member, target=target),
                 dependencies=[],
                 commands=[
                     [
                         os.path.join('{BINDIR}', 'utils', 'noaa_cfsv2_forecast', 'download_cfsv2_forecast.py'),
                         '--timestamp', member,
                         '--target', target,
-                        '--output_dir', self.grib_dir(member=member)
+                        '--output_dir', self.grib_dir(timestamp=member)
                     ]
                 ]
 
@@ -414,7 +552,7 @@ class CFSConfig(ConfigBase):
 
     def __init__(self, source, derived):
         self._observed = NCEP(source)
-        self._forecast = {'CFSv2' : CFSForecast(source, derived)}
+        self._forecast = {'CFSv2' : CFSForecast(source, derived, self._observed)}
         self._static = CFSStatic(source)
         self._workspace = paths.DefaultWorkspace(derived)
 

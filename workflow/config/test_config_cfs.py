@@ -269,6 +269,34 @@ class TestCFSConfig(unittest.TestCase):
         results_summaries = step_for_target(steps, 'results_summaries')
         self.assertEqual(len(results_summaries.dependencies), len(self.config.forecast_targets(yearmon))*(1 + len(self.config.integration_windows())))
 
+    def test_hindcast_dates(self):
+        data = self.config.forecast_data('CFSv2')
+
+        hindcasts = [h for h in data.available_hindcasts(target_month=1, lead=1)]
+
+        # dates in the asserts below assume we've defined 1983-2009 as our fit years
+        # this means that we consider all target months in 1983-2009 (some forecasts
+        # may be generated in 1982)
+        self.assertEqual(1983, data.min_fit_year)
+        self.assertEqual(2009, data.max_fit_year)
+
+        # first hindcast targets 198301, generated in 198212
+        first_hindcast_timestamp, first_hindcast_target = hindcasts[0]
+        self.assertEqual(first_hindcast_timestamp[:6], '198212')
+        self.assertEqual(first_hindcast_target, '198301')
+
+        # last hindcast targets 200901, generated in 200812
+        last_hindcast_timestamp, last_hindcast_target = hindcasts[-1]
+        self.assertEqual(last_hindcast_timestamp[:6], '200812')
+        self.assertEqual(last_hindcast_target, '200901')
+
+    def test_missing_hindcasts_skipped(self):
+        data = self.config.forecast_data('CFSv2')
+
+        for timestamp, target in data.available_hindcasts(target_month=3, lead=1):
+            if timestamp == '1989021500':
+                self.fail()
+
     @unittest.skip
     def test_makefile_readable(self):
         import wsim_workflow.output.gnu_make
