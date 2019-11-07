@@ -406,7 +406,7 @@ class DefaultWorkspace:
                                window=window,
                                time=time,
                                target=target,
-                               model=model,
+                               model=model.lower() if model else None,
                                member=member,
                                basis=basis.value if basis else None)
 

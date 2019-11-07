@@ -293,8 +293,10 @@ class NMMEForecast(paths.ForecastForcing):
         if int(member) == 1 and target == dates.add_months(yearmon, 1):
             steps += self.download_realtime_anomalies(nmme_yearmon=nmme_yearmon(yearmon))
 
+        output = self.forecast_raw(yearmon=yearmon, target=target, member=member).split('::')[0]
+
         steps.append(Step(
-            targets=self.forecast_raw(yearmon=yearmon, target=target, member=member),
+            targets=output,
             dependencies=[self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='T'),
                           self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='Pr'),
                           self.forecast_clim(nmme_month=nmme_month, varname='T'),
@@ -307,8 +309,8 @@ class NMMEForecast(paths.ForecastForcing):
                     '--anom_precip', self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='Pr'),
                     '--anom_temp',   self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='T'),
                     '--member', member,
-                    '--lead', str(dates.get_lead_months(yearmon, target)),
-                    '--output', self.forecast_raw(yearmon=yearmon, target=target, member=member)
+                    '--lead', str(dates.get_lead_months(nmme_yearmon(yearmon), target)),
+                    '--output', output
                 ]
             ]))
 
@@ -320,7 +322,7 @@ class NMMEConfig(ConfigBase):
     def __init__(self, source, derived):
         self._observed = NCEP(source)
         self._forecast = {
-            'CFSv2':  CFSForecast(source, derived),
+            'CFSv2':  CFSForecast(source, derived, self._observed),
             'CanCM4i': NMMEForecast(source, derived, self._observed, 'CanCM4i', 1982, 2010)
         }
         self._static = CFSStatic(source)
