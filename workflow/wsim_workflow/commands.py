@@ -182,7 +182,8 @@ def wsim_fit(*,
              inputs: Union[str, Iterable[str]],
              output: str,
              window: int,
-             comment: Union[str, None]=None):
+             attrs: Optional[Mapping[str, str]] = None,
+             comment: Union[str, None] = None) -> Step:
     dependencies = []
     targets = []
 
@@ -200,6 +201,10 @@ def wsim_fit(*,
 
     if window is not None:
         cmd += ['--attr', attributes.integration_window(var=None, months=window)]
+
+    if attrs:
+        for k, v in attrs.items():
+            cmd += ['--attr', '{}={}'.format(k, v)]
 
     cmd += ['--output', output]
     targets.append(output)
