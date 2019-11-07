@@ -39,11 +39,6 @@ iri_vars <- list(
   T = 'tref'
 )
 
-iri_conversion_factors <- list(
-  Pr = (1/86400), # mm/day to mm/s
-  T = 1
-)
-
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args, types=list(target_month='integer',
                                                           lead='integer',
@@ -62,7 +57,16 @@ main <- function(raw_args) {
                            lead_months = args$lead,
                            min_target_year = args$min_year,
                            max_target_year = args$max_year,
-                           progress = TRUE) * iri_conversion_factors[[args$varname]]
+                           progress = TRUE)
+
+  if (args$varname == 'T') {
+    units <- 'K'
+    standard_name <- 'surface_temperature'
+  }  else {
+    dat <- dat / 86400
+    units <- 'kg/m^2/s'
+    standard_name <- 'precipitation_flux'
+  }
 
   wsim.io::infof("Read %d hindcasts for month %d (lead %d) from %s",
                  dim(dat)[3], args$target_month, args$lead, args$input)
@@ -80,7 +84,9 @@ main <- function(raw_args) {
                                  list(var = NULL, key = "lead_months", val = args$lead),
                                  list(var = NULL, key = "fit_years", val = sprintf("%d-%d", args$min_year, args$max_year)),
                                  list(var = NULL, key = "distribution", val = args$distribution),
-                                 list(var = NULL, key = "variable", val = args$varname)
+                                 list(var = NULL, key = "variable", val = args$varname),
+                                 list(var = NULL, key = "standard_name", val = standard_name),
+                                 list(var = NULL, key = "units", val = units)
                              )))
 
   wsim.io::infof("Wrote distribution fits to %s.", outfile)
