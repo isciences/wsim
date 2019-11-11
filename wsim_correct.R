@@ -32,11 +32,11 @@ Options:
 
 check_unit_consistency <- function(var, retro_units, forecast_units) {
   if (is.null(retro_units)) {
-    wsim.io::warnf("Unspecified units for retrospective forecast fit of %s", var)
+    stop(sprintf("Unspecified units for retrospective forecast fit of %s", var))
   }
 
   if (is.null(forecast_units)) {
-    wsim.io::warnf("Unspecified units for forecast of %s", var)
+    stop(sprintf("Unspecified units for forecast of %s", var))
   }
 
   if (!is.null(retro_units) && !is.null(forecast_units) && retro_units != forecast_units) {
