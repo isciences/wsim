@@ -107,7 +107,7 @@ class NMMEForecast(paths.ForecastForcing):
         return os.path.join(self.model_dir(),
                             'raw_sci',
                             yearmon,
-                            '{model}_{yearmon}_trgt{target}_fcst{member}.nc::T@[x-273.15]->T,Pr@[x*2628000]->Pr'.format(model=self.model_name.lower(),
+                            '{model}_{yearmon}_trgt{target}_fcst{member}.nc'.format(model=self.model_name.lower(),
                                                                                     yearmon=yearmon,
                                                                                     target=target,
                                                                                     member=member))
