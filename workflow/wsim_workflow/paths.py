@@ -333,7 +333,7 @@ class DefaultWorkspace:
         if sector:
             root = os.path.join(root, sector.value)
 
-        return os.path.join(root,
+        ret = os.path.join(root,
                             self.make_dirname(thing,
                                               window=window,
                                               basis=basis,
@@ -349,6 +349,12 @@ class DefaultWorkspace:
                                                basis=basis,
                                                model=model,
                                                summary=summary))
+
+        # TODO normalize these paths?
+        if thing in {'composite', 'composite_adjusted', 'composite_anom', 'composite_anom_rp'}:
+            return ret.replace('_integrated', '').replace('_summary', '')
+
+        return ret
 
     @staticmethod
     def make_stem(thing: str, *,
@@ -417,22 +423,21 @@ class DefaultWorkspace:
                               yearmon=yearmon,
                               window=window,
                               summary=target is not None,
-                              target=target).replace('composite_integrated', 'composite').replace('_summary', '')
+                              target=target)
 
     def composite_summary_adjusted(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('composite_adjusted',
                               yearmon=yearmon,
                               summary=target is not None,
                               window=window,
-                              target=target).replace('composite_adjusted_integrated', 'composite_adjusted').replace('_summary', '')
+                              target=target)
 
     def composite_anomaly(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('composite_anom',
                               yearmon=yearmon,
                               summary=target is not None,
                               window=window,
-                              target=target).replace('composite_anom_integrated',
-                                                     'composite_anom').replace('_summary', '')
+                              target=target)
 
     def composite_anomaly_return_period(self, *,
                                         yearmon: str,
@@ -444,7 +449,7 @@ class DefaultWorkspace:
                               window=window,
                               target=target,
                               summary=target is not None,
-                              temporary=temporary).replace('composite_anom_rp_integrated', 'composite_anom_rp').replace('_summary', '')
+                              temporary=temporary)
 
     def return_period_summary(self, *, yearmon: str, window: int, target: str) -> str:
         assert window is not None
