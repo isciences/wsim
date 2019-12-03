@@ -27,16 +27,16 @@ from wsim_workflow import paths
 from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.step import Step
 
-from config_cfs import CFSStatic, CFSForecast, NCEP
+from .config_cfs import CFSStatic, CFSForecast, NCEP
 
 WSIM_FORCING_VARIABLES = ('T', 'Pr')
 NOAA_RTA_FTP_ROOT = 'ftp://ftp.cpc.ncep.noaa.gov/NMME'
 
-NOAA_RTA_VARS = {'T' : 'tmp2m', 'Pr' : 'prate'}
-IRI_VARS = {'T' : 'tref', 'Pr': 'prec'}
+NOAA_RTA_VARS = {'T': 'tmp2m', 'Pr': 'prate'}
+IRI_VARS = {'T': 'tref', 'Pr': 'prec'}
 
 
-def nmme_yearmon(yearmon: str):
+def wsim_to_nmme_yearmon(yearmon: str):
     return dates.add_months(yearmon, 1)
 
 
@@ -164,8 +164,6 @@ class NMMEForecast(paths.ForecastForcing):
         return steps
 
     def compute_fit_obs(self, varname: str, month: int) -> List[Step]:
-        assert varname in WSIM_FORCING_VARIABLES
-
         # For simplicity, we want to compare all forecasts to a consistent set of observed data.
         # In other words, we don't want to compare March lead-6 forecasts to observed data
         # from March 1983-March 2011 and March lead-2 forecasts to observed data from March 1982-March 2010.
@@ -178,8 +176,10 @@ class NMMEForecast(paths.ForecastForcing):
 
         if varname == 'Pr':
             inputs = self.observed.precip_monthly(yearmon=rng).read_as('Pr')
-        if varname == 'T':
+        elif varname == 'T':
             inputs = self.observed.temp_monthly(yearmon=rng)
+        else:
+            raise ValueError("Unknown varname")
 
         return [
             commands.wsim_fit(distribution='gev',
@@ -286,19 +286,19 @@ class NMMEForecast(paths.ForecastForcing):
     def prep_steps(self, *, yearmon: str, target: str, member: str) -> List[Step]:
         steps = []
 
-        _, nmme_month = dates.parse_yearmon(nmme_yearmon(yearmon))
+        _, nmme_month = dates.parse_yearmon(wsim_to_nmme_yearmon(yearmon))
 
         # Hack to only download these once although they are required for
         # all members / forecast targets
         if int(member) == 1 and target == dates.add_months(yearmon, 1):
-            steps += self.download_realtime_anomalies(nmme_yearmon=nmme_yearmon(yearmon))
+            steps += self.download_realtime_anomalies(nmme_yearmon=wsim_to_nmme_yearmon(yearmon))
 
         output = self.forecast_raw(yearmon=yearmon, target=target, member=member).split('::')[0]
 
         steps.append(Step(
             targets=output,
-            dependencies=[self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='T'),
-                          self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='Pr'),
+            dependencies=[self.forecast_anom(nmme_yearmon=wsim_to_nmme_yearmon(yearmon), varname='T'),
+                          self.forecast_anom(nmme_yearmon=wsim_to_nmme_yearmon(yearmon), varname='Pr'),
                           self.forecast_clim(nmme_month=nmme_month, varname='T'),
                           self.forecast_clim(nmme_month=nmme_month, varname='Pr')],
             commands=[
@@ -306,10 +306,10 @@ class NMMEForecast(paths.ForecastForcing):
                     os.path.join('{BINDIR}', 'utils', 'nmme', 'extract_nmme_forecast.R'),
                     '--clim_precip', self.forecast_clim(nmme_month=nmme_month, varname='Pr'),
                     '--clim_temp',   self.forecast_clim(nmme_month=nmme_month, varname='T'),
-                    '--anom_precip', self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='Pr'),
-                    '--anom_temp',   self.forecast_anom(nmme_yearmon=nmme_yearmon(yearmon), varname='T'),
+                    '--anom_precip', self.forecast_anom(nmme_yearmon=wsim_to_nmme_yearmon(yearmon), varname='Pr'),
+                    '--anom_temp',   self.forecast_anom(nmme_yearmon=wsim_to_nmme_yearmon(yearmon), varname='T'),
                     '--member', member,
-                    '--lead', str(dates.get_lead_months(nmme_yearmon(yearmon), target)),
+                    '--lead', str(dates.get_lead_months(wsim_to_nmme_yearmon(yearmon), target)),
                     '--output', output
                 ]
             ]))
