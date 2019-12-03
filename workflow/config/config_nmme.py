@@ -27,7 +27,7 @@ from wsim_workflow import paths
 from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.step import Step
 
-from .config_cfs import CFSStatic, CFSForecast, NCEP
+from config_cfs import CFSStatic, CFSForecast, NCEP
 
 WSIM_FORCING_VARIABLES = ('T', 'Pr')
 NOAA_RTA_FTP_ROOT = 'ftp://ftp.cpc.ncep.noaa.gov/NMME'
