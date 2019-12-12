@@ -58,3 +58,13 @@ test_that('coalesce errors out for bad inputs', {
     coalesce(dat, matrix(1:6, nrow=2), 'must be a constant or .* same size')
   )
 })
+
+test_that('we can convert forcing units to those required by the model', {
+  expect_equal(5, precip_mm(5, 'mm'))
+  expect_equal(5, precip_mm(0.5, 'cm'))
+  expect_equal(5, precip_mm(1.929012e-06, 'mm/s', 30, 'days'), tolerance=1e-6)
+  expect_equal(5, precip_mm(1.929012e-06, 'kg/m^2/s', 30, 'days'), tolerance=1e-6)
+
+  expect_equal(5, temp_celsius(5, 'degree_Celsius'))
+  expect_equal(5, temp_celsius(278.15, 'K'))
+})

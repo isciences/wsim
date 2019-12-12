@@ -60,11 +60,7 @@ standard_netcdf_attrs <- function(is_new, is_spatial, existing_history=NULL) {
   return(ret)
 }
 
-# Calculate a time stamp on package load so that it's the same for
-# each write within a loop. This prevents duplicate history
-# entries.
-time_loaded <- Sys.time()
-
 date_string <- function() {
+  # time_loaded is defined in init.R
   strftime(time_loaded, '%Y-%m-%dT%H:%M:%S%z')
 }

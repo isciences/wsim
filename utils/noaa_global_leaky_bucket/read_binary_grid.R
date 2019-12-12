@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -28,7 +28,8 @@ Options:
 '->usage
 
 suppressMessages({
-  require(wsim.io)
+  library(wsim.io)
+  library(wsim.lsm)
 })
 
 logging_init('read_binary_grid')
@@ -151,9 +152,9 @@ standard_attrs <- list(
       list(var='T', key='units', val='degree_Celsius')
   ),
   P=list(
-      list(var='P', key='long_name', val='Precipitation'),
-      list(var='P', key='standard_name', val='precipitation_amount'),
-      list(var='P', key='units', val='mm')
+      list(var='P', key='long_name', val='Precipitation Rate'),
+      list(var='P', key='standard_name', val='precipitation_flux'),
+      list(var='P', key='units', val='kg/m^2/s')
   )
 )
 
@@ -176,9 +177,6 @@ main <- function(raw_args) {
     }
   }
 
-  year <- as.integer(substr(args$yearmon, 1, 4))
-  month <- as.integer(substr(args$yearmon, 5, 6))
-
   infile <- file(args$input, 'rb')
 
   attrs <- standard_attrs[[args$var]]
@@ -199,6 +197,11 @@ main <- function(raw_args) {
                      'from', paste0(args$input, '.'))
   } else {
     info('Read data for', args$yearmon)
+  }
+
+  if (args$var == 'P') {
+    # convert mm to mm/s (kg/m^s/s)
+    dat <- dat / wsim.lsm::days_in_yyyymm(args$yearmon) / 86400
   }
 
   to_write <- list()

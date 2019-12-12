@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -79,7 +79,7 @@ main <- function(raw_args) {
     for (i in seq_along(forcings)) {
       iter_num <- iter_num + 1
 
-      forcing <- wsim.lsm::read_forcing_from_cdf(forcings[i])
+      forcing <- wsim.lsm::read_forcing_from_cdf(forcings[i], state$yearmon)
 
       wsim.io::info("Running LSM for", state$yearmon, "using", forcings[i], "...")
       iter <- wsim.lsm::run(static, state, forcing)

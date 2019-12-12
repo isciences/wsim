@@ -1,4 +1,4 @@
-// Copyright (c) 2018 ISciences, LLC.
+// Copyright (c) 2018-2019 ISciences, LLC.
 // All rights reserved.
 //
 // WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -44,15 +44,13 @@ using namespace Rcpp;
 // In both cases, the function receives a vector of arguments, and an
 // integer number of arguments. Any arguments at indices between
 // argv.size() and argc should be interpreted as NA.
-using VectorToVectorFunction= std::function<std::vector<double>(const std::vector<double> & argv, int argc)>;
-using VectorToDoubleFunction= std::function<double(const std::vector<double> & argv, int argc)>;
 
 // Apply function f over each slice [i, j, ] in an array
 // f must return a scalar
-static NumericVector stack_apply (const NumericVector & v,
-                                  VectorToDoubleFunction f,
-                                  bool remove_na) {
-
+template<typename Function>
+NumericVector stack_apply (const NumericVector & v,
+                           Function&& f,
+                           bool remove_na) {
   IntegerVector dims = v.attr("dim");
   if (dims.length() < 2 || dims.length() > 3) {
     throw std::invalid_argument("Expected array of 2 or 3 dimensions");
@@ -88,8 +86,9 @@ static NumericVector stack_apply (const NumericVector & v,
 
 // Apply function f over each slice [i, j, ] in an array
 // f must return a vector of length `depth_out`
+template<typename Function>
 NumericVector stack_apply (const NumericVector & v,
-                           VectorToVectorFunction f,
+                           Function&& f,
                            int depth_out,
                            bool remove_na) {
   const IntegerVector dims = v.attr("dim");
@@ -255,6 +254,90 @@ static double quantile (const std::vector<double> & v, int n, double q) {
   return (1-f)*v2[j] + f*(v2[j+1]);
 }
 
+template<typename V, typename W>
+static double weighted_quantile(const V & values, const W & weights, int _, double q) {
+  // Compute a quantile from weighted values, linearly
+  // interpolating between points.
+  // Uses a formula from https://stats.stackexchange.com/a/13223
+  //
+  // Unlike spatstat::weighted.quantile, it matches the default behavior of the
+  // base R stats::quantile function when all weights are equal.
+  //
+  // Unlike Hmisc::wtd.quantile, quantiles always change as the probability is
+  // changed, unless there are duplicate values. Hmisc::wtd.quantile also
+  // produces nononsense results for non-integer weights; see
+  // https://github.com/harrelfe/Hmisc/issues/97
+
+  struct elem {
+    elem(double _x, double _w) : x(_x), w(_w), cumsum(0) {}
+
+    double x;
+    double w;
+    double cumsum;
+    double s;
+  };
+
+  if (q < 0 || q > 1)
+    return NA_REAL;
+
+  double sum_w = 0;
+  std::vector<elem> elems;
+  elems.reserve(values.size());
+
+  // accumulate the defined values and their weights
+  auto vsize = values.size();
+  for (size_t i = 0; i < vsize; i++) {
+    auto& v = values[i];
+
+    if (!std::isnan(v)) {
+      if (weights[i] < 0) {
+        Rcpp::stop("Negative weights are not supported.");
+      }
+      if (std::isnan(weights[i])) {
+        Rcpp::stop("Undefined weights are not supported.");
+      }
+
+      elems.emplace_back(values[i], weights[i]);
+      sum_w += weights[i];
+    }
+  }
+
+  if (sum_w == 0) {
+    Rcpp::stop("All weights are zero");
+  }
+
+  auto n = elems.size();
+  if (n == 0) {
+    return NA_REAL;
+  }
+
+  std::sort(elems.begin(), elems.end(), [](const elem& a, const elem& b) { return a.x < b.x; });
+
+  elems[0].cumsum = elems[0].w;
+  elems[0].s = 0;
+  for (size_t i = 1; i < n; i++) {
+    elems[i].cumsum = elems[i-1].cumsum + elems[i].w;
+    elems[i].s = i*elems[i].w + (n-1)*elems[i-1].cumsum;
+  }
+  double sn = (n-1)*sum_w;
+
+  size_t left = 0; // index of last element having a probablity <= q
+  while (left < (n-1) && elems[left+1].s <= q*sn) {
+    left++;
+  }
+
+  // Replace w/check on q == 0 or q == 1?
+  if (left == (n-1)) {
+    return elems[left].x;
+  }
+
+  const elem& a = elems[left];
+  const elem& b = elems[left + 1];
+
+  // linearly interpolate p between quantiles of
+  // values to the left and right
+  return  a.x + (q*sn - a.s)*(b.x - a.x)/(b.s - a.s);
+}
 
 //' Compute the sum of defined elements for each row and col in a 3D array
 //'
@@ -358,6 +441,37 @@ NumericVector stack_frac_defined_above_zero (const NumericVector & v) {
 // [[Rcpp::export]]
 NumericVector stack_quantile (const NumericVector & v, double q) {
   return stack_apply(v, std::bind(quantile, std::placeholders::_1, std::placeholders::_2, q), true);
+}
+
+//' Compute a given weighted quantile of defined elements for each row and col in a 3D array
+//'
+//' @param v a 3D array that may contain NA values
+//' @param w a 2D vector of weights, having the same length as the third dimension of \code{v}
+//' @param q a quantile to compute, q within [0, 1]
+//'
+//' @return a matrix with the specified quantile for each [row, col, ]
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_weighted_quantile (const NumericVector & v, const NumericVector & w, double q) {
+  if (Rf_isNull(v.attr("dim"))) {
+    Rcpp::stop("stack_weighted_quantile called with non-array values");
+  }
+
+  IntegerVector vdim = v.attr("dim");
+
+  if (vdim.size() != 3) {
+    Rcpp::stop("stack_weighted_quantile operates on three-dimensional arrays only");
+  }
+
+  auto wlen = w.size();
+  if (wlen != vdim[2]) {
+    Rcpp::stop("length of weights must equal length of 3rd dimension of value array");
+  }
+
+  return stack_apply(v, [&w, q](const std::vector<double> x, int n) {
+    return weighted_quantile(x, w, n, q);
+  }, false); // don't ask stack_apply to remove our null values; we need to handle them
+             // internalls so that we can keep correspondence with weights
 }
 
 //' Compute the median of defined elementsn for each row and col in a 3D array

@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -46,7 +46,12 @@ find_stat <- function(name) {
   if (name == 'fraction_defined_above_zero')
     return(stack_frac_defined_above_zero)
 
-  if (grepl('q\\d{1,2}(.\\d+)?$', name)) {
+  if (grepl('^weighted_q\\d{1,2}(.\\d+)?$', name)) {
+    q <- 0.01 * as.numeric(substring(name, 11))
+    return(function(x, w) { stack_weighted_quantile(x, w, q) })
+  }
+
+  if (grepl('^q\\d{1,2}(.\\d+)?$', name)) {
     q <- 0.01 * as.numeric(substring(name, 2))
     return(function(x) { stack_quantile(x, q) })
   }

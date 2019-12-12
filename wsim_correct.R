@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -29,6 +29,20 @@ Options:
 --attr <attr>     Optional attribute(s) to write to output netCDF file
 --append          Append output to existing file
 '->usage
+
+check_unit_consistency <- function(var, retro_units, forecast_units) {
+  if (is.null(retro_units)) {
+    stop(sprintf("Unspecified units for retrospective forecast fit of %s", var))
+  }
+
+  if (is.null(forecast_units)) {
+    stop(sprintf("Unspecified units for forecast of %s", var))
+  }
+
+  if (!is.null(retro_units) && !is.null(forecast_units) && retro_units != forecast_units) {
+    stop(sprintf("Forecast uses units of %s but retrospective forecast distribution uses units of %s.", forecast_units, retro_units))
+  }
+}
 
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
@@ -69,6 +83,14 @@ main <- function(raw_args) {
       distribution <- attr(retro_fit, 'distribution')
       stopifnot(distribution == attr(obs_fit, 'distribution'))
 
+      retro_units <- attr(retro_fit, 'units')
+      forecast_units <- attr(forecast$data[[var]], 'units')
+      observed_units <- attr(obs_fit, 'units')
+
+      # forecast units need not be the same as observed distribution units, since
+      # we're just matching quantiles
+      check_unit_consistency(var, retro_units, forecast_units)
+
       corrected[[var]] = wsim.distributions::forecast_correct(distribution,
                                                               forecast$data[[var]],
                                                               retro_fit,
@@ -77,12 +99,12 @@ main <- function(raw_args) {
       wsim.io::info('Computed bias-corrected values for', var)
 
       attrs <- c(attrs, list(
-        list(var=var, key="comment", val=paste0("bias-corrected according to ",
-                                                             distribution,
-                                                             " fit data in ",
-                                                             attr(retro_fit, 'filename'),
-                                                             " and ",
-                                                             attr(obs_fit, 'filename')))
+        list(var=var, key="comment", val=sprintf("bias-corrected according to %s fit data in %s and %s",
+                                                 distribution,
+                                                 attr(retro_fit, 'filename'),
+                                                 attr(obs_fit, 'filename'))),
+        list(var=var, key="units", val=observed_units),
+        list(var=var, key="standard_name", val=attr(forecast$data[[var]], 'standard_name'))
       ))
     }
   }

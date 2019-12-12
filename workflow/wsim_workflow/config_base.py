@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict, List, Optional, Iterable
+from typing import Dict, List, Optional, Iterable, Tuple
 
 import abc
 from . import dates
@@ -72,11 +72,12 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         pass
 
-    def forecast_data(self) -> paths.ForecastForcing:
+    def forecast_data(self, model: str) -> paths.ForecastForcing:
         """
         Returns a Forcing instance capable of providing data for a given YYYYMM/forecast target/ensemble member
         :return:
         """
+        pass
 
     def global_prep(self) -> List[Step]:
         """
@@ -84,7 +85,10 @@ class ConfigBase(metaclass=abc.ABCMeta):
         of which time steps/forecasts/etc. are also present in the Makefile.
         :return:
         """
-        return []
+        steps = self.static_data().global_prep_steps() + self.observed_data().global_prep_steps()
+        for model in self.models():
+            steps += self.forecast_data(model).global_prep_steps()
+        return steps
 
     def should_run_spinup(self) -> bool:
         """
@@ -96,7 +100,7 @@ class ConfigBase(metaclass=abc.ABCMeta):
     def should_run_lsm(self, yearmon: Optional[str]=None) -> bool:
         return True
 
-    def result_postprocess_steps(self, yearmon=None, target=None, member=None) -> List[Step]:
+    def result_postprocess_steps(self, model: str = None, yearmon: str = None, target: str = None, member: str = None) -> List[Step]:
         """
         Provides a list of one or more postprocessing steps to be applied to LSM results
         for a given YYYYMM/forecast target/ensemble member
@@ -110,7 +114,13 @@ class ConfigBase(metaclass=abc.ABCMeta):
         """
         return []
 
-    def forecast_ensemble_members(self, yearmon: str, *, lag_hours: Optional[int] = None) -> List[str]:
+    def models(self) -> List[str]:
+        """
+        Provides a list of forecast models used in this configuration.
+        """
+        return []
+
+    def forecast_ensemble_members(self, model: str, yearmon: str, *, lag_hours: Optional[int] = None) -> List[str]:
         """
         Provides a list of forecast ensemble members for a given YYYYMM, or
         an empty list if the configuration does not contain forecasts.
@@ -118,6 +128,13 @@ class ConfigBase(metaclass=abc.ABCMeta):
         within more than `lag_hours` from present time.
         """
         return []
+
+    def weighted_members(self, yearmon: str) -> Iterable[Tuple[str, str, float]]:
+        for model in self.models():
+            members = self.forecast_ensemble_members(model, yearmon)
+            for member in members:
+                weight = 1.0/len(members)/len(self.models())
+                yield model, member, weight
 
     @staticmethod
     def integration_windows() -> List[int]:

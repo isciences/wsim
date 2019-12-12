@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -27,7 +27,7 @@ read_fits_from_cdf <- function(files) {
   extent <- NULL
 
   for (file in files) {
-    fit <- read_vars_to_cube(file, attrs_to_read=c('distribution', 'variable'))
+    fit <- read_vars_to_cube(file, attrs_to_read=c('distribution', 'variable', 'units'))
     attr(fit, 'filename') <- file
 
     var <- attr(fit, 'variable')

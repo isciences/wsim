@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -43,7 +43,7 @@ main <- function(raw_args) {
 
   expanded_inputs <- wsim.io::expand_inputs(args$input)
   wsim.io::info('Preparing to load vars from', length(expanded_inputs), "files.")
-  inputs_stacked <- wsim.io::read_vars_to_cube(expanded_inputs)
+  inputs_stacked <- wsim.io::read_vars_to_cube(expanded_inputs, attrs_to_read=c('units', 'standard_name'))
 
   if (length(unique(dimnames(inputs_stacked)[[3]])) > 1) {
     wsim.io::die_with_message("Can't perform fit on heterogeneous input variables ( received input variables:",
@@ -68,11 +68,14 @@ main <- function(raw_args) {
                              extent=attr(inputs_stacked, 'extent'),
                              ids=attr(inputs_stacked, 'ids'),
                              attrs=c(
-                               output_attrs,
                                list(
                                  list(var=NULL,key="distribution",val=distribution),
-                                 list(var=NULL,key="variable",val=fit_param_name)
-                             )))
+                                 list(var=NULL,key="variable",val=fit_param_name),
+                                 list(var=NULL,key="units", val=attr(inputs_stacked, "units")),
+                                 list(var=NULL,key="standard_name", val=attr(inputs_stacked, "standard_name"))
+                               ),
+                               output_attrs # include output_attrs after standard attrs so that we can overwrite defaults (e.g., unit change)
+                             ))
 
   wsim.io::info('Wrote fits to', outfile)
 }

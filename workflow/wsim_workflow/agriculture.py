@@ -72,14 +72,18 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 
     # Compute a gridded loss risk for each forecast target/ensemble member
     for target in config.forecast_targets(yearmon):
-        for member in config.forecast_ensemble_members(yearmon):
-            steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member)
-            for method in CULTIVATION_METHODS:
-                steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, target=target, member=member, method=method)
+        for model in config.models():
+            print('Generating agriculture steps for', model, yearmon, 'forecast target', target)
+            for member in config.forecast_ensemble_members(model, yearmon):
+                steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon, model=model, target=target, member=member)
+                for method in CULTIVATION_METHODS:
+                    steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, model=model, target=target, member=member, method=method)
+
+        del model
 
         for method in CULTIVATION_METHODS:
             steps += meta_steps['agriculture_assessment'].require(
-                compute_loss_summary(config.workspace(), config.forecast_ensemble_members(yearmon), yearmon=yearmon, target=target, method=method)
+                compute_loss_summary(config, yearmon=yearmon, target=target, method=method)
             )
 
         for basis in AGGREGATION_POLYGONS:
@@ -95,8 +99,7 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
     return steps
 
 
-def compute_loss_summary(workspace: DefaultWorkspace,
-                         ensemble_members: List[str], *,
+def compute_loss_summary(config: ConfigBase, *,
                          yearmon: str,
                          target: str,
                          method: Method) -> List[Step]:
@@ -105,22 +108,25 @@ def compute_loss_summary(workspace: DefaultWorkspace,
                  'cumulative_loss_current_year',
                  'cumulative_loss_next_year')
 
+    ws = config.workspace()
+    inputs = []
+    weights = []
+
+    for model, member, weight in config.weighted_members(yearmon):
+        inputs.append(ws.results(sector=Sector.AGRICULTURE, method=method, model=model, yearmon=yearmon, window=1, target=target, member=member))
+        weights.append(weight)
+
     return [
         commands.wsim_integrate(
-            inputs=[workspace.results(sector=Sector.AGRICULTURE,
-                                      yearmon=yearmon,
-                                      target=target,
-                                      member=member,
-                                      method=method,
-                                      window=1)
-                    for member in ensemble_members],
+            inputs=inputs,
+            weights=weights,
             stats=['q{}::{}'.format(q, ','.join(loss_vars)) for q in (25, 50, 75)],
-            output=workspace.results(sector=Sector.AGRICULTURE,
-                                     yearmon=yearmon,
-                                     target=target,
-                                     method=method,
-                                     window=1,
-                                     summary=True)
+            output=ws.results(sector=Sector.AGRICULTURE,
+                              yearmon=yearmon,
+                              target=target,
+                              method=method,
+                              window=1,
+                              summary=True)
         )
     ]
 
@@ -228,6 +234,7 @@ def compute_basin_integration_windows(workspace: DefaultWorkspace, static: Agric
 def compute_gridded_b2b_btro(workspace: DefaultWorkspace,
                              static: AgricultureStatic, *,
                              yearmon: str,
+                             model: Optional[str] = None,
                              target: Optional[str] = None,
                              member: Optional[str] = None) -> List[Step]:
     windows = (1, 3, 6, 12, 24, 36)
@@ -238,7 +245,7 @@ def compute_gridded_b2b_btro(workspace: DefaultWorkspace,
     year, month = parse_yearmon(yearmon)
 
     for w in windows:
-        bt_ro.append(Vardef(workspace.results(basis=Basis.BASIN, yearmon=yearmon, window=w, target=target, member=member),
+        bt_ro.append(Vardef(workspace.results(basis=Basis.BASIN, model=model, yearmon=yearmon, window=w, target=target, member=member),
                             'Bt_RO' if w == 1 else 'Bt_RO_sum'))
 
         bt_ro_fits.append(workspace.fit_obs(basis=Basis.BASIN,
@@ -247,7 +254,7 @@ def compute_gridded_b2b_btro(workspace: DefaultWorkspace,
                                             window=w,
                                             month=month))
 
-    outfile = workspace.agriculture_bt_ro_rp(yearmon=yearmon, target=target, member=member)
+    outfile = workspace.agriculture_bt_ro_rp(model=model, yearmon=yearmon, target=target, member=member)
 
     return [
         Step(
@@ -297,34 +304,35 @@ def compute_loss_risk(workspace: DefaultWorkspace,
                       *,
                       method: Method,
                       yearmon: str,
+                      model: Optional[str] = None,
                       target: Optional[str] = None,
                       member: Optional[str] = None) -> List[Step]:
     if member:
         if get_lead_months(yearmon, target) > 1:
             current_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon, target=target,
-                                            member=member)
+                                            model=model, member=member)
         else:
             current_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=target)
 
         next_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon,
-                                     target=get_next_yearmon(target), member=member)
+                                     target=get_next_yearmon(target), model=model, member=member)
     else:
         current_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon)
         next_state = workspace.state(sector=Sector.AGRICULTURE, method=method, yearmon=get_next_yearmon(yearmon))
 
     results = workspace.results(sector=Sector.AGRICULTURE, method=method, yearmon=yearmon, window=1, target=target,
-                                member=member)
+                                model=model, member=member)
 
-    temperature_rp = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'T_rp')
+    temperature_rp = read_vars(workspace.return_period(yearmon=yearmon, window=1, model=model, member=member, target=target), 'T_rp')
 
     calendar = static.crop_calendar(method)
     loss_params = workspace.loss_params(sector=Sector.AGRICULTURE, method=method)
 
-    surplus = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target), 'RO_mm_rp')
+    surplus = read_vars(workspace.return_period(yearmon=yearmon, window=1, model=model, member=member, target=target), 'RO_mm_rp')
     if method == Method.IRRIGATED:
-        deficit = workspace.agriculture_bt_ro_rp(yearmon=yearmon, member=member, target=target)
+        deficit = workspace.agriculture_bt_ro_rp(yearmon=yearmon, model=model, member=member, target=target)
     elif method == Method.RAINFED:
-        deficit = read_vars(workspace.return_period(yearmon=yearmon, window=1, member=member, target=target),
+        deficit = read_vars(workspace.return_period(yearmon=yearmon, model=model, window=1, member=member, target=target),
                             'PETmE_rp@negate',
                             'Ws_rp')
     else:

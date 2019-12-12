@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -63,7 +63,7 @@ class TestCFSConfig(unittest.TestCase):
             self.fail('Duplicate targets found')
 
     def test_ensemble_selection(self):
-        members = self.config.forecast_ensemble_members('201701')
+        members = self.config.forecast_ensemble_members('CFSv2', '201701')
         member_dates = set(m[:8] for m in members)
 
         self.assertEqual(28, len(members))
@@ -161,7 +161,8 @@ class TestCFSConfig(unittest.TestCase):
     def test_expected_outputs_created(self):
         yearmon = '201901'
         target = '201904'
-        member = self.config.forecast_ensemble_members(yearmon)[0]
+        model = self.config.models()[0]
+        member = self.config.forecast_ensemble_members(model, yearmon)[0]
 
         steps = self.get_steps(yearmon, yearmon)
 
@@ -181,22 +182,22 @@ class TestCFSConfig(unittest.TestCase):
         # results
         assertBuilt(ws.results(yearmon=yearmon, window=1))
         assertBuilt(ws.results(yearmon=yearmon, target=target, summary=True, window=1))
-        assertBuilt(ws.results(yearmon=yearmon, target=target, member=member, window=1))
+        assertBuilt(ws.results(yearmon=yearmon, target=target, model=model, member=member, window=1))
 
         # integrated results
         assertBuilt(ws.results(yearmon=yearmon, window=3))
         assertBuilt(ws.results(yearmon=yearmon, target=target, summary=True, window=3))
-        assertBuilt(ws.results(yearmon=yearmon, target=target, member=member, window=3))
+        assertBuilt(ws.results(yearmon=yearmon, target=target, model=model, member=member, window=3))
 
         # return periods
         assertBuilt(ws.return_period(yearmon=yearmon, window=1))
         assertBuilt(ws.return_period_summary(yearmon=yearmon, target=target, window=1))
-        assertBuilt(ws.return_period(yearmon=yearmon, target=target, member=member, window=1))
+        assertBuilt(ws.return_period(yearmon=yearmon, target=target, model=model, member=member, window=1))
 
         # integrated return periods
         assertBuilt(ws.return_period(yearmon=yearmon, window=3))
         assertBuilt(ws.return_period_summary(yearmon=yearmon, target=target, window=3))
-        assertBuilt(ws.return_period(yearmon=yearmon, target=target, member=member, window=3))
+        assertBuilt(ws.return_period(yearmon=yearmon, target=target, model=model, member=member, window=3))
 
         # composites
         assertBuilt(ws.composite_summary(yearmon=yearmon, window=1))
@@ -209,7 +210,8 @@ class TestCFSConfig(unittest.TestCase):
     def test_rp_calculated_for_all_necessary_vars(self):
         yearmon = dates.get_next_yearmon(self.config.historical_yearmons()[-1])
         target = dates.add_months(yearmon, 3)
-        member = self.config.forecast_ensemble_members(yearmon)[0]
+        model = self.config.models()[0]
+        member = self.config.forecast_ensemble_members(model, yearmon)[0]
 
         steps = self.get_steps(yearmon, yearmon)
 
@@ -222,7 +224,7 @@ class TestCFSConfig(unittest.TestCase):
                           rp_step.dependencies)
 
         # 1-month forecast rp
-        rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, target=target, member=member, window=1))
+        rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, model=model, target=target, member=member, window=1))
         for v in self.config.lsm_rp_vars() + self.config.forcing_rp_vars():
             self.assertIn(ws.fit_obs(var=v, window=1, month=dates.parse_yearmon(target)[1]),
                           rp_step.dependencies)
@@ -235,7 +237,7 @@ class TestCFSConfig(unittest.TestCase):
                               rp_step.dependencies)
 
         # 3-month forecast rp
-        rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, target=target, member=member, window=3))
+        rp_step = step_for_target(steps, ws.return_period(yearmon=yearmon, model=model, target=target, member=member, window=3))
         for v in self.config.lsm_integrated_var_names():
             self.assertTrue(ws.fit_obs(var=v, window=3, month=dates.parse_yearmon(target)[1])
                             in rp_step.dependencies)
@@ -266,6 +268,34 @@ class TestCFSConfig(unittest.TestCase):
         # a results summary is produced for each forecast month / integration period
         results_summaries = step_for_target(steps, 'results_summaries')
         self.assertEqual(len(results_summaries.dependencies), len(self.config.forecast_targets(yearmon))*(1 + len(self.config.integration_windows())))
+
+    def test_hindcast_dates(self):
+        data = self.config.forecast_data('CFSv2')
+
+        hindcasts = [h for h in data.available_hindcasts(target_month=1, lead=1)]
+
+        # dates in the asserts below assume we've defined 1983-2009 as our fit years
+        # this means that we consider all target months in 1983-2009 (some forecasts
+        # may be generated in 1982)
+        self.assertEqual(1983, data.min_fit_year)
+        self.assertEqual(2009, data.max_fit_year)
+
+        # first hindcast targets 198301, generated in 198212
+        first_hindcast_timestamp, first_hindcast_target = hindcasts[0]
+        self.assertEqual(first_hindcast_timestamp[:6], '198212')
+        self.assertEqual(first_hindcast_target, '198301')
+
+        # last hindcast targets 200901, generated in 200812
+        last_hindcast_timestamp, last_hindcast_target = hindcasts[-1]
+        self.assertEqual(last_hindcast_timestamp[:6], '200812')
+        self.assertEqual(last_hindcast_target, '200901')
+
+    def test_missing_hindcasts_skipped(self):
+        data = self.config.forecast_data('CFSv2')
+
+        for timestamp, target in data.available_hindcasts(target_month=3, lead=1):
+            if timestamp == '1989021500':
+                self.fail()
 
     @unittest.skip
     def test_makefile_readable(self):

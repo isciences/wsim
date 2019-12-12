@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2019 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -182,7 +182,8 @@ def wsim_fit(*,
              inputs: Union[str, Iterable[str]],
              output: str,
              window: int,
-             comment: Union[str, None]=None):
+             attrs: Optional[Mapping[str, str]] = None,
+             comment: Union[str, None] = None) -> Step:
     dependencies = []
     targets = []
 
@@ -200,6 +201,10 @@ def wsim_fit(*,
 
     if window is not None:
         cmd += ['--attr', attributes.integration_window(var=None, months=window)]
+
+    if attrs:
+        for k, v in attrs.items():
+            cmd += ['--attr', '{}={}'.format(k, v)]
 
     cmd += ['--output', output]
     targets.append(output)
@@ -349,6 +354,7 @@ def wsim_correct(*,
 def wsim_integrate(*,
                    stats: Union[str, List[str]],
                    inputs: Union[str, List[str]],
+                   weights: Optional[List[float]] = None,
                    output: str,
                    window: Optional[int]=None,
                    keepvarnames: bool=False,
@@ -373,6 +379,9 @@ def wsim_integrate(*,
 
     if window:
         cmd += ['--window', str(window)]
+
+    if weights:
+        cmd += ['--weights', ','.join(str(w) for w in weights)]
 
     if keepvarnames:
         cmd.append('--keepvarnames')
@@ -433,6 +442,20 @@ def move(from_path: str, to_path: str) -> Step:
                 consumes=from_path,
                 dependencies=from_path,
                 commands=[['mv', q(from_path), q(to_path)]])
+
+
+def download(url: str, to_dir: str) -> Step:
+    fname = os.path.basename(url)
+
+    return Step(
+        targets=os.path.join(to_dir, fname),
+        dependencies=[],
+        commands=[[
+            'wget',
+            '-P', to_dir,
+            url
+        ]]
+    )
 
 
 # noinspection PyShadowingBuiltins

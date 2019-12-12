@@ -299,9 +299,18 @@ test_that("we can read multiple spatial variables into a cube", {
 
   extent <- c(20, 80, 30, 70)
 
-  write_vars_to_cdf(data, fname, extent=extent)
+  write_vars_to_cdf(data, fname, extent=extent, attrs=list(
+    list(var=NULL,       key='globalatt',    val=12345),
+    list(var='location', key='units',        val='kilocalories'),
+    list(var='location', key='units_abbrev', val='kcal')
+  ))
 
-  cube <- read_vars_to_cube(fname)
+  cube <- read_vars_to_cube(fname,
+                            attrs_to_read=c('globalatt',      # global attribute specified as such
+                                            'location:units', # attribute of named regular variable
+                                            'units_abbrev',   # attribute of unnamed regular variable
+                                            'crs:grid_mapping_name',  # attribute of named no-data variable
+                                            'location:doesnotexist')) # non-existant attribute
 
   expect_equal(attr(cube, "extent"), extent)
   expect_equal(cube[,,"location"], data$location)
@@ -309,6 +318,13 @@ test_that("we can read multiple spatial variables into a cube", {
   expect_equal(cube[,,"shape"], data$shape)
 
   expect_equal(dimnames(cube)[[3]], c('location', 'scale', 'shape'))
+
+  expect_equal(attr(cube, 'globalatt'), 12345)
+  expect_equal(attr(cube, 'units'), 'kilocalories')
+  expect_equal(attr(cube, 'units_abbrev'), 'kcal')
+  expect_equal(attr(cube, 'grid_mapping_name'), 'latitude_longitude')
+
+  expect_null(attr(cube, 'doesnotexist'))
 
   file.remove(fname)
 })

@@ -171,43 +171,41 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
     steps = []
 
     for target in config.forecast_targets(yearmon):
-        print('Generating electric power steps for', yearmon, 'forecast target', target)
-        for member in config.forecast_ensemble_members(yearmon):
-            steps += actions.compute_basin_results(workspace=config.workspace(),
-                                                   static=config.static_data(),
-                                                   yearmon=yearmon,
-                                                   target=target,
-                                                   member=member)
+        for model in config.models():
+            print('Generating electric power steps for', model, yearmon, 'forecast target', target)
+            for member in config.forecast_ensemble_members(model, yearmon):
+                steps += actions.compute_basin_results(workspace=config.workspace(),
+                                                       static=config.static_data(),
+                                                       yearmon=yearmon,
+                                                       target=target,
+                                                       model=model,
+                                                       member=member)
 
-            for window in config.integration_windows():
-                steps += actions.time_integrate(config.workspace(),
-                                                config.lsm_integrated_stats(basis=Basis.BASIN),
-                                                yearmon=yearmon,
-                                                target=target,
-                                                member=member,
-                                                window=window,
-                                                basis=Basis.BASIN,
-                                                forcing=False)
+                for window in config.integration_windows():
+                    steps += actions.time_integrate(config.workspace(),
+                                                    config.lsm_integrated_stats(basis=Basis.BASIN),
+                                                    yearmon=yearmon,
+                                                    target=target,
+                                                    model=model,
+                                                    member=member,
+                                                    window=window,
+                                                    basis=Basis.BASIN,
+                                                    forcing=False)
 
-            steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon, target=target, member=member)
-            steps += compute_plant_losses(config.workspace(), yearmon=yearmon, target=target, member=member)
+                steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon, target=target, model=model, member=member)
+                steps += compute_plant_losses(config.workspace(), yearmon=yearmon, target=target, model=model, member=member)
 
-            for basis in AGGREGATION_POLYGONS:
-                steps += compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis, target=target, member=member)
+                for basis in AGGREGATION_POLYGONS:
+                    steps += compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis, target=target, model=model, member=member)
 
         for basis in AGGREGATION_POLYGONS:
             steps += meta_steps['electric_power_assessment'].require(
-                compute_loss_summary(config.workspace(),
-                                     ensemble_members=config.forecast_ensemble_members(yearmon),
-                                     yearmon=yearmon,
-                                     target=target,
-                                     basis=basis))
+                compute_loss_summary(config, yearmon=yearmon, target=target, basis=basis))
 
     return steps
 
 
-def compute_loss_summary(workspace: DefaultWorkspace,
-                         ensemble_members: List[str], *,
+def compute_loss_summary(config: ConfigBase, *,
                          yearmon: str,
                          target: str,
                          basis: Basis) -> List[Step]:
@@ -216,22 +214,32 @@ def compute_loss_summary(workspace: DefaultWorkspace,
                  'gross_loss_pct', 'net_loss_pct', 'hydro_loss_pct', 'nuclear_loss_pct',
                  'reserve_utilization_pct')
 
+    ws = config.workspace()
+
+    inputs = []
+    weights = []
+
+    for model, member, weight in config.weighted_members(yearmon):
+        inputs.append(ws.results(basis=basis,
+                                 sector=Sector.ELECTRIC_POWER,
+                                 model=model,
+                                 yearmon=yearmon,
+                                 window=1,
+                                 target=target,
+                                 member=member))
+        weights.append(weight)
+
     return [
         commands.wsim_integrate(
-            inputs=[workspace.results(
-                sector=Sector.ELECTRIC_POWER,
-                yearmon=yearmon,
-                target=target,
-                member=member,
-                window=1,
-                basis=basis) for member in ensemble_members],
+            inputs=inputs,
+            weights=weights,
             stats=['q{}::{}'.format(q, ','.join(loss_vars)) for q in (25, 50, 75)],
-            output=workspace.results(sector=Sector.ELECTRIC_POWER,
-                                     yearmon=yearmon,
-                                     target=target,
-                                     basis=basis,
-                                     window=1,
-                                     summary=True)
+            output=ws.results(sector=Sector.ELECTRIC_POWER,
+                              yearmon=yearmon,
+                              target=target,
+                              basis=basis,
+                              window=1,
+                              summary=True)
         ),
     ]
 
@@ -324,20 +332,22 @@ def wsim_plant_losses(*,
 def compute_plant_losses(workspace: DefaultWorkspace,
                          *,
                          yearmon: str,
-                         target: Optional[str]=None,
-                         member: Optional[str]=None) -> List[Step]:
+                         model: Optional[str] = None,
+                         target: Optional[str] = None,
+                         member: Optional[str] = None) -> List[Step]:
 
     results = workspace.results(sector=Sector.ELECTRIC_POWER,
                                 yearmon=yearmon,
+                                model=model,
                                 target=target,
                                 member=member,
                                 window=1,
                                 basis=Basis.POWER_PLANT)
 
-    basin_results = workspace.results(yearmon=yearmon, window=1, basis=Basis.BASIN, target=target, member=member)
-    forcing = workspace.forcing(yearmon=yearmon, target=target, member=member, window=1)
-    rp = workspace.return_period(yearmon=yearmon, target=target, member=member, window=1)
-    loss_factors = workspace.basin_loss_factors(yearmon=yearmon, target=target, member=member)
+    basin_results = workspace.results(model=model, yearmon=yearmon, window=1, basis=Basis.BASIN, target=target, member=member)
+    forcing = workspace.forcing(model=model, yearmon=yearmon, target=target, member=member, window=1)
+    rp = workspace.return_period(model=model, yearmon=yearmon, target=target, member=member, window=1)
+    loss_factors = workspace.basin_loss_factors(model=model, yearmon=yearmon, target=target, member=member)
 
     return [
         Step(
@@ -385,8 +395,9 @@ def compute_basin_integration_windows(workspace: DefaultWorkspace, static: Elect
 def compute_basin_loss_factors(workspace: DefaultWorkspace,
                                *,
                                yearmon: str,
-                               target: Optional[str]=None,
-                               member: Optional[str]=None) -> List[Step]:
+                               target: Optional[str] = None,
+                               model: Optional[str] = None,
+                               member: Optional[str] = None) -> List[Step]:
     bt_ro = []
     bt_ro_fits = []
     bt_ro_min_fits = []
@@ -395,7 +406,7 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
     year, month = parse_yearmon(yearmon)
 
     for w in windows:
-        bt_ro.append(Vardef(workspace.results(basis=Basis.BASIN, yearmon=yearmon, window=w, target=target, member=member),
+        bt_ro.append(Vardef(workspace.results(basis=Basis.BASIN, model=model, yearmon=yearmon, window=w, target=target, member=member),
                             'Bt_RO' if w == 1 else 'Bt_RO_sum'))
 
         # For integration periods < 12 months, use the distribution of annual minimum N-month sums.
@@ -413,7 +424,7 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
                                             window=w,
                                             month=month))
 
-    outfile = workspace.basin_loss_factors(yearmon=yearmon, target=target, member=member)
+    outfile = workspace.basin_loss_factors(yearmon=yearmon, model=model, target=target, member=member)
 
     return [
         Step(
@@ -467,20 +478,23 @@ def wsim_aggregate_losses(*,
 def compute_aggregated_losses(workspace: DefaultWorkspace,
                               *,
                               yearmon: str,
-                              target: Optional[str]=None,
-                              member: Optional[str]=None,
+                              model: Optional[str] = None,
+                              target: Optional[str] = None,
+                              member: Optional[str]  = None,
                               basis: Basis
                               ) -> List[Step]:
 
     plants = workspace.power_plants()
     plant_losses = Vardef(workspace.results(sector=Sector.ELECTRIC_POWER,
                                             yearmon=yearmon,
+                                            model=model,
                                             target=target,
                                             member=member,
                                             window=1,
                                             basis=Basis.POWER_PLANT), 'loss_risk')
     aggregated_losses = workspace.results(sector=Sector.ELECTRIC_POWER,
                                           yearmon=yearmon,
+                                          model=model,
                                           target=target,
                                           member=member,
                                           window=1,

@@ -24,13 +24,14 @@ suppressMessages({
 '
 Compute summary statistics from multiple observations
 
-Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>)... [--window=<window>] [--attr=<attr>...] [--keepvarnames]
+Usage: wsim_integrate (--stat=<stat>)... (--input=<input>)... (--output=<output>)... [--weights=<weights>] [--window=<window>] [--attr=<attr>...] [--keepvarnames]
 
 Options:
 --stat <stat>       a summary statistic (min, max, ave, sum). By default, the statistic is computed
                     for all input variables. This can be restricted by providing a list of variables,
                     such as --stat "max::flow,temp"
 --input <file>      one or more input files or glob patterns
+--weights <w>       a comma-separated list of weights for each input
 --output <file>     output file(s) to write integrated results
 --window <window>   size of rolling window to use for integration (e.g. 6 files)
 --attr <attr>       optional attribute(s) to be attached to output netCDF
@@ -79,10 +80,20 @@ read_unique_vars <- function(parsed_inputs) {
   return(vars)
 }
 
-validate_stats <- function(parsed_stats) {
+accepts_weights <- function(stat_name) {
+  startsWith(stat_name, 'weighted_')
+}
+
+validate_stats <- function(parsed_stats, have_weights) {
   for (stat in parsed_stats) {
-    if (is.null(wsim.distributions::find_stat(stat$stat))) {
-      die_with_message("Unknown statistic", stat$stat)
+    stat_name <- stat$stat
+
+    if (is.null(wsim.distributions::find_stat(stat_name))) {
+      die_with_message("Unknown statistic", stat_name)
+    }
+
+    if (accepts_weights(stat_name) && !have_weights) {
+      stop('No weights provided for stat', stat_name)
     }
   }
 }
@@ -112,6 +123,11 @@ main <- function(raw_args) {
   parsed_inputs <- lapply(inputs, wsim.io::parse_vardef)
   output_attrs <- lapply(args$attr, wsim.io::parse_attr)
 
+  weights <- NULL
+  if (!is.null(args$weights)) {
+    weights <- sapply(strsplit(args$weights, ',', fixed=TRUE), as.numeric)
+  }
+
   # Probe for extra dimensions
   extra_dims_found <- wsim.io::read_dimension_values(inputs[[1]], exclude.dims=c('lat', 'lon', 'id', 'latitude', 'longitude'))
   if (length(extra_dims_found) == 0) {
@@ -136,7 +152,7 @@ main <- function(raw_args) {
   }
 
   # Validate configuration
-  validate_stats(parsed_stats)
+  validate_stats(parsed_stats, !is.null(weights))
 
   if (args$keepvarnames && length(args$stat) > 1) {
     die_with_message("Can't keep original variable names if > 1 stat is being computed.")
@@ -159,6 +175,11 @@ main <- function(raw_args) {
     die_with_message("Given", length(inputs), "inputs and window size",
                      window, ", expected ", frames, "output files",
                      "but got", length(outfiles), ".")
+  }
+
+  if (!is.null(weights) && length(weights) != length(inputs)) {
+    die_with_message(sprintf('Unequal numbers of inputs (%d) and weights (%d) provided.',
+                             length(inputs), length(weights)))
   }
 
   get_var_to_read <- function(var_name, i) {
@@ -192,6 +213,8 @@ main <- function(raw_args) {
       # Create an empty array to hold <window> time slices of data
       data[[var_name]] <- provideDimnames(array(dim = c(dims, window)))
     }
+    # Create an empty vector to store weights for <window>
+    data_weights <- rep.int(1.0, 5)
 
     for (i in seq_along(inputs)) {
       slice <- i %% window + 1 # We recycle space in the array. This is the index we should load into.
@@ -215,6 +238,10 @@ main <- function(raw_args) {
         data[[var_name]][,,slice] <- as.matrix(data_slice[[var_name]])
       }
 
+      if (!is.null(weights)) {
+        data_weights[slice] <- weights[i]
+      }
+
       if (i >= window) {
         integrated <- list()
         attrs <- output_attrs
@@ -230,7 +257,11 @@ main <- function(raw_args) {
               stat_fn <- wsim.distributions::find_stat(stat$stat)
               wsim.io::infof('Computing %s', stat_var)
 
-              integrated[[stat_var]] <- stat_fn(data[[var_name]])
+              if (accepts_weights(stat$stat)) {
+                integrated[[stat_var]] <- stat_fn(data[[var_name]], data_weights)
+              } else {
+                integrated[[stat_var]] <- stat_fn(data[[var_name]])
+              }
 
               attrs <- c(attrs, attrs_for_stat(var_attrs, var_name, stat$stat, stat_var))
             }
@@ -261,6 +292,6 @@ main <- function(raw_args) {
   wsim.io::infof("Finished writing integrated variables to %s", outfile)
 }
 
-tryCatch(
+#tryCatch(
   main(commandArgs(trailingOnly=TRUE))
-,error=wsim.io::die_with_message)
+#,error=wsim.io::die_with_message)

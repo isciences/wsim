@@ -31,6 +31,7 @@ def is_yearmon(s: str) -> bool:
 
     return month >= 1 and month <= 12
 
+
 def parse_yearmon(yearmon: str) -> Tuple[int, int]:
     """
     Parse a YYYYMM string and return a (year, month) integer tuple
@@ -207,6 +208,12 @@ def next_occurence_of_month(yearmon: str, month_b: int) -> str:
     else:
         return format_yearmon(year+1, month_b)
 
+
+def format_range(start, end, step=None) -> str:
+    if step:
+        return '[{}:{}:{}]'.format(start, end, step)
+    else:
+        return '[{}:{}]'.format(start, end)
 
 def available_yearmon_range(*, window: int, month: Optional[int]=None, start_year: int, end_year: int) -> str:
     assert start_year + (window-1) // 12 <= end_year
