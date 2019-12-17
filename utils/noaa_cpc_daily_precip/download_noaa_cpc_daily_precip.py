@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from __future__ import print_function # Avoid bombing in Python 2 before we even hit our version check
+from __future__ import print_function  # Avoid bombing in Python 2 before we even hit our version check
 
 import argparse
 import calendar
@@ -30,6 +30,7 @@ if sys.version_info.major < 3:
     print("Must use Python 3")
     sys.exit(1)
 
+
 def parse_args(args):
     parser = argparse.ArgumentParser('Download a month of daily precipitation files')
 
@@ -44,6 +45,7 @@ def parse_args(args):
 
     return parsed
 
+
 def get_folder_url(year):
     if year < 1979:
         raise Exception("Daily precipitation data not available before 1979")
@@ -51,6 +53,7 @@ def get_folder_url(year):
         return "ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/V1.0"
     else:
         return "ftp://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/RT"
+
 
 def get_extension(year):
     if year < 2006:
@@ -61,6 +64,7 @@ def get_extension(year):
         return ".RT.gz"
     else:
         return ".RT"
+
 
 def get_url(year, month, day):
     """
@@ -74,12 +78,14 @@ def get_url(year, month, day):
         EXT=get_extension(year)
     )
 
+
 def get_standard_filename(year, month, day):
     """
     Get the "standardized" name of a daily precipitation file, i.e. the name under the
     scheme used for pre-2006 files.
     """
     return 'PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{YEAR:04d}{MONTH:02d}{DAY:02d}.gz'.format(YEAR=year, MONTH=month, DAY=day)
+
 
 def download(url, output_file):
     """
@@ -101,7 +107,7 @@ def download(url, output_file):
     with opener(temp_file_name, 'wb') as outfile:
         sys.stdout.write(url)
         res = urlopen(url)
-        for chunk in iter(lambda : res.read(1024 * 256), b''):
+        for chunk in iter(lambda: res.read(1024 * 256), b''):
             sys.stdout.write('.')
             sys.stdout.flush()
             outfile.write(chunk)
@@ -109,12 +115,13 @@ def download(url, output_file):
 
     shutil.move(temp_file_name, output_file)
 
+
 def main(raw_args):
     args = parse_args(raw_args)
 
     year = int(args.yearmon[0:4])
     month = int(args.yearmon[4:6])
-    output_dir=args.output_dir
+    output_dir = args.output_dir
 
     for day in range(1, 1+calendar.monthrange(year, month)[1]):
         output_file = os.path.join(output_dir,
@@ -127,6 +134,6 @@ def main(raw_args):
             download(get_url(year, month, day),
                      output_file)
 
+
 if __name__ == "__main__":
     main(sys.argv[1:])
-
