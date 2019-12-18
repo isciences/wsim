@@ -41,23 +41,24 @@ read_noaa_cpc_global_daily_temp <- function(fname, varname, day_start, day_end) 
     fh <- file(fname, 'rb')
   }
 
+  current_record <- 1
+
   read_slice <- function() {
-    matrix(
-      readBin(fh, 'numeric', n=ny*nx, size=valsz, endian=endian),
-      nrow=ny,
-      ncol=nx,
-      byrow=TRUE
-    )
+    vals <- readBin(fh, 'numeric', n=ny*nx, size=valsz, endian=endian)
+    stopifnot(length(vals) == ny*nx)
+    matrix(vals, nrow=ny, ncol=nx, byrow=TRUE)
   }
 
   # seek doesn't work in a gzfile, so we read and discard
   skip_record <- function() {
+    current_record <<- current_record + 1
     for (i in seq_along(vars)) {
       read_slice()
     }
   }
 
   read_record <- function() {
+    current_record <<- current_record + 1
     for (i in seq_along(vars)) {
       if (i == varind) {
         vals <- read_slice()
@@ -67,6 +68,11 @@ read_noaa_cpc_global_daily_temp <- function(fname, varname, day_start, day_end) 
     }
 
     vals[vals == na_val] <- NA
+
+    if(all(is.na(vals))) {
+      stop(sprintf('No data found for day %d in %s', current_record, fname))
+    }
+
     return(cbind(vals[ny:1, ((nx/2)+1):nx], vals[ny:1, 1:(nx/2)]))
   }
 
