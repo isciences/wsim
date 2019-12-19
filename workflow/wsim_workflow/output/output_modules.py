@@ -14,20 +14,23 @@
 import datetime
 import sys
 
+
 def creation_string():
     return 'Generated on {} by {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ' '.join(sys.argv))
 
+
 def add_line_continuation_characters(command_tokens):
     """
-    Add a \ to the end of each command token that precedes an argument token (starting with -)
+    Add a \\ to the end of each command token that precedes an argument token (starting with -)
     """
-    command_tokens = list(command_tokens) # make a copy
+    command_tokens = list(command_tokens)  # make a copy
 
     for i, token in enumerate(command_tokens):
         if i > 0 and token.startswith('-'):
             command_tokens[i-1] += ' \\'
 
     return command_tokens
+
 
 def substitute_tokens(command_tokens, keys):
     tokens_out = []
@@ -40,6 +43,7 @@ def substitute_tokens(command_tokens, keys):
             raise e
 
     return tokens_out
+
 
 def write_command(buff, command_tokens, indent):
     buff.write(indent)

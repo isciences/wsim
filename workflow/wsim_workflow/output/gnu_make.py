@@ -17,6 +17,7 @@ from .output_modules import creation_string, add_line_continuation_characters, s
 
 DEFAULT_FILENAME = 'Makefile'
 
+
 def use_pattern_rules(step):
     """
     Determine if we should use pattern-style rules when writing a Step
@@ -28,6 +29,7 @@ def use_pattern_rules(step):
     """
     return len(step.targets) > 1
 
+
 def patternize(filenames):
     """
     Convert each target or dependency in a list to a pattern
@@ -36,13 +38,16 @@ def patternize(filenames):
     """
     return [filename.replace('.', '%') for filename in filenames]
 
+
 def patternize_if_needed(step, filenames):
     """
     Convert filenames into patterns, if needed
+    :param step step associated with filenames
     :param filenames: list of targets or dependencies
     :return: possibly converted list
     """
     return patternize(filenames) if use_pattern_rules(step) else filenames
+
 
 def target_string(step):
     """
@@ -50,17 +55,20 @@ def target_string(step):
     """
     return ' '.join(patternize_if_needed(step, sorted(list(step.targets))))
 
+
 def dependency_string(step):
     """
     Generate the target portion of the dependency string (the right-hand-side)
     """
     return ' '.join(patternize_if_needed(step, sorted(list(step.dependencies))))
 
+
 def target_separator(use_order_only_rules):
     if use_order_only_rules:
         return ' : | '
     else:
         return ' : '
+
 
 def header():
     return '\n'.join([
@@ -71,10 +79,12 @@ def header():
         '.SUFFIXES:',         # Disable implicit rules
     ]) + 2*'\n'
 
+
 def write_step(step, keys=None, use_order_only_rules=True):
     """
     Output this Step in the rule/recipe format used by GNU Make
 
+    :param step:                  step to be written
     :param keys:                  optional dictionary of substitutions to make throughout
                                   the command (e.g., { 'BINDIR' : '/wsim' }
     :param use_order_only_rules:  if true, instructs make not to rebuild targets when the
@@ -104,4 +114,3 @@ def write_step(step, keys=None, use_order_only_rules=True):
             write_command(buff, command, indent='\t')
 
     return buff.getvalue()
-

@@ -17,8 +17,10 @@ from .output_modules import creation_string, add_line_continuation_characters, s
 
 DEFAULT_FILENAME = 'Drakefile'
 
+
 def header():
     return '; ' + creation_string() + '\n'
+
 
 def write_step(step, keys=None):
     if keys is None:

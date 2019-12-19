@@ -15,8 +15,10 @@ import io
 
 DEFAULT_FILENAME = 'Snakefile'
 
+
 def header():
     return ""
+
 
 def write_step(step, keys=None):
 
@@ -47,5 +49,3 @@ def write_step(step, keys=None):
 
     buff.seek(0)
     return buff.read()
-
-
