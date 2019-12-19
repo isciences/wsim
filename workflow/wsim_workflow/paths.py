@@ -93,6 +93,52 @@ class Vardef:
             return self.file + '::' + self.var
 
 
+class ObservedForcing(metaclass=ABCMeta):
+
+    @abstractmethod
+    def precip_monthly(self, *, yearmon: str) -> Vardef:
+        """
+        Return a Vardef for the precipitation variable
+        """
+        pass
+
+    @abstractmethod
+    def temp_monthly(self, *, yearmon: str) -> Vardef:
+        """
+        Return a Vardef for the average monthly temparature
+        """
+        pass
+
+    @abstractmethod
+    def p_wetdays(self, *, yearmon: str) -> Vardef:
+        """
+        Return a Vardef for the percentage of wet days in a month
+        """
+        pass
+
+    @abstractmethod
+    def mean_p_wetdays(self, month: int) -> Vardef:
+        """
+        Return a Vardef for the long-term mean of pWetDays. This is
+        typically needed by forecast data.
+        """
+        pass
+
+    def prep_steps(self, *, yearmon: str) -> List[step.Step]:
+        """
+        Returns one or more Steps needed to prepare this dataset for use
+        for a given yearmon
+        """
+        return []
+
+    def global_prep_steps(self) -> List[step.Step]:
+        """
+        Returns one or more Steps needed to prepare this dataset for use
+        (included only once for all yearmons)
+        """
+        return []
+
+
 class ForecastForcing(metaclass=ABCMeta):
 
     @abstractmethod
@@ -138,6 +184,13 @@ class ForecastForcing(metaclass=ABCMeta):
     def forecast_corrected(self, *, yearmon: str, target: str, member: str) -> str:
         pass
 
+    @abstractmethod
+    def observed(self) -> ObservedForcing:
+        """
+        Return a link to an associated set of observed data, for use in bias-correcting the forecast.
+        """
+        pass
+
     def prep_steps(self, *, yearmon, target, member):
         """
         Returns one or more Steps needed to prepare this dataset for use
@@ -150,44 +203,6 @@ class ForecastForcing(metaclass=ABCMeta):
         """
         Returns one or more Steps needed to prepare this dataset for use
         (included only once for all yearmons/targets/members)
-        """
-        return []
-
-
-class ObservedForcing(metaclass=ABCMeta):
-
-    @abstractmethod
-    def precip_monthly(self, *, yearmon: str) -> Vardef:
-        """
-        Return a Vardef for the precipitation variable
-        """
-        pass
-
-    @abstractmethod
-    def temp_monthly(self, *, yearmon: str) -> Vardef:
-        """
-        Return a Vardef for the average monthly temparature
-        """
-        pass
-
-    @abstractmethod
-    def p_wetdays(self, *, yearmon: str) -> Vardef:
-        """
-        Return a Vardef for the percentage of wet days in a month
-        """
-        pass
-
-    def prep_steps(self, *, yearmon: str) -> List[step.Step]:
-        """
-        Returns one or more Steps needed to prepare this dataset for use
-        for a given yearmon
-        """
-        return []
-
-    def global_prep_steps(self) -> List[step.Step]:
-        """
-        Returns one or more Steps needed to prepare this dataset for use
-        (included only once for all yearmons)
         """
         return []
 

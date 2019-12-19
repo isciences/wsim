@@ -30,6 +30,8 @@ from .commands import \
     wsim_merge
 from .config_base import ConfigBase
 
+from . import dates
+
 from .dates import get_next_yearmon, get_lead_months, rolling_window, available_yearmon_range, parse_yearmon
 from .step import Step
 
@@ -368,6 +370,59 @@ def composite_anomalies(workspace: DefaultWorkspace,
         )
     ]
 
+
+def compute_observed_forcing_fit_for_hindcast_period(forecast: ForecastForcing, *,
+                                                     varname: str,
+                                                     min_fit_year: int,
+                                                     max_fit_year: int,
+                                                     month: int,
+                                                     distribution: str) -> List[Step]:
+    assert varname in {'T', 'Pr'}
+    assert max_fit_year >= min_fit_year
+
+    start = dates.format_yearmon(min_fit_year, month)
+    stop = dates.format_yearmon(max_fit_year, month)
+
+    rng = dates.format_range(start, stop, 12)
+
+    if varname == 'Pr':
+        inputs = forecast.observed().precip_monthly(yearmon=rng).read_as('Pr')
+    elif varname == 'T':
+        inputs = forecast.observed().temp_monthly(yearmon=rng).read_as('T')
+    else:
+        raise  # keep static analyzer happy
+
+    return [
+        wsim_fit(distribution=distribution,
+                 inputs=[inputs],
+                 output=forecast.fit_obs(var=varname, month=month),
+                 window=1)
+    ]
+
+
+def compute_wetday_ltmeans(forcing: ObservedForcing, start_year: int, stop_year: int) -> List[Step]:
+    """
+    Steps to compute long-term means in wetdays that can be used
+    for months where daily precipitation data is not available
+    """
+    steps = []
+
+    wetday_ltmean_years = range(start_year, stop_year + 1)
+    for month in dates.all_months:
+        input_vardefs = [str(forcing.p_wetdays(yearmon=dates.format_yearmon(year, month)))
+                         for year in wetday_ltmean_years]
+        ltmean_file = forcing.mean_p_wetdays(month=month).file
+
+        steps.append(
+            wsim_integrate(
+                stats=['ave'],
+                inputs=input_vardefs,
+                output=ltmean_file,
+                keepvarnames=True
+            )
+        )
+
+    return steps
 
 def fit_var(config: ConfigBase,
             *,

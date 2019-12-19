@@ -18,8 +18,9 @@ from typing import List
 
 from wsim_workflow.step import Step
 
-from config_cfs import NCEP
-from config_nmme import NMMEForecast
+from forcing.leaky_bucket import LeakyBucket
+from forcing.nmme import NMMEForecast
+
 
 def get_producing_step(target: str, steps: List[Step]) -> Step:
     return [s for s in steps if target in s.targets][0]
@@ -38,7 +39,7 @@ class TestNMMEConfig(unittest.TestCase):
         # the "201901" WSIM run. This offset is handled by the NMME path generator, since
         # other parts of the code have no reason to know about this.
 
-        observed = NCEP(self.source)
+        observed = LeakyBucket(self.source)
         nmme = NMMEForecast(self.source, self.derived, observed, 'Model3', 1969, 2008)
 
         params = {
@@ -68,7 +69,7 @@ class TestNMMEConfig(unittest.TestCase):
         # This test checks another consequence of the offset between WSIM data version and
         # NMME forecast reference times.
 
-        observed = NCEP(self.source)
+        observed = LeakyBucket(self.source)
         nmme = NMMEForecast(self.source, self.derived, observed, 'Model3', 1969, 2008)
         fit_command = nmme.compute_fit_hindcast(varname='Pr', month=9, lead=4)[0].commands[0]
 

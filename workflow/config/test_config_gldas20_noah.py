@@ -43,7 +43,7 @@ class TestGLDAS20NoahConfig(unittest.TestCase):
 
         yearmon = '{year:04d}{month:02d}'.format(year=config.historical_years()[-1], month=4)
 
-        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='latest',
+        steps = generate_steps(config, start=yearmon, stop=yearmon, no_spinup=False, forecasts='none',
                                run_electric_power=False,
                                run_agriculture=False)
 
@@ -70,7 +70,7 @@ class TestGLDAS20NoahConfig(unittest.TestCase):
                                                       start='196404',
                                                       stop='196404',
                                                       no_spinup=False,
-                                                      forecasts='latest',
+                                                      forecasts='none',
                                                       run_electric_power=False,
                                                       run_agriculture=False))
 
@@ -79,6 +79,6 @@ class TestGLDAS20NoahConfig(unittest.TestCase):
                                                       start='201004',
                                                       stop='201004',
                                                       no_spinup=False,
-                                                      forecasts='latest',
+                                                      forecasts='none',
                                                       run_electric_power=False,
                                                       run_agriculture=False))

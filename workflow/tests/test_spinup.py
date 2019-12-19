@@ -18,6 +18,7 @@ from wsim_workflow.spinup import *
 from wsim_workflow.dates import parse_yearmon
 from wsim_workflow.paths import Vardef, DefaultWorkspace, ObservedForcing, Static
 
+
 class FakeForcing(ObservedForcing):
 
     def p_wetdays(self, *, yearmon):
@@ -33,13 +34,17 @@ class FakeForcing(ObservedForcing):
     def temp_monthly(self, *, yearmon):
         return Vardef('temp_{}.tif'.format(yearmon), '1')
 
+    def mean_p_wetdays(self, month: int) -> Vardef:
+        return Vardef('ltmean_{}.tif'.format(month), '1')
+
+
 class BasicConfig(ConfigBase):
 
     def historical_years(self):
-        return range(1948, 2018) # 1948-2017
+        return range(1948, 2018)  # 1948-2017
 
     def result_fit_years(self):
-        return range(1950, 2010) # 1950-2009
+        return range(1950, 2010)  # 1950-2009
 
     def observed_data(self):
         return FakeForcing()
@@ -49,6 +54,7 @@ class BasicConfig(ConfigBase):
 
     def workspace(self):
         return DefaultWorkspace('tmp')
+
 
 class TestSpinup(unittest.TestCase):
 
