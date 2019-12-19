@@ -70,6 +70,7 @@ CORRUPT_HINDCASTS = {
     '1984092800': {'198504'}
 }
 
+
 class CFSStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStatic):
     def __init__(self, source):
         super(CFSStatic, self).__init__(source)
@@ -256,6 +257,8 @@ class NCEP(paths.ObservedForcing):
         )
 
         if year >= 1979:
+            # FIXME call new code in data_sources and Delete compute_noaa_cpc_pwetdays.py
+
             # Download and process files in a single command
             # We do this to avoid including 365 files/year as
             # individual dependencies, clogging up the Makefile.
@@ -345,6 +348,9 @@ class CFSForecast(paths.ForecastForcing):
 
     def p_wetdays(self, *, yearmon=None, target, member=None):
         month = int(target[4:])
+
+        # FIXME use global_prep steps to create wet day ltmeans here instead of assuming they're available
+        # (when they're not part of the ObservedForcing interface)
 
         return paths.Vardef(os.path.join(self.source,
                                          'NCEP',
