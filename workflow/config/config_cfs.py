@@ -553,6 +553,23 @@ class CFSForecast(paths.ForecastForcing):
             commands.forecast_convert(infile, outfile)
         ]
 
+    @staticmethod
+    def last_7_days_of_previous_month(yearmon: str, lag_hours: Optional[int] = None) -> List[str]:
+        # Build an ensemble of 28 forecasts by taking the four
+        # forecasts issued on each of the last 7 days of the month.
+        last_day = dates.get_last_day_of_month(yearmon)
+
+        year, month = dates.parse_yearmon(yearmon)
+
+        members = [datetime.datetime(year, month, day, hour)
+                   for day in range(last_day - 6, last_day + 1)
+                   for hour in (0, 6, 12, 18)]
+
+        if lag_hours is not None:
+            members = [m for m in members if datetime.datetime.utcnow() - m > datetime.timedelta(hours=lag_hours)]
+
+        return [m.strftime('%Y%m%d%H') for m in members]
+
 
 class CFSConfig(ConfigBase):
 
@@ -574,20 +591,7 @@ class CFSConfig(ConfigBase):
     def forecast_ensemble_members(self, model, yearmon, *, lag_hours: Optional[int] = None):
         assert model in self.models()
 
-        # Build an ensemble of 28 forecasts by taking the four
-        # forecasts issued on each of the last 7 days of the month.
-        last_day = dates.get_last_day_of_month(yearmon)
-
-        year, month = dates.parse_yearmon(yearmon)
-
-        members = [datetime.datetime(year, month, day, hour)
-                   for day in range(last_day - 6, last_day + 1)
-                   for hour in (0, 6, 12, 18)]
-
-        if lag_hours is not None:
-            members = [m for m in members if datetime.datetime.utcnow() - m > datetime.timedelta(hours=lag_hours)]
-
-        return [m.strftime('%Y%m%d%H') for m in members]
+        return CFSForecast.last_7_days_of_previous_month(yearmon, lag_hours)
 
     def forecast_targets(self, yearmon):
         return dates.get_next_yearmons(yearmon, 9)
