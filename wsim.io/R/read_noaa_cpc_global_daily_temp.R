@@ -15,14 +15,15 @@
 #'
 #' Data available from \code{ftp://ftp.cpc.ncep.noaa.gov/precip/PEOPLE/wd52ws/global_temp/}
 #'
-#' @param fname     path to file
-#' @param varname   name of variable to extract (one of \code{tmax}, \code{nmax},
-#'                  \code{tmin}, \code{nmin})
-#' @param day_start first day of year to extract
-#' @param day_end   last day of year to extract
+#' @param fname         path to file
+#' @param varname       name of variable to extract (one of \code{tmax}, \code{nmax},
+#'                      \code{tmin}, \code{nmin})
+#' @param day_start     first day of year to extract
+#' @param day_end       last day of year to extract
+#' @param check_defined check that values are defined? (entire grid is not NODATA)
 #' @return a 360x720xN array of daily values for \code{varname}
 #' @export
-read_noaa_cpc_global_daily_temp <- function(fname, varname, day_start, day_end) {
+read_noaa_cpc_global_daily_temp <- function(fname, varname, day_start, day_end, check_defined=TRUE) {
   nx <- 720
   ny <- 360
   valsz <- 4
@@ -41,7 +42,7 @@ read_noaa_cpc_global_daily_temp <- function(fname, varname, day_start, day_end) 
     fh <- file(fname, 'rb')
   }
 
-  current_record <- 1
+  current_record <- 0
 
   read_slice <- function() {
     vals <- readBin(fh, 'numeric', n=ny*nx, size=valsz, endian=endian)
@@ -69,7 +70,7 @@ read_noaa_cpc_global_daily_temp <- function(fname, varname, day_start, day_end) 
 
     vals[vals == na_val] <- NA
 
-    if(all(is.na(vals))) {
+    if(check_defined && all(is.na(vals))) {
       stop(sprintf('No data found for day %d in %s', current_record, fname))
     }
 

@@ -31,6 +31,49 @@ suppressMessages({
 
 logging_init('get_cpc_monthly_mean_temperature')
 
+missing_dates <- c(
+  '19810101',
+  '19810102',
+  '19830426',
+  '19830427',
+  '19830428',
+  '19830429',
+  '19830430',
+  '19840107',
+  '19850101',
+  '19850107',
+  '19850108',
+  '19850112',
+  '19850113',
+  '19850116',
+  '19850119',
+  '19850206',
+  '19850717',
+  '19850810',
+  '19860104',
+  '19860328',
+  '19860920',
+  '19861114',
+  '19861121',
+  '19920731'
+)
+
+get_missing_dates <- function(year, month) {
+  yearmon <- sprintf('%04d%02d', year, month)
+  as.integer(substr(missing_dates[startsWith(missing_dates, yearmon)], 7, 8))
+}
+
+check_missing_data <- function(dat, year, month) {
+  missing_days <- get_missing_dates(year, month)
+  days <- seq_len(days_in_month(ISOdate(year, month, 1)))
+
+  for (i in setdiff(days, missing_days)) {
+    if (all(is.na(dat[,,i]))) {
+      stop(sprintf('Data missing for %04d-%02d-%02d', year, month, i))
+    }
+  }
+}
+
 byte_offset <- function(day, pixel=1) {
   sz <- 4
   nx <- 720
@@ -158,9 +201,12 @@ main <- function(raw_args) {
 
   infof('Extracting data for %04d%02d (days %d-%d) from %s', year, month, start_doy, end_doy, fpath)
 
-  tmin <- read_noaa_cpc_global_daily_temp(fpath, 'tmin', start_doy, end_doy)
-  tmax <- read_noaa_cpc_global_daily_temp(fpath, 'tmax', start_doy, end_doy)
+  tmin <- read_noaa_cpc_global_daily_temp(fpath, 'tmin', start_doy, end_doy, check_defined=FALSE)
+  tmax <- read_noaa_cpc_global_daily_temp(fpath, 'tmax', start_doy, end_doy, check_defined=FALSE)
   tavg <- 0.5*(tmin + tmax)
+
+  # Make sure that values are defined, except for days known to be missing.
+  check_missing_data(tavg, year, month)
 
   wsim.io::write_vars_to_cdf(
     vars = list(
@@ -172,7 +218,8 @@ main <- function(raw_args) {
     attrs = list(
       list(var='tmin', key='units', val='degree_Celsius'),
       list(var='tmax', key='units', val='degree_Celsius'),
-      list(var='tavg', key='units', val='degree_Celsius')))
+      list(var='tavg', key='units', val='degree_Celsius'),
+      list(var='tavg', key='standard_name', val='surface_temperature')))
 
   infof('Wrote min, max, and avg temperatures for %04d%02d to %s', year, month, outfile)
 }
