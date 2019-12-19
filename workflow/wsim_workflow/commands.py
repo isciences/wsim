@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import os
+import re
 from typing import Union, Iterable, Optional, List, Mapping
 
 from .paths import Vardef, gdaldataset2filename
@@ -21,6 +22,11 @@ from . import attributes
 
 def q(txt: str) -> str:
     return '"{}"'.format(txt)
+
+
+def validate_attr(attr: str) -> None:
+    if not re.match(r'^(((\w+)|[*]):)?\w+(=[^\s]+)?$', attr):
+        raise ValueError('Invalid attribute specification: ' + attr)
 
 
 def forecast_convert(infile: str, outfile: str, comment: Optional[str]=None) -> Step:
@@ -297,6 +303,7 @@ def wsim_merge(*,
 
     if attrs:
         for attr in attrs:
+            validate_attr(attr)
             cmd += ['--attr', attr]
 
     return Step(
@@ -338,6 +345,7 @@ def wsim_correct(*,
 
     if attrs:
         for attr in attrs:
+            validate_attr(attr)
             cmd += ['--attr', attr]
 
     if append:
@@ -375,7 +383,8 @@ def wsim_integrate(*,
 
     if attrs:
         for attr in attrs:
-            cmd += ['--attr', attr]
+            validate_attr(attr)
+            cmd += ['--attr', q(attr)]
 
     if window:
         cmd += ['--window', str(window)]
