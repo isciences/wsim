@@ -378,6 +378,8 @@ def wsim_integrate(*,
 
     if type(inputs) is str:
         inputs = [inputs]
+
+    assert len(inputs) >= 1
     for i in inputs:
         cmd += '--input', q(i)
 
