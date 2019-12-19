@@ -18,6 +18,8 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import Union, List, Optional
 
+from . import step
+
 from . import dates
 
 
@@ -120,21 +122,21 @@ class Vardef:
 class ForecastForcing(metaclass=ABCMeta):
 
     @abstractmethod
-    def precip_monthly(self, *, yearmon, target, member):
+    def precip_monthly(self, *, yearmon: str, target: str, member: str) -> Vardef:
         """
         Return a Vardef for the precipitation variable
         """
         pass
 
     @abstractmethod
-    def temp_monthly(self, *, yearmon, target, member):
+    def temp_monthly(self, *, yearmon: str, target: str, member: str) -> Vardef:
         """
         Return a Vardef for the average monthly temperature
         """
         pass
 
     @abstractmethod
-    def p_wetdays(self, *, yearmon, target, member):
+    def p_wetdays(self, *, yearmon: str, target: str, member: str) -> Vardef:
         """
         Return a Vardef for the percentage of wet days in a month
         """
@@ -181,34 +183,34 @@ class ForecastForcing(metaclass=ABCMeta):
 class ObservedForcing(metaclass=ABCMeta):
 
     @abstractmethod
-    def precip_monthly(self, *, yearmon):
+    def precip_monthly(self, *, yearmon: str) -> Vardef:
         """
         Return a Vardef for the precipitation variable
         """
         pass
 
     @abstractmethod
-    def temp_monthly(self, *, yearmon):
+    def temp_monthly(self, *, yearmon: str) -> Vardef:
         """
         Return a Vardef for the average monthly temparature
         """
         pass
 
     @abstractmethod
-    def p_wetdays(self, *, yearmon):
+    def p_wetdays(self, *, yearmon: str) -> Vardef:
         """
         Return a Vardef for the percentage of wet days in a month
         """
         pass
 
-    def prep_steps(self, *, yearmon):
+    def prep_steps(self, *, yearmon: str) -> List[step.Step]:
         """
         Returns one or more Steps needed to prepare this dataset for use
         for a given yearmon
         """
         return []
 
-    def global_prep_steps(self):
+    def global_prep_steps(self) -> List[step.Step]:
         """
         Returns one or more Steps needed to prepare this dataset for use
         (included only once for all yearmons)
@@ -221,7 +223,7 @@ class Static(metaclass=ABCMeta):
     def __init__(self, source):
         self.source = source
 
-    def global_prep_steps(self) -> List['Step']:
+    def global_prep_steps(self) -> List[step.Step]:
         pass
 
     def wc(self) -> Vardef:
@@ -239,7 +241,7 @@ class ElectricityStatic(metaclass=ABCMeta):
     def __init__(self, source):
         self.source = source
 
-    def global_prep_steps(self) -> List['Step']:
+    def global_prep_steps(self) -> List[step.Step]:
         pass
 
     def basins(self) -> Vardef:

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .paths import expand_filename_dates
+from . import paths
 
 import os
 
@@ -24,7 +24,7 @@ def process_filename(txt: str) -> List[str]:
     date ranges present in the filename
     """
     filename = str(txt).split('::')[0]
-    return expand_filename_dates(filename)
+    return paths.expand_filename_dates(filename)
 
 
 def coerce_to_list(thing) -> List:
