@@ -13,13 +13,14 @@
 
 import datetime
 import sys
+from typing import Any, IO, List, Mapping
 
 
-def creation_string():
+def creation_string() -> str:
     return 'Generated on {} by {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ' '.join(sys.argv))
 
 
-def add_line_continuation_characters(command_tokens):
+def add_line_continuation_characters(command_tokens: List[str]) -> List[str]:
     """
     Add a \\ to the end of each command token that precedes an argument token (starting with -)
     """
@@ -32,7 +33,7 @@ def add_line_continuation_characters(command_tokens):
     return command_tokens
 
 
-def substitute_tokens(command_tokens, keys):
+def substitute_tokens(command_tokens: List[str], keys: Mapping[str, Any]) -> List[str]:
     tokens_out = []
 
     for token in command_tokens:
@@ -45,8 +46,9 @@ def substitute_tokens(command_tokens, keys):
     return tokens_out
 
 
-def write_command(buff, command_tokens, indent):
+def write_command(buff: IO, command_tokens: List[str], indent: str) -> None:
     buff.write(indent)
+
     for token in command_tokens:
         buff.write(token)
         if token.endswith('\\'):

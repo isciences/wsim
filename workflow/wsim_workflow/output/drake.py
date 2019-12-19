@@ -11,18 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional, Mapping
+
 import io
 
 from .output_modules import creation_string, add_line_continuation_characters, substitute_tokens, write_command
+from ..step import Step
 
 DEFAULT_FILENAME = 'Drakefile'
 
 
-def header():
+def header() -> str:
     return '; ' + creation_string() + '\n'
 
 
-def write_step(step, keys=None):
+def write_step(step: Step,
+               keys: Optional[Mapping[str, str]] = None) -> str:
     if keys is None:
         keys = {}
 

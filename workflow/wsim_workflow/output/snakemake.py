@@ -13,14 +13,18 @@
 
 import io
 
+from typing import Mapping, Optional
+
+from ..step import Step
+
 DEFAULT_FILENAME = 'Snakefile'
 
 
-def header():
+def header() -> str:
     return ""
 
 
-def write_step(step, keys=None):
+def write_step(step: Step, keys: Optional[Mapping[str, str]] = None) -> str:
 
     if keys is None:
         keys = {}

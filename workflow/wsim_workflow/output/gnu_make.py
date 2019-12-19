@@ -13,12 +13,16 @@
 
 import io
 
+from typing import List, Mapping, Optional
+
 from .output_modules import creation_string, add_line_continuation_characters, substitute_tokens, write_command
+
+from ..step import Step
 
 DEFAULT_FILENAME = 'Makefile'
 
 
-def use_pattern_rules(step):
+def use_pattern_rules(step: Step) -> bool:
     """
     Determine if we should use pattern-style rules when writing a Step
     as a Makefile rule. This can be necessary because GNU Make only supports
@@ -30,7 +34,7 @@ def use_pattern_rules(step):
     return len(step.targets) > 1
 
 
-def patternize(filenames):
+def patternize(filenames: List[str]) -> List[str]:
     """
     Convert each target or dependency in a list to a pattern
     :param filenames: list of targets or dependencies
@@ -39,7 +43,7 @@ def patternize(filenames):
     return [filename.replace('.', '%') for filename in filenames]
 
 
-def patternize_if_needed(step, filenames):
+def patternize_if_needed(step: Step, filenames: List[str]) -> List[str]:
     """
     Convert filenames into patterns, if needed
     :param step step associated with filenames
@@ -49,28 +53,28 @@ def patternize_if_needed(step, filenames):
     return patternize(filenames) if use_pattern_rules(step) else filenames
 
 
-def target_string(step):
+def target_string(step: Step) -> str:
     """
     Generate the target portion of the dependency string (the left-hand-side)
     """
     return ' '.join(patternize_if_needed(step, sorted(list(step.targets))))
 
 
-def dependency_string(step):
+def dependency_string(step: Step) -> str:
     """
     Generate the target portion of the dependency string (the right-hand-side)
     """
     return ' '.join(patternize_if_needed(step, sorted(list(step.dependencies))))
 
 
-def target_separator(use_order_only_rules):
+def target_separator(use_order_only_rules: bool) -> str:
     if use_order_only_rules:
         return ' : | '
     else:
         return ' : '
 
 
-def header():
+def header() -> str:
     return '\n'.join([
         '# ' + creation_string(),
         '',
@@ -80,7 +84,9 @@ def header():
     ]) + 2*'\n'
 
 
-def write_step(step, keys=None, use_order_only_rules=True):
+def write_step(step: Step,
+               keys: Optional[Mapping[str, str]] = None,
+               use_order_only_rules: Optional[bool] = True) -> str:
     """
     Output this Step in the rule/recipe format used by GNU Make
 
