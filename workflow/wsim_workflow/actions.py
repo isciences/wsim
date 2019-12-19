@@ -39,12 +39,25 @@ def create_forcing_file(workspace: DefaultWorkspace,
                         *,
                         yearmon: str,
                         model: Optional[str] = None,
-                        target: Optional[str]=None,
-                        member: Optional[str]=None) -> List[Step]:
+                        target: Optional[str] = None,
+                        member: Optional[str] = None) -> List[Step]:
 
-    precip = data.precip_monthly(yearmon=yearmon, target=target, member=member)
-    temp = data.temp_monthly(yearmon=yearmon, target=target, member=member)
-    wetdays = data.p_wetdays(yearmon=yearmon, target=target, member=member)
+    if target:
+        assert member
+        assert model
+        assert isinstance(data, ForecastForcing)
+
+        precip = data.precip_monthly(yearmon=yearmon, target=target, member=member)
+        temp = data.temp_monthly(yearmon=yearmon, target=target, member=member)
+        wetdays = data.p_wetdays(yearmon=yearmon, target=target, member=member)
+    else:
+        assert not model
+        assert not member
+        assert isinstance(data, ObservedForcing)
+
+        precip = data.precip_monthly(yearmon=yearmon)
+        temp = data.temp_monthly(yearmon=yearmon)
+        wetdays = data.p_wetdays(yearmon=yearmon)
 
     return [
         wsim_merge(
