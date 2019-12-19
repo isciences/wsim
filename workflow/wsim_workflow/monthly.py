@@ -104,6 +104,14 @@ def monthly_forecast(config: Config,
                      *, forecast_lag_hours: Optional[int] = None) -> List[Step]:
     steps = []
 
+    if not config.models():
+        raise ValueError("Forecast requested for {} iteration but configuration specifies no models. "
+                         "Did you want to use --forecasts none?".format(yearmon))
+
+    if not config.forecast_targets(yearmon):
+        raise ValueError("Forecast requested for {} iteration but configuration specifies no forecast targets. "
+                         "Did you want to use --forecasts none?".format(yearmon))
+
     for model in config.models():
         if forecast_lag_hours is not None:
             available = len(config.forecast_ensemble_members(model, yearmon, lag_hours=forecast_lag_hours))
