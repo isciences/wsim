@@ -17,6 +17,7 @@ import re
 
 from typing import Generator, List, Optional, Tuple, Union
 
+RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
 all_months = range(1, 13)
 
 
@@ -29,7 +30,7 @@ def is_yearmon(s: str) -> bool:
 
     _, month = parse_yearmon(s)
 
-    return month >= 1 and month <= 12
+    return 1 <= month <= 12
 
 
 def parse_yearmon(yearmon: str) -> Tuple[int, int]:
@@ -215,7 +216,8 @@ def format_range(start, end, step=None) -> str:
     else:
         return '[{}:{}]'.format(start, end)
 
-def available_yearmon_range(*, window: int, month: Optional[int]=None, start_year: int, end_year: int) -> str:
+
+def available_yearmon_range(*, window: int, month: Optional[int] = None, start_year: int, end_year: int) -> str:
     assert start_year + (window-1) // 12 <= end_year
 
     range_str = '[{begin}:{end}:{step}]'
@@ -239,3 +241,25 @@ def get_lead_months(yearmon: str, target: str) -> int:
         lead += 1
 
     return lead
+
+
+def expand_filename_dates(filename: str) -> List[str]:
+    # Short-circuit regex test.
+    # This statement improves program runtime by ~50%.
+    if '[' not in filename:
+        return [filename]
+
+    match = re.search(RE_DATE_RANGE, filename)
+
+    if not match:
+        return [filename]
+
+    start = match.group('start')
+    stop = match.group('stop')
+    step = int(match.group('step') or 1)
+
+    filenames = []
+    for d in expand_date_range(start, stop, step):
+        filenames.append(filename[:match.start()] + d + filename[match.end():])
+
+    return filenames

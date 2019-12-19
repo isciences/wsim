@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import paths
+from . import dates
 
 import os
 
@@ -24,7 +24,7 @@ def process_filename(txt: str) -> List[str]:
     date ranges present in the filename
     """
     filename = str(txt).split('::')[0]
-    return paths.expand_filename_dates(filename)
+    return dates.expand_filename_dates(filename)
 
 
 def coerce_to_list(thing) -> List:
@@ -46,7 +46,8 @@ class Step:
                  commands: Optional[List[List[str]]]=None,
                  comment: Optional[str]=None,
                  consumes: ZeroOrMoreStrings=None,
-                 working_directories: ZeroOrMoreStrings=None):
+                 working_directories: ZeroOrMoreStrings=None,
+                 lock: Optional[str] = None):
         """
         Initialize a workflow step
 
@@ -84,6 +85,7 @@ class Step:
                 self.dependencies |= set(process_filename(d))
 
         self.comment = comment
+        self.lock = lock
 
         self.validate()
 
@@ -108,6 +110,8 @@ class Step:
         supplied by this step will be removed from the dependency list.
         """
 
+        assert not self.lock  # Not implemented yet
+
         combined_targets = set(self.targets)
         combined_dependencies = set(self.dependencies)
         combined_commands = list(self.commands)
@@ -115,6 +119,8 @@ class Step:
         combined_working_directories = set(self.working_directories)
 
         for other in others:
+            assert not other.lock  # Not implemented yet
+
             # Add dependencies of other step that are not supplied by a
             # previous step to our dependency list
             for d in other.dependencies:

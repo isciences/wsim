@@ -15,6 +15,7 @@ import unittest
 
 from wsim_workflow.dates import *
 
+
 class TestDates(unittest.TestCase):
 
     def test_parse_yearmon(self):
@@ -133,3 +134,14 @@ class TestDates(unittest.TestCase):
 
         with self.assertRaises(Exception):
             get_lead_months('201901', '201812')
+
+    def test_expand_filename_dates(self):
+        self.assertListEqual(
+            ['hurricane.nc'],
+            expand_filename_dates('hurricane.nc')
+        )
+
+        self.assertListEqual(
+            ['hurricane_1938.nc', 'hurricane_1940.nc', 'hurricane_1942.nc', 'hurricane_1944.nc'],
+            expand_filename_dates('hurricane_[1938:1944:2].nc')
+        )

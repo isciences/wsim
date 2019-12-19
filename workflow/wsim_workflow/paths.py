@@ -20,10 +20,6 @@ from typing import Union, List, Optional
 
 from . import step
 
-from . import dates
-
-
-RE_DATE_RANGE = re.compile('\[(?P<start>\d+):(?P<stop>\d+)(:(?P<step>\d+))?\]')
 RE_GDAL_DATASET = re.compile('^(?P<driver>\w+:)?(?P<filename>[^:]+)(?P<dataset>:\w+)?$')
 
 
@@ -77,28 +73,6 @@ def date_range(*args):
         raise Exception('Invalid date range')
 
     return '[{}:{}:{}]'.format(begin, end, step)
-
-
-def expand_filename_dates(filename: str) -> List[str]:
-    # Short-circuit regex test.
-    # This statement improves program runtime by ~50%.
-    if '[' not in filename:
-        return [filename]
-
-    match = re.search(RE_DATE_RANGE, filename)
-
-    if not match:
-        return [filename]
-
-    start = match.group('start')
-    stop = match.group('stop')
-    step = int(match.group('step') or 1)
-
-    filenames = []
-    for d in dates.expand_date_range(start, stop, step):
-        filenames.append(filename[:match.start()] + d + filename[match.end():])
-
-    return filenames
 
 
 class Vardef:

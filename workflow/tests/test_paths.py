@@ -37,17 +37,6 @@ class TestPaths(unittest.TestCase):
             date_range(['201402', '201403', '201404', '201405', '201406'])
         )
 
-    def test_expand_filename_dates(self):
-        self.assertListEqual(
-            ['hurricane.nc'],
-            expand_filename_dates('hurricane.nc')
-        )
-
-        self.assertListEqual(
-            ['hurricane_1938.nc', 'hurricane_1940.nc', 'hurricane_1942.nc', 'hurricane_1944.nc'],
-            expand_filename_dates('hurricane_[1938:1944:2].nc')
-        )
-
     def test_gdal_dataset2filename(self):
         self.assertEqual(gdaldataset2filename("NC:outputs.nc:precip"), "outputs.nc")
         self.assertEqual(gdaldataset2filename("inputs.shp"), "inputs.shp")
