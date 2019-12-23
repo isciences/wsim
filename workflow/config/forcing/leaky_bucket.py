@@ -18,6 +18,7 @@ from typing import List
 from wsim_workflow import actions, dates, paths
 from wsim_workflow.paths import Vardef
 from wsim_workflow.step import Step
+from wsim_workflow.data_sources import cpc_daily_precipitation
 
 
 class LeakyBucket(paths.ObservedForcing):
@@ -141,46 +142,12 @@ class LeakyBucket(paths.ObservedForcing):
         )
 
         if year >= 1979:
-            # FIXME call new code in data_sources and Delete compute_noaa_cpc_pwetdays.py
-
-            # Download and process files in a single command
-            # We do this to avoid including 365 files/year as
-            # individual dependencies, clogging up the Makefile.
-            #
-            # If the precip files already exist, they won't be
-            # re-downloaded.
-            steps.append(
-                Step(
-                    targets=self.p_wetdays(yearmon=yearmon).file,
-                    dependencies=[],
-                    commands=[
-                        [
-                            os.path.join('{BINDIR}',
-                                         'utils',
-                                         'noaa_cpc_daily_precip',
-                                         'download_noaa_cpc_daily_precip.py'),
-                            '--yearmon', yearmon,
-                            '--output_dir', os.path.join(self.source,
-                                                         'NCEP',
-                                                         'daily_precip')
-                        ],
-                        [
-                            os.path.join('{BINDIR}',
-                                         'utils',
-                                         'noaa_cpc_daily_precip',
-                                         'compute_noaa_cpc_pwetdays.py'),
-                            '--bindir', '{BINDIR}',
-                            '--yearmon', yearmon,
-                            '--input_dir', os.path.join(self.source,
-                                                        'NCEP',
-                                                        'daily_precip'),
-                            '--output_dir', os.path.join(self.source,
-                                                         'NCEP',
-                                                         'wetdays')
-                        ]
-                    ]
-                )
-            )
+            steps += cpc_daily_precipitation.download_monthly_precipitation(
+                yearmon=yearmon,
+                workdir=os.path.join(self.source,
+                                     'NCEP',
+                                     'daily_precip'),
+                wetdays_fname=self.p_wetdays(yearmon=yearmon).file)
 
         return steps
 
