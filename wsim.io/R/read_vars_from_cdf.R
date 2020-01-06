@@ -17,7 +17,7 @@ BUILTIN_ATTRIBUTES = c('class', 'dim', 'dimnames', 'names')
 #'
 #' @inheritParams parse_vardef
 #' @inheritParams read_vars
-#' @param vars A list of variables to read.  If NULL (default),
+#' @param vars A character vector of variable names to read.  If NULL (default),
 #'             all variables will be read.
 #' @param as.data.frame return data in a data frame
 #' @return structure described in \code{\link{read_vars}}, or a data frame
