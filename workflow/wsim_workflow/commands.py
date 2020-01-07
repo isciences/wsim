@@ -361,7 +361,7 @@ def wsim_correct(*,
 
 def wsim_integrate(*,
                    stats: Union[str, List[str]],
-                   inputs: Union[str, List[str]],
+                   inputs: Union[str, List[str], Vardef, List[Vardef]],
                    weights: Optional[List[float]] = None,
                    output: str,
                    window: Optional[int]=None,
@@ -376,7 +376,7 @@ def wsim_integrate(*,
     for stat in stats:
         cmd += ['--stat', stat]
 
-    if type(inputs) is str:
+    if type(inputs) is not list:
         inputs = [inputs]
 
     assert len(inputs) >= 1

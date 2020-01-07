@@ -561,6 +561,9 @@ def standard_anomaly_summary(config: ConfigBase,
 
 
 def correct_forecast(data: ForecastForcing, *, yearmon: str, member: str, target: str, lead_months: int) -> List[Step]:
+    if not data.requires_bias_correction():
+        return []
+
     _, target_month = parse_yearmon(target)
 
     return [
