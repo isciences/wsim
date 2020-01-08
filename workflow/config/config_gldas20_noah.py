@@ -20,7 +20,7 @@ import os
 
 # This file provides an example configuration using the results of the
 # Noah land surface model, as run in GLDAS v2.0.
-# This dataset is available from 1948-2010 at the following URL:
+# This dataset is available from 1948-2014 at the following URL:
 # https://disc.sci.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_V2.0/summary?keywords=GLDAS
 
 class GLDAS20_NoahStatic(paths.Static):
@@ -77,7 +77,7 @@ class GLDAS20_NoahConfig(ConfigBase):
         return False
 
     def historical_years(self):
-        return range(1948, 2011)
+        return range(1948, 2015)
 
     def result_fit_years(self):
         return range(1950, 2010)  # 1950-2009 gives even 60-year period

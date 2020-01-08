@@ -82,7 +82,11 @@ main <- function(raw_args){
   }
 
   monthdays <- wsim.gldas::get_ndays_from_fname(fname)
-  gldas_list <- wsim.io::read_vars_from_cdf(fname)
+
+  # Need to specify vars, otherwise the extra var 'time_bnds' prevents lat and lon from being read as real dimensions:
+  gldas_list <- wsim.io::read_vars_from_cdf(fname, vars = c('Evap_tavg', 'PotEvap_tavg', 'Qs_acc', 'Qsb_acc', 'Qsm_acc',
+                                                            'Rainf_f_tavg', 'SoilMoi0_10cm_inst', 'SoilMoi10_40cm_inst',
+                                                            'SoilMoi40_100cm_inst', 'Tair_f_inst'))
 
   # Create new raster layers using arithmetic on the raster brick
   T         <- gldas_list$data$Tair_f_inst - 273.15
