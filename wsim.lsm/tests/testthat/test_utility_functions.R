@@ -68,3 +68,32 @@ test_that('we can convert forcing units to those required by the model', {
   expect_equal(5, temp_celsius(5, 'degree_Celsius'))
   expect_equal(5, temp_celsius(278.15, 'K'))
 })
+
+test_that('cell areas are computed correctly', {
+  dims <- c(360, 720)
+  extent <- c(-180, 180, -90, 90)
+
+  area_hlf_deg <- cell_areas_m2(extent, dims)
+
+  expect_equal(unname(area_hlf_deg[108, 17]), 2492775206)
+})
+
+test_that('date calculations are correct', {
+  expect_equal(next_yyyymm('201612'), '201701')
+  expect_equal(next_yyyymm('201701'), '201702')
+
+  expect_equal(days_in_yyyymm('201701'), 31)
+  expect_equal(days_in_yyyymm('201702'), 28)
+  expect_equal(days_in_yyyymm('201602'), 29)
+})
+
+test_that('we can compute daylength', {
+  daylength <- day_length_matrix(2017, 02, c(-180, 180, -90, 90), 181, 1)
+
+  expect_true(!any(is.na(daylength)))
+  expect_true(!any(daylength < 0 | daylength > 1))
+
+  expect_equal(daylength[1], 0)    # dark at the north pole
+  expect_equal(daylength[181], 1)  # light at the south pole
+  expect_equal(daylength[91], 0.5) # 12 hours of light at the equator
+})
