@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -14,6 +14,8 @@
 require(testthat)
 
 context('LSM functions')
+
+RANDOM_TRIALS <- 100
 
 test_that('all precip accumulates as snow when temp < -1 C', {
   expect_equal(3.2, snow_accum(3.2, -5))
@@ -185,3 +187,109 @@ test_that('dWdt calculation tolerates NODATA inputs', {
   expect_false(is.na(hydro$dWdt))
 })
 
+test_that('mass is conserved in daily hydro calculations', {
+  for (i in seq_len(RANDOM_TRIALS)) {
+    P <- 0
+    Sa <- 0
+    Sm <- 0
+
+    precip <- rbinom(1, 1, prob=0.5)
+    if (precip) {
+      P <- runif(1, min=0, max=100)
+    }
+
+    snow_accum <- rbinom(1, 1, prob=0.5)
+    if (snow_accum) {
+      Sa <- runif(1)*P  # some fraction of precip accumulates as snow
+    } else {
+      snow_melt <- rbinom(1, 1, prob=0.5)
+      if (snow_melt) {
+        Sm <- runif(1, min=0, max=10) # generate some snowmelt in addition to any precip
+      }
+    }
+
+    E0 <- runif(1, min=0, max=100)
+    Wc <- runif(1, min=0, max=300)
+    Ws <- runif(1)*Wc
+
+    nDays <- runif(1, min=1, max=40)
+    pWetDays <- runif(1)
+
+    hydro <- daily_hydro(P, Sa, Sm, E0, Ws, Wc, nDays, pWetDays)
+
+    mass_in <- P - Sa + Sm
+    mass_out <- hydro$E + hydro$R
+
+    expect_equal(mass_in - mass_out, hydro$dWdt)
+  }
+})
+
+test_that('mass is conserved in runoff detention', {
+  set.seed(456)
+  for (i in seq_len(RANDOM_TRIALS)) {
+    precip_falls <- rbinom(1, 1, 0.5)
+
+    if (precip_falls) {
+      Pr <- runif(1, min=0, max=40)
+    } else {
+      Pr <- 0
+    }
+
+    snow_melts <- rbinom(1, 1, 0.3)
+    if (snow_melts) {
+      Sm <- runif(1, min=0, max=40)
+      melt_month <- sample(1:4, 1)
+      Sa <- 0
+    } else {
+      Sm <- 0
+      melt_month <- 0
+
+      snow_accumulates <- rbinom(1, 1, 0.3)
+      if (snow_accumulates) {
+        Sa <- Pr #runif(1)*Pr
+      } else {
+        Sa <- 0
+      }
+    }
+
+    detained_runoff <- rbinom(1, 1, 0.8)
+    if (detained_runoff) {
+      Dr <- runif(1, min=0, max=100)
+    } else {
+      Dr <- 0
+    }
+
+    detained_snowmelt <- rbinom(1, 1, 0.3)
+    if (detained_snowmelt) {
+      Ds <- runif(1, min=0, max=100)
+    } else {
+      Ds <- 0
+    }
+
+    elevation <- runif(1, min=0, max=1000)
+
+    if ((precip_falls || snow_melts) && !snow_accumulates) {
+      runoff_produced <- rbinom(1, 1, 0.8)
+
+      if (runoff_produced) {
+        R <- runif(1)*(Pr + Sm)
+      } else {
+        R <- 0
+      }
+    } else {
+      R <- 0
+    }
+
+    P <- Pr + Sm - Sa
+
+    detained <- calc_detained(R, Pr, P, Sm, Dr, Ds, elevation, melt_month)
+
+    initial_mass <- Dr + Ds
+    final_mass <- (Ds + detained$dDsdt) + (Dr + detained$dDrdt)
+
+    mass_in <- R
+    mass_out <- detained$Rp + detained$Rs
+
+    expect_equal(mass_in - mass_out, final_mass - initial_mass)
+  }
+})

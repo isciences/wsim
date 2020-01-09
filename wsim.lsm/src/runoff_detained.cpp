@@ -69,7 +69,11 @@ List calc_detained (const NumericVector & R,
                     const IntegerVector & melt_month) {
   NumericVector Rp = no_init(R.size());
   NumericVector Rs = no_init(R.size());
+  NumericVector dDrdt = no_init(R.size());
   NumericVector dDsdt = no_init(R.size());
+
+  double beta = 0.50;  // fraction of detained volume that leaves detention
+  double gamma = 0.50; // fraction of runoff that does not enter detention
 
   Rp.attr("dim") = R.attr("dim");
   Rs.attr("dim") = R.attr("dim");
@@ -80,8 +84,8 @@ List calc_detained (const NumericVector & R,
     double Xs = 0;
 
     if (P[i] != 0) {
-      Xr = R[i] * Pr[i] / P[i];
-      Xs = R[i] * Sm[i] / P[i];
+      Xr = R[i] * Pr[i] / P[i]; // runoff due to precipitation
+      Xs = R[i] * Sm[i] / P[i]; // runoff due to snowmelt
 
       if (std::isnan(Xr)) {
         Xr = 0.0;
@@ -91,14 +95,16 @@ List calc_detained (const NumericVector & R,
       }
     }
 
-    Rp[i] = 0.5*(Dr[i] + Xr);
+    Rp[i] = gamma*Xr + beta*Dr[i];
     Rs[i] = runoff_detained_snowpack_cpp(Ds[i], Xs, melt_month[i], z[i]);
 
     dDsdt[i] = Xs - Rs[i];
+    dDrdt[i] = (1.0 - gamma)*Xr - beta*Dr[i];
   }
 
   return List::create(
     Named("dDsdt")=dDsdt,
+    Named("dDrdt")=dDrdt,
     Named("Rp")=Rp,
     Named("Rs")=Rs
   );

@@ -82,7 +82,7 @@ run <- function(static, state, forcing) {
     Snowpack= state$Snowpack + coalesce(Sa-Sm, 0.0),
     snowmelt_month= melt_month,
     Ws= state$Ws + coalesce(dWdt, 0.0),
-    Dr= detained$Rp, # TODO resolve discrepancy with manual
+    Dr= state$Dr + coalesce(detained$dDrdt, 0.0),
     Ds= state$Ds + coalesce(detained$dDsdt, 0.0),
     yearmon= next_yyyymm(state$yearmon)
   )
