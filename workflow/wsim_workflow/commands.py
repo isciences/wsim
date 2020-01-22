@@ -418,6 +418,7 @@ def wsim_composite(*,
                    mask: Optional[str]=None,
                    clamp: Optional[int]=None,
                    output: str,
+                   causes: Optional[str] = None,
                    comment: Optional[str]=None) -> Step:
     cmd = [os.path.join('{BINDIR}', 'wsim_composite.R')]
 
@@ -438,11 +439,14 @@ def wsim_composite(*,
     if clamp:
         cmd += ['--clamp', str(clamp)]
 
+    if causes:
+        cmd += ['--causes_from', causes]
+
     cmd += ['--output', q(output)]
 
     return Step(
         targets=output,
-        dependencies=surplus + deficit + [mask],
+        dependencies=surplus + deficit + [mask, causes],
         commands=[cmd],
         comment=comment
     )

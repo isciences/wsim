@@ -339,6 +339,7 @@ def composite_indicator_adjusted(workspace: DefaultWorkspace,
             deficit=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target),
                             'deficit_rp').read_as('deficit')],
             both_threshold=3,
+            causes=workspace.composite_summary(yearmon=yearmon, window=window, target=target),
             output=workspace.composite_summary_adjusted(yearmon=yearmon, window=window, target=target),
             clamp=60
         )
