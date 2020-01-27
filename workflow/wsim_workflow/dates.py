@@ -234,13 +234,10 @@ def available_yearmon_range(*, window: int, month: Optional[int] = None, start_y
 def get_lead_months(yearmon: str, target: str) -> int:
     assert target >= yearmon
 
-    # dumb implementation, can improve later
-    lead = 0
-    while yearmon < target:
-        yearmon = add_months(yearmon, 1)
-        lead += 1
+    y1, m1 = parse_yearmon(yearmon)
+    y2, m2 = parse_yearmon(target)
 
-    return lead
+    return (y2 - y1)*12 + (m2-m1)
 
 
 def expand_filename_dates(filename: str) -> List[str]:

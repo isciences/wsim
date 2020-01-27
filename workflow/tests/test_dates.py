@@ -131,6 +131,8 @@ class TestDates(unittest.TestCase):
     def test_lead_months(self):
         self.assertEqual(0, get_lead_months('201812', '201812'))
         self.assertEqual(2, get_lead_months('201812', '201902'))
+        self.assertEqual(4, get_lead_months('194804', '194808'))
+        self.assertEqual(863, get_lead_months('194801', '201912'))
 
         with self.assertRaises(Exception):
             get_lead_months('201901', '201812')
