@@ -199,6 +199,10 @@ class ForecastForcing(metaclass=ABCMeta):
         return []
 
     @staticmethod
+    def requires_bias_correction() -> bool:
+        return True
+
+    @staticmethod
     def global_prep_steps():
         """
         Returns one or more Steps needed to prepare this dataset for use

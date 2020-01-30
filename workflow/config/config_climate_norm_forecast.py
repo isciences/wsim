@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -11,25 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This configuration file is provided as an example of an automated operational WSIM workflow.
-
 from typing import Optional
 
+from wsim_workflow.config_base import ConfigBase
 from wsim_workflow import dates
 from wsim_workflow import paths
 
-from wsim_workflow.config_base import ConfigBase
-
 from forcing.leaky_bucket import LeakyBucket
-from forcing.cfsv2 import CFSForecast
+from forcing.climate_norm import ClimateNormForecast
 from static.default_static import DefaultStatic
 
 
-class CFSConfig(ConfigBase):
+class ClimateNormForecastConfig(ConfigBase):
 
     def __init__(self, source, derived):
         self._observed = LeakyBucket(source)
-        self._forecast = {'CFSv2': CFSForecast(source, derived, self._observed)}
+        self._forecast = {'climate_norm': ClimateNormForecast(source, derived, self._observed, 1980, 2009)}
         self._static = DefaultStatic(source)
         self._workspace = paths.DefaultWorkspace(derived)
 
@@ -40,12 +37,12 @@ class CFSConfig(ConfigBase):
         return range(1950, 2010)  # 1950-2009
 
     def models(self):
-        return ['CFSv2']
+        return self._forecast.keys()
 
     def forecast_ensemble_members(self, model, yearmon, *, lag_hours: Optional[int] = None):
         assert model in self.models()
 
-        return CFSForecast.last_7_days_of_previous_month(yearmon, lag_hours)
+        return '1'
 
     def forecast_targets(self, yearmon):
         return dates.get_next_yearmons(yearmon, 9)
@@ -63,4 +60,4 @@ class CFSConfig(ConfigBase):
         return self._workspace
 
 
-config = CFSConfig
+config = ClimateNormForecastConfig
