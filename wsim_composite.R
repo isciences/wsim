@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -22,7 +22,7 @@ suppressMessages({
 '
 Compute composite indicators
 
-Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> [--mask=<file>] [--clamp=<value>] --output=<file>
+Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> [--mask=<file>] [--clamp=<value>] [--causes_from=<file>] --output=<file>
 
 Options:
 --surplus <file>...      One or more variables containing return periods that represent surpluses
@@ -31,6 +31,7 @@ Options:
 --output <file>          Output file containing composite indicators
 --mask <file>            Optional mask to use for computed indicators
 --clamp <value>          Optional absolute value at which to clamp inputs
+--causes_from <file>     Optionally copy surplus_cause and deficit_cause from file instead of computing from inputs
 '->usage
 
 clamp <- function(vals, minval, maxval) {
@@ -100,12 +101,35 @@ main <- function(raw_args) {
                         # indicators.
                         0 * max_surplus_values * min_deficit_values)
 
+  if (is.null(args$causes_from)) {
+    # Compute causes based on inputs
+    deficit_cause <- min_deficit_indices * mask
+    deficit_cause_flags <- seq_len(dim(deficits)[3])
+    deficit_cause_flag_meanings <- paste(dimnames(deficits)[[3]], collapse=" ")
+
+    surplus_cause <- max_surplus_indices * mask
+    surplus_cause_flags <- seq_len(dim(surpluses)[3])
+    surplus_cause_flag_meanings <- paste(dimnames(surpluses)[[3]], collapse=" ")
+  } else {
+    # Copy causes from another file (used for adjusted composites)
+    wsim.io::infof('Reading surplus and deficit causes from %s', args$causes_from)
+
+    causes <- wsim.io::read_vars(sprintf('%s::deficit_cause,surplus_cause', args$causes_from))
+    deficit_cause <- causes$data$deficit_cause * mask
+    deficit_cause_flags <- attr(causes$data$deficit_cause, 'flag_values')
+    deficit_cause_flag_meanings <- attr(causes$data$deficit_cause, 'flag_meanings')
+
+    surplus_cause <- causes$data$surplus_cause * mask
+    surplus_cause_flags <- attr(causes$data$surplus_cause, 'flag_values')
+    surplus_cause_flag_meanings <- attr(causes$data$surplus_cause, 'flag_meanings')
+  }
+
   cdf_data <- list(
     deficit= min_deficit_values*mask,
-    deficit_cause= min_deficit_indices*mask,
+    deficit_cause= deficit_cause,
 
     surplus= max_surplus_values*mask,
-    surplus_cause= max_surplus_indices*mask,
+    surplus_cause= surplus_cause,
 
     both= both_values*mask
   )
@@ -114,14 +138,14 @@ main <- function(raw_args) {
     list(var="deficit", key="long_name", val="Composite Deficit Index"),
 
     list(var="deficit_cause", key="long_name", val="Cause of Deficit"),
-    list(var="deficit_cause", key="flag_values", val=1:dim(deficits)[3], prec="byte"),
-    list(var="deficit_cause", key="flag_meanings", val=paste(dimnames(deficits)[[3]], collapse=" "), prec="text"),
+    list(var="deficit_cause", key="flag_values", val=deficit_cause_flags, prec="byte"),
+    list(var="deficit_cause", key="flag_meanings", val=deficit_cause_flag_meanings, prec="text"),
 
     list(var="surplus", key="long_name", val="Composite Surplus Index"),
 
     list(var="surplus_cause", key="long_name", val="Cause of Surplus"),
-    list(var="surplus_cause", key="flag_values", val=1:dim(surpluses)[3], prec="byte"),
-    list(var="surplus_cause", key="flag_meanings", val=paste(dimnames(surpluses)[[3]], collapse=" "), prec="text"),
+    list(var="surplus_cause", key="flag_values", val=surplus_cause_flags, prec="byte"),
+    list(var="surplus_cause", key="flag_meanings", val=surplus_cause_flag_meanings, prec="text"),
 
     list(var="both", key="long_name", val="Composite Combined Surplus & Deficit Index"),
     list(var="both", key="threshold", val=args$both_threshold)
