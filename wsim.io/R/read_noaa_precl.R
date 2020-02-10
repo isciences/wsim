@@ -64,8 +64,6 @@ download_precl <- function(fname, year, month) {
   url <- precl_url(year)
 
   temp_fname <- tempfile()
-  expected_size <- (stop - start) + 1
-  infof('Downloading %d bytes (%d - %d) from %s', expected_size, start, stop, url)
 
   curl_range(url, start, stop, temp_fname)
 
