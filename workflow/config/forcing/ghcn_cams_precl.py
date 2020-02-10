@@ -18,7 +18,7 @@ from typing import List
 from wsim_workflow import actions, dates, paths
 from wsim_workflow.paths import Vardef
 from wsim_workflow.step import Step
-from wsim_workflow.data_sources import cpc_daily_precipitation, precl
+from wsim_workflow.data_sources import cpc_daily_precipitation, ghcn_cams, precl
 
 
 class GHCN_CAMS_PRECL(paths.ObservedForcing):
@@ -27,7 +27,9 @@ class GHCN_CAMS_PRECL(paths.ObservedForcing):
         self.source = source
 
     def temp_monthly(self, *, yearmon: str) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'NCEP', 'T', 'T_{yearmon}.nc'.format(yearmon=yearmon)), 'T')
+        year, _ = dates.parse_yearmon(yearmon)
+
+        return paths.Vardef(os.path.join(self.source, 'GHCN_CAMS', str(year), 'ghcn_cams_{yearmon}.nc'.format(yearmon=yearmon)), 'T')
 
     def precip_monthly(self, *, yearmon: str) -> paths.Vardef:
         year, _ = dates.parse_yearmon(yearmon)
@@ -54,30 +56,13 @@ class GHCN_CAMS_PRECL(paths.ObservedForcing):
                                          'wetdays_ltmean_month_{month:02d}.nc'.format(month=month)),
                             'pWetDays')
 
+    def ghcn_cams_grib(self) -> str:
+        return os.path.join(self.source, 'GHCN_CAMS', ghcn_cams.GHCN_CAMS_GRIB)
+
     def global_prep_steps(self) -> List[Step]:
         return \
-            self.download_monthly_temp_and_precip_files() + \
+            ghcn_cams.download_ghcn_cams(self.ghcn_cams_grib()) + \
             actions.compute_wetday_ltmeans(self, 1979, 2008)
-
-    def download_monthly_temp_and_precip_files(self) -> List[Step]:
-        """
-        Steps to download (or update) the t.long and p.long full data sets from NCEP.
-        Because this is a single step (no matter which yearmon we're running), we can't
-        include it in prep_steps below.
-        """
-        return [
-            Step(
-                targets=self.full_temp_file(),
-                dependencies=[],
-                commands=[
-                    [
-                        'wget', '--continue',
-                        '--directory-prefix', os.path.join(self.source, 'NCEP'),
-                        'ftp://ftp.cpc.ncep.noaa.gov/wd51yf/global_monthly/gridded_binary/t.long'
-                    ]
-                ]
-            )
-        ]
 
     def prep_steps(self, *, yearmon: str) -> List[Step]:
         """
@@ -92,27 +77,11 @@ class GHCN_CAMS_PRECL(paths.ObservedForcing):
         year, month = dates.parse_yearmon(yearmon)
 
         # Extract netCDF of monthly temperature from full binary file
-        steps.append(
-            Step(
-                targets=self.temp_monthly(yearmon=yearmon).file,
-                dependencies=self.full_temp_file(),
-                commands=[
-                    [
-                        os.path.join('{BINDIR}',
-                                     'utils',
-                                     'noaa_global_leaky_bucket',
-                                     'read_binary_grid.R'),
-                        '--input',   self.full_temp_file(),
-                        '--update_url', 'ftp://ftp.cpc.ncep.noaa.gov/wd51yf/global_monthly/gridded_binary/t.long',
-                        '--output',  self.temp_monthly(yearmon=yearmon).file,
-                        '--var',     'T',
-                        '--yearmon', yearmon
-                    ]
-                ]
-            )
-        )
-
-        steps += precl.download_precl(yearmon=yearmon, output_filename=self.precip_monthly(yearmon=yearmon).file)
+        steps += ghcn_cams.extract_monthly_temperature(grib_file=self.ghcn_cams_grib(),
+                                                       output_filename=self.temp_monthly(yearmon=yearmon).file,
+                                                       yearmon=yearmon)
+        steps += precl.download_precl(yearmon=yearmon,
+                                      output_filename=self.precip_monthly(yearmon=yearmon).file)
 
         if year >= 1979:
             steps += cpc_daily_precipitation.download_monthly_precipitation(
@@ -123,6 +92,3 @@ class GHCN_CAMS_PRECL(paths.ObservedForcing):
                 wetdays_fname=self.p_wetdays(yearmon=yearmon).file)
 
         return steps
-
-    def full_temp_file(self) -> str:
-        return os.path.join(self.source, 'NCEP', 't.long')
