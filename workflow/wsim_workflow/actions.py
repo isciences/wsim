@@ -384,18 +384,18 @@ def compute_observed_forcing_fit_for_hindcast_period(forecast: ForecastForcing, 
     start = dates.format_yearmon(min_fit_year, month)
     stop = dates.format_yearmon(max_fit_year, month)
 
-    rng = dates.format_range(start, stop, 12)
+    rng = dates.expand_date_range(start, stop, 12)
 
     if varname == 'Pr':
-        inputs = forecast.observed().precip_monthly(yearmon=rng).read_as('Pr')
+        inputs = [forecast.observed().precip_monthly(yearmon=x).read_as('Pr') for x in rng]
     elif varname == 'T':
-        inputs = forecast.observed().temp_monthly(yearmon=rng).read_as('T')
+        inputs = [forecast.observed().temp_monthly(yearmon=x).read_as('T') for x in rng]
     else:
         raise  # keep static analyzer happy
 
     return [
         wsim_fit(distribution=distribution,
-                 inputs=[inputs],
+                 inputs=inputs,
                  output=forecast.fit_obs(var=varname, month=month),
                  window=1)
     ]
