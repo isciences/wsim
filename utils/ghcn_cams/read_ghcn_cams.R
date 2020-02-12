@@ -140,8 +140,11 @@ standard_attrs <- list(
   )
 )
 
-get_nbands <- function(fname) {
-  suppressWarnings(unname(rgdal::GDALinfo(fname)['bands']))
+has_band <- function(fname, band_num) {
+  x <- rgdal::GDAL.open(fname)
+  ret <- !identical(rgdal::getRasterBand(x, band_num)@handle, new("externalptr"))
+  rgdal::GDAL.close(x)
+  return(ret)
 }
 
 main <- function(raw_args) {
@@ -151,11 +154,12 @@ main <- function(raw_args) {
 
   band <- 1L + months_diff(begin_date, args$yearmon)
 
-  if(band > get_nbands(args$input)) {
+  if(!has_band(args$input, band)) {
     if (!is.null(args$update_url)) {
+      infof('Attempting to update %s via FTP...', basename(args$input))
       download.file(url=args$update_url, destfile=args$input, method='wget', extra=c('--continue'))
 
-      if(band > get_nbands(args$input)) {
+      if(!has_band(args$input, band)) {
         stop(sprintf('%s is up-to-date, but does not include data for %s.',
                      basename(args$input),
                      args$yearmon))
@@ -166,7 +170,11 @@ main <- function(raw_args) {
     }
   }
 
-  dat <- read_vars(make_vardef(args$input, list(make_var(as.character(band)))))$data[[1]]
+  infof('Reading GHCN+CAMS data for %s from %s', args$yearmon, basename(args$input))
+
+  #dat <- read_vars(make_vardef(args$input, list(make_var(as.character(band)))))$data[[1]]
+  dat <- read_vars(sprintf('%s::%d', args$input, band))$data[[1]]
+  infof('Read GHCN+CAMS data for %s from %s', args$yearmon, basename(args$input))
 
   # rotate from [0, 360] to [-180, 180]
   dat <- dat[, c(361:720,1:360)]
