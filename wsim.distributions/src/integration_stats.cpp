@@ -45,18 +45,36 @@ using namespace Rcpp;
 // integer number of arguments. Any arguments at indices between
 // argv.size() and argc should be interpreted as NA.
 
+static std::array<int, 3> get_dims3(const NumericVector & v) {
+  std::array<int, 3> ret = { 1, 1, 1};
+
+  if (v.hasAttribute("dim")) {
+    IntegerVector dims = v.attr("dim");
+
+    switch(dims.size()) {
+      case 3: ret[2] = dims[2];
+      case 2: ret[1] = dims[1];
+      case 1: ret[0] = dims[0];
+        break;
+      default:
+        throw std::invalid_argument("Expected array of <= 3 dimensions");
+    }
+  } else {
+    ret[0] = v.size();
+  }
+
+  return ret;
+}
+
 // Apply function f over each slice [i, j, ] in an array
 // f must return a scalar
 template<typename Function>
 NumericVector stack_apply (const NumericVector & v,
                            Function&& f,
                            bool remove_na) {
-  IntegerVector dims = v.attr("dim");
-  if (dims.length() < 2 || dims.length() > 3) {
-    throw std::invalid_argument("Expected array of 2 or 3 dimensions");
-  }
+  auto dims = get_dims3(v);
   const int cells_per_level = dims[0]*dims[1];
-  const int depth = dims.length() == 2 ? 1 : dims[2];
+  const int depth = dims.size() == 2 ? 1 : dims[2];
 
   // Create an output array of dimensions matching the input
   NumericVector out = no_init(cells_per_level);
@@ -78,6 +96,52 @@ NumericVector stack_apply (const NumericVector & v,
       }
 
       out[jblock + i] = f(f_args, argc);
+    }
+  }
+
+  return out;
+}
+
+template<typename Function>
+NumericVector stack_apply(const NumericVector & v,
+                          const NumericVector & m,
+                          Function&& f,
+                          bool remove_na) {
+
+  auto dims = get_dims3(v);
+
+  const int cells_per_level = dims[0]*dims[1];
+  const int depth = dims[2];
+
+  auto mdims = get_dims3(m);
+  if (mdims[2] != 1) {
+      throw std::invalid_argument("Expected matrix.");
+  }
+  if (mdims[0] != dims[0] || mdims[1] != dims[1]) {
+    Rcpp::Rcout << mdims[0] << " " << mdims [1] << " " << dims[0] << " " << dims[1] << std::endl;
+    throw std::invalid_argument("Number of rows and columns in matrix must match companion array.");
+  }
+
+  // Create an output array of dimensions matching the input
+  NumericVector out = no_init(cells_per_level);
+  out.attr("dim") = NumericVector::create(dims[0], dims[1]);
+
+  // Create mutable vector to hold arguments for `f`
+  std::vector<double> f_args(depth);
+
+  for (int j = 0; j < dims[0]; j++) {
+    int jblock = j*dims[1];
+
+    for (int i = 0; i < dims[1]; i++) {
+      int argc = 0;
+      for (int k = 0; k < depth; k++) {
+        double val = v[k*cells_per_level + jblock + i];
+        if (!remove_na || !std::isnan(val)) {
+          f_args[argc++] = val;
+        }
+      }
+
+      out[jblock + i] = f(m[jblock + i], f_args, argc);
     }
   }
 
@@ -520,4 +584,50 @@ NumericVector stack_sort(const NumericVector & v) {
 
     return out;
   }, dim[2], true);
+}
+
+//' Compute the rank of each element in a matrix, returning the minimum in case of ties
+//'
+//' @param x   a matrix of values to rank
+//' @param obs a 3D array of observations against which each value in x should be ranked
+//'
+//' @return the rank of \code{x} after it is added to \code{obs}, for each (i, j) in \code{x}
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_min_rank(const NumericVector & x, const NumericVector & obs) {
+  return stack_apply(obs, x, [](double xi, const std::vector<double> & sorted_obs, int nobs) -> double {
+    if (std::isnan(xi)) {
+      return NA_REAL;
+    }
+
+    if (nobs == 0) {
+      return 1;
+    }
+
+    auto o = std::lower_bound(sorted_obs.begin(), std::next(sorted_obs.begin(), nobs), xi);
+    return std::distance(sorted_obs.begin(), o) + 1;
+  }, true);
+}
+
+//' Compute the rank of each element in a matrix, returning the maximum in case of ties
+//'
+//' @param x   a matrix of values to rank
+//' @param obs a 3D array of observations against which each value in x should be ranked
+//'
+//' @return the rank of \code{x} after it is added to \code{obs}, for each (i, j) in \code{x}
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_max_rank(const NumericVector & x, const NumericVector & obs) {
+  return stack_apply(obs, x, [](double xi, const std::vector<double> & sorted_obs, int nobs) -> double {
+    if (std::isnan(xi)) {
+      return NA_REAL;
+    }
+
+    if (nobs == 0) {
+      return 1;
+    }
+
+    auto o = std::upper_bound(sorted_obs.begin(), std::next(sorted_obs.begin(), nobs), xi);
+    return std::distance(sorted_obs.begin(), o) + 1;
+  }, true);
 }

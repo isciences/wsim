@@ -140,3 +140,39 @@ test_that('we can compute the number of defined elements', {
     stack_num_defined(arr)
   )
 })
+
+test_that('we can compute minimum and maximum ranks', {
+  arr <- array(0, dim=c(2, 2, 10))
+  arr[1, 1, ] <- 1:10 # all defined and unique
+  arr[1, 2, ] <- c(1, 3, 4, 4, 4, 5, NA, NA, NA, NA)
+  arr[2, 1, ] <- NA
+  arr[2, 2, ] <- 5
+
+  expect_equal(stack_min_rank(matrix(4, nrow=2, ncol=2), arr),
+               rbind(c(4, 3),
+                     c(1, 1)))
+  expect_equal(stack_max_rank(matrix(4, nrow=2, ncol=2), arr),
+               rbind(c(5, 6),
+                     c(1, 1)))
+
+
+})
+
+test_that('rank edge cases behave as expected', {
+  minmax_ranks <- function(x, obs) {
+    c(stack_min_rank(x, array(obs, dim=c(1, 1, length(obs)))),
+      stack_max_rank(x, array(obs, dim=c(1, 1, length(obs)))))
+  }
+
+  expect_equal(c(NA_real_, NA_real_),
+               minmax_ranks(NA, 1:4))
+
+  expect_equal(c(1, 1),
+               minmax_ranks(-1, 4:6))
+
+  expect_equal(c(1, 2),
+               minmax_ranks(4, 4:6))
+
+  expect_equal(c(3, 4),
+               minmax_ranks(6, 4:6))
+})
