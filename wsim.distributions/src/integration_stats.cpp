@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 ISciences, LLC.
+// Copyright (c) 2018-2020 ISciences, LLC.
 // All rights reserved.
 //
 // WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -468,7 +468,7 @@ NumericVector stack_weighted_quantile (const NumericVector & v, const NumericVec
     Rcpp::stop("length of weights must equal length of 3rd dimension of value array");
   }
 
-  return stack_apply(v, [&w, q](const std::vector<double> x, int n) {
+  return stack_apply(v, [&w, q](const std::vector<double> & x, int n) {
     return weighted_quantile(x, w, n, q);
   }, false); // don't ask stack_apply to remove our null values; we need to handle them
              // internalls so that we can keep correspondence with weights
@@ -485,3 +485,75 @@ NumericVector stack_median (const NumericVector & v) {
   return stack_apply(v, std::bind(quantile, std::placeholders::_1, std::placeholders::_2, 0.50), true);
 }
 
+//' Sort each slice [i, j, ] in an array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the median for each [row, col, ]
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_sort(const NumericVector & v) {
+  IntegerVector dim = v.attr("dim");
+
+  if (dim.size() < 3) {
+    return v;
+  }
+
+  return stack_apply(v, [](const std::vector<double> & x, int n) {
+    std::vector<double> out(x.size());
+    std::copy_n(x.begin(), n, out.begin());
+    std::sort(out.begin(), std::next(out.begin(), n));
+    std::fill(std::next(out.begin(), n), out.end(), NA_REAL);
+
+    return out;
+  }, dim[2], true);
+}
+
+// Sort each slice [i, j, ] in an array
+// [[Rcpp::export]]
+NumericVector stack_sort2(const NumericVector & v) {
+  const IntegerVector dims = v.attr("dim");
+
+  if (dims.length() < 2 || dims.length() > 3) {
+    throw std::invalid_argument("Expected array of 2 or 3 dimensions");
+  }
+
+  if (dims.length() == 2) {
+    return v;
+  }
+
+  const int cells_per_level = dims[0]*dims[1];
+  const int depth = dims[2];
+
+  // Create an output array of dimensions matching the input
+  NumericVector out = no_init(v.size());
+  out.attr("dim") = dims;
+
+  // Create mutable vector to hold defined elements to sort
+  std::vector<double> pixel_values(depth);
+
+  for (int j = 0; j < dims[0]; j++) {
+    int jblock = j*dims[1];
+
+    for (int i = 0; i < dims[1]; i++) {
+      int argc = 0;
+      for (int k = 0; k < depth; k++) {
+        double val = v[k*cells_per_level + jblock + i];
+        if (!std::isnan(val)) {
+          pixel_values[argc++] = val;
+        }
+      }
+
+      std::sort(pixel_values.begin(), std::next(pixel_values.begin(), argc));
+
+      for (int k = 0; k < argc; k++) {
+        out[k*cells_per_level + jblock + i] = pixel_values[k];
+      }
+      for (int k = argc; k < depth; k++) {
+        out[k*cells_per_level + jblock + i] = NA_REAL;
+      }
+    }
+  }
+
+  return out;
+}

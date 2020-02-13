@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -112,5 +112,15 @@ test_that('weighted quantile distributes weights from missing values among defin
   expect_equal(
     integrate('weighted_q25', dat, weights),
     integrate('weighted_q25', dat[!is.na(dat)], weights[!is.na(dat)])
+  )
+})
+
+test_that('we can sort a 3d array along the 3rd timension, sending NAs to the back', {
+  arr <- array(runif(3*7*11), dim=c(3, 7, 11))
+  arr[sample.int(length(arr), 0.3*length(arr))] <- NA
+
+  expect_equal(
+    array_apply(arr, function(x) sort(x, na.last=TRUE)),
+    stack_sort(arr)
   )
 })
