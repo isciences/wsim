@@ -119,6 +119,12 @@ test_that('we can sort a 3d array along the 3rd timension, sending NAs to the ba
   arr <- array(runif(3*7*11), dim=c(3, 7, 11))
   arr[sample.int(length(arr), 0.3*length(arr))] <- NA
 
+  # ensure one set of inputs is fully undefined
+  arr[2, 2, ] <- NA
+
+  # ensure one set of inputs is fully defined
+  arr[3, 3, ] <- rev(seq_len(dim(arr)[3]))
+
   expect_equal(
     array_apply(arr, function(x) sort(x, na.last=TRUE)),
     stack_sort(arr)
