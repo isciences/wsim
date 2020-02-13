@@ -409,6 +409,19 @@ NumericVector stack_which_max (const NumericVector & v) {
   return stack_apply(v, which_max_n, false);
 }
 
+//' Compute the number of defined elements for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the computed count for each [row, col, ]
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_num_defined (const NumericVector & v) {
+  return stack_apply(v, [](std::vector<double> &, int count) {
+    return static_cast<double>(count);
+  }, true);
+}
+
 //' Compute the fraction of defined elements for each row and col in a 3D array
 //'
 //' @param v 3D array that may contain NA values
@@ -471,7 +484,7 @@ NumericVector stack_weighted_quantile (const NumericVector & v, const NumericVec
   return stack_apply(v, [&w, q](const std::vector<double> & x, int n) {
     return weighted_quantile(x, w, n, q);
   }, false); // don't ask stack_apply to remove our null values; we need to handle them
-             // internalls so that we can keep correspondence with weights
+             // internally so that we can keep correspondence with weights
 }
 
 //' Compute the median of defined elementsn for each row and col in a 3D array

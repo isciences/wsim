@@ -124,3 +124,13 @@ test_that('we can sort a 3d array along the 3rd timension, sending NAs to the ba
     stack_sort(arr)
   )
 })
+
+test_that('we can compute the number of defined elements', {
+  arr <- array(runif(3*7*11), dim=c(3, 7, 11))
+  arr[sample.int(length(arr), 0.3*length(arr))] <- NA
+
+  expect_equal(
+    array_apply(arr, function(x) sum(!is.na(x))),
+    stack_num_defined(arr)
+  )
+})
