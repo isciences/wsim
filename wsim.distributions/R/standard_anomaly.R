@@ -34,24 +34,10 @@ standard_anomaly <- function(distribution, dist_params, obs, plotting_position='
     stopifnot(is.matrix(obs))
     stopifnot(all(dim(obs) == dim(dist_params)[1:2]))
 
-    min_ranks <- stack_min_rank(obs, dist_params)
-    max_ranks <- stack_max_rank(obs, dist_params)
-    n_obs <- stack_num_defined(dist_params)
-
     plotting_fn <- switch(plotting_position,
-                          tukey = function(r, n) (r - 1/3)/(n + 4/3)
-                          )
+                          tukey = plotting_position_tukey)
 
-    min_quantile <- plotting_fn(min_ranks, n_obs)
-    max_quantile <- plotting_fn(max_ranks, n_obs)
-
-    # if min and max quantile span 0.5, consider the result to be 0.5
-    # otherwise, use whichever produces the smaller anomaly
-    quantiles <- ifelse(min_quantile < 0.5 & max_quantile > 0.5,
-                        0.5,
-                        ifelse(abs(0.5 - min_quantile) < abs(0.5 - max_quantile),
-                               min_quantile,
-                               max_quantile))
+    quantiles <- cdf_plotting_position(obs, dist_params, plotting_fn)
   } else {
     # parametric distribution
 
