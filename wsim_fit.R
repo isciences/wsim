@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+library(Rcpp)
+
 wsim.io::logging_init('wsim_fit')
 '
 Fit statistical distributions.
@@ -54,11 +56,20 @@ main <- function(raw_args) {
   wsim.io::info('Read', dim(inputs_stacked)[[3]], 'inputs.')
 
   distribution <- tolower(args$distribution)
+  extra_dims <- NULL
+  prec <- NULL
 
   tryCatch({
     fits <- wsim.distributions::fit_cell_distributions(distribution,
                                                        inputs_stacked,
                                                        log.errors=wsim.io::error)
+
+    if (distribution == 'nonparametric') {
+      # no dimnames for nonparametric
+      fits <- list(ordered_values = fits)
+      extra_dims <- list(n = seq_len(dim(fits$ordered_values)[3]))
+      prec <- 'single'
+    }
   }, error=function(e) {
     wsim.io::die_with_message(e$message)
   })
@@ -67,6 +78,8 @@ main <- function(raw_args) {
                              outfile,
                              extent=attr(inputs_stacked, 'extent'),
                              ids=attr(inputs_stacked, 'ids'),
+                             extra_dims=extra_dims,
+                             prec=prec,
                              attrs=c(
                                list(
                                  list(var=NULL,key="distribution",val=distribution),
