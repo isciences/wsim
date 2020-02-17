@@ -49,10 +49,8 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
   ids <- NULL
 
   if (is_spatial) {
-    latname <- names(cdf$dim)[which(tolower(names(cdf$dim)) %in% c('lat', 'latitude', 'y'))]
-    lonname <- names(cdf$dim)[which(tolower(names(cdf$dim)) %in% c('lon', 'longitude', 'x'))]
-    stopifnot(length(latname) == 1)
-    stopifnot(length(lonname) == 1)
+    latname <- get_latvar(cdf)
+    lonname <- get_lonvar(cdf)
 
     lats <- ncdf4::ncvar_get(cdf, latname)
     lons <- ncdf4::ncvar_get(cdf, lonname)
@@ -363,4 +361,46 @@ find_count <- function(real_dims, dim_values) {
   }
 
   ifelse(real_dims %in% names(dim_values), 1, -1)
+}
+
+
+#' Determine the name of the latitude variable in a netCDF
+#'
+#' @param cdf object of class \code{ncdf4}
+#' @return name of the latitude variable
+get_latvar <- function(cdf) {
+  latname <- names(cdf$dim)[which(tolower(names(cdf$dim)) %in% c('lat', 'latitude', 'y'))]
+  stopifnot(length(latname) == 1)
+  return(latname)
+}
+
+#' Determine the name of the longitude variable in a netCDF
+#'
+#' @param cdf object of class \code{ncdf4}
+#' @return name of the longitude variable
+get_lonvar <- function(cdf) {
+  lonname <- names(cdf$dim)[which(tolower(names(cdf$dim)) %in% c('lon', 'longitude', 'x'))]
+  stopifnot(length(lonname) == 1)
+  return(lonname)
+}
+
+#' Compute the extent of a netCDF file. Doesn't handle longitude rotation.
+#'
+#' @param cdf object of class \code{ncdf4}
+#' @return vector of (xmin, xmax, ymin, ymax)
+get_extent <- function(cdf) {
+  latname <- get_latvar(cdf)
+  lonname <- get_lonvar(cdf)
+
+  lats <- ncdf4::ncvar_get(cdf, latname)
+  lons <- ncdf4::ncvar_get(cdf, lonname)
+
+  dlat <- ifelse(length(lats) >=2, abs(lats[2] - lats[1]), 0)
+  dlon <- ifelse(length(lons) >=2, abs(lons[2] - lons[1]), 0)
+
+  c(xmin = min(lons) - dlon/2,
+    xmax = max(lons) + dlon/2,
+    ymin = min(lats) - dlat/2,
+    ymax = max(lats) + dlat/2
+  )
 }

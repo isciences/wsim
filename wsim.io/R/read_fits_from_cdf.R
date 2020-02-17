@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -27,7 +27,12 @@ read_fits_from_cdf <- function(files) {
   extent <- NULL
 
   for (file in files) {
-    fit <- read_vars_to_cube(file, attrs_to_read=c('distribution', 'variable', 'units'))
+    if (isTRUE(peek_distribution(file) == 'nonparametric')) {
+      fit <- read_nonparametric(file)
+    } else {
+      fit <- read_parametric(file)
+    }
+
     attr(fit, 'filename') <- file
 
     var <- attr(fit, 'variable')
@@ -35,6 +40,7 @@ read_fits_from_cdf <- function(files) {
 
     if (is.null(extent)) {
       extent <- attr(fit, 'extent')
+      stopifnot(!is.null(extent))
     } else {
       stopifnot(extent == attr(fit, 'extent'))
     }
@@ -52,5 +58,39 @@ read_fits_from_cdf <- function(files) {
   }
 
   return(fits)
+}
+
+read_global_att <- function(nc, attname) {
+  att <- ncdf4::ncatt_get(nc, 0, attname)
+  if (att$hasatt) {
+    return(att$value)
+  } else {
+    return(NULL)
+  }
+}
+
+peek_distribution <- function(fname) {
+  nc <- ncdf4::nc_open(fname)
+  dist <- read_global_att(nc, 'distribution')
+  ncdf4::nc_close(nc)
+  return(dist)
+}
+
+read_parametric <- function(fname) {
+  read_vars_to_cube(fname, attrs_to_read=c('distribution', 'variable', 'units'))
+}
+
+read_nonparametric <- function(fname) {
+  nc <- ncdf4::nc_open(fname)
+
+  obs <- aperm(ncdf4::ncvar_get(nc, 'ordered_values'), c(2, 1, 3))
+  for (attname in c('variable', 'distribution', 'units')) {
+    attr(obs, attname) <- read_global_att(nc, attname)
+  }
+  attr(obs, 'extent') <- get_extent(nc)
+
+  ncdf4::nc_close(nc)
+
+  return(obs)
 }
 
