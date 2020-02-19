@@ -23,18 +23,22 @@
 #'
 #' @export
 cell_areas_m2 <- function(extent, dim) {
-  radius_m <- 6371000 # mean radius
+  stopifnot(length(extent) == 4)
+  stopifnot(length(dim) == 2)
+
   dlon <- (extent[2] - extent[1]) / dim[2]
   dlat <- (extent[4] - extent[3]) / dim[1]
 
   lats <- seq(from=extent[4]-0.5*dlat, to=extent[3]+0.5*dlat, by=-dlat)
 
   areas <- sapply(lats, function(lat) {
-    lat1 <- lat - dlat/2
-    lat2 <- lat + dlat/2
-
-    return(pi / 180 * radius_m^2 * abs(sin(lat1 * pi / 180) - sin(lat2 * pi / 180)) * dlon)
+    cell_area_m2(lat - dlat/2, lat + dlat/2, dlon)
   })
 
   return(array(areas, dim=dim))
+}
+
+cell_area_m2 <- function(lat1, lat2, dlon) {
+  radius_m <- 6371000 # mean radius
+  pi / 180 * radius_m^2 * abs(sin(lat1 * pi / 180) - sin(lat2 * pi / 180)) * dlon
 }

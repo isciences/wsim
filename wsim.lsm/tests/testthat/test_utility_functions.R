@@ -97,3 +97,19 @@ test_that('we can compute daylength', {
   expect_equal(daylength[181], 1)  # light at the south pole
   expect_equal(daylength[91], 0.5) # 12 hours of light at the equator
 })
+
+test_that('precision is correctly converted to digits before/after decimal point', {
+  expect_equal(digits_for_res(0.1), 1)
+  expect_equal(digits_for_res(0.11), 1)
+  expect_equal(digits_for_res(0.09999999), 2)
+
+  expect_equal(digits_for_res(1500), -3)
+})
+
+test_that('mm precision is converted to m3 precision using cell area at equator', {
+  extent <- c(-180, 180, -90, 90)
+  dims <- c(360, 720)
+
+  expect_equal(digits_for_res(res_mm_to_m3(0.1, extent, dims)),
+               -5)
+})

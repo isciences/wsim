@@ -293,3 +293,37 @@ test_that('mass is conserved in runoff detention', {
     expect_equal(mass_in - mass_out, final_mass - initial_mass)
   }
 })
+
+test_that('make_results rounds data to the specified precision', {
+  x <- matrix(123456789.123456)
+
+  results <- make_results(
+    Bt_RO = x,
+    Bt_Runoff = x,
+    E = x,
+    EmPET = x,
+    PET = x,
+    PETmE = x,
+    P_net = x,
+    RO_m3 = x,
+    RO_mm = x,
+    Runoff_m3 = x,
+    Runoff_mm = x,
+    Sa = x,
+    Sm = x,
+    Ws = x,
+    dWdt = x,
+    extent = c(0, 1, 0, 1),
+    digits_mm = 2,
+    digits_m3 = -3
+  )
+
+  for (var in names(results)) {
+    if (var == 'extent')
+      next
+    if (var %in% c('Bt_RO', 'Bt_Runoff', 'RO_m3', 'Runoff_m3'))
+      expect_equal(results[[var]], round(x, -3))
+    else
+      expect_equal(results[[var]], round(x, 2))
+  }
+})

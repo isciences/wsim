@@ -67,10 +67,10 @@ List calc_detained (const NumericVector & R,
                     const NumericVector & Ds,
                     const NumericVector & z,
                     const IntegerVector & melt_month) {
-  NumericVector Rp = no_init(R.size());
-  NumericVector Rs = no_init(R.size());
-  NumericVector dDrdt = no_init(R.size());
-  NumericVector dDsdt = no_init(R.size());
+  NumericVector Rp = no_init(R.size());    // revised runoff due to rainfall
+  NumericVector Rs = no_init(R.size());    // revised runoff due to snowmelt
+  NumericVector dDrdt = no_init(R.size()); // change in detained rainfall
+  NumericVector dDsdt = no_init(R.size()); // change in detained snowmelt
 
   double beta = 0.50;  // fraction of detained volume that leaves detention
   double gamma = 0.50; // fraction of runoff that does not enter detention
