@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 ISciences, LLC.
+// Copyright (c) 2018-2020 ISciences, LLC.
 // All rights reserved.
 //
 // WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -45,18 +45,36 @@ using namespace Rcpp;
 // integer number of arguments. Any arguments at indices between
 // argv.size() and argc should be interpreted as NA.
 
+static std::array<int, 3> get_dims3(const NumericVector & v) {
+  std::array<int, 3> ret = { 1, 1, 1};
+
+  if (v.hasAttribute("dim")) {
+    IntegerVector dims = v.attr("dim");
+
+    switch(dims.size()) {
+      case 3: ret[2] = dims[2];
+      case 2: ret[1] = dims[1];
+      case 1: ret[0] = dims[0];
+        break;
+      default:
+        throw std::invalid_argument("Expected array of <= 3 dimensions");
+    }
+  } else {
+    ret[0] = v.size();
+  }
+
+  return ret;
+}
+
 // Apply function f over each slice [i, j, ] in an array
 // f must return a scalar
 template<typename Function>
 NumericVector stack_apply (const NumericVector & v,
                            Function&& f,
                            bool remove_na) {
-  IntegerVector dims = v.attr("dim");
-  if (dims.length() < 2 || dims.length() > 3) {
-    throw std::invalid_argument("Expected array of 2 or 3 dimensions");
-  }
+  auto dims = get_dims3(v);
   const int cells_per_level = dims[0]*dims[1];
-  const int depth = dims.length() == 2 ? 1 : dims[2];
+  const int depth = dims.size() == 2 ? 1 : dims[2];
 
   // Create an output array of dimensions matching the input
   NumericVector out = no_init(cells_per_level);
@@ -78,6 +96,52 @@ NumericVector stack_apply (const NumericVector & v,
       }
 
       out[jblock + i] = f(f_args, argc);
+    }
+  }
+
+  return out;
+}
+
+template<typename Function>
+NumericVector stack_apply(const NumericVector & v,
+                          const NumericVector & m,
+                          Function&& f,
+                          bool remove_na) {
+
+  auto dims = get_dims3(v);
+
+  const int cells_per_level = dims[0]*dims[1];
+  const int depth = dims[2];
+
+  auto mdims = get_dims3(m);
+  if (mdims[2] != 1) {
+      throw std::invalid_argument("Expected matrix.");
+  }
+  if (mdims[0] != dims[0] || mdims[1] != dims[1]) {
+    Rcpp::Rcout << mdims[0] << " " << mdims [1] << " " << dims[0] << " " << dims[1] << std::endl;
+    throw std::invalid_argument("Number of rows and columns in matrix must match companion array.");
+  }
+
+  // Create an output array of dimensions matching the input
+  NumericVector out = no_init(cells_per_level);
+  out.attr("dim") = NumericVector::create(dims[0], dims[1]);
+
+  // Create mutable vector to hold arguments for `f`
+  std::vector<double> f_args(depth);
+
+  for (int j = 0; j < dims[0]; j++) {
+    int jblock = j*dims[1];
+
+    for (int i = 0; i < dims[1]; i++) {
+      int argc = 0;
+      for (int k = 0; k < depth; k++) {
+        double val = v[k*cells_per_level + jblock + i];
+        if (!remove_na || !std::isnan(val)) {
+          f_args[argc++] = val;
+        }
+      }
+
+      out[jblock + i] = f(m[jblock + i], f_args, argc);
     }
   }
 
@@ -409,6 +473,19 @@ NumericVector stack_which_max (const NumericVector & v) {
   return stack_apply(v, which_max_n, false);
 }
 
+//' Compute the number of defined elements for each row and col in a 3D array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the computed count for each [row, col, ]
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_num_defined (const NumericVector & v) {
+  return stack_apply(v, [](std::vector<double> &, int count) {
+    return static_cast<double>(count);
+  }, true);
+}
+
 //' Compute the fraction of defined elements for each row and col in a 3D array
 //'
 //' @param v 3D array that may contain NA values
@@ -468,10 +545,10 @@ NumericVector stack_weighted_quantile (const NumericVector & v, const NumericVec
     Rcpp::stop("length of weights must equal length of 3rd dimension of value array");
   }
 
-  return stack_apply(v, [&w, q](const std::vector<double> x, int n) {
+  return stack_apply(v, [&w, q](const std::vector<double> & x, int n) {
     return weighted_quantile(x, w, n, q);
   }, false); // don't ask stack_apply to remove our null values; we need to handle them
-             // internalls so that we can keep correspondence with weights
+             // internally so that we can keep correspondence with weights
 }
 
 //' Compute the median of defined elementsn for each row and col in a 3D array
@@ -485,3 +562,72 @@ NumericVector stack_median (const NumericVector & v) {
   return stack_apply(v, std::bind(quantile, std::placeholders::_1, std::placeholders::_2, 0.50), true);
 }
 
+//' Sort each slice [i, j, ] in an array
+//'
+//' @param v 3D array that may contain NA values
+//'
+//' @return a matrix with the median for each [row, col, ]
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_sort(const NumericVector & v) {
+  IntegerVector dim = v.attr("dim");
+
+  if (dim.size() < 3) {
+    return v;
+  }
+
+  return stack_apply(v, [](const std::vector<double> & x, int n) {
+    std::vector<double> out(x.size());
+    std::copy_n(x.begin(), n, out.begin());
+    std::sort(out.begin(), std::next(out.begin(), n));
+    std::fill(std::next(out.begin(), n), out.end(), NA_REAL);
+
+    return out;
+  }, dim[2], true);
+}
+
+//' Compute the rank of each element in a matrix, returning the minimum in case of ties
+//'
+//' @param x   a matrix of values to rank
+//' @param obs a 3D array of observations against which each value in x should be ranked
+//'
+//' @return the rank of \code{x} after it is added to \code{obs}, for each (i, j) in \code{x}
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_min_rank(const NumericVector & x, const NumericVector & obs) {
+  return stack_apply(obs, x, [](double xi, const std::vector<double> & sorted_obs, int nobs) -> double {
+    if (std::isnan(xi)) {
+      return NA_REAL;
+    }
+
+    if (nobs == 0) {
+      return 1;
+    }
+
+    auto o = std::lower_bound(sorted_obs.begin(), std::next(sorted_obs.begin(), nobs), xi);
+    return std::distance(sorted_obs.begin(), o) + 1;
+  }, true);
+}
+
+//' Compute the rank of each element in a matrix, returning the maximum in case of ties
+//'
+//' @param x   a matrix of values to rank
+//' @param obs a 3D array of observations against which each value in x should be ranked
+//'
+//' @return the rank of \code{x} after it is added to \code{obs}, for each (i, j) in \code{x}
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_max_rank(const NumericVector & x, const NumericVector & obs) {
+  return stack_apply(obs, x, [](double xi, const std::vector<double> & sorted_obs, int nobs) -> double {
+    if (std::isnan(xi)) {
+      return NA_REAL;
+    }
+
+    if (nobs == 0) {
+      return 1;
+    }
+
+    auto o = std::upper_bound(sorted_obs.begin(), std::next(sorted_obs.begin(), nobs), xi);
+    return std::distance(sorted_obs.begin(), o) + 1;
+  }, true);
+}

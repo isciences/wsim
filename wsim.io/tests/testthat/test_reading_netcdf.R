@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -362,7 +362,8 @@ test_that("we can read fits from multiple netCDFs", {
   write_vars_to_cdf(data(), fname1, extent=c(0, 1, 0, 1))
 
   # Error because variable name is undefined
-  expect_error(read_fits_from_cdf(fname1))
+  expect_error(read_fits_from_cdf(fname1),
+               'Unknown variable')
 
   write_vars_to_cdf(data(), fname1, extent=c(0, 1, 0, 1), attrs=list(list(key="variable", val="rainfall")))
 
@@ -395,6 +396,36 @@ test_that("we can read fits from multiple netCDFs", {
 
   file.remove(fname1)
   file.remove(fname2)
+})
+
+test_that('we can read sorted observations as a fit', {
+  fname <- tempfile(fileext = '.nc')
+
+  d <- c(360, 720, 60)
+  arr <- array(runif(prod(d)), dim=d)
+
+  extent <- c(-180, 180, -90, 90)
+
+  write_vars_to_cdf(list(ordered_values=arr),
+                    fname,
+                    extent = extent,
+                    extra_dims = list(n=seq_len(dim(arr)[3])),
+                    attrs = list(
+                      list(key = 'variable', val = 'Pr'),
+                      list(key = 'units', val = 'kg/m^2/s'),
+                      list(key = 'distribution', val = 'nonparametric')))
+
+  fits <- read_fits_from_cdf(fname)
+
+  expect_named(fits, 'Pr')
+
+  expect_equal(attr(fits$Pr, 'extent'), extent, check.attributes=FALSE)
+  expect_named(attr(fits$Pr, 'extent'), c('xmin', 'xmax', 'ymin', 'ymax'))
+
+  expect_equal(attr(fits$Pr, 'units'), 'kg/m^2/s')
+  expect_equal(attr(fits$Pr, 'distribution'), 'nonparametric')
+
+  file.remove(fname)
 })
 
 test_that('we get a helpful error message when trying to access data that does not exist', {

@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -25,24 +25,33 @@
 #' If a distribution cannot be fit, then the returned parameters will
 #' be NA.  (TODO: Describe cases where this may happen.)
 #'
-#' @param distribution The name of the distribution to fit (e.g., "gev", "pe3")
+#' @param distribution The name of the distribution to fit (e.g., "gev", "pe3").
+#'                     Alternatively, \code{distribution} can be set to "nonparametric"
+#'                     in which case all pixelwise values will be returned in
+#'                     sorted order.
 #' @param arr          A 3D array representing multiple observations of a variable
 #'                     in each 2D cell
 #' @param nmin.unique  Minimum number of unique values required to perform
-#'                     the fit
+#'                     a parametric distribution fit
 #' @param nmin.defined Minimum number of defined values required to perform
-#'                     the fit
+#'                     a parametric distribution fit
 #' @param zero.scale.to.na If TRUE, fit will be discarded (set to NA) if
-#'                         the scale parameter is computed to be zero.
+#'                         the parametric distribution scale parameter is
+#'                         computed to be zero.
 #' @param log.errors   Function that will be called with any errors reported
 #'                     by distribution-fitting function. If \code{log.errors}
 #'                     is not specified, errors will be written to stdout.
 #'
-#' @return A 3D array containing the fitted (location, scale, shape)
-#'         parameters of the GEV for each pixel
+#' @return A 3D array containing the fitted parameters of a parametric distribution at
+#'         each pixel, or the the sorted values of \code{arr} when
+#'         \code{distribution = 'nonparametric'}.
 #'
 #' @export
 fit_cell_distributions <- function(distribution, arr, nmin.unique=10, nmin.defined=10, zero.scale.to.na=TRUE, log.errors=NULL) {
+  if (distribution == 'nonparametric') {
+    return(stack_sort(arr))
+  }
+
   if (distribution == 'gev') {
     param.names <- c('location', 'scale', 'shape')
     lmom2params <- lmom::pelgev

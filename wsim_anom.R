@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -22,14 +22,14 @@ suppressMessages({
 })
 
 '
-Compute standard anomalies and/or return periods
+Compute standardized anomalies and/or return periods
 
 Usage: wsim_anom --fits=<fits>... --obs=<file>... [--sa=<file>] [--rp=<file>]
 
 Options:
 --fits <file>  netCDF file containing distribution fit parameters
 --obs <file>   Raster file containing observed values
---sa <file>    output location for netCDF file of standard anomalies
+--sa <file>    output location for netCDF file of standardized anomalies
 --rp <file>    output location for netCDF file of return periods
 '->usage
 
@@ -37,7 +37,7 @@ main <- function(raw_args) {
   args <- parse_args(usage, raw_args)
 
   if (is.null(args$sa) && is.null(args$rp)) {
-    die_with_message("Must write return periods or standard anomalies (--rp and/or --sa)")
+    die_with_message("Must write return periods or standardized anomalies (--rp and/or --sa)")
   }
 
   for (outfile in c(args$sa, args$rp)) {
@@ -73,7 +73,7 @@ main <- function(raw_args) {
 
       sa <- standard_anomaly(distribution, fit, obs)
 
-      wsim.io::info("Computed standard anomalies for", varname)
+      wsim.io::info("Computed standardized anomalies for", varname)
 
       if (writing_sa) {
         sa_to_write[[paste0(varname, '_sa')]] <- sa
