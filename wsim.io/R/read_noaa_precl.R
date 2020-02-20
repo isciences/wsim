@@ -53,7 +53,7 @@ read_noaa_precl <- function(fname, month) {
 
 #' Download a month of PREC/L data and write to netCDF
 #'
-#' @param name of output filename
+#' @param fname of output filename
 #' @param year year to download
 #' @param month month to download
 #' @export
@@ -88,6 +88,7 @@ download_precl <- function(fname, year, month) {
 #' @param url url to access
 #' @param start first byte to read (0-indexed, inclusive)
 #' @param stop last byte to read (0-indexed, inclusive)
+#' @param fname output filename
 #' @param timeout timeout in seconds
 #' @export
 curl_range <- function(url, start, stop, fname, timeout=NULL) {
