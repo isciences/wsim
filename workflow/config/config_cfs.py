@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -20,7 +20,7 @@ from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
 
-from forcing.leaky_bucket import LeakyBucket
+from forcing.ghcn_cams_precl import GHCN_CAMS_PRECL
 from forcing.cfsv2 import CFSForecast
 from static.default_static import DefaultStatic
 
@@ -28,7 +28,7 @@ from static.default_static import DefaultStatic
 class CFSConfig(ConfigBase):
 
     def __init__(self, source, derived):
-        self._observed = LeakyBucket(source)
+        self._observed = GHCN_CAMS_PRECL(source)
         self._forecast = {'CFSv2': CFSForecast(source, derived, self._observed)}
         self._static = DefaultStatic(source)
         self._workspace = paths.DefaultWorkspace(derived)
