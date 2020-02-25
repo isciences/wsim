@@ -22,9 +22,11 @@
 #'
 #' @param fname filename to read
 #' @param mv NODATA value
+#' @param layer layer to retrieve (1 = precipitation rates, 2 = number of stations)
 #' @return a matrix of daily precipitation values in 0.1 mm/day
 #' @export
-read_ncep_daily_precip <- function(fname, mv=-999.0) {
+read_ncep_daily_precip <- function(fname, mv=-999.0, layer=1) {
+  stopifnot(layer %in% c(1, 2))
 
 	# we're expecting 1/2 degree global geographic data
 	nr     <- 360 # number of map columns
@@ -45,7 +47,7 @@ read_ncep_daily_precip <- function(fname, mv=-999.0) {
 	close(fh)
 
 	# first value is the precipitation map
-	pmap        <- fdata[,,1]
+	pmap        <- fdata[,,layer]
 	mvmap       <- (pmap==mv)
 	pmap[mvmap] <- NA
 
