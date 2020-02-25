@@ -11,75 +11,120 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Hardcoded grid parameters, described in:
+# ftp://ftp.cpc.ncep.noaa.gov/precip/50yr/gauge/0.5deg/format_bin_lnx/README.txt
+precl_nx <- 720
+precl_ny <- 360
+precl_valsz <- 4
+precl_na_val <- -999
+precl_endian <- 'little'
+
 #' Read a gridded 0.5-degree PREC/L binary file
 #'
 #' PREC/L files are distributed in a custom binary format at the following URL:
 #' ftp://ftp.cpc.ncep.noaa.gov/precip/50yr/gauge/0.5deg/format_bin_lnx/
 #'
-#' Each file contains up to 12 months of precipitation data in mm/month.
+#' Each file contains up to 12 months of precipitation rates and gauge counts
 #'
 #' @param fname the file name to read
 #' @param month the month to read
-#' @return a 360x720 matrix of precipitation rates in mm/s
+#' @param layer layer to retrieve (1 = precipitation rates, 2 = number of stations)
+#' @return a an opened file handle, positioned at the given month/layer
 #' @export
-read_noaa_precl <- function(fname, month) {
+open_noaa_precl <- function(fname, month, layer=1) {
   stopifnot(month %in% 1:12)
-
-  # Hardcoded grid parameters, described in:
-  # ftp://ftp.cpc.ncep.noaa.gov/precip/50yr/gauge/0.5deg/format_bin_lnx/README.txt
-  nx <- 720
-  ny <- 360
-  valsz <- 4
-  na_val <- -999
-  endian <- 'little'
+  stopifnot(layer %in% 1:2)
 
   fh <- file(fname, 'rb')
 
-  seek(fh, precl_byte_offset(month, 1), origin='start')
+  seek(fh, precl_byte_offset(month, 1, layer), origin='start')
+
+  fh
+}
+
+#' Read precipitation rates or gauge counts from a file handle
+#'
+#' @param fh an open file handle pointing to the position to begin reading
+#' @param what \code{precipitation_rate} or \code{gauge_count}
+read_noaa_precl <- function(fh, what) {
+  stopifnot(what %in% c('precipitation_rate', 'gauge_count'))
 
   vals <- matrix(
-    readBin(fh, 'numeric', n=ny*nx, size=valsz, endian=endian),
-    nrow=ny,
-    ncol=nx,
+    readBin(fh, 'numeric', n=precl_ny*precl_nx, size=precl_valsz, endian=precl_endian),
+    nrow=precl_ny,
+    ncol=precl_nx,
     byrow=TRUE)
 
   close(fh)
 
-  vals[vals == na_val] <- NA
-  # Flip rows, switch from 0-360 to -180-180, and change units from
-  # tenths-of-millimeters/day to mm/s
-  cbind(vals[ny:1, ((nx/2)+1):nx], vals[ny:1, 1:(nx/2)]) * 0.1 / 24 / 3600
+  vals[vals == precl_na_val] <- NA
+
+  # Flip rows, switch from 0-360 to -180-180
+  vals <- cbind(vals[precl_ny:1, ((precl_nx/2)+1):precl_nx], vals[precl_ny:1, 1:(precl_nx/2)])
+
+  if (what == 'precipitation_rate') {
+    # Change units from tenths-of-millimeters/day to mm/s
+    return(vals * 0.1 / 24 / 3600)
+  } else {
+    return(vals)
+  }
 }
 
-#' Download a month of PREC/L data and write to netCDF
+#' Download a month of PREC/L precipitation data and write to netCDF
 #'
 #' @param fname of output filename
 #' @param year year to download
 #' @param month month to download
+#' @inheritParams read_noaa_precl
 #' @export
-download_precl <- function(fname, year, month) {
-  start <- precl_byte_offset(month, 1)
-  stop <- precl_byte_offset(month + 1, 1) - 1
+download_precl <- function(fname, year, month, what='precipitation_rate') {
+  stopifnot(what %in% c('precipitation_rate', 'gauge_count'))
+  stopifnot(year >= 1948)
+  stopifnot(month %in% 1:12)
 
-  url <- precl_url(year)
+  data <- list()
+  attrs <- list()
 
-  temp_fname <- tempfile()
+  for (w in what) {
+    if (w == 'precipitation_rate') {
+      start <- precl_byte_offset(month, pixel=1, layer=1)
+      stop <- precl_byte_offset(month, pixel=1, layer=2) - 1
 
-  curl_range(url, start, stop, temp_fname)
+      varname <- 'Pr'
 
-  dat <- read_noaa_precl(temp_fname, 1)
+      attrs <- c(attrs,list(
+        list(var=varname, key="standard_name", val="precipitation_flux"),
+        list(var=varname, key="long_name", val="Precipitation Rate"),
+        list(var=varname, key="units", val="kg/m^2/s")
+      ))
+    } else {
+      start <- precl_byte_offset(month, pixel=1, layer=2)
+      stop <- precl_byte_offset(month+1, pixel=1, layer=1) - 1
 
-  file.remove(temp_fname)
+      varname <- 'num_stations'
 
-  write_vars_to_cdf(list(Pr=dat),
+      attrs <- c(attrs,list(
+        list(var=varname, key="long_name", val="Number of Stations")
+      ))
+    }
+
+    url <- precl_url(year)
+
+    temp_fname <- tempfile()
+
+    curl_range(url, start, stop, temp_fname)
+
+    fh <- open_noaa_precl(temp_fname, 1, 1) # month/layer parameter is always 1 because we only downloaded one month
+    data[[varname]] <- read_noaa_precl(fh, w)
+
+    file.remove(temp_fname)
+  }
+
+  write_vars_to_cdf(data,
                     fname,
                     extent=c(-180, 180, -90, 90),
-                    attrs=list(
-                      list(var="Pr", key="standard_name", val="precipitation_flux"),
-                      list(var="Pr", key="long_name", val="Precipitation Rate"),
-                      list(var="Pr", key="units", val="kg/m^2/s")
-                    ),
-                    prec='single')
+                    attrs=attrs,
+                    prec=list(Pr='single', num_stations='byte'))
   infof("Wrote PREC/L data to %s", fname)
 }
 
@@ -124,17 +169,14 @@ precl_url <- function(year) {
 
 #' Return the number of bytes from the start of a PREC/L binary file until a given pixel in a given month
 #'
-#' @param month month of data
 #' @param pixel pixel in image (1 for start of image)
+#' @inheritParams open_noaa_precl
 #' @return offset in bytes
-precl_byte_offset <- function(month, pixel) {
-  nx <- 720
-  ny <- 360
-  valsz <- 4
+precl_byte_offset <- function(month, pixel, layer) {
+  recsize <- precl_nx*precl_ny*precl_valsz
+  nlayers <- 2
 
-  recsize <- nx*nx*valsz
-
-  (month-1)*recsize + (pixel-1)*valsz
+  recsize*((month-1)*nlayers + (layer-1)) + (pixel-1)*precl_valsz
 }
 
 #' Return TRUE if PREC/L data is available for a given year/month
@@ -150,7 +192,7 @@ is_precl_available <- function(year, month) {
   url <- precl_url(year)
 
   is_byte_defined(url,
-                  precl_byte_offset(month, test_pixel),
+                  precl_byte_offset(month, test_pixel, 1),
                   4,
                   'little',
                   -999)

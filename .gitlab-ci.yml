@@ -13,6 +13,7 @@ variables:
         CONTAINER_TEST_IMAGE: isciences/wsim:$CI_COMMIT_REF_NAME
         CONTAINER_RELEASE_IMAGE: isciences/wsim:latest
         WSIM_VERSION_BASE: "2.0"
+        WSIM_ALL_TESTS: "YES"
 
 before_script:
         - docker login -u ci4isciences -p $DOCKERHUB_PW
