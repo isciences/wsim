@@ -16,11 +16,12 @@
 '
 Download PREC/L monthly precipitation rates
 
-Usage: get_precl.R (--yearmon=<yearmon> --output=<file>)
+Usage: get_precl.R --yearmon=<yearmon> --output=<file> [--include_station_counts]
 
 Options:
---yearmon <yearmon>    Year and month of data to read
---output <file>        Path of output netCDF file
+--yearmon <yearmon>       Year and month of data to read
+--output <file>           Path of output netCDF file
+--include_station_counts  Include station counts in output? [Default: True]
 '->usage
 
 suppressMessages({
@@ -40,7 +41,12 @@ main <- function(raw_args) {
     stop(sprintf('Cannot write to %s. Does the directory exist?', outfile))
   }
 
-  download_precl(outfile, year, month)
+  vars <- c('precipitation_rate')
+  if (args$include_station_counts) {
+    vars <- c(vars, 'gauge_count')
+  }
+
+  download_precl(outfile, year, month, vars)
 }
 
 tryCatch(main(commandArgs(trailingOnly=TRUE)),
