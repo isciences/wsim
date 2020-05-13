@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -22,7 +22,7 @@ hydropower_loss <- function(blue_water, blue_water_median) {
   
   ifelse(is.nan(blue_water),
          NA_real_,
-         ifelse(rep.int(blue_water_median > 0, length(blue_water)),
+         ifelse(rep.int(blue_water_median > 0, length(blue_water)/length(blue_water_median)),
                 1 - pmax(pmin(1.013446 + 0.281561*log(blue_water / blue_water_median), 1.0), 0.0), 
                 0))
 }
