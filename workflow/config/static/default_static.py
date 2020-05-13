@@ -40,7 +40,7 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
             stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
             gadm.admin_boundaries(source_dir=self.source, levels=[0, 1]) + \
             gppd.power_plant_database(source_dir=self.source) + \
-            grand.dam_locations(source_dir=self.source) + \
+            grand.download_grand(source_dir=self.source) + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=7) + \
             hydrobasins.downstream_ids(source_dir=self.source,
                                        basins_file=self.basins().file,
@@ -74,7 +74,7 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07_downstream.nc'), 'next_down')
 
     def dam_locations(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GRanD', 'GRanD_dams_v1_1.shp'), None)
+        return paths.Vardef(grand.dam_locations(self.source), None)
 
     def water_stress(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'Aqueduct', 'aqueduct_baseline_water_stress.tif'), '1')
