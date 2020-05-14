@@ -29,31 +29,11 @@ from wsim_workflow import dates
 
 import importlib
 import importlib.util
-import types
-from importlib.machinery import SourceFileLoader
 import sys
 
 
 def load_module(module):
     return importlib.import_module('wsim_workflow.output.{}'.format(module))
-
-
-def load_config(path, source, derived):
-    dirname = os.path.dirname(path)
-
-    # Temporarily add config module directory to the system path
-    # This feels wrong, but I can't find another method that allows
-    # one config to derive from another (as config_fast inherits from
-    # config_cfs)
-    sys.path.insert(0, dirname)
-
-    loader = SourceFileLoader("config", path)
-    mod = types.ModuleType(loader.name)
-    loader.exec_module(mod)
-
-    sys.path.remove(dirname)
-
-    return mod.config(source, derived)
 
 
 def parse_args(args):
@@ -123,7 +103,7 @@ def main(raw_args):
     output_module = load_module(args.module)
     output_filename = args.makefile or output_module.DEFAULT_FILENAME
 
-    config = load_config(args.config, args.source, args.workspace)
+    config = workflow.load_config(args.config, args.source, args.workspace)
 
     steps = workflow.generate_steps(config,
                                     start=args.start,

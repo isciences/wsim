@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -14,6 +14,9 @@
 # limitations under the License.
 
 import os
+import sys
+import types
+import importlib.machinery
 
 from typing import List, Optional
 
@@ -154,3 +157,21 @@ def unbuildable_targets(steps) -> List[Step]:
         print('xox')
 
     return unbuildable
+
+
+def load_config(path, source, derived):
+    dirname = os.path.dirname(path)
+
+    # Temporarily add config module directory to the system path
+    # This feels wrong, but I can't find another method that allows
+    # one config to derive from another (as config_fast inherits from
+    # config_cfs)
+    sys.path.insert(0, dirname)
+
+    loader = importlib.machinery.SourceFileLoader("config", path)
+    mod = types.ModuleType(loader.name)
+    loader.exec_module(mod)
+
+    sys.path.remove(dirname)
+
+    return mod.config(source, derived)
