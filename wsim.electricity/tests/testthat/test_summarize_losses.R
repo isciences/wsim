@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -55,7 +55,7 @@ test_that('Reserve capacity calculation is vectorized', {
 
 test_that('Summary produces correct_results', {
   dat <- data.frame(
-    id=             c(      1,       2,         3,     4,       5,     6,       7),
+    basin_id=       c(      1,       2,         3,     4,       5,     6,       7),
     province_id=    c(      1,       1,         1,     1,       2,     2,       3),
     fuel=           c('Hydro', 'Hydro', 'Nuclear', 'Oil', 'Hydro', 'Gas', 'Solar'),
     water_cooled=   c(  FALSE,   FALSE,      TRUE, FALSE,   FALSE,  TRUE,   FALSE),
@@ -65,8 +65,8 @@ test_that('Summary produces correct_results', {
   )
   
   loss <- data.frame(
-    id=             c(      1,       2,         3,     4,       5,     6,       7),
-    loss_risk=      c(    0.5,      0.4,     0.05,    0.2,    0.4,    0.2,      0)
+    id=              c(      1,       2,         3,     4,       5,     6,       7),
+    hydropower_loss= c(    0.5,      0.4,     0.05,    0.2,    0.4,    0.2,      0)
   )
   attr(loss$id, 'source') <- 'unknown' # provoke dplyr attribute mismatch warning
   
@@ -75,57 +75,35 @@ test_that('Summary produces correct_results', {
     datsum <- summarize_losses(dat, loss, 'province_id', 3)
   , regexp=NA)
   
-  # TODO reserve capacity should take temperature losses into account
   expect_equal(as.list(datsum[1, ]),
                list(province_id=1,
                     capacity_tot_mw= 100+70+300+20,
-                    capacity_reserve_mw= 0+0+0+(20-5),
                     generation_tot_mwh= 3*(40+50+220+5),
-                    gross_loss_mwh= 3*(0.5*40 + 0.4*50 + 0.05*220 + 0.2*5),
-                    net_loss_mwh= 3*((0.5*40 + 0.4*50 + 0.05*220 + 0.2*5) - (20 - 5)),
+                    gross_loss_mwh= 3*(40*0.5 + 0.4*50),
                     hydro_loss_mwh= 3*(40*0.5 + 0.4*50),
-                    nuclear_loss_mwh= 3*(220*0.05),
-                    gross_loss_pct= (0.5*40 + 0.4*50 + 0.05*220 + 0.2*5) / (40 + 50 + 220 + 5),
-                    net_loss_pct= ((0.5*40 + 0.4*50 + 0.05*220 + 0.2*5) - (20 - 5)) / (40+50+220+5),
-                    hydro_loss_pct= (40*0.5 + 0.4*50)/(40 + 50),
-                    nuclear_loss_pct= 220*0.05/220,
-                    reserve_utilization_mwh= 3*(0+0+0+20-5),
-                    reserve_utilization_pct= 1
+                    gross_loss_pct= (40*0.5 + 0.4*50) / (40 + 50 + 220 + 5),
+                    hydro_loss_pct= (40*0.5 + 0.4*50)/(40 + 50)
                ))
   
   expect_equal(as.list(datsum[2, ]),
                 list(
                     province_id= 2,
                     capacity_tot_mw= 30+40,
-                    capacity_reserve_mw= 0+0,
                     generation_tot_mwh= 3*(20+20),
-                    gross_loss_mwh= 3*(20*0.4 + 20*0.2),
-                    net_loss_mwh= 3*(20*0.4 + 20.*0.2 - 0),
+                    gross_loss_mwh= 3*(20*0.4),
                     hydro_loss_mwh= 3*(20*0.4),
-                    nuclear_loss_mwh= 0,
-                    gross_loss_pct= (20*0.4 + 20*0.2)/(20 + 20),
-                    net_loss_pct= (20*0.4 + 20*0.2 - 0)/(20 + 20),
-                    hydro_loss_pct= 20*0.4 / 20,
-                    nuclear_loss_pct= NA_real_,
-                    reserve_utilization_mwh= 0,
-                    reserve_utilization_pct= NA_real_
+                    gross_loss_pct= 20*0.4 /(20 + 20),
+                    hydro_loss_pct= 20*0.4 / 20
                ))
   
   expect_equal(as.list(datsum[3, ]),
                 list(
                     province_id= 3,
                     capacity_tot_mw= 5,
-                    capacity_reserve_mw= 0,
                     generation_tot_mwh= 3*2,
-                    gross_loss_mwh= 3*2*0,
-                    net_loss_mwh= 3*2*0,
+                    gross_loss_mwh= 0,
                     hydro_loss_mwh= 0,
-                    nuclear_loss_mwh= 0,
                     gross_loss_pct= 0,
-                    net_loss_pct= 0,
-                    hydro_loss_pct= NA_real_,
-                    nuclear_loss_pct= NA_real_,
-                    reserve_utilization_mwh= 0,
-                    reserve_utilization_pct= NA_real_
+                    hydro_loss_pct= NA_real_
                ))
 })

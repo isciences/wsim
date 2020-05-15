@@ -586,7 +586,7 @@ class DefaultWorkspace:
 
     # Electricity assessment misc
     def basin_loss_factors(self, *, yearmon: str, model: Optional[str], target: Optional[str], member: Optional[str]) -> str:
-        return self.make_path('loss_factors', sector=Sector.ELECTRIC_POWER, yearmon=yearmon, window=1, target=target, model=model, member=member, basis=Basis.BASIN)
+        return self.make_path('loss_factors', sector=Sector.ELECTRIC_POWER, yearmon=yearmon, window=12, target=target, model=model, member=member, basis=Basis.BASIN)
 
     def basin_upstream_storage(self, sector: Sector) -> str:
         return os.path.join(self.outputs, sector.value, 'spinup', 'basin_upstream_storage.nc')

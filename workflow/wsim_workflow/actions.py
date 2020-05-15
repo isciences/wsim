@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -87,7 +87,6 @@ def compute_basin_results(workspace: DefaultWorkspace,
                           target: Optional[str] = None,
                           model: Optional[str] = None,
                           member: Optional[str] = None) -> List[Step]:
-    pixel_forcing = workspace.forcing(model=model, yearmon=yearmon, target=target, member=member, window=1)
     pixel_results = workspace.results(model=model, yearmon=yearmon, window=1, target=target, member=member)
     basin_results = workspace.results(model=model, yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
 
@@ -100,11 +99,9 @@ def compute_basin_results(workspace: DefaultWorkspace,
             rasters={
                 'Bt_RO': 'NETCDF:{}:Bt_RO'.format(pixel_results),
                 'RO_m3': 'NETCDF:{}:RO_m3'.format(pixel_results),
-                'T': 'NETCDF:{}:T'.format(pixel_forcing)
             },
             stats=[
                 'RO_m3=sum(RO_m3)',
-                'T_Bt_RO=weighted_mean(RO_m3,Bt_RO)'
             ],
             output=basin_results
         ).merge(

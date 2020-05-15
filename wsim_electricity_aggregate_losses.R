@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -18,11 +18,11 @@ wsim.io::logging_init('wsim_electricity_aggregate_losses')
 '
 Aggregate plant-level losses to boundaries
 
-Usage: wsim_electricity_aggregate_losses --plants=<file> --plant_losses=<file> --basis=<basis> --yearmon=<yearmon> --output=<file>
+Usage: wsim_electricity_aggregate_losses --plants=<file> --basin_losses=<file> --basis=<basis> --yearmon=<yearmon> --output=<file>
 
 Options:
 --plants <file>            Table of power plants
---plant_losses <file>      Table of predicted losses for each plant
+--basin_losses <file>      Table of predicted losses for each basin
 --basis <basis>            Basis on which to aggregate losses (basin, province, country)
 --yearmon <yearmon>        Year and month of predicted losess (YYYYMM)
 --output <file>            Output netCDF with aggregated loss data
@@ -32,7 +32,7 @@ main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
 
   plants <- wsim.io::read_vars(args$plants, as.data.frame=TRUE)
-  losses <- wsim.io::read_vars(args$plant_losses, as.data.frame=TRUE, expect.ids=plants$id)
+  losses <- wsim.io::read_vars(args$basin_losses, as.data.frame=TRUE)
   
   id_field <- sprintf('%s_id', args$basis)
   
