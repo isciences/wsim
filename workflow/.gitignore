@@ -4,3 +4,4 @@ build/
 MANIFEST
 *.egg-info/
 *.pyc
+.cache
