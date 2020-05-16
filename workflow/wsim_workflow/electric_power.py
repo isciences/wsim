@@ -98,14 +98,14 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                                     window=window,
                                                     basis=Basis.BASIN)
 
-        # Compute basin loss factors
-        steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon)
+    # Compute basin loss factors
+    steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon)
 
-        # Compute aggregated losses
-        for basis in AGGREGATION_POLYGONS:
-            steps += meta_steps['electric_power_assessment'].require(
-                compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
-            )
+    # Compute aggregated losses
+    for basis in AGGREGATION_POLYGONS:
+        steps += meta_steps['electric_power_assessment'].require(
+            compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
+        )
 
     return steps
 
