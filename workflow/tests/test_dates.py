@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -48,6 +48,12 @@ class TestDates(unittest.TestCase):
     def test_get_previous_yearmon(self):
         self.assertEqual('201712', get_previous_yearmon('201801'))
         self.assertEqual('201711', get_previous_yearmon('201712'))
+
+    def test_get_previous_yearmons(self):
+        self.assertListEqual(
+            ['201811', '201812', '201901', '201902'],
+            get_previous_yearmons('201903', 4)
+        )
 
     def test_rolling_window(self):
         self.assertListEqual(

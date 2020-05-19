@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -98,6 +98,19 @@ def get_next_yearmon(yearmon: str) -> str:
         year += 1
 
     return format_yearmon(year, month)
+
+
+def get_previous_yearmons(yearmon: str, n: int) -> List[str]:
+    """
+    Get previous YYYYMMs to input
+    """
+    targets = [get_previous_yearmon(yearmon)]
+
+    for _ in range(n - 1):
+        targets.append(get_previous_yearmon(targets[-1]))
+
+    targets.reverse()
+    return targets
 
 
 def get_next_yearmons(yearmon: str, n: int) -> List[str]:
