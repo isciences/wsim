@@ -176,3 +176,37 @@ test_that('rank edge cases behave as expected', {
   expect_equal(c(3, 4),
                minmax_ranks(6, 4:6))
 })
+
+test_that('stack_select pulls a ragged slice from a 3d array', {
+  nx <- 3
+  ny <- 2
+  nz <- 8
+  arr <- array(runif(nx*ny*nz), dim=c(ny, nx, nz))
+
+  start <- rbind(c(3, 1, 2),
+                 c(9, 4, 5))
+  n <- 5
+  fill <- -999
+  sel <- stack_select(arr, start, n, fill)
+
+  expect_equal(dim(sel), c(dim(arr)[1:2], n))
+
+  for (i in seq_len(nrow(start))) {
+    for (j in seq_len(ncol(start))) {
+      first <- start[i, j]
+      last <- first + n - 1
+
+      if (first > nz) {
+        orig <- rep.int(fill, n)
+      } else {
+        if (last <= nz) {
+          orig <- arr[i, j, first:last]
+        } else {
+          orig <- c(arr[i, j, first:nz], rep.int(fill, last - nz))
+        }
+      }
+
+      expect_equal(orig, sel[i, j, ])
+    }
+  }
+})

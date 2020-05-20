@@ -66,8 +66,47 @@ static std::array<int, 3> get_dims3(const NumericVector & v) {
   return ret;
 }
 
+template<typename ContainerType, typename ValueType>
+struct ResultHolder {
+
+  ResultHolder(ContainerType obj) {
+    m_obj = std::move(obj);
+  }
+
+  size_t size() const {
+    return m_obj.size();
+  }
+
+  const ValueType& operator[](size_t i) const {
+    return m_obj[i];
+  }
+
+  ContainerType m_obj;
+};
+
+template<>
+struct ResultHolder<double, double>
+{
+  ResultHolder(double obj) {
+    m_obj = obj;
+  }
+
+  size_t size() const {
+    return 1ul;
+  }
+
+  const double& operator[](size_t i) const {
+    assert(i == 0);
+    return m_obj;
+  }
+
+  double m_obj;
+};
+
+
 // Apply function f over each slice [i, j, ] in an array
 // f must return a scalar
+// f(v[i,j,-]) -> scalar
 template<typename Function>
 NumericVector stack_apply (const NumericVector & v,
                            Function&& f,
@@ -76,12 +115,27 @@ NumericVector stack_apply (const NumericVector & v,
   const int cells_per_level = dims[0]*dims[1];
   const int depth = dims.size() == 2 ? 1 : dims[2];
 
-  // Create an output array of dimensions matching the input
-  NumericVector out = no_init(cells_per_level);
-  out.attr("dim") = NumericVector::create(dims[0], dims[1]);
-
   // Create mutable vector to hold arguments for `f`
   std::vector<double> f_args(depth);
+
+  size_t depth_out = 0;
+
+  // Probe the first cell to find the length of the output.
+  for (size_t k = 0; k < depth; k++) {
+    double val = v[k*cells_per_level];
+    f_args[k] = val;
+
+    ResultHolder<decltype(f(f_args, depth)), double> result(f(f_args, depth));
+    depth_out = result.size();
+  }
+
+  // Create an output array of dimensions matching the input
+  NumericVector out = no_init(cells_per_level*depth_out);
+  if (depth_out == 1) {
+    out.attr("dim") = NumericVector::create(dims[0], dims[1]);
+  } else {
+    out.attr("dim") = NumericVector::create(dims[0], dims[1], depth_out);
+  }
 
   for (int j = 0; j < dims[0]; j++) {
     int jblock = j*dims[1];
@@ -95,13 +149,18 @@ NumericVector stack_apply (const NumericVector & v,
         }
       }
 
-      out[jblock + i] = f(f_args, argc);
+      ResultHolder<decltype(f(f_args, argc)), double> result(f(f_args, argc));
+
+      for (int k = 0; k < result.size(); k++) {
+        out[k*cells_per_level + jblock + i] = result[k];
+      }
     }
   }
 
   return out;
 }
 
+// f(v[i,j,-], m[i, j]) -> scalar
 template<typename Function>
 NumericVector stack_apply(const NumericVector & v,
                           const NumericVector & m,
@@ -122,53 +181,27 @@ NumericVector stack_apply(const NumericVector & v,
     throw std::invalid_argument("Number of rows and columns in matrix must match companion array.");
   }
 
-  // Create an output array of dimensions matching the input
-  NumericVector out = no_init(cells_per_level);
-  out.attr("dim") = NumericVector::create(dims[0], dims[1]);
-
   // Create mutable vector to hold arguments for `f`
   std::vector<double> f_args(depth);
 
-  for (int j = 0; j < dims[0]; j++) {
-    int jblock = j*dims[1];
+  size_t depth_out = 0;
 
-    for (int i = 0; i < dims[1]; i++) {
-      int argc = 0;
-      for (int k = 0; k < depth; k++) {
-        double val = v[k*cells_per_level + jblock + i];
-        if (!remove_na || !std::isnan(val)) {
-          f_args[argc++] = val;
-        }
-      }
+  // Probe the first cell to find the length of the output.
+  for (size_t k = 0; k < depth; k++) {
+    double val = v[k*cells_per_level];
+    f_args[k] = val;
 
-      out[jblock + i] = f(m[jblock + i], f_args, argc);
-    }
+    ResultHolder<decltype(f(m[0], f_args, depth)), double> result(f(m[0], f_args, depth));
+    depth_out = result.size();
   }
-
-  return out;
-}
-
-// Apply function f over each slice [i, j, ] in an array
-// f must return a vector of length `depth_out`
-template<typename Function>
-NumericVector stack_apply (const NumericVector & v,
-                           Function&& f,
-                           int depth_out,
-                           bool remove_na) {
-  const IntegerVector dims = v.attr("dim");
-  if (dims.length() < 2 || dims.length() > 3) {
-    throw std::invalid_argument("Expected array of 2 or 3 dimensions");
-  }
-
-  const int cells_per_level = dims[0]*dims[1];
-  const int depth = dims[2];
 
   // Create an output array of dimensions matching the input
   NumericVector out = no_init(cells_per_level*depth_out);
-  out.attr("dim") = NumericVector::create(dims[0], dims[1], depth_out);
-
-  // Create mutable vector to hold arguments for `f`
-  std::vector<double> f_args(depth);
+  if (depth_out == 1) {
+    out.attr("dim") = NumericVector::create(dims[0], dims[1]);
+  } else {
+    out.attr("dim") = NumericVector::create(dims[0], dims[1], depth_out);
+  }
 
   for (int j = 0; j < dims[0]; j++) {
     int jblock = j*dims[1];
@@ -182,9 +215,9 @@ NumericVector stack_apply (const NumericVector & v,
         }
       }
 
-      std::vector<double> result = f(f_args, argc);
+      ResultHolder<decltype(f(m[jblock+i],f_args,argc)), double> result(f(m[jblock + i], f_args, argc));
 
-      for (int k = 0; k < std::min(depth_out, (int) result.size()); k++) {
+      for (int k = 0; k < result.size(); k++) {
         out[k*cells_per_level + jblock + i] = result[k];
       }
     }
@@ -583,7 +616,32 @@ NumericVector stack_sort(const NumericVector & v) {
     std::fill(std::next(out.begin(), n), out.end(), NA_REAL);
 
     return out;
-  }, dim[2], true);
+  }, true);
+}
+
+//' Extract a slab of n elements from an array, with a variable starting point
+//'
+//' @param v     a three-dimemsional array
+//' @param start a matrix containing start indices along the third dimension of \code{v}
+//' @param n     the number of elements to extract along the third dimension
+//' @param fill  a fill value to use where \code{start[i, j] + n > dim(v)[3]}
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_select(const NumericVector & v, const NumericVector & start, const IntegerVector & n, const NumericVector & fill) {
+  return stack_apply(v, start, [n, fill](double s, const std::vector<double> & x, int argc) {
+    std::vector<double> out(n[0]);
+
+    for(size_t i = 0; i < n[0]; i++) {
+      auto j = i + static_cast<size_t>(s) - 1;
+      if (j >= argc) {
+        out[i] = fill[0];
+      } else {
+        out[i] = x[j];
+      }
+    }
+
+    return out;
+  }, false);
 }
 
 //' Compute the rank of each element in a matrix, returning the minimum in case of ties
