@@ -22,7 +22,7 @@ SUBDIR = 'MIRCA2000'
 
 def _condensed_crop_calendar(*, source_dir: str) -> List[Step]:
     dirname = os.path.join(source_dir, SUBDIR)
-    url = 'https://hessenbox-a10.rz.uni-frankfurt.de/dl/fiBX48XXU1GQumNk7iAsoXyG/condensed_cropping_calendars.zip'
+    url = 'https://hessenbox-a10.rz.uni-frankfurt.de/dl/fiLKG1sUeoJ4pwMzezcoxG2F/condensed_cropping_calendars.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
 
     steps = [
@@ -70,7 +70,7 @@ def _condensed_crop_calendar(*, source_dir: str) -> List[Step]:
 
 def _regions(*, source_dir: str) -> List[Step]:
     dirname = os.path.join(source_dir, SUBDIR)
-    url = 'https://hessenbox-a10.rz.uni-frankfurt.de/dl/fi5tzYpNuExZ5KLMVoBZh3uy/unit_code_grid.zip'
+    url = 'https://hessenbox-a10.rz.uni-frankfurt.de/dl/fi2fAy4fEP11wvBrpL1aEaow/unit_code_grid.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
 
     gz_file = os.path.join(dirname, 'unit_code.asc.gz')
