@@ -24,17 +24,20 @@ suppressMessages({
 '
 Compute standardized anomalies and/or return periods
 
-Usage: wsim_anom --fits=<fits>... --obs=<file>... [--sa=<file>] [--rp=<file>]
+Usage: wsim_anom --fits=<fits>... --obs=<file>... [--sa=<file>] [--rp=<file>] [--attr=<attr>]...
 
 Options:
 --fits <file>  netCDF file containing distribution fit parameters
 --obs <file>   Raster file containing observed values
 --sa <file>    output location for netCDF file of standardized anomalies
 --rp <file>    output location for netCDF file of return periods
+--attr <attr>  optional attributes to attach to output netCDF(s)
 '->usage
 
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args)
+  
+  attrs <- lapply(args$attr, wsim.io::parse_attr)
 
   if (is.null(args$sa) && is.null(args$rp)) {
     die_with_message("Must write return periods or standardized anomalies (--rp and/or --sa)")
@@ -94,6 +97,7 @@ main <- function(raw_args) {
                       extent=extent,
                       ids=ids,
                       prec='single',
+                      attrs=attrs,
                       append=TRUE)
     wsim.io::info("Wrote standard anomalies to", args$sa)
   }
@@ -104,6 +108,7 @@ main <- function(raw_args) {
                       extent=extent,
                       ids=ids,
                       prec='single',
+                      attrs=attrs,
                       append=TRUE)
     wsim.io::info("Wrote return periods to", args$rp)
   }

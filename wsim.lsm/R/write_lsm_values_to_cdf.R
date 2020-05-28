@@ -22,9 +22,10 @@
 #' @param fname Output filename
 #' @param prec optional variable-specific precision settings, as
 #'             described in \link{write_vars_to_cdf}
+#' @param attrs optional attributes to write to output
 #'
 #' @export
-write_lsm_values_to_cdf <- function(values, fname, prec) {
+write_lsm_values_to_cdf <- function(values, fname, prec, attrs=NULL) {
   stopifnot(is.wsim.lsm.forcing(values) ||
             is.wsim.lsm.results(values) ||
             is.wsim.lsm.state(values))
@@ -72,7 +73,9 @@ write_lsm_values_to_cdf <- function(values, fname, prec) {
 
   # Merge the flattened attributes with any constants (such as timestamp date), which
   # will be applied as global attributes.
-  flat_attrs <- c(do.call(c, lapply(var_attrs, flatten_attributes)), global_attrs)
+  flat_attrs <- c(do.call(c, lapply(var_attrs, flatten_attributes)),
+                  global_attrs,
+                  attrs)
 
   wsim.io::write_vars_to_cdf(data_vars,
                              filename=fname,

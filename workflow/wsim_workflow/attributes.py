@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -11,9 +11,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import List, Optional
 
 
 def integration_window(*, var: Optional[str], months: int) -> str:
     return '{}integration_window_months={}'.format('' if var is None else var + ':',
                                                    months)
+
+
+def standard_attrs(*,
+                   yearmon: str,
+                   window: int,
+                   target: Optional[str],
+                   model: Optional[str],
+                   member: Optional[str]) -> List[str]:
+
+    attrs = [
+        'yearmon={}'.format(yearmon),
+        'target={}'.format(target if target else yearmon),
+        'window={}'.format(window)
+    ]
+
+    if model:
+        attrs.append('model={}'.format(model))
+    if member:
+        attrs.append('member={}'.format(member))
+
+    return attrs
