@@ -624,7 +624,7 @@ NumericVector stack_sort(const NumericVector & v) {
 //' @param v     a three-dimemsional array
 //' @param start a matrix containing start indices along the third dimension of \code{v}
 //' @param n     the number of elements to extract along the third dimension
-//' @param fill  a fill value to use where \code{start[i, j] + n > dim(v)[3]}
+//' @param fill  a fill value to use where \code{start[i, j] < 1 | start[i, j] + n > dim(v)[3]}
 //' @export
 // [[Rcpp::export]]
 NumericVector stack_select(const NumericVector & v, const NumericVector & start, const IntegerVector & n, const NumericVector & fill) {
@@ -632,8 +632,8 @@ NumericVector stack_select(const NumericVector & v, const NumericVector & start,
     std::vector<double> out(n[0]);
 
     for(size_t i = 0; i < n[0]; i++) {
-      auto j = i + static_cast<size_t>(s) - 1;
-      if (j >= argc) {
+      auto j = i + s - 1;
+      if (j >= argc || j < 0) {
         out[i] = fill[0];
       } else {
         out[i] = x[j];

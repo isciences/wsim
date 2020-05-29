@@ -183,8 +183,8 @@ test_that('stack_select pulls a ragged slice from a 3d array', {
   nz <- 8
   arr <- array(runif(nx*ny*nz), dim=c(ny, nx, nz))
 
-  start <- rbind(c(3, 1, 2),
-                 c(9, 4, 5))
+  start <- rbind(c(3, 1, 0),
+                 c(9, 4, -1))
   n <- 5
   fill <- -999
   sel <- stack_select(arr, start, n, fill)
@@ -199,11 +199,21 @@ test_that('stack_select pulls a ragged slice from a 3d array', {
       if (first > nz) {
         orig <- rep.int(fill, n)
       } else {
-        if (last <= nz) {
-          orig <- arr[i, j, first:last]
-        } else {
-          orig <- c(arr[i, j, first:nz], rep.int(fill, last - nz))
+        orig <- c()
+
+        # pre-fill
+        if (first < 1) {
+          orig <- c(orig, rep.int(fill, 1 - first))
+          first <- 1
         }
+
+        if (last <= nz) {
+          orig <- c(orig, arr[i, j, first:last])
+        } else {
+          # post-fill
+          orig <- c(orig, arr[i, j, first:nz], rep.int(fill, last - nz))
+        }
+
       }
 
       expect_equal(orig, sel[i, j, ])
