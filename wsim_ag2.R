@@ -53,8 +53,8 @@ args$anom <-
             '202004_trgt202005_fcstcfsv2_2020043018',
             '202004_trgt202006_fcstcfsv2_2020043018',
             '202004_trgt202007_fcstcfsv2_2020043018',
-            '202004_trgt202008_fcstcfsv2_2020043018',
             '202004_trgt202009_fcstcfsv2_2020043018',
+            '202004_trgt202008_fcstcfsv2_2020043018',
             '202004_trgt202010_fcstcfsv2_2020043018',
             '202004_trgt202011_fcstcfsv2_2020043018',
             '202004_trgt202012_fcstcfsv2_2020043018',
@@ -65,14 +65,12 @@ args$calendar_rf <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_rainfed
 args$calendar_irr <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_irrigated.nc'
 args$crop <- 'maize'
 args$output <- '/tmp/ag_losses.nc'
-args$yearmon <- '202005'
-args$model <- '/tmp/r7_maize_county'
+args$yearmon <- '202004'
+args$model <- '/home/dan/dev/wsim/r7_maize_county'
 
 # globals
 rf_vars <- c('T_1mo_mean', 'RO_1mo_mean', 'Ws_1mo_mean', 'Bt_RO_1mo_max', 'Pr_1mo_mean', 'PETmE_1mo_mean')
 anom_vars <- c('T_sa', 'RO_mm_sa', 'Ws_sa', 'Bt_RO_sa', 'Pr_sa', 'PETmE_sa')
-months_obs <- 12
-months_fcst <- 9
 model_months <- 12
 
 # utility functions (move to pkg)
@@ -115,6 +113,29 @@ update_dimnames <- function(x, dim, fun) {
   set_dimnames(x, dim, fun(dimnames(x)[[dim]]))
 }
 
+#' Read anom_vars from fnames
+#' Return a list with a 3d array for each anom_var
+#' Dates associated with each anomaly are provided in dimnames of cube
+#' NA anomalies replaced with zero
+read_anoms <- function(anom_vars, fnames) {
+  anoms <- sapply(anom_vars, function(anom_var) {
+    a <- list()
+    for (anom_fname in fnames) {
+      d <- read_vars_from_cdf(anom_fname, vars=anom_var)
+      target <- d[['attrs']][['target']]
+      a[[target]] <- wsim.lsm::coalesce(d$data[[1]], 0)
+    }
+    abind::abind(a[sort(names(a))], along=3)
+  }, simplify = FALSE)
+  
+  dates <- dimnames(anoms)[[3]]
+  if (!all(dates[-1] == sapply(dates, wsim.lsm::next_yyyymm)[-length(dates)])) {
+    stop('Provided anomaly files do not form a contiguous sequence.')
+  }
+
+  return(anoms)
+}
+
 #flatten_arr <- function(arr, varname) {
 #  dim(arr) <- c(nx*ny, model_months)
 #  dimnames(arr) <- list(row=1:(nx*ny),
@@ -128,6 +149,15 @@ main <- function(raw_args) {
   infof('Reading model from %s', args$model)
   rf <- readRDS(args$model)
   infof('Loaded model from %s', args$model)
+  
+  anoms <- read_anoms(anom_vars, args$anom)
+  anom_yearmons <- dimnames(anoms[[1]])[[3]]
+  # TODO use yearmon/target attrs from anomaly files to determine args$yearmon
+  # instead of relying on user input?
+  months_obs <- sum(anom_yearmons <= args$yearmon)
+  months_fcst <- sum(anom_yearmons > args$yearmon)
+  infof('Read %d months of anomalies (%d observed, %d forecast)', 
+        length(anom_yearmons), months_obs, months_fcst)
   
   num_subcrops <- wsim.agriculture::wsim_crops %>%
     filter(wsim_name == args$crop) %>%
@@ -186,14 +216,7 @@ main <- function(raw_args) {
     anom_tbl <- do.call(cbind, lapply(rf_vars, function(rf_var) {
       anom_var <- anom_vars[which(rf_vars == rf_var)]
       
-      anoms <- lapply(args$anom, function(anom_fname) {
-        read_vars_from_cdf(anom_fname, vars=anom_var)
-      })
-      
-      anoms <- abind(lapply(anoms, function(d) d$data[[1]]), along=3)
-      anoms <- wsim.lsm::coalesce(anoms, 0)
-      
-      anom_arr <- flatten_arr(stack_select(anoms, start_indices, model_months, 0)) %>%
+      anom_arr <- flatten_arr(stack_select(anoms[[anom_var]], start_indices, model_months, 0)) %>%
         update_dimnames(2, function(n) paste(rf_var, as.integer(n) - 1, sep='_'))
     }))
     
@@ -220,9 +243,6 @@ main <- function(raw_args) {
   }
 }
 
-# TODO ensure anoms are sorted
-# 
-# TODO ensure 12 months of observed data
-
+main()
 
 
