@@ -220,3 +220,30 @@ test_that('stack_select pulls a ragged slice from a 3d array', {
     }
   }
 })
+
+test_that('stack_select can also use a callback to fill out-of-range values', {
+  nx <- 3
+  ny <- 2
+  nz <- 8
+  arr <- array(0, dim=c(ny, nx, nz))
+
+  start <- rbind(c(3, 1, 0),
+                 c(9, 4, -1))
+  n <- 5
+  sel_constant <- stack_select(arr, start, n, -999)
+
+  # instead of filling with constant values, fill with random values
+  set.seed(802)
+  sel_runif <- stack_select(arr, start, n, function() runif(1))
+
+  # check that random values filled are same ones we would get by calling
+  # from R
+  set.seed(802)
+  for (j in 1:nx) {
+    for (i in 1:ny) {
+      x <- sel_runif[i, j, which(sel_constant[i, j, ] == -999)]
+      y <- runif(length(x))
+      expect_equal(x, y)
+    }
+  }
+})

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::plugins(cpp14)]]
 #include <Rcpp.h>
 using namespace Rcpp;
 
@@ -619,29 +619,50 @@ NumericVector stack_sort(const NumericVector & v) {
   }, true);
 }
 
-//' Extract a slab of n elements from an array, with a variable starting point
-//'
-//' @param v     a three-dimemsional array
-//' @param start a matrix containing start indices along the third dimension of \code{v}
-//' @param n     the number of elements to extract along the third dimension
-//' @param fill  a fill value to use where \code{start[i, j] < 1 | start[i, j] + n > dim(v)[3]}
-//' @export
-// [[Rcpp::export]]
-NumericVector stack_select(const NumericVector & v, const NumericVector & start, const IntegerVector & n, const NumericVector & fill) {
-  return stack_apply(v, start, [n, fill](double s, const std::vector<double> & x, int argc) {
-    std::vector<double> out(n[0]);
+template<typename F>
+auto stack_select_impl(int n, F&& f) {
+  return [n, &f](double s, const std::vector<double> & x, int argc) {
+    std::vector<double> out(n);
 
-    for(size_t i = 0; i < n[0]; i++) {
+    for(size_t i = 0; i < n; i++) {
       auto j = i + s - 1;
       if (j >= argc || j < 0) {
-        out[i] = fill[0];
+        out[i] = f();
       } else {
         out[i] = x[j];
       }
     }
 
     return out;
-  }, false);
+  };
+}
+
+//' Extract a slab of n elements from an array, with a variable starting point
+//'
+//' @param v     a three-dimemsional array
+//' @param start a matrix containing start indices along the third dimension of \code{v}
+//' @param n     the number of elements to extract along the third dimension
+//' @param fill  a fill value to use where \code{start[i, j] < 1 | start[i, j] + n > dim(v)[3]},
+//'              or a function taking no arguments that will be called to obtain fill values
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_select(const NumericVector & v, const NumericVector & start, const IntegerVector & n, const SEXP & fill) {
+  if (TYPEOF(fill) == CLOSXP) {
+    Function fill_fn = fill;
+
+    auto constant = [&fill_fn](){
+      NumericVector result = fill_fn();
+      return result[0];
+    };
+
+    return stack_apply(v, start, stack_select_impl(n[0], constant), false);
+  } else {
+    NumericVector fill_val = fill;
+
+    auto constant = [&fill_val](){ return fill_val[0]; };
+
+    return stack_apply(v, start, stack_select_impl(n[0], constant), false);
+  }
 }
 
 //' Compute the rank of each element in a matrix, returning the minimum in case of ties
