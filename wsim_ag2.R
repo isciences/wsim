@@ -32,21 +32,21 @@ Compute crop-specific loss risk
 Usage: wsim_ag.R --calendar <file> --anom <file>... --yearmon <yyyymm> --model <file>
 
 Options:
---calendar_irr <file>    Crop calendar file
+--calendar_irr <file>   Crop calendar file
 --calendar_rf <file>    Crop calendar file
---subcrop <name>     Name of subcrop to process (e.g., maize_1, rice_4)
---prod_irr <file>    Irrigated production
---prod_rf  <file>    Rainfed production
---model <file>       Random forest model file
---anom <file>        File of standardized anomalies
---yearmon <yearmon>  Year and month of most recent observed anomalies
---output 
+--crop <name>           Name of crop to process (e.g., maize, rice)
+--prod_irr <file>       Irrigated production
+--prod_rf  <file>       Rainfed production
+--model <file>          Random forest model file
+--anom <file>           File of standardized anomalies
+--yearmon <yearmon>     Year and month of most recent observed anomalies
+--output
 '->usage
 
 # test args
 args <- list()
 
-args$anom <- 
+args$anom <-
   sprintf('/home/dan/wsim/may12/derived/anom/anom_1mo_%s.nc',
           c('201905', '201906', '201907', '201908', '201909', '201910',
             '201911', '201912', '202001', '202002', '202003', '202004',
@@ -91,12 +91,20 @@ months_until_harvest <- function(month, harvest_month) {
          harvest_month - month)
 }
 
+months_until_harvest_this_year <- function(month, harvest_month) {
+  harvest_month - month
+}
+
+months_until_harvest_next_year <- function(month, harvest_month) {
+  harvest_month - month + 12L
+}
+
 #' Reduce the dimensions of a 3-dimensional array
-#' 
+#'
 #' The first two dimensions will be combined, while the third dimension will be preserved.
-#' 
+#'
 #' @param arr array to flatten
-#' @param varname 
+#' @param varname
 flatten_arr <- function(arr) {
   dim(arr) <- c(prod(dim(arr)[1:2]), dim(arr)[3])
   dimnames(arr) <- list(row=1:dim(arr)[1],
@@ -127,7 +135,7 @@ read_anoms <- function(anom_vars, fnames) {
     }
     abind::abind(a[sort(names(a))], along=3)
   }, simplify = FALSE)
-  
+
   dates <- dimnames(anoms)[[3]]
   if (!all(dates[-1] == sapply(dates, wsim.lsm::next_yyyymm)[-length(dates)])) {
     stop('Provided anomaly files do not form a contiguous sequence.')
@@ -136,65 +144,56 @@ read_anoms <- function(anom_vars, fnames) {
   return(anoms)
 }
 
-#flatten_arr <- function(arr, varname) {
-#  dim(arr) <- c(nx*ny, model_months)
-#  dimnames(arr) <- list(row=1:(nx*ny),
-#                        var=sprintf('%s_%s', varname, 0:(model_months-1)))
-#  arr
-#}
-
 main <- function(raw_args) {
   #args <- wsim.io::parse_args(usage, raw_args)
-  
+
   infof('Reading model from %s', args$model)
   rf <- readRDS(args$model)
   infof('Loaded model from %s', args$model)
-  
+
   anoms <- read_anoms(anom_vars, args$anom)
   anom_yearmons <- dimnames(anoms[[1]])[[3]]
-  # TODO use yearmon/target attrs from anomaly files to determine args$yearmon
-  # instead of relying on user input?
   months_obs <- sum(anom_yearmons <= args$yearmon)
   months_fcst <- sum(anom_yearmons > args$yearmon)
-  infof('Read %d months of anomalies (%d observed, %d forecast)', 
+  infof('Read %d months of anomalies (%d observed, %d forecast)',
         length(anom_yearmons), months_obs, months_fcst)
-  
+
   num_subcrops <- wsim.agriculture::wsim_crops %>%
     filter(wsim_name == args$crop) %>%
     inner_join(wsim.agriculture::mirca_crops, by='wsim_id') %>%
     pull(mirca_subcrops)
-  
+
   for (subcrop in wsim.agriculture::subcrop_names(args$crop, num_subcrops)) {
     calendar_irr <- read_vars_from_cdf(args$calendar_irr,
                                        vars=c('plant_date', 'harvest_date'), #sprintf('%s::plant_date,harvest_date', args$calendar),
                                        extra_dims=list(crop=subcrop))
-    
+
     calendar_rf <- read_vars_from_cdf(args$calendar_rf,
                                        vars=c('plant_date', 'harvest_date'), #sprintf('%s::plant_date,harvest_date', args$calendar),
                                        extra_dims=list(crop=subcrop))
     infof('Read crop calendars for %s', subcrop)
-    
+
     prod_irr <- wsim.io::read_vars_from_cdf(args$prod_irr,
                                                  vars='production',
                                                  extra_dims=list(crop=subcrop))$data[[1]]
     prod_rf <- wsim.io::read_vars_from_cdf(args$prod_rf,
                                                 vars='production',
                                                 extra_dims=list(crop=subcrop))$data[[1]]
-    
+
     infof('Read production data for %s', subcrop)
-    
+
     prod_frac_irr <- aggregate_mean(prod_irr / psum(prod_irr, prod_rf), 6)
     infof('Computed irrigated fraction for %s', subcrop)
-    
+
     plant_date <- ifelse(prod_frac_irr >= 0.5,
                          calendar_irr$data$plant_date,
                          calendar_rf$data$plant_date)
     harvest_date <- ifelse(prod_frac_irr >= 0.5,
                          calendar_irr$data$harvest_date,
                          calendar_rf$data$harvest_date)
-    
+
     infof('Computed dominant calendar for %s based on dominant cultivation method', subcrop)
-  
+
     # todo pull into a method, use s3 dispatch to preserve matrix dims?
     plant_month <- matrix(doy_to_month[plant_date],
                           nrow=nrow(plant_date),
@@ -202,43 +201,56 @@ main <- function(raw_args) {
     harvest_month <- matrix(doy_to_month[harvest_date],
                             nrow=nrow(harvest_date),
                             ncol=ncol(harvest_date))
-    
+
     in_season <- abind(sapply(0:11,
                               function(m) is_growing_season(harvest_month - m, plant_month, harvest_month),
                               simplify=FALSE),
                        along=3)
-  
+
     month <- as.integer(substr(args$yearmon, 5, 6))
-    start_indices <- months_until_harvest(month, harvest_month) - model_months + months_obs + 1
-    nx <- dim(start_indices)[2]
-    ny <- dim(start_indices)[1]
-    
-    anom_tbl <- do.call(cbind, lapply(rf_vars, function(rf_var) {
-      anom_var <- anom_vars[which(rf_vars == rf_var)]
-      
-      anom_arr <- flatten_arr(stack_select(anoms[[anom_var]], start_indices, model_months, 0)) %>%
-        update_dimnames(2, function(n) paste(rf_var, as.integer(n) - 1, sep='_'))
-    }))
-    
-    anom_tbl <- cbind(anom_tbl, flatten_arr(in_season) %>%
-                        update_dimnames(2, function(n) paste('in_season', as.integer(n) - 1, sep='_')))
-    anom_tbl <- cbind(anom_tbl, frac_prod_irr=as.vector(prod_frac_irr))
-    
-    infof('Read anomalies')
-    
-    # Subset the inputs to pixels where we have a defined crop calendar.
-    input <- anom_tbl[!is.na(anom_tbl[, 'in_season_0']), ]
-    
-    p <- predict(object = rf, data = input)
-    
-    results <- matrix(NA_real_, nrow=ny, ncol=nx)
-    results[as.integer(dimnames(input)[[1]])] <- p$predictions
-    
-    write_vars_to_cdf(list(loss=results),
+
+    nx <- dim(in_season)[2]
+    ny <- dim(in_season)[1]
+
+    results <- list()
+    for (harvest in c('this_year', 'next_year')) {
+      if (harvest == 'this_year') {
+        start_indices <- months_until_harvest_this_year(month, harvest_month) - model_months + months_obs + 1
+      } else {
+        start_indices <- months_until_harvest_next_year(month, harvest_month) - model_months + months_obs + 1
+      }
+
+      infof('Arranging anomalies for the %s crop calendar', subcrop)
+      anom_tbl <- do.call(cbind, lapply(rf_vars, function(rf_var) {
+        anom_var <- anom_vars[which(rf_vars == rf_var)]
+
+        anoms[[anom_var]] %>%
+          stack_select(start_indices, model_months, 0) %>%
+          flatten_arr() %>%
+          stats::pnorm() %>% # convert standardized anomaly to probability (0-1)
+          update_dimnames(2, function(n) paste(rf_var, as.integer(n) - 1, sep='_'))
+      }))
+
+      anom_tbl <- cbind(anom_tbl, flatten_arr(in_season) %>%
+                          update_dimnames(2, function(n) paste('in_season', as.integer(n) - 1, sep='_')))
+      anom_tbl <- cbind(anom_tbl, frac_prod_irr=as.vector(prod_frac_irr))
+
+      # Subset the inputs to pixels where we have a defined crop calendar.
+      input <- anom_tbl[!is.na(anom_tbl[, 'in_season_0']), ]
+
+      infof('Generating yield anomaly predictions for %s (harvest %s)', subcrop, sub('_', ' ', harvest))
+      p <- predict(object = rf, data = input)
+
+      results[[harvest]] <- matrix(NA_real_, nrow=ny, ncol=nx)
+      results[[harvest]][as.integer(dimnames(input)[[1]])] <- p$predictions
+    }
+
+    write_vars_to_cdf(list(loss_this_year=results[['this_year']],
+                           loss_next_year=results[['next_year']]),
                       args$output,
                       extent=calendar_irr$extent,
                       prec='single')
-    
+
     infof('Wrote predictions to %s', args$output)
   }
 }
