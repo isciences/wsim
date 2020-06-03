@@ -235,7 +235,7 @@ main <- function(raw_args) {
                                        vars=c('plant_date', 'harvest_date'), #sprintf('%s::plant_date,harvest_date', args$calendar),
                                        extra_dims=list(crop=subcrop))
     infof('Read crop calendars for %s', subcrop)
-
+    
     prod_irr <- wsim.io::read_vars_from_cdf(args$prod_irr,
                                                  vars='production',
                                                  extra_dims=list(crop=subcrop))$data[[1]]
@@ -254,7 +254,7 @@ main <- function(raw_args) {
     harvest_date <- ifelse(prod_frac_irr >= 0.5,
                          calendar_irr$data$harvest_date,
                          calendar_rf$data$harvest_date)
-
+    
     infof('Computed dominant calendar for %s based on dominant cultivation method', subcrop)
 
     # todo pull into a method, use s3 dispatch to preserve matrix dims?
@@ -305,15 +305,16 @@ main <- function(raw_args) {
       results[[harvest]][,,subcrop] <- q
     }
 
-    write_vars_to_cdf(list(loss_this_year=results[['this_year']],
-                           loss_next_year=results[['next_year']]),
-                      args$output,
-                      extent=calendar_irr$extent,
-                      extra_dims=list(crop=subcrops),
-                      prec='single')
-
-    infof('Wrote predictions to %s', args$output)
   }
+  
+  write_vars_to_cdf(list(loss_this_year=results[['this_year']],
+                         loss_next_year=results[['next_year']]),
+                    args$output,
+                    extent=calendar_irr$extent,
+                    extra_dims=list(crop=subcrops),
+                    prec='single')
+
+  infof('Wrote predictions to %s', args$output)
 }
 
 main()
