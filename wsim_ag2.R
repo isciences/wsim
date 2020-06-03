@@ -29,44 +29,80 @@ library(wsim.io)
 '
 Compute crop-specific loss risk
 
-Usage: wsim_ag.R --calendar <file> --anom <file>... --yearmon <yyyymm> --model <file>
+Usage: wsim_ag.R [options]
 
 Options:
---calendar_irr <file>   Crop calendar file
---calendar_rf <file>    Crop calendar file
---crop <name>           Name of crop to process (e.g., maize, rice)
---prod_irr <file>       Irrigated production
---prod_rf  <file>       Rainfed production
---model <file>          Random forest model file
---anom <file>           File of standardized anomalies
---yearmon <yearmon>     Year and month of most recent observed anomalies
+--calendar_irr <file>        Crop calendar file
+--calendar_rf <file>         Crop calendar file
+--prod_irr <file>            Irrigated production
+--prod_rf  <file>            Rainfed production
+--model_spring_wheat <file>  Random forest model file
+--model_winter_wheat <file>
+--model_maize <file>
+--model_soybeans <file>
+--model_potatoes <file>
+--model_rice <file>
+--anom... <file>             File of standardized anomalies
+--yearmon <yearmon>          Year and month of most recent observed anomalies
 --output
 '->usage
 
 # test args
 args <- list()
 
-args$anom <-
-  sprintf('/home/dan/wsim/may12/derived/anom/anom_1mo_%s.nc',
-          c('201905', '201906', '201907', '201908', '201909', '201910',
-            '201911', '201912', '202001', '202002', '202003', '202004',
-            '202004_trgt202005_fcstcfsv2_2020043018',
-            '202004_trgt202006_fcstcfsv2_2020043018',
-            '202004_trgt202007_fcstcfsv2_2020043018',
-            '202004_trgt202009_fcstcfsv2_2020043018',
-            '202004_trgt202008_fcstcfsv2_2020043018',
-            '202004_trgt202010_fcstcfsv2_2020043018',
-            '202004_trgt202011_fcstcfsv2_2020043018',
-            '202004_trgt202012_fcstcfsv2_2020043018',
-            '202004_trgt202101_fcstcfsv2_2020043018'))
+add_months <- function(yearmon, n) {
+  year <- as.integer(substr(yearmon, 1, 4))
+  month <- as.integer(substr(yearmon, 5, 6))
+  
+  month <- month + n
+  
+  while(month > 12) {
+    month <- month - 12
+    year <- year + 1
+  }
+  
+  while(month < 1) {
+    month <- month + 12
+    year <- year - 1
+  }
+  
+  sprintf('%04d%02d', year, month)
+}
+
+args$yearmon <- '202004'
+args$anom <- c(
+  sprintf('/home/dan/wsim/may12/derived/anom/anom_1mo_[%s:%s].nc', add_months(args$yearmon, -23), args$yearmon),
+  sprintf('/home/dan/wsim/may12/derived/anom/anom_1mo_%s_trgt[%s:%s]_fcstcfsv2_%s3018.nc',
+          args$yearmon,
+          add_months(args$yearmon, 1),
+          add_months(args$yearmon, 9),
+          args$yearmon)
+)
+
+#args$anom <-
+#  sprintf('/home/dan/wsim/may12/derived/anom/anom_1mo_%s.nc',
+#          c('201905', '201906', '201907', '201908', '201909', '201910',
+#            '201911', '201912', '202001', '202002', '202003', '202004',
+#            '202004_trgt202005_fcstcfsv2_2020043018',
+#            '202004_trgt202006_fcstcfsv2_2020043018',
+#            '202004_trgt202007_fcstcfsv2_2020043018',
+#            '202004_trgt202009_fcstcfsv2_2020043018',
+#            '202004_trgt202008_fcstcfsv2_2020043018',
+#            '202004_trgt202010_fcstcfsv2_2020043018',
+#            '202004_trgt202011_fcstcfsv2_2020043018',
+#            '202004_trgt202012_fcstcfsv2_2020043018',
+#            '202004_trgt202101_fcstcfsv2_2020043018'))
 args$prod_irr <- '/home/dan/wsim/may12/source/SPAM2010/production_irrigated.nc'
 args$prod_rf <- '/home/dan/wsim/may12/source/SPAM2010/production_rainfed.nc'
 args$calendar_rf <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_rainfed.nc'
 args$calendar_irr <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_irrigated.nc'
-args$crop <- 'maize'
 args$output <- '/tmp/ag_losses.nc'
-args$yearmon <- '202004'
-args$model <- '/home/dan/dev/wsim/r7_maize_county'
+args$model_maize <- '/home/dan/dev/wsim/r7_maize_county'
+args$model_rice <- '/home/dan/dev/wsim/r7_rice_county'
+args$model_winter_wheat <- '/home/dan/dev/wsim/r7_winter_wheat_county'
+args$model_spring_wheat <- '/home/dan/dev/wsim/r7_spring_wheat_county'
+args$model_soybeans <- '/home/dan/dev/wsim/r7_soybeans_county'
+args$model_potatoes <- '/home/dan/dev/wsim/r7_potatoes_county'
 
 # globals
 rf_vars <- c('T_1mo_mean', 'RO_1mo_mean', 'Ws_1mo_mean', 'Bt_RO_1mo_max', 'Pr_1mo_mean', 'PETmE_1mo_mean')
@@ -144,26 +180,53 @@ read_anoms <- function(anom_vars, fnames) {
   return(anoms)
 }
 
+subcrop_model_name <- function(subcrop) {
+  if (subcrop == 'wheat_1') {
+    'winter_wheat'
+  } else if (subcrop == 'wheat_2') {
+    'spring_wheat'
+  } else {
+    sub('_\\d+$', '', subcrop) 
+  }
+}  
+
 main <- function(raw_args) {
   #args <- wsim.io::parse_args(usage, raw_args)
 
-  infof('Reading model from %s', args$model)
-  rf <- readRDS(args$model)
-  infof('Loaded model from %s', args$model)
-
-  anoms <- read_anoms(anom_vars, args$anom)
+  anoms <- read_anoms(anom_vars, wsim.io::expand_inputs(args$anom))
   anom_yearmons <- dimnames(anoms[[1]])[[3]]
   months_obs <- sum(anom_yearmons <= args$yearmon)
   months_fcst <- sum(anom_yearmons > args$yearmon)
   infof('Read %d months of anomalies (%d observed, %d forecast)',
         length(anom_yearmons), months_obs, months_fcst)
-
-  num_subcrops <- wsim.agriculture::wsim_crops %>%
-    filter(wsim_name == args$crop) %>%
-    inner_join(wsim.agriculture::mirca_crops, by='wsim_id') %>%
-    pull(mirca_subcrops)
-
-  for (subcrop in wsim.agriculture::subcrop_names(args$crop, num_subcrops)) {
+  
+  nx <- dim(anoms[[1]])[2]
+  ny <- dim(anoms[[1]])[1]
+  
+  subcrops <- wsim.agriculture::wsim_subcrop_names()
+  
+  # initialize results array
+  results <- list()
+  for (harvest in c('this_year', 'next_year')) {
+    results[[harvest]] <- array(NA, dim=c(ny, nx, length(subcrops)))
+    dimnames(results[[harvest]])[[3]] <- subcrops
+  }
+  
+  last_subcrop_model_fname <- ''
+    
+  for (subcrop in subcrops) {
+    infof('Processing %s', subcrop)
+    
+    subcrop_model_fname <- args[[sprintf('model_%s', subcrop_model_name(subcrop))]]
+    
+    # avoid reading same model when it is shared between subcrops
+    if (subcrop_model_fname != last_subcrop_model_fname) {
+      infof('Reading model from %s', subcrop_model_fname)
+      rf <- readRDS(subcrop_model_fname)
+      last_subcrop_model_fname <- subcrop_model_fname
+      infof('Loaded model from %s', subcrop_model_fname)
+    }
+    
     calendar_irr <- read_vars_from_cdf(args$calendar_irr,
                                        vars=c('plant_date', 'harvest_date'), #sprintf('%s::plant_date,harvest_date', args$calendar),
                                        extra_dims=list(crop=subcrop))
@@ -209,10 +272,6 @@ main <- function(raw_args) {
 
     month <- as.integer(substr(args$yearmon, 5, 6))
 
-    nx <- dim(in_season)[2]
-    ny <- dim(in_season)[1]
-
-    results <- list()
     for (harvest in c('this_year', 'next_year')) {
       if (harvest == 'this_year') {
         start_indices <- months_until_harvest_this_year(month, harvest_month) - model_months + months_obs + 1
@@ -241,14 +300,16 @@ main <- function(raw_args) {
       infof('Generating yield anomaly predictions for %s (harvest %s)', subcrop, sub('_', ' ', harvest))
       p <- predict(object = rf, data = input)
 
-      results[[harvest]] <- matrix(NA_real_, nrow=ny, ncol=nx)
-      results[[harvest]][as.integer(dimnames(input)[[1]])] <- p$predictions
+      q <- matrix(NA_real_, nrow=ny, ncol=nx)
+      q[as.integer(dimnames(input)[[1]])] <- p$predictions
+      results[[harvest]][,,subcrop] <- q
     }
 
     write_vars_to_cdf(list(loss_this_year=results[['this_year']],
                            loss_next_year=results[['next_year']]),
                       args$output,
                       extent=calendar_irr$extent,
+                      extra_dims=list(crop=subcrops),
                       prec='single')
 
     infof('Wrote predictions to %s', args$output)
@@ -256,5 +317,3 @@ main <- function(raw_args) {
 }
 
 main()
-
-
