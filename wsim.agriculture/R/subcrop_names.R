@@ -15,10 +15,11 @@ subcrop_names <- function(crops, num_subcrops) {
          }, crops, num_subcrops))
 }
 
-#' List the names of WSIM subcrops
+#' List the names of implemented WSIM subcrops
 #' 
 #' @export
 wsim_subcrop_names <- function() {
   x <- merge(wsim_crops, mirca_crops)
+  x <- x[x$implemented, ]
   subcrop_names(x$wsim_name, x$mirca_subcrops)
 }
