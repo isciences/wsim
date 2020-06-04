@@ -264,16 +264,19 @@ class AgricultureStatic(metaclass=ABCMeta):
     def __init__(self, source):
         self.source = source
 
+    @abstractmethod
     def crop_calendar(self, method: Method) -> str:
         pass
 
-    def dam_locations(self) -> Vardef:
+    @abstractmethod
+    def production(self, method: Method) -> Vardef:
+        pass
+
+    @abstractmethod
+    def ag_yield_anomaly_model(self, model_name: str) -> str:
         pass
 
     def basins(self) -> Vardef:
-        pass
-
-    def basin_downstream(self) -> Vardef:
         pass
 
     def countries(self) -> Vardef:
@@ -282,8 +285,6 @@ class AgricultureStatic(metaclass=ABCMeta):
     def provinces(self) -> Vardef:
         pass
 
-    def production(self, method: Method) -> Vardef:
-        pass
 
 
 class DefaultWorkspace:
@@ -497,10 +498,6 @@ class DefaultWorkspace:
                 summary: Optional[bool]=False) -> str:
 
         assert window is not None
-
-        if sector == Sector.AGRICULTURE:
-            # Polygon-aggregated results don't distinguish between cultivation methods but raster results do
-            assert (method is None) != (basis is None)
 
         if year:
             # Check that "annual" summaries are not generated for return periods

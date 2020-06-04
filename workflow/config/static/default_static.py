@@ -94,3 +94,7 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
     def production(self, method: paths.Method) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, spam2010.SUBDIR, 'production_{}.nc'.format(method.value)),
                             'production')
+
+    def ag_yield_anomaly_model(self, model_name: str) -> str:
+        # FIXME
+        return '/home/dan/dev/wsim/r7_{}_county'.format(model_name)

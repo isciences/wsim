@@ -212,6 +212,7 @@ class Step:
                 raise TypeError("Non-list command: ", c)
             for token in c:
                 if type(token) is not str:
+                    print(c)
                     raise TypeError("Non-string command token: ", str(token))
 
     def __str__(self) -> str:

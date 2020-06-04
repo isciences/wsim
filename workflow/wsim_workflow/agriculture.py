@@ -1,4 +1,4 @@
-# Copyright (c) 2019 ISciences, LLC.
+# Copyright (c) 2019-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -16,34 +16,19 @@ import os
 from typing import List, Mapping, Optional, Union
 
 from .config_base import ConfigBase
-from .dates import get_lead_months, get_next_yearmon, parse_yearmon
+from .dates import add_months, format_range, get_lead_months, get_next_yearmon, parse_yearmon
 from .paths import AgricultureStatic, DefaultWorkspace, read_vars, Basis, Method, Sector, Vardef
 from .step import Step
 from . import commands
 
 AGGREGATION_POLYGONS = (Basis.COUNTRY, Basis.PROVINCE, Basis.BASIN)
 CULTIVATION_METHODS = (Method.RAINFED, Method.IRRIGATED)
-DAWN_OF_AGRICULTURE = '200001'
-
-
-def ag_historical_yearmons(config: ConfigBase):
-    return [yearmon for yearmon in config.historical_yearmons() if yearmon >= DAWN_OF_AGRICULTURE]
 
 
 def spinup(config: ConfigBase, _meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
-    for method in CULTIVATION_METHODS:
-        steps += make_initial_state(config.workspace(), method, DAWN_OF_AGRICULTURE)
-
-    steps += compute_basin_integration_windows(config.workspace(), config.static_data())
-
-    steps += compute_expected_losses(config.workspace())
-
-    for yearmon in ag_historical_yearmons(config):
-        steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon)
-        for method in CULTIVATION_METHODS:
-            steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
+    # TODO fit models
 
     return steps
 
@@ -53,16 +38,15 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 
     steps = []
 
-    if yearmon not in ag_historical_yearmons(config):
-        steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon)
-        for method in CULTIVATION_METHODS:
-            steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, method=method)
+    steps += meta_steps['agriculture_assessment'].require(
+        compute_yield_anomalies(config.workspace(), config.static_data(), yearmon=yearmon)
+    )
 
-    # Compute aggregated losses
-    for basis in AGGREGATION_POLYGONS:
-        steps += meta_steps['agriculture_assessment'].require(
-            compute_aggregated_losses(config.workspace(), config.static_data(), yearmon=yearmon, basis=basis)
-        )
+    ## Compute aggregated losses
+    #for basis in AGGREGATION_POLYGONS:
+    #    steps += meta_steps['agriculture_assessment'].require(
+    #        compute_aggregated_losses(config.workspace(), config.static_data(), yearmon=yearmon, basis=basis)
+    #    )
 
     return steps
 
@@ -70,31 +54,22 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
-    # Compute a gridded loss risk for each forecast target/ensemble member
-    for target in config.forecast_targets(yearmon):
-        for model in config.models():
-            print('Generating agriculture steps for', model, yearmon, 'forecast target', target)
-            for member in config.forecast_ensemble_members(model, yearmon):
-                steps += compute_gridded_b2b_btro(config.workspace(), config.static_data(), yearmon=yearmon, model=model, target=target, member=member)
-                for method in CULTIVATION_METHODS:
-                    steps += compute_loss_risk(config.workspace(), config.static_data(), yearmon=yearmon, model=model, target=target, member=member, method=method)
+    # Compute a gridded loss risk for each forecast ensemble member
+    for model in config.models():
+        print('Generating agriculture steps for', model)
+        for member in config.forecast_ensemble_members(model, yearmon):
+            steps += compute_yield_anomalies(config.workspace(), config.static_data(),
+                                             yearmon=yearmon, model=model, member=member)
 
-        del model
-
-        for method in CULTIVATION_METHODS:
-            steps += meta_steps['agriculture_assessment'].require(
-                compute_loss_summary(config, yearmon=yearmon, target=target, method=method)
-            )
-
-        for basis in AGGREGATION_POLYGONS:
-            steps += meta_steps['agriculture_assessment'].require(
-                compute_aggregated_losses(config.workspace(),
-                                          config.static_data(),
-                                          yearmon=yearmon,
-                                          target=target,
-                                          summary=True,
-                                          basis=basis)
-            )
+        #for basis in AGGREGATION_POLYGONS:
+        #    steps += meta_steps['agriculture_assessment'].require(
+        #        compute_aggregated_losses(config.workspace(),
+        #                                  config.static_data(),
+        #                                  yearmon=yearmon,
+        #                                  target=target,
+        #                                  summary=True,
+        #                                  basis=basis)
+        #    )
 
     return steps
 
@@ -355,6 +330,122 @@ def compute_loss_risk(workspace: DefaultWorkspace,
             ]
         )
     ]
+
+
+def compute_yield_anomalies(workspace: DefaultWorkspace,
+                            static: AgricultureStatic,
+                            *,
+                            yearmon: str,
+                            latest_target: Optional[str] = None,
+                            model: Optional[str] = None,
+                            member: Optional[str] = None) -> List[Step]:
+
+    # We need up to 23 months of observed data and 9 months of forecast data.
+    # Imagine that we run the model in December 2019.
+    # One pixel has a crop with a growing season of February - January.
+    # In this case we need observed data from February 2018 - January 2019 to calculate the yield anomaly.
+    # Another pixel has a growing season of January - December.
+    # In this case we need observed data from January 2019 - December 2019 to calculate the yield anomaly.
+    earliest_obs = add_months(yearmon, -22)
+    obs_range = format_range(earliest_obs, yearmon, 1)
+
+    anoms = [workspace.standard_anomaly(yearmon=obs_range, window=1)]
+
+    if latest_target:
+        earliest_target = add_months(yearmon, 1)
+        fcst_range = format_range(earliest_target, latest_target)
+
+        fcst_anoms = workspace.standard_anomaly(yearmon=yearmon,
+                                                window=1,
+                                                target=fcst_range,
+                                                model=model,
+                                                member=member)
+        anoms.append(fcst_anoms)
+
+    models = (
+        'maize',
+        'potatoes',
+        'rice',
+        'soybeans',
+        'spring_wheat',
+        'winter_wheat',
+    )
+
+    results = workspace.results(sector=Sector.AGRICULTURE,
+                                yearmon=yearmon,
+                                window=1,
+                                member=member,
+                                model=model,
+                                target=None)
+
+    return [
+        Step(
+            targets=results,
+            dependencies=anoms + [
+                static.crop_calendar(Method.IRRIGATED),
+                static.crop_calendar(Method.RAINFED),
+                static.production(Method.IRRIGATED),
+                static.production(Method.RAINFED)
+            ] + [static.ag_yield_anomaly_model(m) for m in models],
+            commands=[
+                wsim_ag2(yearmon=yearmon,
+                         anom=anoms,
+                         calendar_irrigated=static.crop_calendar(Method.IRRIGATED),
+                         calendar_rainfed=static.crop_calendar(Method.RAINFED),
+                         production_irrigated=static.production(Method.IRRIGATED).file,
+                         production_rainfed=static.production(Method.RAINFED).file,
+                         model_spring_wheat=static.ag_yield_anomaly_model('spring_wheat'),
+                         model_winter_wheat=static.ag_yield_anomaly_model('winter_wheat'),
+                         model_potatoes=static.ag_yield_anomaly_model('potatoes'),
+                         model_maize = static.ag_yield_anomaly_model('maize'),
+                         model_rice=static.ag_yield_anomaly_model('rice'),
+                         model_soybeans=static.ag_yield_anomaly_model('soybeans'),
+                         output=results)
+            ]
+        )
+    ]
+
+
+def wsim_ag2(*,
+             yearmon: str,
+             anom: Union[str, List[str]],
+             calendar_irrigated: str,
+             calendar_rainfed: str,
+             production_irrigated: str,
+             production_rainfed: str,
+             model_spring_wheat: str,
+             model_winter_wheat: str,
+             model_maize: str,
+             model_soybeans: str,
+             model_potatoes: str,
+             model_rice: str,
+             output: str) -> List[str]:
+
+    if type(anom) is str:
+        anom = [anom]
+
+    command = [
+        os.path.join('{BINDIR}', 'wsim_ag2.R'),
+        '--yearmon', yearmon,
+        '--calendar_irr', calendar_irrigated,
+        '--calendar_rf', calendar_rainfed,
+        '--prod_irr', production_irrigated,
+        '--prod_rf', production_rainfed,
+        '--model_spring_wheat', model_spring_wheat,
+        '--model_winter_wheat', model_winter_wheat,
+        '--model_maize', model_maize,
+        '--model_soybeans', model_soybeans,
+        '--model_potatoes', model_potatoes,
+        '--model_rice', model_rice
+    ]
+
+    for a in anom:
+        command += ['--anom', '"{}"'.format(a)]
+
+    command += ['--output', output]
+
+    return command
+
 
 
 def wsim_ag(*,
