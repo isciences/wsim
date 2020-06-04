@@ -29,22 +29,22 @@ library(wsim.io)
 '
 Compute crop-specific loss risk
 
-Usage: wsim_ag.R [options]
+Usage: wsim_ag.R --calendar_irr <file> --calendar_rf <file> --prod_irr <file> --prod_rf <file> --model_spring_wheat <file> --model_winter_wheat <file> --model_maize <file> --model_rice <file> --model_soybeans <file> --model_potatoes <file> --anom <file>... --yearmon <yearmon> --output <file>
 
 Options:
 --calendar_irr <file>        Crop calendar file
 --calendar_rf <file>         Crop calendar file
 --prod_irr <file>            Irrigated production
---prod_rf  <file>            Rainfed production
+--prod_rf <file>             Rainfed production
 --model_spring_wheat <file>  Random forest model file
 --model_winter_wheat <file>
 --model_maize <file>
 --model_soybeans <file>
 --model_potatoes <file>
 --model_rice <file>
---anom... <file>             File of standardized anomalies
+--anom <file>             File of standardized anomalies
 --yearmon <yearmon>          Year and month of most recent observed anomalies
---output
+--output <file>
 '->usage
 
 # test args
@@ -92,17 +92,17 @@ args$anom <- c(
 #            '202004_trgt202011_fcstcfsv2_2020043018',
 #            '202004_trgt202012_fcstcfsv2_2020043018',
 #            '202004_trgt202101_fcstcfsv2_2020043018'))
-args$prod_irr <- '/home/dan/wsim/may12/source/SPAM2010/production_irrigated.nc'
-args$prod_rf <- '/home/dan/wsim/may12/source/SPAM2010/production_rainfed.nc'
-args$calendar_rf <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_rainfed.nc'
-args$calendar_irr <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_irrigated.nc'
-args$output <- '/tmp/ag_losses.nc'
-args$model_maize <- '/home/dan/dev/wsim/r7_maize_county'
-args$model_rice <- '/home/dan/dev/wsim/r7_rice_county'
-args$model_winter_wheat <- '/home/dan/dev/wsim/r7_winter_wheat_county'
-args$model_spring_wheat <- '/home/dan/dev/wsim/r7_spring_wheat_county'
-args$model_soybeans <- '/home/dan/dev/wsim/r7_soybeans_county'
-args$model_potatoes <- '/home/dan/dev/wsim/r7_potatoes_county'
+#args$prod_irr <- '/home/dan/wsim/may12/source/SPAM2010/production_irrigated.nc'
+#args$prod_rf <- '/home/dan/wsim/may12/source/SPAM2010/production_rainfed.nc'
+#args$calendar_rf <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_rainfed.nc'
+#args$calendar_irr <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_irrigated.nc'
+#args$output <- '/tmp/ag_losses.nc'
+#args$model_maize <- '/home/dan/dev/wsim/r7_maize_county'
+#args$model_rice <- '/home/dan/dev/wsim/r7_rice_county'
+#args$model_winter_wheat <- '/home/dan/dev/wsim/r7_winter_wheat_county'
+#args$model_spring_wheat <- '/home/dan/dev/wsim/r7_spring_wheat_county'
+#args$model_soybeans <- '/home/dan/dev/wsim/r7_soybeans_county'
+#args$model_potatoes <- '/home/dan/dev/wsim/r7_potatoes_county'
 
 # globals
 rf_vars <- c('T_1mo_mean', 'RO_1mo_mean', 'Ws_1mo_mean', 'Bt_RO_1mo_max', 'Pr_1mo_mean', 'PETmE_1mo_mean')
@@ -191,7 +191,7 @@ subcrop_model_name <- function(subcrop) {
 }  
 
 main <- function(raw_args) {
-  #args <- wsim.io::parse_args(usage, raw_args)
+  args <- wsim.io::parse_args(usage, raw_args)
 
   anoms <- read_anoms(anom_vars, wsim.io::expand_inputs(args$anom))
   anom_yearmons <- dimnames(anoms[[1]])[[3]]
@@ -235,6 +235,8 @@ main <- function(raw_args) {
                                        vars=c('plant_date', 'harvest_date'), #sprintf('%s::plant_date,harvest_date', args$calendar),
                                        extra_dims=list(crop=subcrop))
     infof('Read crop calendars for %s', subcrop)
+    
+    # TODO read in subcrop area fraction and null out the calendar if it is zero
     
     prod_irr <- wsim.io::read_vars_from_cdf(args$prod_irr,
                                                  vars='production',
@@ -303,6 +305,8 @@ main <- function(raw_args) {
       q <- matrix(NA_real_, nrow=ny, ncol=nx)
       q[as.integer(dimnames(input)[[1]])] <- p$predictions
       results[[harvest]][,,subcrop] <- q
+
+      gc()
     }
 
   }
@@ -317,4 +321,8 @@ main <- function(raw_args) {
   infof('Wrote predictions to %s', args$output)
 }
 
-main()
+if (!interactive()) {
+  tryCatch(
+    main(commandArgs(trailingOnly=TRUE))
+  ,error=wsim.io::die_with_message)
+}
