@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -94,8 +94,7 @@ def main(raw_args):
             sys.exit(1)
 
         url_patterns = [
-            'ftp://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
-            'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_forecast_mm_9mon/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
+            'https://ncei.noaa.gov/data/climate-forecast-system/access/operational-9-month-forecast/monthly-means/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}'
         ]
 
         rolling_url_pattern = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}'
