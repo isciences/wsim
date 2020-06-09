@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -94,4 +94,18 @@ test_that('bin assignment works as expected', {
   expect_equal(assign_to_bin(vals=c(0.5, 1, 1.5, 2, 3, 4),
                              bins=c(2, 1, 3)),
                c(1, 1, 1, 2, 3, 3))
+})
+
+test_that('dimemsion name updating functions work as expected', {
+  arr <- array(runif(1000), dim=c(10, 10, 10))
+
+  arr <- set_dimnames(arr, 3, letters[1:10])
+
+  expect_equal(dimnames(arr),
+               list(NULL, NULL, letters[1:10]))
+
+  arr <- update_dimnames(arr, 3, toupper)
+
+  expect_equal(dimnames(arr),
+               list(NULL, NULL, LETTERS[1:10]))
 })
