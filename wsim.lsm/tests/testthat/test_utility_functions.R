@@ -91,6 +91,13 @@ test_that('date calculations are correct', {
   expect_equal(add_months('201612', -1), '201611')
   expect_equal(add_months('201612', -13), '201511')
   expect_equal(add_months('201612', -25), '201411')
+
+  expect_equal(doy_to_month(1), 1)
+  expect_equal(doy_to_month(31), 1)
+  expect_equal(doy_to_month(32), 2)
+
+  expect_equal(doy_to_month(matrix(c(1, 31, 32, 37), nrow=2)),
+               matrix(c(1, 1, 2, 2), nrow=2))
 })
 
 test_that('we can compute daylength', {
