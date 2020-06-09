@@ -109,3 +109,10 @@ test_that('dimemsion name updating functions work as expected', {
   expect_equal(dimnames(arr),
                list(NULL, NULL, LETTERS[1:10]))
 })
+
+test_that('quantile varname parsing works as expected', {
+  varnames <- c('RO_mm', 'T_q95', 'T_q50', 'T_q05')
+
+  expect_equal(parse_quantiles(varnames),
+               c(5L, 50L, 95L))
+})
