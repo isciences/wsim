@@ -51,25 +51,6 @@ Options:
 # test args
 args <- list()
 
-add_months <- function(yearmon, n) {
-  year <- as.integer(substr(yearmon, 1, 4))
-  month <- as.integer(substr(yearmon, 5, 6))
-
-  month <- month + n
-
-  while(month > 12) {
-    month <- month - 12
-    year <- year + 1
-  }
-
-  while(month < 1) {
-    month <- month + 12
-    year <- year - 1
-  }
-
-  sprintf('%04d%02d', year, month)
-}
-
 args$yearmon <- '202004'
 args$anom <- c(
   sprintf('/home/dan/wsim/may12/derived/anom/anom_1mo_[%s:%s].nc', add_months(args$yearmon, -23), args$yearmon),
@@ -111,10 +92,6 @@ anom_vars <- c('T_sa', 'RO_mm_sa', 'Ws_sa', 'Bt_RO_sa', 'Pr_sa', 'PETmE_sa')
 model_months <- 12
 
 # utility functions (move to pkg)
-doy_to_month <- sapply(1:365,
-                       function(doy) {
-                         as.integer(strftime(as.Date(doy - 1, origin='1999-01-01'), '%m'))
-                       })
 
 is_growing_season <- function(month, plant_month, harvest_month) {
   ifelse(harvest_month > plant_month,
@@ -147,15 +124,6 @@ flatten_arr <- function(arr) {
   dimnames(arr) <- list(row=1:dim(arr)[1],
                         col=1:dim(arr)[2])
   arr
-}
-
-set_dimnames <- function(x, dim, names) {
-  dimnames(x)[[dim]] <- names
-  x
-}
-
-update_dimnames <- function(x, dim, fun) {
-  set_dimnames(x, dim, fun(dimnames(x)[[dim]]))
 }
 
 #' Read anom_vars from fnames
@@ -260,13 +228,8 @@ main <- function(raw_args) {
 
     infof('Computed dominant calendar for %s based on dominant cultivation method', subcrop)
 
-    # todo pull into a method, use s3 dispatch to preserve matrix dims?
-    plant_month <- matrix(doy_to_month[plant_date],
-                          nrow=nrow(plant_date),
-                          ncol=ncol(plant_date))
-    harvest_month <- matrix(doy_to_month[harvest_date],
-                            nrow=nrow(harvest_date),
-                            ncol=ncol(harvest_date))
+    plant_month <- doy_to_month(plant_date)
+    harvest_month <- doy_to_month(harvest_date)
 
     in_season <- abind(sapply(0:11,
                               function(m) is_growing_season(harvest_month - m, plant_month, harvest_month),
