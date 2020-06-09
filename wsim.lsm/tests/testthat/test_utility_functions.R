@@ -1,4 +1,4 @@
-# Copyright (c) 2019 ISciences, LLC.
+# Copyright (c) 2019-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -85,6 +85,12 @@ test_that('date calculations are correct', {
   expect_equal(days_in_yyyymm('201701'), 31)
   expect_equal(days_in_yyyymm('201702'), 28)
   expect_equal(days_in_yyyymm('201602'), 29)
+
+  expect_equal(add_months('201612', 1), '201701')
+  expect_equal(add_months('201612', 13), '201801')
+  expect_equal(add_months('201612', -1), '201611')
+  expect_equal(add_months('201612', -13), '201511')
+  expect_equal(add_months('201612', -25), '201411')
 })
 
 test_that('we can compute daylength', {

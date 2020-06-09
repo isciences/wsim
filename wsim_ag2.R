@@ -24,6 +24,7 @@ library(tidyr)
 library(wsim.agriculture)
 library(wsim.distributions)
 library(wsim.io)
+library(wsim.lsm)
 })
 
 '
@@ -36,13 +37,13 @@ Options:
 --calendar_rf <file>         Crop calendar file
 --prod_irr <file>            Irrigated production
 --prod_rf <file>             Rainfed production
---model_spring_wheat <file>  Random forest model file
---model_winter_wheat <file>
---model_maize <file>
---model_soybeans <file>
---model_potatoes <file>
---model_rice <file>
---anom <file>             File of standardized anomalies
+--model_spring_wheat <file>  Random forest model file for spring wheat
+--model_winter_wheat <file>  Random forest model file for winter wheat
+--model_maize <file>         Random forest model file for maize
+--model_soybeans <file>      Random forest model file for soybeans
+--model_potatoes <file>      Random forest model file for potatoes
+--model_rice <file>          Random forest model file for rice
+--anom <file>                File of standardized anomalies
 --yearmon <yearmon>          Year and month of most recent observed anomalies
 --output <file>
 '->usage
@@ -53,19 +54,19 @@ args <- list()
 add_months <- function(yearmon, n) {
   year <- as.integer(substr(yearmon, 1, 4))
   month <- as.integer(substr(yearmon, 5, 6))
-  
+
   month <- month + n
-  
+
   while(month > 12) {
     month <- month - 12
     year <- year + 1
   }
-  
+
   while(month < 1) {
     month <- month + 12
     year <- year - 1
   }
-  
+
   sprintf('%04d%02d', year, month)
 }
 
@@ -186,9 +187,9 @@ subcrop_model_name <- function(subcrop) {
   } else if (subcrop == 'wheat_2') {
     'spring_wheat'
   } else {
-    sub('_\\d+$', '', subcrop) 
+    sub('_\\d+$', '', subcrop)
   }
-}  
+}
 
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage, raw_args)
@@ -199,26 +200,26 @@ main <- function(raw_args) {
   months_fcst <- sum(anom_yearmons > args$yearmon)
   infof('Read %d months of anomalies (%d observed, %d forecast)',
         length(anom_yearmons), months_obs, months_fcst)
-  
+
   nx <- dim(anoms[[1]])[2]
   ny <- dim(anoms[[1]])[1]
-  
+
   subcrops <- wsim.agriculture::wsim_subcrop_names()
-  
+
   # initialize results array
   results <- list()
   for (harvest in c('this_year', 'next_year')) {
     results[[harvest]] <- array(NA, dim=c(ny, nx, length(subcrops)))
     dimnames(results[[harvest]])[[3]] <- subcrops
   }
-  
+
   last_subcrop_model_fname <- ''
-    
+
   for (subcrop in subcrops) {
     infof('Processing %s', subcrop)
-    
+
     subcrop_model_fname <- args[[sprintf('model_%s', subcrop_model_name(subcrop))]]
-    
+
     # avoid reading same model when it is shared between subcrops
     if (subcrop_model_fname != last_subcrop_model_fname) {
       infof('Reading model from %s', subcrop_model_fname)
@@ -226,7 +227,7 @@ main <- function(raw_args) {
       last_subcrop_model_fname <- subcrop_model_fname
       infof('Loaded model from %s', subcrop_model_fname)
     }
-    
+
     calendar_irr <- read_vars_from_cdf(args$calendar_irr,
                                        vars=c('plant_date', 'harvest_date'), #sprintf('%s::plant_date,harvest_date', args$calendar),
                                        extra_dims=list(crop=subcrop))
@@ -235,9 +236,9 @@ main <- function(raw_args) {
                                        vars=c('plant_date', 'harvest_date'), #sprintf('%s::plant_date,harvest_date', args$calendar),
                                        extra_dims=list(crop=subcrop))
     infof('Read crop calendars for %s', subcrop)
-    
+
     # TODO read in subcrop area fraction and null out the calendar if it is zero
-    
+
     prod_irr <- wsim.io::read_vars_from_cdf(args$prod_irr,
                                                  vars='production',
                                                  extra_dims=list(crop=subcrop))$data[[1]]
@@ -256,7 +257,7 @@ main <- function(raw_args) {
     harvest_date <- ifelse(prod_frac_irr >= 0.5,
                          calendar_irr$data$harvest_date,
                          calendar_rf$data$harvest_date)
-    
+
     infof('Computed dominant calendar for %s based on dominant cultivation method', subcrop)
 
     # todo pull into a method, use s3 dispatch to preserve matrix dims?
@@ -310,7 +311,7 @@ main <- function(raw_args) {
     }
 
   }
-  
+
   write_vars_to_cdf(list(loss_this_year=results[['this_year']],
                          loss_next_year=results[['next_year']]),
                     args$output,
