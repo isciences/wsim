@@ -317,7 +317,7 @@ class DefaultWorkspace:
 
         if target:
             assert (summary and member is None) or (not summary and member is not None)
-        else:
+        elif sector != Sector.AGRICULTURE:
             assert not summary
             assert member is None
 
