@@ -96,5 +96,4 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
                             'production')
 
     def ag_yield_anomaly_model(self, model_name: str) -> str:
-        # FIXME
-        return '/home/dan/dev/wsim/r7_{}_county'.format(model_name)
+        return os.path.join(self.source, 'ag_models', 'r7_{}.rds'.format(model_name))

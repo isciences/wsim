@@ -24,11 +24,23 @@ from . import commands
 AGGREGATION_POLYGONS = (Basis.COUNTRY, Basis.PROVINCE, Basis.BASIN)
 CULTIVATION_METHODS = (Method.RAINFED, Method.IRRIGATED)
 
+AG_MODELS = (
+    'maize',
+    'potatoes',
+    'rice',
+    'soybeans',
+    'spring_wheat',
+    'winter_wheat',
+)
+
 
 def spinup(_config: ConfigBase, _meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
-    # TODO fit or download models
+    for model in AG_MODELS:
+        url = 'https://wsim-datasets.s3.us-east-2.amazonaws.com/ag_models/r7_{}.rds'.format(model)
+        dir = os.path.dirname(_config.static_data().ag_yield_anomaly_model(model))
+        steps.append(commands.download(url, dir))
 
     return steps
 
@@ -194,15 +206,6 @@ def compute_yield_anomalies(workspace: DefaultWorkspace,
                                                 member=member)
         anoms.append(fcst_anoms)
 
-    models = (
-        'maize',
-        'potatoes',
-        'rice',
-        'soybeans',
-        'spring_wheat',
-        'winter_wheat',
-    )
-
     results = workspace.results(sector=Sector.AGRICULTURE,
                                 yearmon=yearmon,
                                 window=1,
@@ -218,7 +221,7 @@ def compute_yield_anomalies(workspace: DefaultWorkspace,
                 static.crop_calendar(Method.RAINFED),
                 static.production(Method.IRRIGATED),
                 static.production(Method.RAINFED)
-            ] + [static.ag_yield_anomaly_model(m) for m in models],
+            ] + [static.ag_yield_anomaly_model(m) for m in AG_MODELS],
             commands=[
                 wsim_ag(yearmon=yearmon,
                         anom=anoms,
