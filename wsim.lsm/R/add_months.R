@@ -17,9 +17,9 @@
 #' @param n      Number of months to add
 #' @return year/month in YYYYMM format
 #' @export
-add_months <- function(yearmon, n) {
-  year <- as.integer(substr(yearmon, 1, 4))
-  month <- as.integer(substr(yearmon, 5, 6))
+add_months <- function(yyyymm, n) {
+  year <- as.integer(substr(yyyymm, 1, 4))
+  month <- as.integer(substr(yyyymm, 5, 6))
 
   month <- month + n
 
