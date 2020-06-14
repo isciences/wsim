@@ -55,7 +55,8 @@ test_that("all tools return 1 on error", {
     'wsim_merge.R',
     'wsim_electricity_aggregate_losses.R',
     'wsim_electricity_basin_loss_factors.R',
-    'wsim_electricity_plant_losses.R'
+    'wsim_ag.R',
+    'wsim_ag_aggregate.R'
   )
 
   for (tool in tools) {
