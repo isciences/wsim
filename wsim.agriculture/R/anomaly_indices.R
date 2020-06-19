@@ -11,15 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#' Reduce the dimensions of a 3-dimensional array
-#'
-#' The first two dimensions will be combined, while the third dimension will be preserved.
-#'
-#' @param arr array to flatten
+#' Get the array index associated with the first month of observed data
+#' 
+#' @param months_obs number of months of observed data available, up to and
+#'                   including the current month
+#' @param model_months number of months used in the random forest mode
+#' @param months_to_harvest number of months until the crop will be harvested
+#'                          (\code{0} for a harvest this month)
 #' @export
-flatten_arr <- function(arr) {
-  old_dim <- dim(arr)
-  dim(arr) <- c(prod(dim(arr)[1:2]), dim(arr)[3])
-  attr(arr, 'old_dim') <- old_dim
-  arr
+anomaly_start_indices <- function(months_to_harvest, model_months, months_obs) {
+  months_to_harvest - model_months + months_obs + 1
 }
+

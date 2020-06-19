@@ -79,12 +79,12 @@ args$prod_rf <- '/home/dan/wsim/may12/source/SPAM2010/production_rainfed.nc'
 args$calendar_rf <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_rainfed.nc'
 args$calendar_irr <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_irrigated.nc'
 args$output <- '/tmp/ag_losses.nc'
-args$model_maize <- '/home/dan/dev/wsim/r7_maize_county'
-args$model_rice <- '/home/dan/dev/wsim/r7_rice_county'
-args$model_winter_wheat <- '/home/dan/dev/wsim/r7_winter_wheat_county'
-args$model_spring_wheat <- '/home/dan/dev/wsim/r7_spring_wheat_county'
-args$model_soybeans <- '/home/dan/dev/wsim/r7_soybeans_county'
-args$model_potatoes <- '/home/dan/dev/wsim/r7_potatoes_county'
+args$model_maize <-        '/home/dan/wsim/may12/source/ag_models/r7_maize.rds'
+args$model_rice <-         '/home/dan/wsim/may12/source/ag_models/r7_rice.rds'
+args$model_winter_wheat <- '/home/dan/wsim/may12/source/ag_models/r7_winter_wheat.rds'
+args$model_spring_wheat <- '/home/dan/wsim/may12/source/ag_models/r7_spring_wheat.rds'
+args$model_soybeans <-     '/home/dan/wsim/may12/source/ag_models/r7_soybeans.rds'
+args$model_potatoes <-     '/home/dan/wsim/may12/source/ag_models/r7_potatoes.rds'
 
 # globals
 rf_vars <- c('T_1mo_mean', 'RO_1mo_mean', 'Ws_1mo_mean', 'Bt_RO_1mo_max', 'Pr_1mo_mean', 'PETmE_1mo_mean')
@@ -158,7 +158,7 @@ main <- function(raw_args) {
 
   # initialize results array
   results <- list()
-  for (harvest in c('this_year', 'next_year')) {
+  for (harvest in c('current_year', 'next_year')) {
     results[[harvest]] <- array(NA, dim=c(ny, nx, length(subcrops)))
     dimnames(results[[harvest]])[[3]] <- subcrops
   }
@@ -220,11 +220,15 @@ main <- function(raw_args) {
 
     month <- as.integer(substr(args$yearmon, 5, 6))
 
-    for (harvest in c('this_year', 'next_year')) {
-      if (harvest == 'this_year') {
-        start_indices <- months_until_harvest_this_year(month, harvest_month) - model_months + months_obs + 1
+    for (harvest in c('current_year', 'next_year')) {
+      if (harvest == 'current_year') {
+        start_indices <- anomaly_start_indices(months_until_harvest_this_year(month, harvest_month),
+                                               model_months,
+                                               months_obs)
       } else {
-        start_indices <- months_until_harvest_next_year(month, harvest_month) - model_months + months_obs + 1
+        start_indices <- anomaly_start_indices(months_until_harvest_next_year(month, harvest_month),
+                                               model_months,
+                                               months_obs)
       }
 
       infof('Arranging anomalies for the %s crop calendar', subcrop)
@@ -235,11 +239,11 @@ main <- function(raw_args) {
           stack_select(start_indices, model_months, 0) %>%
           flatten_arr() %>%
           stats::pnorm() %>% # convert standardized anomaly to probability (0-1)
-          update_dimnames(2, function(n) paste(rf_var, as.integer(n) - 1, sep='_'))
+          set_dimnames(2, paste(rf_var, 11:0, sep='_'))
       }))
 
       anom_tbl <- cbind(anom_tbl, flatten_arr(in_season) %>%
-                          update_dimnames(2, function(n) paste('in_season', as.integer(n) - 1, sep='_')))
+                          set_dimnames(2, paste('in_season', 11:0, sep='_')))
       anom_tbl <- cbind(anom_tbl, frac_prod_irr=as.vector(prod_frac_irr))
 
       # Subset the inputs to pixels where we have a defined crop calendar.
@@ -260,8 +264,8 @@ main <- function(raw_args) {
 
   }
 
-  write_vars_to_cdf(list(loss_this_year=results[['this_year']],
-                         loss_next_year=results[['next_year']]),
+  write_vars_to_cdf(list(yield_frac_current_year=results[['current_year']],
+                         yield_frac_next_year=results[['next_year']]),
                     args$output,
                     extent=calendar_irr$extent,
                     extra_dims=list(crop=subcrops),
