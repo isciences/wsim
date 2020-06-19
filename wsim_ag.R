@@ -74,17 +74,17 @@ args$anom <- c(
 #            '202004_trgt202011_fcstcfsv2_2020043018',
 #            '202004_trgt202012_fcstcfsv2_2020043018',
 #            '202004_trgt202101_fcstcfsv2_2020043018'))
-#args$prod_irr <- '/home/dan/wsim/may12/source/SPAM2010/production_irrigated.nc'
-#args$prod_rf <- '/home/dan/wsim/may12/source/SPAM2010/production_rainfed.nc'
-#args$calendar_rf <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_rainfed.nc'
-#args$calendar_irr <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_irrigated.nc'
-#args$output <- '/tmp/ag_losses.nc'
-#args$model_maize <- '/home/dan/dev/wsim/r7_maize_county'
-#args$model_rice <- '/home/dan/dev/wsim/r7_rice_county'
-#args$model_winter_wheat <- '/home/dan/dev/wsim/r7_winter_wheat_county'
-#args$model_spring_wheat <- '/home/dan/dev/wsim/r7_spring_wheat_county'
-#args$model_soybeans <- '/home/dan/dev/wsim/r7_soybeans_county'
-#args$model_potatoes <- '/home/dan/dev/wsim/r7_potatoes_county'
+args$prod_irr <- '/home/dan/wsim/may12/source/SPAM2010/production_irrigated.nc'
+args$prod_rf <- '/home/dan/wsim/may12/source/SPAM2010/production_rainfed.nc'
+args$calendar_rf <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_rainfed.nc'
+args$calendar_irr <- '/home/dan/wsim/may12/source/MIRCA2000/crop_calendar_irrigated.nc'
+args$output <- '/tmp/ag_losses.nc'
+args$model_maize <- '/home/dan/dev/wsim/r7_maize_county'
+args$model_rice <- '/home/dan/dev/wsim/r7_rice_county'
+args$model_winter_wheat <- '/home/dan/dev/wsim/r7_winter_wheat_county'
+args$model_spring_wheat <- '/home/dan/dev/wsim/r7_spring_wheat_county'
+args$model_soybeans <- '/home/dan/dev/wsim/r7_soybeans_county'
+args$model_potatoes <- '/home/dan/dev/wsim/r7_potatoes_county'
 
 # globals
 rf_vars <- c('T_1mo_mean', 'RO_1mo_mean', 'Ws_1mo_mean', 'Bt_RO_1mo_max', 'Pr_1mo_mean', 'PETmE_1mo_mean')
@@ -99,11 +99,6 @@ is_growing_season <- function(month, plant_month, harvest_month) {
          month >= plant_month | month <= harvest_month)
 }
 
-months_until_harvest <- function(month, harvest_month) {
-  ifelse(harvest_month - month < 0,
-         harvest_month - month + 12L,
-         harvest_month - month)
-}
 
 months_until_harvest_this_year <- function(month, harvest_month) {
   harvest_month - month
@@ -111,19 +106,6 @@ months_until_harvest_this_year <- function(month, harvest_month) {
 
 months_until_harvest_next_year <- function(month, harvest_month) {
   harvest_month - month + 12L
-}
-
-#' Reduce the dimensions of a 3-dimensional array
-#'
-#' The first two dimensions will be combined, while the third dimension will be preserved.
-#'
-#' @param arr array to flatten
-#' @param varname
-flatten_arr <- function(arr) {
-  dim(arr) <- c(prod(dim(arr)[1:2]), dim(arr)[3])
-  dimnames(arr) <- list(row=1:dim(arr)[1],
-                        col=1:dim(arr)[2])
-  arr
 }
 
 #' Read anom_vars from fnames
@@ -261,6 +243,9 @@ main <- function(raw_args) {
       anom_tbl <- cbind(anom_tbl, frac_prod_irr=as.vector(prod_frac_irr))
 
       # Subset the inputs to pixels where we have a defined crop calendar.
+      # Store the original row numbers as dimnames so that we can match
+      # outputs to inputs.
+      dimnames(anom_tbl)[[1]] <- 1:nrow(anom_tbl)
       input <- anom_tbl[!is.na(anom_tbl[, 'in_season_0']), ]
 
       infof('Generating yield anomaly predictions for %s (harvest %s)', subcrop, sub('_', ' ', harvest))

@@ -116,3 +116,28 @@ test_that('quantile varname parsing works as expected', {
   expect_equal(parse_quantiles(varnames),
                c(5L, 50L, 95L))
 })
+
+test_that('flatten_arr transforms a 3D array to 2D', {
+  dims <- c(3, 5, 7)
+  arr <- array(runif(prod(dims)), dim=dims)
+
+  flattened <- flatten_arr(arr)
+
+  expect_equal(dim(flattened), c(15, 7))
+
+  expect_equal(flattened[1, ],
+               arr[1, 1, ])
+
+  expect_equal(flattened[2, ],
+               arr[2, 1, ])
+
+  expect_equal(flattened[4, ],
+               arr[1, 2, ])
+
+  expect_equal(attr(flattened, 'old_dim'), dims)
+
+  # reconstruct original dimensions
+  res <- matrix(NA_real_, nrow=dims[1], ncol=dims[2])
+  res[] <- flattened[, 4]
+  expect_equal(res, arr[,,4])
+})
