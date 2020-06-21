@@ -235,6 +235,7 @@ def compute_yield_anomalies(workspace: DefaultWorkspace,
                         model_maize=static.ag_yield_anomaly_model('maize'),
                         model_rice=static.ag_yield_anomaly_model('rice'),
                         model_soybeans=static.ag_yield_anomaly_model('soybeans'),
+                        seed=(hash(yearmon + member) >> 32) if member else None, # R only has 32 bit integers
                         output=results)
             ]
         )
@@ -254,6 +255,7 @@ def wsim_ag(*,
             model_soybeans: str,
             model_potatoes: str,
             model_rice: str,
+            seed: Optional[int] = None,
             output: str) -> List[str]:
 
     if type(anom) is str:
@@ -276,6 +278,9 @@ def wsim_ag(*,
 
     for a in anom:
         command += ['--anom', '"{}"'.format(a)]
+
+    if seed:
+        command += ['--seed', '"{}"'.format(seed)] # quote in case of negative seed value
 
     command += ['--output', output]
 
