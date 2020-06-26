@@ -45,7 +45,11 @@ main <- function(raw_args) {
                  wsim.agriculture::mirca_crops,
                  by='wsim_id')[, c('wsim_id', 'wsim_name', 'mirca_subcrops')]
   
-  write_empty_results(args$output, res=5/60, vars=c('production'), fill_zero=FALSE)
+  write_empty_results(args$output,
+                      res=5/60,
+                      crop_names=subcrop_names(crops$wsim_name, crops$mirca_subcrops),
+                      vars=c('production'),
+                      fill_zero=FALSE)
   
   for (i in seq_len(nrow(crops))) {
     crop_id <- crops[i, 'wsim_id']
@@ -77,17 +81,18 @@ main <- function(raw_args) {
     }
     
     if (n_subcrops > 1) {
-      for (subcrop in seq_len(n_subcrops)) {
         infof('Allocating production for %s among %d subcrops', crop, n_subcrops)
+      for (subcrop in seq_len(n_subcrops)) {
+        subcrop_name <- sprintf('%s_%d', crop, subcrop)
         area_frac <- read_vars_from_cdf(args$area_fractions,
-                                        extra_dims=list(crop=sprintf('%s_%d', crop, subcrop)))$data[[1]]  
+                                        extra_dims=list(crop=subcrop_name))$data[[1]]
         subcrop_tot <- pprod(tot, wsim.lsm::coalesce(area_frac, 1))
         
-        infof('Writing production data for %s to %s', crop, args$output)
+        infof('Writing production data for %s to %s', subcrop_name, args$output)
         write_vars_to_cdf(list(production=subcrop_tot),
                           args$output,
                           extent=c(-180, 180, -90, 90),
-                          write_slice=list(crop=sprintf('%s_%d', crop, subcrop)),
+                          write_slice=list(crop=subcrop_name),
                           append=TRUE)
       }
     } else {
