@@ -34,6 +34,7 @@ def download_grand(source_dir: str) -> List[Step]:
              dependencies=[],
              commands=[
                  ['echo', 'GRanD is not currently available for automated download.'],
+                 ['echo', 'It can be manually downloaded from http://globaldamwatch.org/data/#core_global'],
                  ['echo', 'Please manually place', zip_path, 'in', dirname],
                  ['false']
                  # [ 'wget', '--directory-prefix', dirname, url ]
