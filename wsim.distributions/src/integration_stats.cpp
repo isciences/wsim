@@ -436,6 +436,23 @@ static double weighted_quantile(const V & values, const W & weights, int _, doub
   return  a.x + (q*sn - a.s)*(b.x - a.x)/(b.s - a.s);
 }
 
+template<typename V, typename W>
+static double weighted_mean(const V & values, const W & weights) {
+  using product = decltype(values[0] * weights[0]);
+
+  product sum = 0;
+  auto n = values.size();
+  product sum_weights = 0;
+  for (decltype(n) i = 0; i < n; i++) {
+    if (!std::isnan(values[i])) {
+      sum += values[i]*weights[i];
+      sum_weights += weights[i];
+    }
+  }
+
+  return sum / sum_weights;
+}
+
 //' Compute the sum of defined elements for each row and col in a 3D array
 //'
 //' @param v 3D array that may contain NA values
@@ -584,7 +601,37 @@ NumericVector stack_weighted_quantile (const NumericVector & v, const NumericVec
              // internally so that we can keep correspondence with weights
 }
 
-//' Compute the median of defined elementsn for each row and col in a 3D array
+//' Compute a weighted mean of defined elements for each row and col in a 3D array
+//'
+//' @param v a 3D array that may contain NA values
+//' @param w a 2D vector of weights, having the same length as the third dimension of \code{v}
+//'
+//' @return a matrix with the specified quantile for each [row, col, ]
+//' @export
+// [[Rcpp::export]]
+NumericVector stack_weighted_mean (const NumericVector & v, const NumericVector & w) {
+  if (Rf_isNull(v.attr("dim"))) {
+    Rcpp::stop("stack_weighted_mean called with non-array values");
+  }
+
+  IntegerVector vdim = v.attr("dim");
+
+  if (vdim.size() != 3) {
+    Rcpp::stop("stack_weighted_mean operates on three-dimensional arrays only");
+  }
+
+  auto wlen = w.size();
+  if (wlen != vdim[2]) {
+    Rcpp::stop("length of weights must equal length of 3rd dimension of value array");
+  }
+
+  return stack_apply(v, [&w](const std::vector<double> & x, int _) {
+    return weighted_mean(x, w);
+  }, false); // don't ask stack_apply to remove our null values; we need to handle them
+             // internally so that we can keep correspondence with weights
+}
+
+//' Compute the median of defined elements for each row and col in a 3D array
 //'
 //' @param v 3D array that may contain NA values
 //'

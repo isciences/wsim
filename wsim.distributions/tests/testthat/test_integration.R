@@ -41,6 +41,23 @@ test_that('we can calculate basic stats', {
    expect_equal(integrate('q100', obs), 22)
 })
 
+test_that('weighted mean implementation behaves like R version', {
+  set.seed(123)
+
+  n <- 20
+
+  obs <- runif(n)
+  obs[sample.int(n, size=3)] <- NA
+  weights <- runif(n)
+
+  expect_equal(
+    stack_weighted_mean(
+      array(obs, dim=c(1, 1, n)),
+      weights)[1,1],
+    weighted.mean(obs, weights, na.rm=TRUE)
+  )
+})
+
 test_that('basic stat behavior is as expected when inputs are all undefined', {
   obs <- rep.int(NA, 10)
 
