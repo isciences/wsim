@@ -27,5 +27,5 @@ mirca_id	mirca_name	wsim_id	mirca_subcrops
 23	"coffee"	19	1
 24	"others perennial"	NA	1
 25	"fodder grasses"	NA	1
-26	"others annual"	NA	3
+26	"others annual"	NA	5
 ')
