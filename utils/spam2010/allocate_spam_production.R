@@ -60,33 +60,17 @@ main <- function(raw_args) {
     
     spam_abbrevs <- spam_crops[which(spam_crops$wsim_id == crop_id), 'spam_abbrev']
     
-    tot <- NULL  
-    
-    # extract spam production
-    for (abbrev in spam_abbrevs) {
-      infof('Extracting production data: %s', abbrev) 
-      fname <- sprintf('spam2010v1r0_global_production_%s_%s.tif', abbrev, substr(args$method, 1, 1))
-      fpath <- sprintf('spam2010v1r0_global_prod.geotiff/%s', fname)
-      
-      unzip(args$spam_zip, fpath, junkpaths=TRUE, exdir=workdir)
-      prod <- read_vars(file.path(workdir, fname))$data[[1]]
-      
-      if (is.null(tot)) {
-        tot <- wsim.lsm::coalesce(prod, 0) # replace NA production (what would that mean?) with zero
-      } else {
-        tot <- psum(tot, prod, na.rm=TRUE)
-      }
-      
-      file.remove(file.path(workdir, fname))
-    }
+    spam_prod <- load_spam_production(args$spam_zip, spam_abbrevs, args$method) 
     
     if (n_subcrops > 1) {
-        infof('Allocating production for %s among %d subcrops', crop, n_subcrops)
+      infof('Allocating production for %s among %d subcrops', crop, n_subcrops)
       for (subcrop in seq_len(n_subcrops)) {
         subcrop_name <- sprintf('%s_%d', crop, subcrop)
-        area_frac <- read_vars_from_cdf(args$area_fractions,
-                                        extra_dims=list(crop=subcrop_name))$data[[1]]
-        subcrop_tot <- pprod(tot, wsim.lsm::coalesce(area_frac, 1))
+        area_frac <- read_vars_from_cdf(args$area_fractions, 
+                                        vars = 'area_frac',
+                                        extra_dims = list(crop=subcrop_name))$data[['area_frac']]
+        
+        subcrop_tot <- pprod(spam_prod, wsim.lsm::coalesce(area_frac, 0))
         
         infof('Writing production data for %s to %s', subcrop_name, args$output)
         write_vars_to_cdf(list(production=subcrop_tot),
@@ -97,7 +81,7 @@ main <- function(raw_args) {
       }
     } else {
       infof('Writing production data for %s to %s', crop, args$output)
-      write_vars_to_cdf(list(production=tot),
+      write_vars_to_cdf(list(production=spam_prod),
                         args$output,
                         extent=c(-180, 180, -90, 90),
                         write_slice=list(crop=crop),
