@@ -1,4 +1,4 @@
-// Copyright (c) 2019 ISciences, LLC.
+// Copyright (c) 2019-2020 ISciences, LLC.
 // All rights reserved.
 //
 // WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -17,7 +17,7 @@
 //' Reclassify the values in a numeric vector
 //' 
 //' @param x       a vector of values to reclassify
-//' @param reclass a 2xN matrix with original values in the first
+//' @param reclass a Nx2 matrix with original values in the first
 //'                column and reclassified values in the second 
 //'                column
 //' @param na_default boolean indicating whether to reclassify values
