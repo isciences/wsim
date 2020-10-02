@@ -77,25 +77,18 @@ main <- function(raw_args) {
                               crop_name)
         infof('Constructing calendar for %s (%d/%d)', crop_name, subcrop_id, num_subcrops)
         
-        reclass_matrix <- as.matrix(calendar[calendar$crop==mirca_crop_id & calendar$subcrop==subcrop_id,
-                                             c('unit_code', 'plant_month', 'harvest_month', 'area_frac')],
-                                    rownames.force=FALSE)
-        
-        reclass_matrix[, 2] <- start_of_month(reclass_matrix[, 2])
-        reclass_matrix[, 3] <- end_of_month(reclass_matrix[, 3])
-        
         plant_date[[crop_string]] <- aggregate_mean_doy(
-          wsim.agriculture::reclassify(regions,
-                                       reclass_matrix[, c(1,2), drop=FALSE], TRUE),
-          aggregation_factor)
+          mirca_plant_date_grid(regions, calendar, mirca_crop_id, subcrop_id),
+          aggregation_factor
+        )
+        
         harvest_date[[crop_string]] <- aggregate_mean_doy(
-          wsim.agriculture::reclassify(regions,
-                                       reclass_matrix[, c(1,3), drop=FALSE], TRUE),
+          mirca_harvest_date_grid(regions, calendar, mirca_crop_id, subcrop_id),
           aggregation_factor)
+        
         area_frac[[crop_string]] <- aggregate_mean(
-          wsim.agriculture::reclassify(regions,
-                                       reclass_matrix[, c(1,4), drop=FALSE], TRUE),
-        aggregation_factor)
+          mirca_area_fraction_grid(regions, calendar, mirca_crop_id, subcrop_id),
+          aggregation_factor)
       }
     }
   }
@@ -116,4 +109,6 @@ main <- function(raw_args) {
   infof('Wrote crop calendar to %s', args$output)
 }
 
-tryCatch(main(commandArgs(trailingOnly=TRUE)), error=wsim.io::die_with_message)
+#tryCatch(
+  main(commandArgs(trailingOnly=TRUE))
+#, error=wsim.io::die_with_message)
