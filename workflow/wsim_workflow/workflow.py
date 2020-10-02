@@ -61,6 +61,7 @@ def get_meta_steps():
 def generate_steps(config: ConfigBase, *,
                    start: str,
                    stop: str,
+                   step: Optional[int] = 1,
                    no_spinup: bool,
                    forecasts: str,
                    forecast_lag_hours: Optional[int] = None,
@@ -80,7 +81,7 @@ def generate_steps(config: ConfigBase, *,
             steps += agriculture.spinup(config, meta_steps)
 
 
-    for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop)))):
+    for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop))[::step])):
         steps += monthly.monthly_observed(config, yearmon, meta_steps)
 
         if run_electric_power:

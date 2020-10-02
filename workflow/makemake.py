@@ -76,6 +76,10 @@ def parse_args(args):
     parser.add_argument('--stop',
                         help='End date in YYYYMM format',
                         required=False)
+    parser.add_argument('--step',
+                        help='Generate steps for every N months between start and stop [default: 1]',
+                        default=1,
+                        type=int)
     parser.add_argument('--forecast-lag-hours',
                         type=int,
                         help="Only attempt to download forecasts issued within the specified number of hours")
@@ -108,6 +112,7 @@ def main(raw_args):
     steps = workflow.generate_steps(config,
                                     start=args.start,
                                     stop=args.stop,
+                                    step=args.step,
                                     no_spinup=args.nospinup,
                                     forecasts=args.forecasts,
                                     run_electric_power=not args.noelectric,
