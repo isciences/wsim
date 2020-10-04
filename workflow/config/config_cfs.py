@@ -34,7 +34,7 @@ class CFSConfig(ConfigBase):
         self._workspace = paths.DefaultWorkspace(derived)
 
     def historical_years(self):
-        return range(1948, 2018)  # 1948-2017
+        return range(1948, 2020)  # 1948-2019
 
     def result_fit_years(self):
         return range(1950, 2010)  # 1950-2009
