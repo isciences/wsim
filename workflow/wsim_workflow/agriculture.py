@@ -50,15 +50,21 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 
     steps = []
 
-    steps += meta_steps['agriculture_assessment'].require(
-        compute_yield_anomalies(config.workspace(), config.static_data(), yearmon=yearmon)
-    )
+    # The random forest model requires that we provide conditions from the present until the next year's harvest,
+    # potentially 23 months in the future depending on the crop/pixel. The process is set up to use climate
+    # norms when forecasts are not available, so the usefulness of a result based only on observed data is not clear.
+    # If we want one, we can explictly generate one by running a configuration using climate norms as forecasts.
+    # Therefore, this is disabled by default, since the aggregated yield anomalies are relatively expensive to
+    # compute.
 
-    # Compute aggregated losses
-    for basis in AGGREGATION_POLYGONS:
-        steps += meta_steps['agriculture_assessment'].require(
-            compute_aggregated_losses(config.workspace(), config.static_data(), yearmon=yearmon, summary=False, basis=basis)
-        )
+    #steps += meta_steps['agriculture_assessment'].require(
+    #    compute_yield_anomalies(config.workspace(), config.static_data(), yearmon=yearmon)
+    #)
+
+    #for basis in AGGREGATION_POLYGONS:
+    #    steps += meta_steps['agriculture_assessment'].require(
+    #        compute_aggregated_losses(config.workspace(), config.static_data(), yearmon=yearmon, summary=False, basis=basis)
+    #    )
 
     return steps
 
@@ -66,7 +72,7 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
 def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
 
-    # Compute a gridded loss risk for each forecast ensemble member
+    # Compute gridded yield fractions for each forecast ensemble member
     latest_target = config.forecast_targets(yearmon)[-1]
 
     for model in config.models():
