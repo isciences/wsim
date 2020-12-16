@@ -362,7 +362,7 @@ static double weighted_quantile(const V & values, const W & weights, int _, doub
   //
   // Unlike Hmisc::wtd.quantile, quantiles always change as the probability is
   // changed, unless there are duplicate values. Hmisc::wtd.quantile also
-  // produces nononsense results for non-integer weights; see
+  // produces nonsense results for non-integer weights; see
   // https://github.com/harrelfe/Hmisc/issues/97
 
   struct elem {
