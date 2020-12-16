@@ -22,7 +22,7 @@ suppressMessages({
 '
 Compute composite indicators
 
-Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> [--mask=<file>] [--clamp=<value>] [--causes_from=<file>] --output=<file>
+Usage: wsim_composite (--surplus=<file>)... (--deficit=<file>)... --both_threshold=<value> [--mask=<file>] [--clamp=<value>] [--causes_from=<file>] --output=<file> [--attr=<attr>]...
 
 Options:
 --surplus <file>...      One or more variables containing return periods that represent surpluses
@@ -32,6 +32,7 @@ Options:
 --mask <file>            Optional mask to use for computed indicators
 --clamp <value>          Optional absolute value at which to clamp inputs
 --causes_from <file>     Optionally copy surplus_cause and deficit_cause from file instead of computing from inputs
+--attr <attr>            Optional attributes to attach to output netCDF(s)
 '->usage
 
 clamp <- function(vals, minval, maxval) {
@@ -51,6 +52,8 @@ main <- function(raw_args) {
                               raw_args,
                               types=list(both_threshold= 'integer',
                                          clamp= 'integer'))
+  
+  attrs <- lapply(args$attr, wsim.io::parse_attr)
 
   if (is.null(args$deficit)) {
     wsim.io::die_with_message("Must supply at least one deficit indicator.")
@@ -134,7 +137,7 @@ main <- function(raw_args) {
     both= both_values*mask
   )
 
-  cdf_attrs <- list(
+  attrs <- c(attrs, list(
     list(var="deficit", key="long_name", val="Composite Deficit Index"),
 
     list(var="deficit_cause", key="long_name", val="Cause of Deficit"),
@@ -149,12 +152,12 @@ main <- function(raw_args) {
 
     list(var="both", key="long_name", val="Composite Combined Surplus & Deficit Index"),
     list(var="both", key="threshold", val=args$both_threshold)
-  )
+  ))
 
   wsim.io::write_vars_to_cdf(cdf_data,
                              outfile,
                              extent= attr(deficits, 'extent'),
-                             attrs= cdf_attrs,
+                             attrs= attrs,
                              prec=list(
                                deficit= "float",
                                deficit_cause= "byte",

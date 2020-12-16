@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'WSIM<br/>Water Security Indicator Model'
-copyright = '2017-2018, ISciences, LLC'
+copyright = '2017-2020, ISciences, LLC'
 author = 'ISciences, LLC'
 
 numfig = True

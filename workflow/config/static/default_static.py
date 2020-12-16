@@ -40,8 +40,8 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
             stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
             gadm.admin_boundaries(source_dir=self.source, levels=[0, 1]) + \
             gppd.power_plant_database(source_dir=self.source) + \
-            grand.dam_locations(source_dir=self.source) + \
-            hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
+            grand.download_grand(source_dir=self.source) + \
+            hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=7) + \
             hydrobasins.downstream_ids(source_dir=self.source,
                                        basins_file=self.basins().file,
                                        ids_file=self.basin_downstream().file) + \
@@ -68,13 +68,13 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
         return paths.Vardef(os.path.join(self.source, 'GMTED2010', 'gmted2010_05deg.tif'), '1')
 
     def basins(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05.shp'), None)
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07.shp'), None)
 
     def basin_downstream(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07_downstream.nc'), 'next_down')
 
     def dam_locations(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GRanD', 'GRanD_dams_v1_1.shp'), None)
+        return paths.Vardef(grand.dam_locations(self.source), None)
 
     def water_stress(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'Aqueduct', 'aqueduct_baseline_water_stress.tif'), '1')
@@ -94,3 +94,6 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
     def production(self, method: paths.Method) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, spam2010.SUBDIR, 'production_{}.nc'.format(method.value)),
                             'production')
+
+    def ag_yield_anomaly_model(self, model_name: str) -> str:
+        return os.path.join(self.source, 'ag_models', 'r7_{}.rds'.format(model_name))

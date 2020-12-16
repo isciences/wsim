@@ -41,6 +41,23 @@ test_that('we can calculate basic stats', {
    expect_equal(integrate('q100', obs), 22)
 })
 
+test_that('weighted mean implementation behaves like R version', {
+  set.seed(123)
+
+  n <- 20
+
+  obs <- runif(n)
+  obs[sample.int(n, size=3)] <- NA
+  weights <- runif(n)
+
+  expect_equal(
+    stack_weighted_mean(
+      array(obs, dim=c(1, 1, n)),
+      weights)[1,1],
+    weighted.mean(obs, weights, na.rm=TRUE)
+  )
+})
+
 test_that('basic stat behavior is as expected when inputs are all undefined', {
   obs <- rep.int(NA, 10)
 
@@ -175,4 +192,75 @@ test_that('rank edge cases behave as expected', {
 
   expect_equal(c(3, 4),
                minmax_ranks(6, 4:6))
+})
+
+test_that('stack_select pulls a ragged slice from a 3d array', {
+  nx <- 3
+  ny <- 2
+  nz <- 8
+  arr <- array(runif(nx*ny*nz), dim=c(ny, nx, nz))
+
+  start <- rbind(c(3, 1, 0),
+                 c(9, 4, -1))
+  n <- 5
+  fill <- -999
+  sel <- stack_select(arr, start, n, fill)
+
+  expect_equal(dim(sel), c(dim(arr)[1:2], n))
+
+  for (i in seq_len(nrow(start))) {
+    for (j in seq_len(ncol(start))) {
+      first <- start[i, j]
+      last <- first + n - 1
+
+      if (first > nz) {
+        orig <- rep.int(fill, n)
+      } else {
+        orig <- c()
+
+        # pre-fill
+        if (first < 1) {
+          orig <- c(orig, rep.int(fill, 1 - first))
+          first <- 1
+        }
+
+        if (last <= nz) {
+          orig <- c(orig, arr[i, j, first:last])
+        } else {
+          # post-fill
+          orig <- c(orig, arr[i, j, first:nz], rep.int(fill, last - nz))
+        }
+
+      }
+
+      expect_equal(orig, sel[i, j, ])
+    }
+  }
+})
+
+test_that('stack_select can also use a callback to fill out-of-range values', {
+  nx <- 3
+  ny <- 2
+  nz <- 8
+  arr <- array(0, dim=c(ny, nx, nz))
+
+  start <- rbind(c(3, 1, 0),
+                 c(9, 4, -1))
+  n <- 5
+  sel_constant <- stack_select(arr, start, n, -999)
+
+  # instead of filling with constant values, fill with random values
+  set.seed(802)
+  sel_runif <- stack_select(arr, start, n, function() runif(1))
+
+  # check that random values filled are same ones we would get by calling
+  # from R
+  set.seed(802)
+  for (j in 1:nx) {
+    for (i in 1:ny) {
+      x <- sel_runif[i, j, which(sel_constant[i, j, ] == -999)]
+      y <- runif(length(x))
+      expect_equal(x, y)
+    }
+  }
 })

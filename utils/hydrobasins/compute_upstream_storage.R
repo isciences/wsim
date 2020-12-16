@@ -1,5 +1,18 @@
 #!/usr/bin/env Rscript
 
+# Copyright (c) 2018-2020 ISciences, LLC.
+# All rights reserved.
+#
+# WSIM is licensed under the Apache License, Version 2.0 (the "License").
+# You may not use this file except in compliance with the License. You may
+# obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 suppressMessages({
   library(dplyr)
   library(sf)
@@ -12,7 +25,7 @@ suppressMessages({
 '
 Compute an upstream storage capacity for each basin
 
-Usage: compute_upstream_storage --flow <file> --dams <file> --basins <file> --sector <sector> --output <file>
+Usage: compute_upstream_storage.R --flow <file> --dams <file> --basins <file> --sector <sector> --output <file>
 
 Options:
 --flow <file>     A fitted distribution of annual total blue water

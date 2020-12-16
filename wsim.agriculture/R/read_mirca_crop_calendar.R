@@ -5,8 +5,10 @@
 #' @export
 read_mirca_crop_calendar <- function(fname) {
   parse_mirca_condensed_crop_calendar(fname) %>%
-    group_by(unit_code, crop) %>%
-    mutate(area_frac= area_ha/sum(area_ha)) %>%
-    select(unit_code, crop, subcrop, area_frac, plant_month, harvest_month) %>%
+    dplyr::group_by(unit_code, crop) %>%
+    dplyr::mutate(tot_area = sum(area_ha)) %>%
+    dplyr::filter(tot_area > 0) %>%
+    dplyr::mutate(area_frac= area_ha / tot_area) %>%
+    dplyr::select(unit_code, crop, subcrop, area_frac, plant_month, harvest_month) %>%
     as.data.frame()
 }

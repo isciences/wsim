@@ -9,3 +9,5 @@ RcppExports.R
 .Rhistory
 *.Rcheck
 *.nc
+*.gz
+tags

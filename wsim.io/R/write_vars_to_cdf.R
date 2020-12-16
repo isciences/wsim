@@ -436,7 +436,7 @@ standardize_vars <- function(vars) {
 
   # convert factors to text
   for (varname in names(vars)) {
-    if(class(vars[[varname]]) == 'factor') {
+    if(is.factor(vars[[varname]])) {
       vars[[varname]] <- as.character(vars[[varname]])
     }
   }

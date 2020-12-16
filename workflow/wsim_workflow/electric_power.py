@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -17,10 +17,10 @@ from typing import Iterable, List, Mapping, Union, Optional
 
 from . import actions, commands
 
-from .dates import all_months, available_yearmon_range, parse_yearmon
+from .dates import all_months
 from .spinup import time_integrate_results
 from .step import Step
-from .paths import date_range, read_vars, Basis, DefaultWorkspace, ElectricityStatic, Sector, Vardef
+from .paths import Basis, DefaultWorkspace, ElectricityStatic, Sector, Vardef
 from .config_base import ConfigBase
 
 AGGREGATION_POLYGONS = (Basis.BASIN, Basis.COUNTRY, Basis.PROVINCE)
@@ -29,6 +29,7 @@ AGGREGATION_POLYGONS = (Basis.BASIN, Basis.COUNTRY, Basis.PROVINCE)
 def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
     all_fits = meta_steps['all_fits']
+    windows = [w for w in config.integration_windows() if w >= 12]
 
     b2b_steps = []
     for yearmon in config.historical_yearmons():
@@ -45,64 +46,15 @@ def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     ))
 
     # Time-integrate the variables
-    for window in config.integration_windows():
+    for window in windows:
         steps += time_integrate_results(config, window, basis=Basis.BASIN)
 
-    # Compute monthly fits over the fit period
-    for param in config.lsm_rp_vars(basis=Basis.BASIN):
-        for month in all_months:
-            steps += all_fits.require(actions.fit_var(config, param=param, month=month, basis=Basis.BASIN))
-
     # Compute time-integrated fits
-    for window in config.integration_windows():
+    for window in windows:
         for param in config.lsm_integrated_var_names(basis=Basis.BASIN):
             for month in all_months:
                 steps += all_fits.require(
                     actions.fit_var(config, param=param, window=window, month=month, basis=Basis.BASIN))
-
-    # Compute annual min flows, for sub-annual integration periods
-    for window in [1] + config.integration_windows():
-        if window < 12:
-            for year in config.result_fit_years():
-                integration_step = commands.wsim_integrate(
-                    stats='min',
-                    inputs=read_vars(config.workspace().results(
-                        yearmon=available_yearmon_range(window=window, start_year=year, end_year=year),
-                        window=window,
-                        basis=Basis.BASIN),
-                        'Bt_RO' if window == 1 else 'Bt_RO_sum'
-                    ),
-                    output=config.workspace().results(
-                        year=year,
-                        window=window,
-                        basis=Basis.BASIN
-                    )).replace_dependencies(config.workspace().tag('basin_spinup_{}mo_results'.format(window)))
-                steps.append(integration_step)
-
-    # Compute fits of annual min flows
-    for window in [1] + config.integration_windows():
-        var_to_fit = 'Bt_RO_min' if window == 1 else 'Bt_RO_sum_min'
-
-        if window < 12:
-            steps.append(
-                commands.wsim_fit(
-                    distribution=config.distribution,
-                    inputs=read_vars(config.workspace().results(
-                        year=date_range(config.result_fit_years()[0],
-                                        config.result_fit_years()[-1]),
-                        window=window,
-                        basis=Basis.BASIN,
-                    ), var_to_fit),
-                    output=config.workspace().fit_obs(
-                        basis=Basis.BASIN,
-                        var='Bt_RO',
-                        stat='sum' if window > 1 else None,
-                        window=window,
-                        annual_stat='min',
-                    ),
-                    window=window
-                )
-            )
 
     # Compute upstream storage of each basin
     steps += compute_basin_integration_windows(config.workspace(), config.static_data())
@@ -120,6 +72,7 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
     print('Generating electric power steps for', yearmon, 'observed data')
 
     steps = []
+    windows = [w for w in config.integration_windows() if w >= 12]
 
     # Skip if we would already have run this date as part of spinup
     if yearmon not in config.historical_yearmons():
@@ -129,7 +82,7 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                                    yearmon=yearmon)
 
         # Do time integration
-        for window in config.integration_windows():
+        for window in windows:
             steps += actions.time_integrate(config.workspace(),
                                             config.lsm_integrated_stats(basis=Basis.BASIN),
                                             yearmon=yearmon,
@@ -138,37 +91,28 @@ def monthly_observed(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                             basis=Basis.BASIN)
 
     if yearmon not in config.result_fit_yearmons():
-        # Compute return periods
-        steps += actions.compute_return_periods(config.workspace(),
-                                                result_vars=config.lsm_rp_vars(basis=Basis.BASIN),
-                                                yearmon=yearmon,
-                                                window=1,
-                                                basis=Basis.BASIN)
-
-        for window in config.integration_windows():
+        for window in windows:
             steps += actions.compute_return_periods(config.workspace(),
                                                     result_vars=config.lsm_integrated_var_names(basis=Basis.BASIN),
                                                     yearmon=yearmon,
                                                     window=window,
                                                     basis=Basis.BASIN)
 
-        # Compute basin loss factors
-        steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon)
+    # Compute basin loss factors
+    steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon)
 
-        # Compute plant-level losses
-        steps += compute_plant_losses(config.workspace(), yearmon=yearmon)
-
-        # Compute aggregated losses
-        for basis in AGGREGATION_POLYGONS:
-            steps += meta_steps['electric_power_assessment'].require(
-                compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
-            )
+    # Compute aggregated losses
+    for basis in AGGREGATION_POLYGONS:
+        steps += meta_steps['electric_power_assessment'].require(
+            compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis)
+        )
 
     return steps
 
 
 def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, Step]) -> List[Step]:
     steps = []
+    windows = [w for w in config.integration_windows() if w >= 12]
 
     for target in config.forecast_targets(yearmon):
         for model in config.models():
@@ -181,7 +125,7 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                                        model=model,
                                                        member=member)
 
-                for window in config.integration_windows():
+                for window in windows:
                     steps += actions.time_integrate(config.workspace(),
                                                     config.lsm_integrated_stats(basis=Basis.BASIN),
                                                     yearmon=yearmon,
@@ -193,7 +137,6 @@ def monthly_forecast(config: ConfigBase, yearmon: str, meta_steps: Mapping[str, 
                                                     forcing=False)
 
                 steps += compute_basin_loss_factors(config.workspace(), yearmon=yearmon, target=target, model=model, member=member)
-                steps += compute_plant_losses(config.workspace(), yearmon=yearmon, target=target, model=model, member=member)
 
                 for basis in AGGREGATION_POLYGONS:
                     steps += compute_aggregated_losses(config.workspace(), yearmon=yearmon, basis=basis, target=target, model=model, member=member)
@@ -210,9 +153,9 @@ def compute_loss_summary(config: ConfigBase, *,
                          target: str,
                          basis: Basis) -> List[Step]:
 
-    loss_vars = ('gross_loss_mw',  'net_loss_mw',  'hydro_loss_mw',  'nuclear_loss_mw',
-                 'gross_loss_pct', 'net_loss_pct', 'hydro_loss_pct', 'nuclear_loss_pct',
-                 'reserve_utilization_pct')
+    loss_vars = ('gross_loss_mw',  'hydro_loss_mw',
+                 'gross_loss_pct', 'hydro_loss_pct',
+                 )
 
     ws = config.workspace()
 
@@ -224,7 +167,7 @@ def compute_loss_summary(config: ConfigBase, *,
                                  sector=Sector.ELECTRIC_POWER,
                                  model=model,
                                  yearmon=yearmon,
-                                 window=1,
+                                 window=12,
                                  target=target,
                                  member=member))
         weights.append(weight)
@@ -238,7 +181,7 @@ def compute_loss_summary(config: ConfigBase, *,
                               yearmon=yearmon,
                               target=target,
                               basis=basis,
-                              window=1,
+                              window=12,
                               summary=True)
         ),
     ]
@@ -287,15 +230,12 @@ def append_boundaries(*, points: str, boundaries: Union[str, List[str]], output:
 
 def wsim_basin_losses(*,
                       basin_windows: str,
-                      basin_stress: str,
                       bt_ro: Iterable[Vardef],
-                      bt_ro_min_fits: List[str],
                       bt_ro_fits: List[str],
                       output: str) -> List[str]:
     cmd = [
         os.path.join('{BINDIR}', 'wsim_electricity_basin_loss_factors.R'),
         '--windows', '"{}"'.format(basin_windows),
-        '--stress', '"{}"'.format(basin_stress),
         '--output', output
     ]
 
@@ -305,70 +245,7 @@ def wsim_basin_losses(*,
     for filename in bt_ro_fits:
         cmd += ['--bt_ro_fit', filename]
 
-    for filename in bt_ro_min_fits:
-        cmd += ['--bt_ro_min_fit', filename]
-
     return cmd
-
-
-def wsim_plant_losses(*,
-                      plants: str,
-                      basin_losses: str,
-                      basin_temp: Union[str, Vardef],
-                      temperature: Union[str, Vardef],
-                      temperature_rp: Union[str, Vardef],
-                      output: str) -> List[str]:
-    return [
-        os.path.join('{BINDIR}', 'wsim_electricity_plant_losses.R'),
-        '--plants', plants,
-        '--basin_losses',   '"{}"'.format(basin_losses),
-        '--basin_temp',     '"{}"'.format(basin_temp),
-        '--temperature',    '"{}"'.format(temperature),
-        '--temperature_rp', '"{}"'.format(temperature_rp),
-        '--output',         '"{}"'.format(output)
-    ]
-
-
-def compute_plant_losses(workspace: DefaultWorkspace,
-                         *,
-                         yearmon: str,
-                         model: Optional[str] = None,
-                         target: Optional[str] = None,
-                         member: Optional[str] = None) -> List[Step]:
-
-    results = workspace.results(sector=Sector.ELECTRIC_POWER,
-                                yearmon=yearmon,
-                                model=model,
-                                target=target,
-                                member=member,
-                                window=1,
-                                basis=Basis.POWER_PLANT)
-
-    basin_results = workspace.results(model=model, yearmon=yearmon, window=1, basis=Basis.BASIN, target=target, member=member)
-    forcing = workspace.forcing(model=model, yearmon=yearmon, target=target, member=member, window=1)
-    rp = workspace.return_period(model=model, yearmon=yearmon, target=target, member=member, window=1)
-    loss_factors = workspace.basin_loss_factors(model=model, yearmon=yearmon, target=target, member=member)
-
-    return [
-        Step(
-            targets=results,
-            dependencies=[
-                workspace.power_plants(),
-                basin_results,
-                forcing,
-                loss_factors,
-                rp
-            ],
-            commands=[
-                wsim_plant_losses(plants=workspace.power_plants(),
-                                  basin_losses=read_vars(loss_factors, 'water_cooled_loss', 'hydropower_loss'),
-                                  basin_temp=Vardef(basin_results, 'T_Bt_RO'),
-                                  temperature=Vardef(forcing, 'T'),
-                                  temperature_rp=Vardef(rp, 'T_rp'),
-                                  output=results)
-            ]
-        )
-    ]
 
 
 def compute_basin_integration_windows(workspace: DefaultWorkspace, static: ElectricityStatic) -> List[Step]:
@@ -400,43 +277,39 @@ def compute_basin_loss_factors(workspace: DefaultWorkspace,
                                member: Optional[str] = None) -> List[Step]:
     bt_ro = []
     bt_ro_fits = []
-    bt_ro_min_fits = []
 
-    windows = (1, 3, 6, 12, 24, 36)
-    year, month = parse_yearmon(yearmon)
+    windows = (12, 24, 36)
 
     for w in windows:
-        bt_ro.append(Vardef(workspace.results(basis=Basis.BASIN, model=model, yearmon=yearmon, window=w, target=target, member=member),
-                            'Bt_RO' if w == 1 else 'Bt_RO_sum'))
+        bt_ro.append(Vardef(workspace.results(basis=Basis.BASIN,
+                                              model=model,
+                                              yearmon=yearmon,
+                                              window=w,
+                                              target=target,
+                                              member=member),
+                            'Bt_RO_sum'))
 
-        # For integration periods < 12 months, use the distribution of annual minimum N-month sums.
-        # For integration periods >= 12 months, just use the N-month sum ending in December.
-        bt_ro_min_fits.append(workspace.fit_obs(basis=Basis.BASIN,
-                                            var='Bt_RO',
-                                            stat='sum' if w != 1 else None,
-                                            window=w,
-                                            annual_stat='min' if w < 12 else None,
-                                            month=12 if w >= 12 else None))
-
+        # Since our integration windows are all multiples of 12 months, always compare flow values
+        # against the N-month sum ending in December. (The distribution of June-May flow sums should
+        # be the same as the distribution of Jan-December flow sums.)
+        assert all((w/12).is_integer() for w in windows)
         bt_ro_fits.append(workspace.fit_obs(basis=Basis.BASIN,
                                             var='Bt_RO',
-                                            stat='sum' if w != 1 else None,
+                                            stat='sum',
                                             window=w,
-                                            month=month))
+                                            month=12))
 
     outfile = workspace.basin_loss_factors(yearmon=yearmon, model=model, target=target, member=member)
 
     return [
         Step(
             targets=[outfile],
-            dependencies=[v.file for v in bt_ro] + bt_ro_fits + bt_ro_min_fits +
-                         [workspace.basin_water_stress(), workspace.basin_upstream_storage(sector=Sector.ELECTRIC_POWER)],
+            dependencies=[v.file for v in bt_ro] + bt_ro_fits +
+                         [workspace.basin_upstream_storage(sector=Sector.ELECTRIC_POWER)],
             commands=[
                 wsim_basin_losses(
                     basin_windows=workspace.basin_upstream_storage(sector=Sector.ELECTRIC_POWER),
-                    basin_stress=workspace.basin_water_stress(),
                     bt_ro=bt_ro,
-                    bt_ro_min_fits=bt_ro_min_fits,
                     bt_ro_fits=bt_ro_fits,
                     output=outfile
                 )
@@ -461,14 +334,14 @@ def compute_basin_water_stress(workspace: DefaultWorkspace, static: ElectricityS
 
 def wsim_aggregate_losses(*,
                           plants: str,
-                          plant_losses: Vardef,
+                          basin_losses: Vardef,
                           basis: Basis,
                           yearmon: str,
                           output: str) -> List[str]:
     return [
         os.path.join('{BINDIR}', 'wsim_electricity_aggregate_losses.R'),
         '--plants',        plants,
-        '--plant_losses',  '"{}"'.format(plant_losses),
+        '--basin_losses',  '"{}"'.format(basin_losses),
         '--basis',         basis.value,
         '--yearmon',       yearmon,
         '--output',        '"{}"'.format(output)
@@ -480,32 +353,27 @@ def compute_aggregated_losses(workspace: DefaultWorkspace,
                               yearmon: str,
                               model: Optional[str] = None,
                               target: Optional[str] = None,
-                              member: Optional[str]  = None,
+                              member: Optional[str] = None,
                               basis: Basis
                               ) -> List[Step]:
 
     plants = workspace.power_plants()
-    plant_losses = Vardef(workspace.results(sector=Sector.ELECTRIC_POWER,
-                                            yearmon=yearmon,
-                                            model=model,
-                                            target=target,
-                                            member=member,
-                                            window=1,
-                                            basis=Basis.POWER_PLANT), 'loss_risk')
+    basin_losses = Vardef(workspace.basin_loss_factors(yearmon=yearmon, model=model, target=target, member=member),
+                          'hydropower_loss')
     aggregated_losses = workspace.results(sector=Sector.ELECTRIC_POWER,
                                           yearmon=yearmon,
                                           model=model,
                                           target=target,
                                           member=member,
-                                          window=1,
+                                          window=12,
                                           basis=basis)
 
     return [Step(
         targets=aggregated_losses,
-        dependencies=[plants, plant_losses],
+        dependencies=[plants, basin_losses],
         commands=[
             wsim_aggregate_losses(plants=plants,
-                                  plant_losses=plant_losses,
+                                  basin_losses=basin_losses,
                                   basis=basis,
                                   output=aggregated_losses,
                                   yearmon=target if target else yearmon)

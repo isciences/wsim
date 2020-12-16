@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -20,41 +20,25 @@
 #' @return data frame with aggregated risks
 #' @export
 summarize_losses <- function(plants, loss, aggfield, hours_in_period) {
-  plants <-  dplyr::mutate(
-    plants,
-    reserve_capacity_mw= calculate_reserve_capacity(fuel=fuel,
-                                                    water_cooled=water_cooled,
-                                                    seawater_cooled=seawater_cooled,
-                                                    capacity_mw=capacity_mw,
-                                                    generation_mw=generation_mw)
-  )
-  
   suppressWarnings(
-    plants <- dplyr::inner_join(plants, loss, by='id')
+    plants <- dplyr::inner_join(plants, loss, by=c(basin_id='id'))
   )
   
+  plants <- dplyr::mutate(plants, loss_risk = ifelse(fuel == 'Hydro', hydropower_loss, 0))
   plants <- dplyr::filter(plants, !is.na(!!rlang::sym(aggfield)))
   plants <- dplyr::group_by(plants, !!rlang::sym(aggfield))
   
   dplyr::summarize(
     plants,
     capacity_tot_mw= sum(capacity_mw),
-    capacity_reserve_mw= sum(reserve_capacity_mw),
     
     generation_tot_mwh= sum(generation_mw)*hours_in_period,
     
     gross_loss_mwh= sum(generation_mw*loss_risk)*hours_in_period,
-    net_loss_mwh= pmax(0, gross_loss_mwh/hours_in_period - capacity_reserve_mw)*hours_in_period,
     hydro_loss_mwh= sum(ifelse(fuel=='Hydro', generation_mw*loss_risk, 0))*hours_in_period,
-    nuclear_loss_mwh= sum(ifelse(fuel=='Nuclear', generation_mw*loss_risk, 0))*hours_in_period,
     
     gross_loss_pct= gross_loss_mwh / generation_tot_mwh,
-    net_loss_pct= net_loss_mwh / generation_tot_mwh,
-    hydro_loss_pct= hydro_loss_mwh / dplyr::na_if(sum(ifelse(fuel=='Hydro', generation_mw, 0))*hours_in_period, 0),
-    nuclear_loss_pct= nuclear_loss_mwh / dplyr::na_if(sum(ifelse(fuel=='Nuclear', generation_mw, 0))*hours_in_period, 0),
-    
-    reserve_utilization_mwh= sum(gross_loss_mwh - net_loss_mwh),
-    reserve_utilization_pct= sum(gross_loss_mwh - net_loss_mwh) / dplyr::na_if(sum(reserve_capacity_mw)*hours_in_period, 0)
+    hydro_loss_pct= hydro_loss_mwh / dplyr::na_if(sum(ifelse(fuel=='Hydro', generation_mw, 0))*hours_in_period, 0)
   )
 }
 

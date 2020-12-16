@@ -76,9 +76,10 @@ def extract_from_tar(tarfile: str, to_extract: str, dest_dir: str, comment: Opti
 def wsim_anom(*,
               fits: Union[str, List[str]],
               obs: Union[str, List[str]],
-              rp: Optional[str]=None,
-              sa: Optional[str]=None,
-              comment: Optional[str]=None) -> Step:
+              rp: Optional[str] = None,
+              sa: Optional[str] = None,
+              attrs: Optional[List[str]] = None,
+              comment: Optional[str] = None) -> Step:
     if type(fits) is str:
         fits = [fits]
 
@@ -101,6 +102,10 @@ def wsim_anom(*,
         cmd += ['--rp', q(rp)]
     if sa:
         cmd += ['--sa', q(sa)]
+
+    if attrs:
+        for attr in attrs:
+            cmd += ['--attr', q(attr)]
 
     return Step(
         targets=[rp, sa],
@@ -254,8 +259,9 @@ def wsim_lsm(*,
              forcing: Union[str, List[str]],
              results: Optional[str],
              next_state: Optional[str],
-             loop: Optional[int]=None,
-             comment: Optional[str]=None) -> Step:
+             loop: Optional[int] = None,
+             result_attrs: Optional[List[str]] = None,
+             comment: Optional[str] = None) -> Step:
     cmd = [
         os.path.join('{BINDIR}', 'wsim_lsm.R'),
         '--wc',         q(wc),
@@ -274,6 +280,10 @@ def wsim_lsm(*,
 
     if next_state is not None:
         cmd += ['--next_state', q(next_state)]
+
+    if result_attrs:
+        for attr in result_attrs:
+            cmd += ['--result_attr', q(attr)]
 
     if loop:
         cmd += ['--loop', str(loop)]
@@ -419,7 +429,8 @@ def wsim_composite(*,
                    clamp: Optional[int]=None,
                    output: str,
                    causes: Optional[str] = None,
-                   comment: Optional[str]=None) -> Step:
+                   attrs: Optional[List[str]] = None,
+                   comment: Optional[str] = None) -> Step:
     cmd = [os.path.join('{BINDIR}', 'wsim_composite.R')]
 
     if surplus:
@@ -441,6 +452,10 @@ def wsim_composite(*,
 
     if causes:
         cmd += ['--causes_from', causes]
+
+    if attrs:
+        for attr in attrs:
+            cmd += ['--attr', q(attr)]
 
     cmd += ['--output', q(output)]
 

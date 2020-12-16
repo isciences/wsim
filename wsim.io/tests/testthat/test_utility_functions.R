@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -94,4 +94,50 @@ test_that('bin assignment works as expected', {
   expect_equal(assign_to_bin(vals=c(0.5, 1, 1.5, 2, 3, 4),
                              bins=c(2, 1, 3)),
                c(1, 1, 1, 2, 3, 3))
+})
+
+test_that('dimemsion name updating functions work as expected', {
+  arr <- array(runif(1000), dim=c(10, 10, 10))
+
+  arr <- set_dimnames(arr, 3, letters[1:10])
+
+  expect_equal(dimnames(arr),
+               list(NULL, NULL, letters[1:10]))
+
+  arr <- update_dimnames(arr, 3, toupper)
+
+  expect_equal(dimnames(arr),
+               list(NULL, NULL, LETTERS[1:10]))
+})
+
+test_that('quantile varname parsing works as expected', {
+  varnames <- c('RO_mm', 'T_q95', 'T_q50', 'T_q05')
+
+  expect_equal(parse_quantiles(varnames),
+               c(5L, 50L, 95L))
+})
+
+test_that('flatten_arr transforms a 3D array to 2D', {
+  dims <- c(3, 5, 7)
+  arr <- array(runif(prod(dims)), dim=dims)
+
+  flattened <- flatten_arr(arr)
+
+  expect_equal(dim(flattened), c(15, 7))
+
+  expect_equal(flattened[1, ],
+               arr[1, 1, ])
+
+  expect_equal(flattened[2, ],
+               arr[2, 1, ])
+
+  expect_equal(flattened[4, ],
+               arr[1, 2, ])
+
+  expect_equal(attr(flattened, 'old_dim'), dims)
+
+  # reconstruct original dimensions
+  res <- matrix(NA_real_, nrow=dims[1], ncol=dims[2])
+  res[] <- flattened[, 4]
+  expect_equal(res, arr[,,4])
 })

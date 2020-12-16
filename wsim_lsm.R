@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -23,22 +23,23 @@ suppressMessages({
 '
 WSIM Land Surface Model
 
-Usage: wsim_lsm --state <file> (--forcing <file>)... --flowdir <file> --wc <file> --elevation <file> [--loop <n>] [--results <file>] [--next_state <file>]
+Usage: wsim_lsm --state <file> (--forcing <file>)... --flowdir <file> --wc <file> --elevation <file> [--loop <n>] [--results <file>] [--next_state <file>] [--result_attr <attr]...
 
 Options:
 
---state <file>       netCDF containing initial model state
---forcing <file>...  netCDF file(s) containing model forcing(s)
+--state <file>          netCDF containing initial model state
+--forcing <file>...     netCDF file(s) containing model forcing(s)
 
---flowdir <file>     file containing flow direction grid
---wc <file>          file containing soil water holding capacity
---elevation <file>   file containing elevations
+--flowdir <file>        file containing flow direction grid
+--wc <file>             file containing soil water holding capacity
+--elevation <file>      file containing elevations
 
---loop <n>           perform n model iterations using the same forcing data [default: 1]
+--loop <n>              perform n model iterations using the same forcing data [default: 1]
+--result_attr <attr>... optional attribute(s) to attach to model results
 
 Output:
---results <file>     filename for model results
---next_state <file>  filename for next state
+--results <file>        filename for model results
+--next_state <file>     filename for next state
 '->usage
 
 read_static_data <- function(args) {
@@ -63,6 +64,8 @@ read_static_data <- function(args) {
 
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args, types=list(loop="integer"))
+  
+  result_attrs <- lapply(args$result_attr, wsim.io::parse_attr)
 
   static <- read_static_data(args)
   state <- wsim.lsm::read_state_from_cdf(args$state)
@@ -89,7 +92,7 @@ main <- function(raw_args) {
         fname <- gsub("%T", state$yearmon, args$results)
         fname <- gsub("%N", iter_num, fname)
         wsim.io::info("Writing model results to", fname)
-        wsim.lsm::write_lsm_values_to_cdf(iter$obs, fname, prec='single')
+        wsim.lsm::write_lsm_values_to_cdf(iter$obs, fname, prec='single', attrs=result_attrs)
       }
 
       if (write_all_states) {
@@ -111,10 +114,11 @@ main <- function(raw_args) {
     wsim.io::info("Writing final state to", fname)
     wsim.lsm::write_lsm_values_to_cdf(state, fname, prec='double')
   }
+  
   if (!is.null(args$results) && !write_all_results) {
     fname <- args$results
     wsim.io::info("Writing results to", fname)
-    wsim.lsm::write_lsm_values_to_cdf(results, fname, prec='single')
+    wsim.lsm::write_lsm_values_to_cdf(results, fname, prec='single', attrs=result_attrs)
   }
 }
 

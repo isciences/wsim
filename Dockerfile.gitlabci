@@ -1,6 +1,7 @@
 FROM debian:buster-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+  curl \
   enchant \
   g++ \
   gcc \
@@ -47,7 +48,7 @@ RUN echo "MAKEFLAGS = -j8" >> /etc/R/Makeconf
 # Install packages in a loop (rather than providing a vector) so that 
 # we can enforce a specific order. Some packages were failing to install
 # because testthat.so could not be found.
-RUN Rscript -e 'for (package in c( \
+RUN Rscript -e 'tryCatch(install.packages(c( \
   "Rcpp", \
   "codetools", \
   "testthat", \
@@ -55,6 +56,7 @@ RUN Rscript -e 'for (package in c( \
   "devtools", \
   "docopt", \
   "dplyr", \
+  "exactextractr", \
   "fasterize", \
   "futile.logger", \
   "geosphere", \
@@ -63,6 +65,7 @@ RUN Rscript -e 'for (package in c( \
   "lwgeom", \
   "ncdf4", \
   "pkgdown", \
+  "ranger", \
   "raster", \
   "readr", \
   "rgdal", \
@@ -71,7 +74,7 @@ RUN Rscript -e 'for (package in c( \
   "sf", \
   "tidyr", \
   "units" \
-)) tryCatch(install.packages(package, dependencies = NA, repos="http://cran.rstudio.com", Ncpus=parallel::detectCores()), warning=function() quit(status=1))'
+), dependencies = NA, repos="http://cran.rstudio.com", Ncpus=parallel::detectCores()), warning=function() quit(status=1))'
 
 
 # Add wgrib2 for converting CFS forecast data

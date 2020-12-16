@@ -264,16 +264,19 @@ class AgricultureStatic(metaclass=ABCMeta):
     def __init__(self, source):
         self.source = source
 
+    @abstractmethod
     def crop_calendar(self, method: Method) -> str:
         pass
 
-    def dam_locations(self) -> Vardef:
+    @abstractmethod
+    def production(self, method: Method) -> Vardef:
+        pass
+
+    @abstractmethod
+    def ag_yield_anomaly_model(self, model_name: str) -> str:
         pass
 
     def basins(self) -> Vardef:
-        pass
-
-    def basin_downstream(self) -> Vardef:
         pass
 
     def countries(self) -> Vardef:
@@ -282,8 +285,6 @@ class AgricultureStatic(metaclass=ABCMeta):
     def provinces(self) -> Vardef:
         pass
 
-    def production(self, method: Method) -> Vardef:
-        pass
 
 
 class DefaultWorkspace:
@@ -316,7 +317,7 @@ class DefaultWorkspace:
 
         if target:
             assert (summary and member is None) or (not summary and member is not None)
-        else:
+        elif sector != Sector.AGRICULTURE:
             assert not summary
             assert member is None
 
@@ -498,10 +499,6 @@ class DefaultWorkspace:
 
         assert window is not None
 
-        if sector == Sector.AGRICULTURE:
-            # Polygon-aggregated results don't distinguish between cultivation methods but raster results do
-            assert (method is None) != (basis is None)
-
         if year:
             # Check that "annual" summaries are not generated for return periods
             # greater than one year.
@@ -586,7 +583,7 @@ class DefaultWorkspace:
 
     # Electricity assessment misc
     def basin_loss_factors(self, *, yearmon: str, model: Optional[str], target: Optional[str], member: Optional[str]) -> str:
-        return self.make_path('loss_factors', sector=Sector.ELECTRIC_POWER, yearmon=yearmon, window=1, target=target, model=model, member=member, basis=Basis.BASIN)
+        return self.make_path('loss_factors', sector=Sector.ELECTRIC_POWER, yearmon=yearmon, window=12, target=target, model=model, member=member, basis=Basis.BASIN)
 
     def basin_upstream_storage(self, sector: Sector) -> str:
         return os.path.join(self.outputs, sector.value, 'spinup', 'basin_upstream_storage.nc')

@@ -14,7 +14,7 @@ svg(filename="hydropower_loss_risk.svg",
     bg='transparent')
 par(mar=c(5.1, 4.1, 1, 2.1))
 
-curve(hydropower_loss(x, 1.0, 0.6),
+curve(hydropower_loss(x, 1.0),
       xlab="blue water / expected blue water",
       ylab="Loss Risk",
       from=1.0,

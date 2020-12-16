@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2020 ISciences, LLC.
+# Copyright (c) 2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -11,41 +11,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This configuration file is provided as an example of an automated operational WSIM workflow.
-
 from typing import Optional
 
+from wsim_workflow.config_base import ConfigBase
 from wsim_workflow import dates
 from wsim_workflow import paths
 
-from wsim_workflow.config_base import ConfigBase
-
 from forcing.ghcn_cams_precl import GHCN_CAMS_PRECL
-from forcing.cfsv2 import CFSForecast
+from forcing.perfect_forecast import PerfectForecast
 from static.default_static import DefaultStatic
 
-
-class CFSConfig(ConfigBase):
+class PerfectForecastConfig(ConfigBase):
+    """
+    Configuration that uses observed data as a forecast. Can be used for evaluating the agricultural assessment (which
+    must use forecasts) retrospectively.
+    """
 
     def __init__(self, source, derived):
         self._observed = GHCN_CAMS_PRECL(source)
-        self._forecast = {'CFSv2': CFSForecast(source, derived, self._observed)}
+        self._forecast = {'Observed': PerfectForecast(self._observed)}
         self._static = DefaultStatic(source)
         self._workspace = paths.DefaultWorkspace(derived)
 
     def historical_years(self):
-        return range(1948, 2020)  # 1948-2019
+        return range(1948, 2018)  # 1948-2017
 
     def result_fit_years(self):
         return range(1950, 2010)  # 1950-2009
 
     def models(self):
-        return ['CFSv2']
+        return self._forecast.keys()
 
     def forecast_ensemble_members(self, model, yearmon, *, lag_hours: Optional[int] = None):
         assert model in self.models()
 
-        return CFSForecast.last_7_days_of_previous_month(yearmon, lag_hours)
+        return '1'
 
     def forecast_targets(self, yearmon):
         return dates.get_next_yearmons(yearmon, 9)
@@ -63,4 +63,4 @@ class CFSConfig(ConfigBase):
         return self._workspace
 
 
-config = CFSConfig
+config = PerfectForecastConfig

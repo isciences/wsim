@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -18,12 +18,15 @@ from typing import List
 from ..step import Step
 
 
-def dam_locations(source_dir: str) -> List[Step]:
+def dam_locations(source_dir: str) -> str:
+    return os.path.join(source_dir, 'GRanD', 'GRanD_dams_v1_3.shp')
+
+
+def download_grand(source_dir: str) -> List[Step]:
     dirname = os.path.join(source_dir, 'GRanD')
     # url = None # Login required to download from SEDAC; GWSP appears to be down
 
-    zip_path = os.path.join(dirname, 'grand_v1_1.zip')
-    dam_file = os.path.join(dirname, 'GRanD_dams_v1_1.shp')
+    zip_path = os.path.join(dirname, 'GRanD_Version_1_3.zip')
 
     return [
         Step(
@@ -31,6 +34,7 @@ def dam_locations(source_dir: str) -> List[Step]:
              dependencies=[],
              commands=[
                  ['echo', 'GRanD is not currently available for automated download.'],
+                 ['echo', 'It can be manually downloaded from http://globaldamwatch.org/data/#core_global'],
                  ['echo', 'Please manually place', zip_path, 'in', dirname],
                  ['false']
                  # [ 'wget', '--directory-prefix', dirname, url ]
@@ -39,7 +43,7 @@ def dam_locations(source_dir: str) -> List[Step]:
 
         # Unzip data
         Step(
-            targets=dam_file,
+            targets=dam_locations(source_dir),
             dependencies=zip_path,
             commands=[
                 ['unzip', '-d', dirname, '-j', '-D', zip_path],

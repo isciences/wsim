@@ -32,7 +32,7 @@ class GLDAS20_NoahStatic(paths.Static):
     def global_prep_steps(self):
         return \
             ntsg_drt.global_flow_direction(filename=self.flowdir_raw, resolution=0.25) + self.extend_flowdir() + \
-            hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=5) + \
+            hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=7) + \
             hydrobasins.downstream_ids(source_dir=self.source, basins_file=self.basins().file, ids_file=self.basin_downstream().file)
 
     def extend_flowdir(self):
@@ -54,10 +54,10 @@ class GLDAS20_NoahStatic(paths.Static):
         return paths.Vardef(os.path.join(self.source, 'NTSG_DRT', 'drt_flow_directions_025deg_gldas.tif'), var='1')
 
     def basins(self):
-        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05.shp'), '1')
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07.shp'), '1')
 
     def basin_downstream(self):
-        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev05_downstream.nc'), 'next_down')
+        return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07_downstream.nc'), 'next_down')
 
 
 class GLDAS20_NoahConfig(ConfigBase):

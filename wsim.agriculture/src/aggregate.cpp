@@ -1,4 +1,4 @@
-// Copyright (c) 2019 ISciences, LLC.
+// Copyright (c) 2019-2020 ISciences, LLC.
 // All rights reserved.
 //
 // WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -26,6 +26,10 @@ void validate_factor(const T& rows, const T& cols, int factor) {
   }
 }
 
+//' Aggregate a matrix, reducing a block of cells by the arithmetic mean of the defined values
+//' 
+//' @inheritParams aggregate_mean_doy
+//' @export
 //[[Rcpp::export]]
 Rcpp::NumericMatrix aggregate_sum (const Rcpp::NumericMatrix & mat, int factor) {
   auto rows = mat.rows();

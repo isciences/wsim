@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -16,6 +16,7 @@ import itertools
 from typing import Dict, List, Optional, Union
 
 from . import attributes as attrs
+from .attributes import standard_attrs
 
 from .paths import read_vars, Basis, Vardef, DefaultWorkspace, ObservedForcing, ForecastForcing, ElectricityStatic, Static
 from .commands import \
@@ -68,14 +69,16 @@ def create_forcing_file(workspace: DefaultWorkspace,
                 temp.read_as('T'),
                 wetdays.read_as('pWetDays')
             ],
-            attrs=list(filter(None, [
-                ('target=' + target) if target else None,
-                ('member=' + member) if member else None,
-                'T:units',
-                'T:standard_name',
-                'Pr:units',
-                'Pr:standard_name'
-            ])),
+            attrs=standard_attrs(yearmon=yearmon,
+                                 target=target,
+                                 model=model,
+                                 member=member,
+                                 window=1) + [
+                      'T:units',
+                      'T:standard_name',
+                      'Pr:units',
+                      'Pr:standard_name'
+                  ],
             output=workspace.forcing(yearmon=yearmon, target=target, model=model, member=member, window=1)
         )
     ]
@@ -87,7 +90,6 @@ def compute_basin_results(workspace: DefaultWorkspace,
                           target: Optional[str] = None,
                           model: Optional[str] = None,
                           member: Optional[str] = None) -> List[Step]:
-    pixel_forcing = workspace.forcing(model=model, yearmon=yearmon, target=target, member=member, window=1)
     pixel_results = workspace.results(model=model, yearmon=yearmon, window=1, target=target, member=member)
     basin_results = workspace.results(model=model, yearmon=yearmon, window=1, target=target, member=member, basis=Basis.BASIN)
 
@@ -100,11 +102,9 @@ def compute_basin_results(workspace: DefaultWorkspace,
             rasters={
                 'Bt_RO': 'NETCDF:{}:Bt_RO'.format(pixel_results),
                 'RO_m3': 'NETCDF:{}:RO_m3'.format(pixel_results),
-                'T': 'NETCDF:{}:T'.format(pixel_forcing)
             },
             stats=[
                 'RO_m3=sum(RO_m3)',
-                'T_Bt_RO=weighted_mean(RO_m3,Bt_RO)'
             ],
             output=basin_results
         ).merge(
@@ -147,7 +147,8 @@ def run_lsm(workspace: DefaultWorkspace, static: Static, *,
             flowdir=static.flowdir(),
             forcing=forcing,
             results=results,
-            next_state=next_state
+            next_state=next_state,
+            result_attrs=standard_attrs(yearmon=yearmon, target=target, model=model, member=member, window=1)
         )
     ]
 
@@ -186,7 +187,12 @@ def time_integrate(workspace: DefaultWorkspace,
         wsim_integrate(
             inputs=[read_vars(f, *set(itertools.chain(*integrated_stats.values()))) for f in prev],
             stats=[stat + '::' + ','.join(varname) for stat, varname in integrated_stats.items()],
-            attrs=[attrs.integration_window(var='*', months=window)],
+            attrs=standard_attrs(yearmon=yearmon,
+                                 target=target,
+                                 model=model,
+                                 member=member,
+                                 window=window) +
+                                 [attrs.integration_window(var='*', months=window)],
             output=results
         )
     ]
@@ -234,7 +240,8 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
                 read_vars(workspace.state(yearmon=yearmon), *state_vars) if state_vars else None
             ],
             rp=workspace.return_period(**args),
-            sa=workspace.standard_anomaly(**args)
+            sa=workspace.standard_anomaly(**args),
+            attrs=standard_attrs(yearmon=yearmon, target=target, model=model, member=member, window=window)
         )
     ]
 
@@ -283,9 +290,9 @@ def composite_vars(*, method: str, window: int, quantile: Optional[int]) -> Dict
 def composite_indicators(workspace: DefaultWorkspace,
                          *,
                          yearmon: str,
-                         window: Optional[int]=None,
-                         target: Optional[str]=None,
-                         quantile: Optional[int]=None) -> List[Step]:
+                         window: Optional[int] = None,
+                         target: Optional[str] = None,
+                         quantile: Optional[int] = None) -> List[Step]:
     # If we're working with a forecast, we should have also have the desired
     # quantile of the ensemble members
     assert (quantile is None) == (target is None)
@@ -304,7 +311,8 @@ def composite_indicators(workspace: DefaultWorkspace,
             both_threshold=3,
             mask=infile + '::' + cvars['mask'],
             output=workspace.composite_summary(yearmon=yearmon, target=target, window=window),
-            clamp=60
+            clamp=60,
+            attrs=standard_attrs(yearmon=yearmon, target=target, window=window, model=None, member=None)
         )
     ]
 
@@ -331,7 +339,7 @@ def composite_indicator_adjusted(workspace: DefaultWorkspace,
                                  *,
                                  yearmon: str,
                                  window: int,
-                                 target: Optional[str]=None) -> List[Step]:
+                                 target: Optional[str]= None) -> List[Step]:
     return [
         wsim_composite(
             surplus=[Vardef(workspace.composite_anomaly_return_period(yearmon=yearmon, window=window, target=target),
@@ -341,7 +349,8 @@ def composite_indicator_adjusted(workspace: DefaultWorkspace,
             both_threshold=3,
             causes=workspace.composite_summary(yearmon=yearmon, window=window, target=target),
             output=workspace.composite_summary_adjusted(yearmon=yearmon, window=window, target=target),
-            clamp=60
+            clamp=60,
+            attrs=standard_attrs(yearmon=yearmon, target=target, window=window, model=None, member=None)
         )
     ]
 
@@ -349,9 +358,9 @@ def composite_indicator_adjusted(workspace: DefaultWorkspace,
 def composite_anomalies(workspace: DefaultWorkspace,
                         *,
                         yearmon: str,
-                        window: Optional[int]=None,
-                        target: Optional[str]=None,
-                        quantile: Optional[int]=None) -> List[Step]:
+                        window: Optional[int] = None,
+                        target: Optional[str] = None,
+                        quantile: Optional[int] = None) -> List[Step]:
     cvars = composite_vars(method='standard_anomaly', window=window, quantile=quantile)
 
     if target:
@@ -367,7 +376,8 @@ def composite_anomalies(workspace: DefaultWorkspace,
             deficit=[infile + '::' + var for var in cvars['deficit']],
             both_threshold=0.4307273,  # corresponds with rp of 3
             mask=infile + '::' + cvars['mask'],
-            output=outfile
+            output=outfile,
+            attrs=standard_attrs(yearmon=yearmon, target=target, window=window, model=None, member=None)
         )
     ]
 
@@ -424,6 +434,7 @@ def compute_wetday_ltmeans(forcing: ObservedForcing, start_year: int, stop_year:
         )
 
     return steps
+
 
 def fit_var(config: ConfigBase,
             *,
@@ -484,7 +495,8 @@ def forcing_summary(config: ConfigBase, *, yearmon: str, target: str, window: in
             inputs=inputs,
             weights=weights,
             stats=['q25', 'q50', 'q75'],
-            output=ws.forcing_summary(yearmon=yearmon, target=target, window=window)
+            output=ws.forcing_summary(yearmon=yearmon, target=target, window=window),
+            attrs=standard_attrs(yearmon=yearmon, target=target, window=window, model=','.join(config.models()), member='All')
         )
     ]
 
@@ -509,8 +521,9 @@ def result_summary(config: ConfigBase,
             inputs=inputs,
             weights=weights,
             stats=['q25', 'q50', 'q75'],
-            output=ws.results_summary(yearmon=yearmon, window=window, target=target)
-        )
+            output=ws.results_summary(yearmon=yearmon, window=window, target=target),
+            attrs=standard_attrs(yearmon=yearmon, target=target, window=window, model=','.join(config.models()), member='All')
+    )
     ]
 
 

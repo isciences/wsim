@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2020 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -14,6 +14,9 @@
 # limitations under the License.
 
 import os
+import sys
+import types
+import importlib.machinery
 
 from typing import List, Optional
 
@@ -58,6 +61,7 @@ def get_meta_steps():
 def generate_steps(config: ConfigBase, *,
                    start: str,
                    stop: str,
+                   step: Optional[int] = 1,
                    no_spinup: bool,
                    forecasts: str,
                    forecast_lag_hours: Optional[int] = None,
@@ -77,7 +81,7 @@ def generate_steps(config: ConfigBase, *,
             steps += agriculture.spinup(config, meta_steps)
 
 
-    for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop)))):
+    for i, yearmon in enumerate(reversed(list(dates.get_yearmons(start, stop))[::step])):
         steps += monthly.monthly_observed(config, yearmon, meta_steps)
 
         if run_electric_power:
@@ -154,3 +158,21 @@ def unbuildable_targets(steps) -> List[Step]:
         print('xox')
 
     return unbuildable
+
+
+def load_config(path, source, derived):
+    dirname = os.path.dirname(path)
+
+    # Temporarily add config module directory to the system path
+    # This feels wrong, but I can't find another method that allows
+    # one config to derive from another (as config_fast inherits from
+    # config_cfs)
+    sys.path.insert(0, dirname)
+
+    loader = importlib.machinery.SourceFileLoader("config", path)
+    mod = types.ModuleType(loader.name)
+    loader.exec_module(mod)
+
+    sys.path.remove(dirname)
+
+    return mod.config(source, derived)
