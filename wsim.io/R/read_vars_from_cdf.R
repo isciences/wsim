@@ -77,7 +77,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
       }
 
       wrap_rows <- which(lons > 180)
-      lons <- c(lons[lons > 180] - 360, lons[lons < 180])
+      lons <- c(lons[lons > 180] - 360, lons[lons <= 180])
     }
 
     # Do we need to flip latitudes?

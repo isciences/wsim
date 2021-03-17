@@ -601,3 +601,33 @@ test_that("datasets from 0-360 are wrapped to -180 to 180", {
 
   file.remove(fname)
 })
+
+test_that("ERA5 0.25-degree dataset is correctly wrapped on read", {
+  fname <- tempfile(fileext = '.nc')
+
+  nrow <- 721
+  ncol <- 1440
+
+  era5 <- raster::raster(matrix(1:(nrow*ncol), nrow=nrow),
+                         xmn = -0.125,
+                         xmx = 359.875,
+                         ymn = -90.125,
+                         ymx = 90.125)
+  raster::crs(era5) <- '+proj=longlat'
+
+  suppressWarnings({
+    raster::writeRaster(era5, fname)
+  })
+
+  era5_in <- read_vars_from_cdf(fname)
+  era5_inr <- raster::raster(era5_in$data[[1]],
+                             xmn = era5_in$extent[1],
+                             xmx = era5_in$extent[2],
+                             ymn = era5_in$extent[3],
+                             ymx = era5_in$extent[4])
+
+  expect_equal(
+    raster::extract(era5, cbind(30, 44)),
+    raster::extract(era5_inr, cbind(30, 44))
+  )
+})
