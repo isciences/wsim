@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -75,23 +75,23 @@ class CFSForecast(paths.ForecastForcing):
     def observed(self) -> paths.ObservedForcing:
         return self._observed
 
-    def temp_monthly(self, *, yearmon, target, member):
+    def temp_monthly(self, *, yearmon: str, target: str, member: str) -> paths.Vardef:
         return paths.Vardef(self.forecast_corrected(yearmon=yearmon, target=target, member=member), 'T')
 
-    def precip_monthly(self, *, yearmon, target, member):
+    def precip_monthly(self, *, yearmon: str, target: str, member: str) -> paths.Vardef:
         return paths.Vardef(self.forecast_corrected(yearmon=yearmon, target=target, member=member), 'Pr')
 
-    def p_wetdays(self, *, yearmon=None, target, member=None):
+    def p_wetdays(self, *, yearmon=None, target, member=None) -> paths.Vardef:
         _, month = dates.parse_yearmon(target)
         return self.observed().mean_p_wetdays(month=month)
 
-    def fit_obs(self, *, var, month):
+    def fit_obs(self, *, var: str, month: int) -> str:
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'hindcast_fits',
                             'obs_{var}_month_{month:02d}.nc'.format(var=var, month=month))
 
-    def fit_retro(self, *, var, target_month, lead_months):
+    def fit_retro(self, *, var: str, target_month: int, lead_months: int) -> str:
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'hindcast_fits',
@@ -99,7 +99,7 @@ class CFSForecast(paths.ForecastForcing):
                                                                                                   target_month=target_month,  # noqa
                                                                                                   lead_months=lead_months))   # noqa
 
-    def forecast_raw(self, *, yearmon, target, member) -> str:
+    def forecast_raw(self, *, yearmon: str, target: str, member: str) -> str:
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'raw_nc',
@@ -113,7 +113,7 @@ class CFSForecast(paths.ForecastForcing):
                             timestamp[:6],
                             'cfs_trgt{target}_fcst{timestamp}_raw.nc').format(target=target, timestamp=timestamp)
 
-    def forecast_corrected(self, *, yearmon, target, member):
+    def forecast_corrected(self, *, yearmon: str, target: str, member: str) -> str:
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'corrected',
@@ -132,11 +132,11 @@ class CFSForecast(paths.ForecastForcing):
                             'cfs.{}'.format(timestamp[:-2]),
                             'flxf{}.01.{}.avrg.grb2'.format(timestamp, target))
 
-    def forecast_grib(self, *, timestamp, target) -> str:
+    def forecast_grib(self, *, timestamp: str, target: str) -> str:
         return os.path.join(self.grib_dir(timestamp=timestamp),
                             'flxf.01.{member}.{target}.avrg.grib.grb2'.format(member=timestamp, target=target))
 
-    def global_prep_steps(self):
+    def global_prep_steps(self) -> List[Step]:
         steps = []
 
         for month in dates.all_months:
