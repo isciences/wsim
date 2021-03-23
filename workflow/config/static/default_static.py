@@ -34,7 +34,6 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
 
     def global_prep_steps(self):
         return \
-            aqueduct.baseline_water_stress(source_dir=self.source, filename=self.water_stress().file) + \
             gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, resolution=0.5) + \
             isric.global_tawc(source_dir=self.source, filename=self.wc().file, resolution=0.5) + \
             stn30.global_flow_direction(source_dir=self.source, filename=self.flowdir().file, resolution=0.5) + \
