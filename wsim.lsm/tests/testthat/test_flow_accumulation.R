@@ -36,6 +36,13 @@ IN_NORTH <- 4;
 IN_NORTHEAST <- 8;
 IN_NONE <- 0;
 
+# Helper function to disaggregate a flow direction matrix
+disaggregate_directions <- function(dirs, factor) {
+  ret <- disaggregate_amount(dirs, factor) * factor * factor
+  mode(ret) <- 'integer'
+  ret
+}
+
 test_that('Downstream cells are identified', {
   directions <- rbind(
     c( OUT_EAST,   OUT_SOUTH, OUT_WEST ),
@@ -77,7 +84,6 @@ test_that('Downstream cells are identified with wrapping', {
 
 
 test_that('Flow accumulates correctly without wrapping', {
-
   weights <- rbind(
     c( 1,  2, 4  ),
     c( 8, 16, 32 )
@@ -206,4 +212,23 @@ test_that('Headwater NAs are not conveyed downstream', {
     c( 5,  4 ),
     c( 4, NA )
   ))
+})
+
+test_that('Direction matrix can be integer multiple of flow matrix', {
+  weights <- rbind(
+    c( 1,  2, 4  ),
+    c( 8, 16, 32 )
+  )
+
+  directions <- rbind(
+    c( OUT_EAST,   OUT_SOUTH, OUT_WEST  ),
+    c( OUT_NODATA, OUT_WEST,  OUT_NORTH )
+  )
+
+  directions3 <- disaggregate_directions(directions, 3)
+
+  expect_equal(
+    accumulate_flow(directions, weights, FALSE, FALSE),
+    accumulate_flow(directions3, weights, FALSE, FALSE)
+  )
 })
