@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -231,4 +231,41 @@ test_that('Direction matrix can be integer multiple of flow matrix', {
     accumulate_flow(directions, weights, FALSE, FALSE),
     accumulate_flow(directions3, weights, FALSE, FALSE)
   )
+})
+
+test_that('Global 0.125-degree flow direction grid can be shifted and extended to match 0.25-degree ERA5 grid', {
+  flowdir <- matrix(1L:(2880L*1120L), nrow=1120)
+  flowdir_extent <- c(-180, 180, -56, 84)
+
+  era5_extent <- c(-179.875, 180.125, -90.125, 90.125)
+  era5_dims <- c(721, 1440)
+
+  flowdir_adj <- adjust_flow_dirs(flowdir, flowdir_extent, era5_extent, era5_dims)
+
+  expect_equal(dim(flowdir_adj), 2 * era5_dims)
+  expect_true(is.integer(flowdir_adj))
+
+  filled_northern_lats <- (90.125 - 84) / 0.125
+  filled_southern_lats <- (90.125 - 56) / 0.125 - 1
+
+  # northern latitudes filled with NA
+  expect_true(all(is.na(flowdir_adj[seq(1, filled_northern_lats), ])))
+
+  # southern latitudes filled with NA
+  expect_true(all(is.na(flowdir_adj[seq(nrow(flowdir_adj) - filled_southern_lats, nrow(flowdir_adj), )])))
+
+  # leftmost column of flowdir grid moved to right
+  # (western extent moved from -180 to -179.875)
+  expect_equal(na.omit(flowdir_adj[, 1]), 1121:2240, check.attributes = FALSE)
+  expect_equal(na.omit(flowdir_adj[, 2880]), 1:1120, check.attributes = FALSE)
+})
+
+test_that('adjust_flow_dirs is a no-op when grids are the same', {
+  flowdir <- matrix(1L:(360L*720L), nrow=360)
+  flowdir_extent <- c(-180, 180, -90, 90)
+
+  flowdir_adj <- adjust_flow_dirs(flowdir, flowdir_extent, flowdir_extent, dim(flowdir))
+
+  expect_equal(flowdir, flowdir_adj)
+  expect_true(is.integer(flowdir_adj))
 })
