@@ -16,7 +16,10 @@
 import argparse
 import cdsapi
 import os
+import shutil
 import sys
+import subprocess
+import tempfile
 
 from typing import List
 
@@ -113,8 +116,18 @@ def main(raw_args):
         print('specified by the CDSAPI_RC environment variable. Instructions for creating the file can be found at', file=sys.stderr)
         print('https://cds.climate.copernicus.eu/api-how-to#install-the-cds-api-key', file=sys.stderr)
         sys.exit(1)
-        
-    get_era5(args.outfile, args.timestep, args.var, args.year, args.month)
+
+    fh, fname = tempfile.mkstemp()
+    os.close(fh)
+    get_era5(fname, args.timestep, args.var, args.year, args.month)
+    subprocess.run(['nccopy',
+                    '-7',   # netCDF 4 classic
+                    '-d1',  # level 1 deflate,
+                    '-s',   # shuffle bits for better compression
+                    '-c', 'time/1,latitude/721,longitude/1440',  # set chunk size for better compression and optimal access by time
+                    fname,
+                    args.outfile],
+                   check=True)
 
 
 if __name__ == "__main__":
