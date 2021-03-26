@@ -54,7 +54,16 @@ main <- function(raw_args) {
 
   daily_precip_m <- abind(lapply(unique(days), function(day) {
     hours_since_initial_time = hours[days == day]
-    stopifnot(length(hours_since_initial_time) == 24)
+
+    if (length(hours_since_initial_time) != 24) {
+      # ERA5 dataset starts at 7 AM UTC on 1979-01-01, so we don't have 24
+      # hours for that date.
+      if (initial_time + lubridate::days(day) != make_date(1979, 1, 1)) {
+        stop(sprintf('Only found %d hours of data for %s',
+                     length(hours_since_initial_time),
+                     initial_time + lubridate::days(day)))
+      }
+    }
 
     hourly_precip <- abind(lapply(hours_since_initial_time, function(hour) {
       wsim.io::read_vars_from_cdf(args$input,
