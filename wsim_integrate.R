@@ -128,8 +128,11 @@ main <- function(raw_args) {
     weights <- sapply(strsplit(args$weights, ',', fixed=TRUE), as.numeric)
   }
 
-  # Probe for extra dimensions
-  extra_dims_found <- wsim.io::read_dimension_values(inputs[[1]], exclude.dims=c('lat', 'lon', 'id', 'latitude', 'longitude'))
+  # Probe for non-trivial extra dimensions
+  extra_dims_found <- wsim.io::read_dimension_values(inputs[[1]],
+                                                     exclude.dims=c('lat', 'lon', 'id', 'latitude', 'longitude'),
+                                                     exclude.degenerate=TRUE)
+
   if (length(extra_dims_found) == 0) {
     extra_dim_name <- NULL
     extra_dim_vals <- list(NULL)

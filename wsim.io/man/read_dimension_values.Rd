@@ -4,12 +4,15 @@
 \alias{read_dimension_values}
 \title{Get the values of the dimensions associated with a variable in a netCDF file}
 \usage{
-read_dimension_values(vardef, exclude.dims = NULL)
+read_dimension_values(vardef, exclude.dims = NULL, exclude.degenerate = FALSE)
 }
 \arguments{
 \item{vardef}{filename/variable to check}
 
 \item{exclude.dims}{dimensions to ignore in output}
+
+\item{exclude.degenerate}{if \code{TRUE}, do not return dimensions having
+length <= 1 in output}
 }
 \value{
 a list with names representing dimension names and values
