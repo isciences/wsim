@@ -126,7 +126,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
 
     expected_extra_dims <- length(real_dims) - 2
     if (length(extra_dims) != expected_extra_dims) {
-      stop(sprintf("Expected %d extra dimensions but got %d.", expected_extra_dims, length(extra_dims)))
+      stop(sprintf("Expected %d extra dimensions for %s but got %d.", expected_extra_dims, vardef, length(extra_dims)))
     }
 
     for (dimname in names(extra_dims)) {
