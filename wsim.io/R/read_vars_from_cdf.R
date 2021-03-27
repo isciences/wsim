@@ -115,7 +115,7 @@ read_vars_from_cdf <- function(vardef, vars=as.character(c()), offset=NULL, coun
       length(cdf$dim[[x]]$vals)
     })
     potential_degen <- which(dims_lengths == 1)
-    additional_extra_dim_names <- c(names(potential_degen)[!names(potential_degen) %in% c(latname, lonname)])
+    additional_extra_dim_names <- c(names(potential_degen)[!names(potential_degen) %in% c(latname, lonname, names(extra_dims))])
 
     if(length(additional_extra_dim_names) > 0){
       # get extra_dims = list(<name>=<values>)

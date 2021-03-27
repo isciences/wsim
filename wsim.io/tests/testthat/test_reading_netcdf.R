@@ -30,7 +30,11 @@ test_that("we can read attributes and variables from a spatial netCDF file into 
                     attrs=list(list(var="my_data", key="station", val="A"),
                                list(key="yearmon", val="201702")))
 
+  # ok to omit extra dim since it is constant
   v <- read_vars_from_cdf(fname)
+
+  # also ok to specify it
+  v <- read_vars_from_cdf(fname, extra_dims = list(time = 00000))
 
   # Grid extent is returned as xmin, xmax, ymin, ymax
   expect_equal(v$extent, c(-40, 0, 20, 70))
