@@ -46,6 +46,9 @@ class NMMEForecast(paths.ForecastForcing):
         self.max_hindcast_year = max_hindcast_year
         self.hindcast_distribution = 'gev'
 
+    def name(self) -> str:
+        return 'NMME_' + self.model_name
+
     def observed(self) -> paths.ObservedForcing:
         return self._observed
 

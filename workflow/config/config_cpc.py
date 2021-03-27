@@ -30,7 +30,7 @@ class CPCConfig(ConfigBase):
         self._forecast = {
             'CFSv2':  CFSForecast(source, derived, self._observed),
         }
-        self._static = DefaultStatic(source)
+        self._static = DefaultStatic(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived)
 
     def result_fit_years(self) -> Iterable[int]:

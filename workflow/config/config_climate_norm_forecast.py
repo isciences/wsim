@@ -27,7 +27,7 @@ class ClimateNormForecastConfig(ConfigBase):
     def __init__(self, source, derived):
         self._observed = LeakyBucket(source)
         self._forecast = {'climate_norm': ClimateNormForecast(source, derived, self._observed, 1980, 2009)}
-        self._static = DefaultStatic(source)
+        self._static = DefaultStatic(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived)
 
     def historical_years(self):

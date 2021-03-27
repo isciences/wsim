@@ -30,7 +30,7 @@ class CFSConfig(ConfigBase):
     def __init__(self, source, derived):
         self._observed = GHCN_CAMS_PRECL(source)
         self._forecast = {'CFSv2': CFSForecast(source, derived, self._observed)}
-        self._static = DefaultStatic(source)
+        self._static = DefaultStatic(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived)
 
     def historical_years(self):

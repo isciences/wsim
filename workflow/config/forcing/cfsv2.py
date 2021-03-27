@@ -72,6 +72,9 @@ class CFSForecast(paths.ForecastForcing):
         self.max_fit_year = 2009
         self.hindcast_distribution = 'gev'
 
+    def name(self) -> str:
+        return 'CFSv2'
+
     def observed(self) -> paths.ObservedForcing:
         return self._observed
 
@@ -89,12 +92,14 @@ class CFSForecast(paths.ForecastForcing):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'hindcast_fits',
+                            self._observed.name(),
                             'obs_{var}_month_{month:02d}.nc'.format(var=var, month=month))
 
     def fit_retro(self, *, var: str, target_month: int, lead_months: int) -> str:
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'hindcast_fits',
+                            self._observed.grid().name,
                             'retro_{var}_month_{target_month:02d}_lead_{lead_months:d}.nc'.format(var=var,
                                                                                                   target_month=target_month,  # noqa
                                                                                                   lead_months=lead_months))   # noqa
@@ -103,6 +108,7 @@ class CFSForecast(paths.ForecastForcing):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'raw_nc',
+                            self._observed.grid().name,
                             member[:6],
                             'cfs_trgt{target}_fcst{member}_raw.nc'.format(target=target, member=member))
 
@@ -110,6 +116,7 @@ class CFSForecast(paths.ForecastForcing):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'hindcast_nc',
+                            self._observed.grid().name,
                             timestamp[:6],
                             'cfs_trgt{target}_fcst{timestamp}_raw.nc').format(target=target, timestamp=timestamp)
 
@@ -117,6 +124,7 @@ class CFSForecast(paths.ForecastForcing):
         return os.path.join(self.source,
                             'NCEP_CFSv2',
                             'corrected',
+                            self._observed.name(),
                             'cfs_trgt{target}_fcst{member}_corrected.nc'.format(target=target, member=member))
 
     def grib_dir(self, *, timestamp: str) -> str:
@@ -205,7 +213,7 @@ class CFSForecast(paths.ForecastForcing):
                 ]
             ))
 
-            steps.append(commands.forecast_convert(grib_file, netcdf_file))
+            steps.append(commands.forecast_convert(grib_file, netcdf_file, self.observed().grid()))
 
         return steps
 
@@ -244,7 +252,7 @@ class CFSForecast(paths.ForecastForcing):
 
             ),
             # Convert the forecast data from GRIB to netCDF
-            commands.forecast_convert(infile, outfile)
+            commands.forecast_convert(infile, outfile, self.observed().grid())
         ]
 
     @staticmethod

@@ -19,6 +19,7 @@ from enum import Enum
 from typing import Union, List, Optional
 
 from . import step
+from .grids import Grid
 
 RE_GDAL_DATASET = re.compile('^(?P<driver>\w+:)?(?P<filename>[^:]+)(?P<dataset>:\w+)?$')
 
@@ -96,6 +97,19 @@ class Vardef:
 class ObservedForcing(metaclass=ABCMeta):
 
     @abstractmethod
+    def name(self) -> str:
+        """
+        Name of forcing dataset
+        """
+        pass
+
+    @abstractmethod
+    def grid(self) -> Grid:
+        """
+        Grid of forcing dataset
+        """
+
+    @abstractmethod
     def precip_monthly(self, *, yearmon: str) -> Vardef:
         """
         Return a Vardef for the precipitation variable
@@ -140,6 +154,13 @@ class ObservedForcing(metaclass=ABCMeta):
 
 
 class ForecastForcing(metaclass=ABCMeta):
+
+    @abstractmethod
+    def name(self) -> str:
+        """
+        Name of forcing dataset
+        """
+        pass
 
     @abstractmethod
     def precip_monthly(self, *, yearmon: str, target: str, member: str) -> Vardef:

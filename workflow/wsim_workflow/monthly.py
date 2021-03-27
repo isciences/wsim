@@ -35,7 +35,7 @@ from .step import Step
 
 
 def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) -> List[Step]:
-    print('Generating steps for', yearmon, 'observed data')
+    print('Generating steps for', yearmon, config.observed_data().name(), 'observed data')
 
     steps = []
 

@@ -16,10 +16,17 @@ import unittest
 from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.spinup import *
 from wsim_workflow.dates import parse_yearmon
+from wsim_workflow.grids import GLOBAL_HALF_DEGREE
 from wsim_workflow.paths import Vardef, DefaultWorkspace, ObservedForcing, Static
 
 
 class FakeForcing(ObservedForcing):
+
+    def name(self):
+        return 'fake_forcing'
+
+    def grid(self):
+        return GLOBAL_HALF_DEGREE
 
     def p_wetdays(self, *, yearmon):
         year, mon = parse_yearmon(yearmon)

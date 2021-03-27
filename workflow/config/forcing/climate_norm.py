@@ -14,6 +14,7 @@
 import os
 
 from wsim_workflow import dates, paths
+from wsim_workflow.grids import Grid
 from wsim_workflow.paths import Vardef, ObservedForcing
 
 from wsim_workflow.commands import wsim_integrate
@@ -31,6 +32,12 @@ class ClimateNormForecast(paths.ForecastForcing):
         self._observed = observed
         self.min_year = min_year
         self.max_year = max_year
+
+    def name(self) -> str:
+        return 'climate_norm'
+
+    def grid(self) -> Grid:
+        return self._observed.grid()
 
     @staticmethod
     def requires_bias_correction() -> bool:
