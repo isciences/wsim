@@ -14,16 +14,17 @@
 import os
 from typing import List
 
+from ..grids import Grid, GLOBAL_HALF_DEGREE
 from ..step import Step
 
 
-def global_elevation(source_dir: str, filename: str, resolution: float) -> List[Step]:
+def global_elevation(source_dir: str, filename: str, grid: Grid) -> List[Step]:
     dirname = os.path.join(source_dir, 'GMTED2010')
     url = 'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
     raw_file = os.path.join(dirname, 'mn30_grd')
 
-    return [
+    steps = [
         # Download elevation data
         Step(
             targets=zip_path,
@@ -40,19 +41,42 @@ def global_elevation(source_dir: str, filename: str, resolution: float) -> List[
             commands=[
                 ['unzip', '-d', dirname, '-D', zip_path],
             ]
-        ),
-
-        # Aggregate elevation data
-        Step(
-            targets=filename,
-            dependencies=raw_file,
-            commands=[
-                [
-                    os.path.join('{BINDIR}', 'utils', 'aggregate.R'),
-                    '--res', str(resolution),
-                    '--input', raw_file,
-                    '--output', filename
-                ]
-            ]
         )
     ]
+
+    # Aggregate elevation data
+    if grid == GLOBAL_HALF_DEGREE:
+        steps.append(
+            Step(
+                targets=filename,
+                dependencies=raw_file,
+                commands=[
+                    [
+                        os.path.join('{BINDIR}', 'utils', 'aggregate.R'),
+                        '--res', str(grid.dx()),
+                        '--input', raw_file,
+                        '--output', filename
+                    ]
+                ]
+            )
+        )
+    else:
+        steps.append(
+            Step(
+                targets=filename,
+                dependencies=raw_file,
+                commands=[
+                    [
+                        'gdalwarp',
+                        '-tr', grid.gdal_tr(),
+                        '-te', grid.gdal_te(),
+                        '-r', 'average',
+                        '-ot', 'Float32',
+                        raw_file,
+                        filename
+                    ]
+                ]
+            )
+        )
+
+    return steps
