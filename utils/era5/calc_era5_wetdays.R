@@ -45,10 +45,20 @@ main <- function(raw_args) {
   hours <- nc$dim$time$vals
   days <- hours %/% 24
 
+  # if a file contains a mix of ERA5 and ERA5T data, then an `expver`
+  # dimension will be used to differentiate between them. In this case
+  # we will need to read both possible values of expver (1 and 5) and
+  # take whichever is not NA.
+  has_expver <- !is.null(nc$dim$expver)
+
   # read the first hour to get the grid extent
+  test_read_extra_dims <- list(time = hours[1])
+  if (has_expver) {
+    test_read_extra_dims$expver <- 1
+  }
   extent <- wsim.io::read_vars_from_cdf(args$input,
                                         vars = 'tp',
-                                        extra_dims = list(time = hours[1]))$extent
+                                        extra_dims = test_read_extra_dims)$extent
 
   infof('Reading hourly data for %d days from %s', length(unique(days)), args$input)
 
@@ -66,9 +76,23 @@ main <- function(raw_args) {
     }
 
     hourly_precip <- abind(lapply(hours_since_initial_time, function(hour) {
-      wsim.io::read_vars_from_cdf(args$input,
+      if (has_expver) {
+        era5 <- read_vars_from_cdf(args$input,
+                           vars = 'tp',
+                           extra_dims = list(time = hour, expver = 1))$data$tp
+        if (all(is.na(era5))) {
+          era5t <-read_vars_from_cdf(args$input,
+                                     vars = 'tp',
+                                     extra_dims = list(time = hour, expver = 5))$data$tp
+          return(era5t)
+        } else {
+          return(era5)
+        }
+      } else {
+        return(read_vars_from_cdf(args$input,
                                   vars = 'tp',
-                                  extra_dims = list(time = hour))$data$tp
+                                  extra_dims = list(time = hour))$data$tp)
+      }
     }), along = 3)
 
     wsim.distributions::stack_sum(hourly_precip)
