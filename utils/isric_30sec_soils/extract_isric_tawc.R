@@ -45,9 +45,10 @@ Usage: extract_isric_tawc [--max_depth=<depth> --data=<data> --missing=<missing>
 '->usage
 
 suppressMessages({
-  require(dplyr)
-  require(readr)
-  require(wsim.io)
+  library(Rcpp)
+  library(dplyr)
+  library(readr)
+  library(wsim.io)
 })
 
 #' Add variables to WISE data containing depths in meters and TAWC in mm
