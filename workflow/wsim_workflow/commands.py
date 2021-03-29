@@ -36,10 +36,9 @@ def forecast_convert(infile: str, outfile: str, grid: Grid, comment: Optional[st
         dependencies=infile,
         commands=[
             [os.path.join('{BINDIR}', 'utils', 'noaa_cfsv2_forecast', 'convert_cfsv2_forecast.sh'),
-             grid.name,
              infile,
              outfile,
-             '{}'.format(grid.wgrib_def())]
+             '"{}"'.format(grid.wgrib_def())]
         ],
         comment=comment
     )

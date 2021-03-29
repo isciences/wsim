@@ -45,7 +45,7 @@ function cleanup {
 }
 trap cleanup EXIT
 
-wgrib2 "$INFILE" -match "PRATE:surface|TMP:2 m" -new_grid latlon "$WGRIB_GRID" $TEMP_GRB2
+wgrib2 "$INFILE" -match "PRATE:surface|TMP:2 m" -new_grid latlon $WGRIB_GRID $TEMP_GRB2
 wgrib2 $TEMP_GRB2 -nc_grads -netcdf $TEMP_NC1
 
 # Rename each variable in separate commands

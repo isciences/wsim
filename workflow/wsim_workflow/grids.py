@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 class Grid:
 
     def __init__(self, name: str, xmin: float, ymin: float, xmax: float, ymax: float, nx: int, ny: int):
@@ -38,14 +40,18 @@ class Grid:
         return "{xmin:f} {ymin:f} {xmax:f} {ymax:f}".format(
             xmin=self.xmin, ymin=self.ymin, xmax=self.xmax, ymax=self.ymax)
 
+    @staticmethod
+    def _wgrib_format_number(num):
+        return '{:f}'.format(num).rstrip('0').rstrip('.')
+
     def wgrib_def(self) -> str:
-        return "{xmin:f}:{nx:d}:{dx:f} {ymin:f}:{ny:d}:{dy:f}".format(
-            xmin=self.xmin,
-            nx=self.nx,
-            dx=self.dx(),
-            ymin=self.ymin,
-            ny=self.ny,
-            dy=self.dy()
+        return '{xmin}:{nx}:{dx} {ymin}:{ny}:{dy}'.format(
+            xmin=self._wgrib_format_number(self.xmin + 0.5*self.dx()),
+            nx=self._wgrib_format_number(self.nx),
+            dx=self._wgrib_format_number(self.dx()),
+            ymin=self._wgrib_format_number(self.ymin + 0.5*self.dy()),
+            ny=self._wgrib_format_number(self.ny),
+            dy=self._wgrib_format_number(self.dy())
         )
 
 GLOBAL_HALF_DEGREE = Grid('global_half_degree', -180, -90, 180, 90, 720, 360)
