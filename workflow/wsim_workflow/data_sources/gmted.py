@@ -17,11 +17,11 @@ from typing import List
 from ..grids import Grid, GLOBAL_HALF_DEGREE
 from ..step import Step
 
-SUBDIR = 'GMTED2020'
+SUBDIR = 'GMTED2010'
 
 
 def filename(source_dir: str, grid_name: str) -> str:
-    return os.path.join(source_dir, SUBDIR, 'gmted2020_{}.tif'.format(grid_name))
+    return os.path.join(source_dir, SUBDIR, 'gmted2010_{}.tif'.format(grid_name))
 
 
 def global_elevation(source_dir: str, filename: str, grid: Grid) -> List[Step]:
