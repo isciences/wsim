@@ -50,21 +50,23 @@ read_static_data <- function(args) {
   dims <- dim(elevation$data[[1]])
 
   static$elevation <- elevation$data[[1]]
-  static$flow_directions <- wsim.io::read_vars(args$flowdir,
-                                               expect.nvars=1,
-                                               expect.extent=extent,
-                                               expect.dims=dims)$data[[1]]
+
   static$Wc <- wsim.io::read_vars(args$wc,
                                   expect.nvars=1,
                                   expect.extent=extent,
                                   expect.dims=dims)$data[[1]]
+
+  flowdir <- wsim.io::read_vars(args$flowdir,
+                                expect.nvars=1)
+
+  static$flow_directions <- wsim.lsm::adjust_flow_dirs(flowdir$data[[1]], flowdir$extent, extent, dims)
 
   return(static)
 }
 
 main <- function(raw_args) {
   args <- parse_args(usage, raw_args, types=list(loop="integer"))
-  
+
   result_attrs <- lapply(args$result_attr, wsim.io::parse_attr)
 
   static <- read_static_data(args)
@@ -114,7 +116,7 @@ main <- function(raw_args) {
     wsim.io::info("Writing final state to", fname)
     wsim.lsm::write_lsm_values_to_cdf(state, fname, prec='double')
   }
-  
+
   if (!is.null(args$results) && !write_all_results) {
     fname <- args$results
     wsim.io::info("Writing results to", fname)
