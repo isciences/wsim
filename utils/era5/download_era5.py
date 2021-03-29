@@ -120,6 +120,14 @@ def main(raw_args):
     fh, fname = tempfile.mkstemp()
     os.close(fh)
     get_era5(fname, args.timestep, args.var, args.year, args.month)
+
+    if args.timestep == 'month' and 'total_precipitation' in args.var:
+        # ERA5 monthly average precipitation netCDFs have a unit of "m" but the stored values are actually "m/day"
+        subprocess.run(['ncatted',
+                        '-a', 'units,tp,m,c,m/day',
+                        fname
+        ])
+
     subprocess.run(['nccopy',
                     '-7',   # netCDF 4 classic
                     '-d1',  # level 1 deflate,
@@ -128,6 +136,8 @@ def main(raw_args):
                     fname,
                     args.outfile],
                    check=True)
+
+    # TODO populate standard_name attribute either here or in workflow invocation of wsim_merge
 
 
 if __name__ == "__main__":
