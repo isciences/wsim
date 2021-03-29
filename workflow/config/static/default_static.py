@@ -92,7 +92,7 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
         return paths.Vardef(os.path.join(self.source, 'STN_30', 'g_network.asc'), '1')
 
     def elevation(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GMTED2010', 'gmted2010_05deg.tif'), '1')
+        return paths.Vardef(gmted.filename(self.source, self.grid.name), '1')
 
     def basins(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07.shp'), None)

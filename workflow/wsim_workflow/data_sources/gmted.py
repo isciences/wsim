@@ -17,9 +17,15 @@ from typing import List
 from ..grids import Grid, GLOBAL_HALF_DEGREE
 from ..step import Step
 
+SUBDIR = 'GMTED2020'
+
+
+def filename(source_dir: str, grid_name: str) -> str:
+    return os.path.join(source_dir, SUBDIR, 'gmted2020_{}.tif'.format(grid_name))
+
 
 def global_elevation(source_dir: str, filename: str, grid: Grid) -> List[Step]:
-    dirname = os.path.join(source_dir, 'GMTED2010')
+    dirname = os.path.join(source_dir, SUBDIR)
     url = 'http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
     raw_file = os.path.join(dirname, 'mn30_grd')
