@@ -69,6 +69,13 @@ class GLDAS20_NoahStatic(paths.Static):
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07_downstream.nc'), 'next_down')
 
 
+# Although the GLDAS configuration is rigged up in such a way that we have no
+# "observed" dataset, we still require an observed dataset name.
+class GLDASName:
+    def name(self):
+        return 'GLDAS20_Noah'
+
+
 class GLDAS20_NoahConfig(ConfigBase):
 
     def __init__(self, source, derived):
@@ -95,7 +102,7 @@ class GLDAS20_NoahConfig(ConfigBase):
         return self._static
 
     def observed_data(self):
-        raise NotImplementedError()
+        return GLDASName()
 
     def workspace(self):
         return self._workspace
@@ -135,7 +142,6 @@ class GLDAS20_NoahConfig(ConfigBase):
     def state_rp_vars(cls, basis=None):
         return[]
         
-        
     @classmethod
     def lsm_integrated_vars(cls, basis=None):
         if not basis:
@@ -143,24 +149,19 @@ class GLDAS20_NoahConfig(ConfigBase):
                 'Bt_RO': ['min', 'max', 'sum'],
                 'PETmE': ['sum'],
                 'RO_mm': ['sum'],
-                'Ws'   : ['ave'],
-                'T'    : ['ave'],
-                'Pr'   : ['sum']
+                'Ws': ['ave'],
+                'T': ['ave'],
+                'Pr': ['sum']
             }
 
         if basis == 'basin':
             return {
-                'Bt_RO_m3' : ['sum']
+                'Bt_RO_m3': ['sum']
             }
 
         assert False
 
-    @classmethod
-    def forcing_integrated_vars(cls, basis=None):
-            return {}
-
-
-    def result_postprocess_steps(self, yearmon=None, target=None, member=None):
+    def result_postprocess_steps(self, model=None, yearmon=None, target=None, member=None):
         input_file = os.path.join(self._source,
                                   'GLDAS_NOAH025_M.A{}.020.nc4'.format(yearmon))
 
