@@ -19,6 +19,12 @@ from wsim_workflow.monthly import monthly_observed
 from wsim_workflow.workflow import get_meta_steps
 
 
+class FakeForcing:
+
+    def name(self):
+        return 'fake_forcing'
+
+
 class BasicConfig(ConfigBase):
 
     def historical_years(self):
@@ -28,7 +34,7 @@ class BasicConfig(ConfigBase):
         return range(1950, 2010)  # 1950-2009
 
     def observed_data(self):
-        pass
+        return FakeForcing()
 
     def static_data(self):
         return Static('fake')

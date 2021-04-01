@@ -33,6 +33,11 @@ class CFSConfig(ConfigBase):
         self._static = DefaultStatic(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived)
 
+    def land_mask(self) -> Optional[paths.Vardef]:
+        return paths.Vardef(
+            self._workspace.return_period(yearmon='195001', window=1),
+            'Ws_rp')
+
     def historical_years(self):
         return range(1948, 2020)  # 1948-2019
 

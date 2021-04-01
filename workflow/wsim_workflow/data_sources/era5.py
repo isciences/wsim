@@ -25,6 +25,29 @@ def filename(source: str, duration: str, yearmon: str) -> str:
     return os.path.join(source, SUBDIR, duration, 'era5_{}_{}.nc'.format(duration, yearmon))
 
 
+def land_mask_filename(source: str, min_fraction_land) -> str:
+    return os.path.join(source, SUBDIR, 'land_mask_{}.nc'.format(min_fraction_land*100))
+
+
+def calculate_land_mask(source, min_fraction_land: float) -> List[Step]:
+    land_fraction_fname = os.path.join(source, SUBDIR, 'land_fraction.nc')
+
+    return download(land_fraction_fname, 'month', '202001', ['land_sea_mask']) + \
+        [
+            Step(
+                targets=land_mask_filename(source, min_fraction_land),
+                dependencies=land_fraction_fname,
+                commands=[
+                    [
+                        os.path.join('{BINDIR}', 'utils', 'era5', 'create_era5_mask.R'),
+                        '--input', land_fraction_fname,
+                        '--output', land_mask_filename(source, min_fraction_land),
+                        '--threshold', str(min_fraction_land)
+                    ]
+                ]
+            )
+        ]
+
 def download(output_filename: str, duration: str, yearmon: str, variables: List[str]) -> List[Step]:
     year, month = dates.parse_yearmon(yearmon)
 

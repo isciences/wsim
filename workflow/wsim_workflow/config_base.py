@@ -24,6 +24,12 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
     distribution = "gev"
 
+    def land_mask(self) -> Optional[paths.Vardef]:
+        """
+        An optional land mask for composite outputs
+        """
+        return None
+
     @abc.abstractmethod
     def historical_years(self):
         """

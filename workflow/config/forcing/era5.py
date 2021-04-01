@@ -32,7 +32,16 @@ class ERA5(paths.ObservedForcing):
         return 'ERA5'
 
     def grid(self) -> Grid:
-        return Grid('ERA5_quarter_degree', -179.875, -90.125, 180.125, 90.125, 1440, 721)
+        return Grid('ERA5_quarter_degree',
+                    xmin=-179.875,
+                    ymin=-90.125,
+                    xmax=180.125,
+                    ymax=90.125,
+                    nx=1440,
+                    ny=721)
+
+    def land_mask(self) -> paths.Vardef:
+        return paths.Vardef(era5.land_mask_filename(self.source, 0), '1')
 
     def temp_monthly(self, *, yearmon: str) -> paths.Vardef:
         return paths.Vardef(era5.filename(self.source, 'month', yearmon), 't2m')
@@ -61,7 +70,8 @@ class ERA5(paths.ObservedForcing):
 
     def global_prep_steps(self) -> List[Step]:
         return \
-            actions.compute_wetday_ltmeans(self, 1979, 2008)
+            actions.compute_wetday_ltmeans(self, 1979, 2008) + \
+            era5.calculate_land_mask(self.source, 0)
 
     def prep_steps(self, *, yearmon: str) -> List[Step]:
         """

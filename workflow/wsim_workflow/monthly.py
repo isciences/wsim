@@ -72,7 +72,7 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
         # Don't write composite steps for a window that extends back too early.
         if yearmon >= config.historical_yearmons()[window-1]:
-            composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon)
+            composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon, mask=config.land_mask())
             steps += composite_indicator_steps
 
             meta_steps['all_composites'].require(composite_indicator_steps)
@@ -80,7 +80,7 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
                 meta_steps['all_monthly_composites'].require(composite_indicator_steps)
 
             if yearmon not in config.historical_yearmons():
-                steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
+                steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon, mask=config.land_mask())
 
             # Express composite anomalies in terms of a return period
             # (relative to historical composite anomalies)
@@ -184,10 +184,12 @@ def monthly_forecast(config: Config,
 
             # Generate composite indicators from summarized ensemble data
             steps += composite_anomalies(config.workspace(),
-                                         window=window, yearmon=yearmon, target=target, quantile=50)
+                                         window=window, yearmon=yearmon, target=target, quantile=50,
+                                         mask=config.land_mask())
 
             composite_indicator_steps = composite_indicators(config.workspace(),
-                                                             window=window, yearmon=yearmon, target=target, quantile=50)
+                                                             window=window, yearmon=yearmon, target=target, quantile=50,
+                                                             mask=config.land_mask())
             steps += composite_indicator_steps
 
             meta_steps['all_composites'].require(composite_indicator_steps)

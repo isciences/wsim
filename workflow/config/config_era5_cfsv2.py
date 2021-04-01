@@ -46,6 +46,9 @@ class ERA5CFSv2Config(ConfigBase):
         self._static = ERA5Static(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived)
 
+    def land_mask(self) -> paths.Vardef:
+        return self._observed.land_mask()
+
     def historical_years(self):
         return range(1950, 2021)  # 1950-2021
 

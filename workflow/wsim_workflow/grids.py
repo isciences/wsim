@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 
 class Grid:
 
-    def __init__(self, name: str, xmin: float, ymin: float, xmax: float, ymax: float, nx: int, ny: int):
+    def __init__(self, name: str, *, xmin: float, ymin: float, xmax: float, ymax: float, nx: int, ny: int):
         self.name = name
         self.xmin = xmin
         self.ymin = ymin
@@ -54,4 +53,10 @@ class Grid:
             dy=self._wgrib_format_number(self.dy())
         )
 
-GLOBAL_HALF_DEGREE = Grid('global_half_degree', -180, -90, 180, 90, 720, 360)
+GLOBAL_HALF_DEGREE = Grid('global_half_degree',
+                          xmin=-180,
+                          ymin=-90,
+                          xmax=180,
+                          ymax=90,
+                          nx=720,
+                          ny=360)
