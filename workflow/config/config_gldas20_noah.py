@@ -13,10 +13,19 @@
 
 from wsim_workflow.step import Step
 from wsim_workflow import paths
+from wsim_workflow.grids import Grid
 from wsim_workflow.config_base import ConfigBase
 from wsim_workflow.data_sources import ntsg_drt, hydrobasins
 
 import os
+
+GLDAS_GRID = Grid("gldas_025",
+                  xmin=-180,
+                  xmax=180,
+                  ymin=-60,
+                  ymax=90,
+                  nx=1440,
+                  ny=600)
 
 # This file provides an example configuration using the results of the
 # Noah land surface model, as run in GLDAS v2.0.
@@ -31,7 +40,7 @@ class GLDAS20_NoahStatic(paths.Static):
 
     def global_prep_steps(self):
         return \
-            ntsg_drt.global_flow_direction(filename=self.flowdir_raw, resolution=0.25) + self.extend_flowdir() + \
+            ntsg_drt.global_flow_direction(self.flowdir_raw, resolution=0.25) + self.extend_flowdir() + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=7) + \
             hydrobasins.downstream_ids(source_dir=self.source, basins_file=self.basins().file, ids_file=self.basin_downstream().file)
 
