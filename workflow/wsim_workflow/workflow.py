@@ -160,7 +160,7 @@ def unbuildable_targets(steps) -> List[Step]:
     return unbuildable
 
 
-def load_config(path, source, derived):
+def load_config(path: str, source: str, derived: str) -> ConfigBase:
     dirname = os.path.dirname(path)
 
     # Temporarily add config module directory to the system path

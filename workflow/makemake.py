@@ -80,6 +80,10 @@ def parse_args(args):
                         help='Generate steps for every N months between start and stop [default: 1]',
                         default=1,
                         type=int)
+    parser.add_argument('--only-windows',
+                        help='Only process the specified integration windows (comma-separated list)',
+                        required=False,
+                        type=str)
     parser.add_argument('--forecast-lag-hours',
                         type=int,
                         help="Only attempt to download forecasts issued within the specified number of hours")
@@ -88,6 +92,9 @@ def parse_args(args):
 
     if parsed.stop is None:
         parsed.stop = parsed.start
+
+    if parsed.only_windows:
+        parsed.only_windows = [int(w) for w in parsed.only_windows.split(',')]
 
     if not dates.is_yearmon(parsed.start):
         sys.exit('Start date {} is not in YYYYMM format.'.format(parsed.start))
@@ -108,6 +115,12 @@ def main(raw_args):
     output_filename = args.makefile or output_module.DEFAULT_FILENAME
 
     config = workflow.load_config(args.config, args.source, args.workspace)
+
+    if args.only_windows:
+        for w in args.only_windows:
+            if w not in config.integration_windows():
+                raise Exception("Integration windows specified by --only-windows must be a subset of: " + ','.join(str(m) for m in config.integration_windows()))
+        config.integration_windows = lambda: args.only_windows
 
     steps = workflow.generate_steps(config,
                                     start=args.start,
