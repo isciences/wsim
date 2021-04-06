@@ -1,11 +1,11 @@
 #!/usr/bin/env Rscript
 
 '
-Process GLDAS NOAH monthly land surface model results to input to WSIM.
+Process GLDAS Noah monthly land surface model results to input to WSIM.
 
 Usage: gldas_noah_extract (--input=<file>) (--output=<file>)
 
---input <file>        GLDAS NOAH source file (netCDF)
+--input <file>        GLDAS Noah source file (netCDF)
 --output <file>       Output netCDF file with WSIM-friendly parameters
 ' -> usage
 
@@ -98,16 +98,25 @@ main <- function(raw_args){
   potevaptr <- convert_w_msquared2mm_d(gldas_list$data$PotEvap_tavg)*monthdays
   actevaptr <- converth2o_kg_msquared_s2mm_day(gldas_list$data$Evap_tavg)*monthdays
   PETmE     <- potevaptr - actevaptr
+
+  # Per LIS user's guide, "Monthly average contain straight averages of 3-hourly
+  # data, so that each monthly average has units PER 3 HOURS. We need to convert
+  # this into a monthly total runoff.
   RO_mm     <- converth20_kg_msquared_3hour2mm_day(gldas_list$data$Qs_acc)*monthdays +
     converth20_kg_msquared_3hour2mm_day(gldas_list$data$Qsb_acc)*monthdays +
     converth20_kg_msquared_3hour2mm_day(gldas_list$data$Qsm_acc)*monthdays
+
+  # Convert per-cell runoff into a volume that can be accumulated, considering
+  # variable area fo grid cells
+  area_m2   <- wsim.lsm::cell_areas_m2(gldas_list$extent, dim(RO_mm))
+  RO_m3     <- (RO_mm / 1000) * area_m2
 
   # Soil moisture is in kg m-2, which == mm for water
   #Ws <- (0.1*gldas_list$data$SoilMoi0_10cm_inst+0.3*gldas_list$data$SoilMoi10_40cm_inst+0.6*gldas_list$data$SoilMoi40_100cm_inst)
   Ws <- (gldas_list$data$SoilMoi0_10cm_inst + gldas_list$data$SoilMoi10_40cm_inst + gldas_list$data$SoilMoi40_100cm_inst)
 
   # Create list of matrices and write to netCDF
-  gldas_newmats <- list(T=T, Pr=Pr, PETmE=PETmE, RO_mm=RO_mm, Ws=Ws)
+  gldas_newmats <- list(T=T, Pr=Pr, PETmE=PETmE, RO_mm=RO_mm, RO_m3=RO_m3, Ws=Ws)
 
   # Write to file
   wsim.io::write_vars_to_cdf(vars=gldas_newmats, filename=outfile, extent=gldas_list$extent)
