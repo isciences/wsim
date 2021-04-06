@@ -41,7 +41,7 @@ class ERA5(paths.ObservedForcing):
                     ny=721)
 
     def land_mask(self) -> paths.Vardef:
-        return paths.Vardef(era5.land_mask_filename(self.source, 0), '1')
+        return paths.Vardef(era5.land_mask_filename(self.source, 0), 'is_land')
 
     def temp_monthly(self, *, yearmon: str) -> paths.Vardef:
         return paths.Vardef(era5.filename(self.source, 'month', yearmon), 't2m')
