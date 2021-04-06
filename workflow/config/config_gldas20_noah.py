@@ -169,7 +169,7 @@ class GLDAS20_NoahConfig(ConfigBase):
                     ],
                     [
                         os.path.join('{BINDIR}', 'wsim_flow.R'),
-                        '--input', paths.read_vars(output_file, 'RO_mm'),
+                        '--input', paths.read_vars(output_file, 'RO_m3'),
                         '--flowdir', self.static_data().flowdir().file,
                         '--output', output_file,
                         '--varname', 'Bt_RO',
