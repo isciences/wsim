@@ -137,6 +137,8 @@ def main(raw_args):
                     args.outfile],
                    check=True)
 
+    os.remove(fname)
+
     # TODO populate standard_name attribute either here or in workflow invocation of wsim_merge
 
 
