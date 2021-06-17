@@ -1,8 +1,6 @@
 *.sw[mnop]
 *.o
 *.so
-RcppExports.cpp
-RcppExports.R
 .Rproj.user
 .idea/
 ..Rcheck
