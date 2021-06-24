@@ -94,7 +94,8 @@ def main(raw_args):
             sys.exit(1)
 
         url_patterns = [
-            'https://ncei.noaa.gov/data/climate-forecast-system/access/operational-9-month-forecast/monthly-means/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}'
+            'https://ncei.noaa.gov/data/climate-forecast-system/access/operational-9-month-forecast/monthly-means/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{TIMESTAMP}/{GRIBFILE}',
+            'https://wsim-datasets.s3.us-east-2.amazonaws.com/CFSv2/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{GRIBFILE}'
         ]
 
         rolling_url_pattern = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}'
