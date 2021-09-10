@@ -1,4 +1,4 @@
-# Copyright (c) 2020 ISciences, LLC.
+# Copyright (c) 2020-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -17,7 +17,7 @@ from wsim_workflow.config_base import ConfigBase
 from wsim_workflow import dates
 from wsim_workflow import paths
 
-from forcing.leaky_bucket import LeakyBucket
+from forcing.ghcn_cams_precl import GHCN_CAMS_PRECL
 from forcing.climate_norm import ClimateNormForecast
 from static.default_static import DefaultStatic
 
@@ -25,7 +25,7 @@ from static.default_static import DefaultStatic
 class ClimateNormForecastConfig(ConfigBase):
 
     def __init__(self, source, derived):
-        self._observed = LeakyBucket(source)
+        self._observed = GHCN_CAMS_PRECL(source)
         self._forecast = {'climate_norm': ClimateNormForecast(source, derived, self._observed, 1980, 2009)}
         self._static = DefaultStatic(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived)
