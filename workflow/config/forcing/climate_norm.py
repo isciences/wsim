@@ -77,7 +77,10 @@ class ClimateNormForecast(paths.ForecastForcing):
         return steps
 
     def subdir(self):
-        return os.path.join(self.source, 'climate_norms_{}_{}'.format(self.min_year, self.max_year))
+        return os.path.join(self.source,
+                            'climate_norms',
+                            self.observed().name(),
+                            'climate_norms_{}_{}'.format(self.min_year, self.max_year))
 
     def temp_monthly(self, *, yearmon: str, target: str, member: str) -> Vardef:
         _, month = dates.parse_yearmon(target)
