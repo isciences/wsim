@@ -47,7 +47,9 @@ class ERA5(paths.ObservedForcing):
         return paths.Vardef(era5.filename(self.source, 'month', yearmon), 't2m')
 
     def precip_monthly(self, *, yearmon: str) -> paths.Vardef:
-        return paths.Vardef(era5.filename(self.source, 'month', yearmon), 'tp')
+        # because precip is stored as packed floats, some values are slightly negative (~1e-19)
+        # force them to be >= 0 on read
+        return paths.Vardef(era5.filename(self.source, 'month', yearmon), 'tp@clamp0')
 
     def p_wetdays(self, *, yearmon: str) -> paths.Vardef:
         year, month = dates.parse_yearmon(yearmon)
