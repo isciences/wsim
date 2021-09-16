@@ -43,7 +43,13 @@ attrs_for_stat <- function(var_attrs, var, stat, stat_var) {
 
   Filter(Negate(is.null), lapply(names(var_attrs[[var]]), function(field) {
     # Don't pass "dim" R attr, or _FillValue/missing_data netCDF attr through
-    if (field %in% c('dim', 'dimnames', '_FillValue', 'missing_data')) {
+    if (field %in% c('dim', 'dimnames', '_FillValue', 'missing_data', 'missing_value')) {
+      return(NULL)
+    }
+
+    # Don't pass through scaling attributes, since we will transform packed
+    # integer variables into floating point variables
+    if (field %in% c('scale_factor', 'add_offset')) {
       return(NULL)
     }
 
