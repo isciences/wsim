@@ -33,14 +33,25 @@ adjust_flow_dirs <- function(fd, fd_extent, final_extent, final_dims) {
 
   if (all(fd_extent[1:2] == final_extent[1:2])) {
     # do nothing
-  } else if ((flow_dim[2] == 2*final_dims[2]) &&
-      all(fd_extent[1:2] == (final_extent[1:2] - flow_dlon))) {
-    # Flow direction raster is double the resolution of other variables and
-    # is offset by one half the pixel width of other variables. Rotate a single
-    # column from the left of the flow grid to the right.
-    fd <- cbind(fd[, -1, drop = FALSE], fd[, 1, drop = FALSE])
+  } else if (flow_dim[2] == 2*final_dims[2]) {
+    if (all(fd_extent[1:2] == (final_extent[1:2] - flow_dlon))) {
+      # Flow direction raster is double the resolution of other variables and
+      # is offset by one half the pixel width of other variables. Rotate a single
+      # column from the left of the flow grid to the right.
+      fd <- cbind(fd[, -1, drop = FALSE], fd[, 1, drop = FALSE])
 
-    fd_extent[1:2] <- final_extent[1:2]
+      fd_extent[1:2] <- final_extent[1:2]
+    } else if (all(fd_extent[1:2] == (final_extent[1:2] + flow_dlon))) {
+      # Flow direction raster is double the resolution of other variables and
+      # is offset by one half the pixel width of other variables. Rotate a single
+      # column from the right of the flow grid to the left.
+
+      fd <- cbind(fd[,  ncol(fd), drop = FALSE],
+                  fd[, -ncol(fd), drop = FALSE])
+      fd_extent[1:2] <- final_extent[1:2]
+    } else {
+      stop("Unable to adjust flow direction matrix to desired extent")
+    }
   } else {
     stop("Unable to adjust flow direction matrix to desired extent")
   }

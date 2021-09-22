@@ -233,7 +233,7 @@ test_that('Direction matrix can be integer multiple of flow matrix', {
   )
 })
 
-test_that('Global 0.125-degree flow direction grid can be shifted and extended to match 0.25-degree ERA5 grid', {
+test_that('Global 0.125-degree flow direction grid can be shifted and extended to match +/- 180 0.25-degree ERA5 grid', {
   flowdir <- matrix(1L:(2880L*1120L), nrow=1120)
   flowdir_extent <- c(-180, 180, -56, 84)
 
@@ -258,6 +258,24 @@ test_that('Global 0.125-degree flow direction grid can be shifted and extended t
   # (western extent moved from -180 to -179.875)
   expect_equal(na.omit(flowdir_adj[, 1]), 1121:2240, check.attributes = FALSE)
   expect_equal(na.omit(flowdir_adj[, 2880]), 1:1120, check.attributes = FALSE)
+})
+
+test_that('Global 0.125-degree flow direction grid can be shifted and extended to match 0-360 0.25-degree ERA5 grid', {
+  flowdir <- matrix(1L:(2880L*1120L), nrow=1120)
+  flowdir_extent <- c(0, 360, -56, 84)
+
+  era5_extent <- c(-0.125, 359.875, -90.125, 90.125)
+  era5_dims <- c(721, 1440)
+
+  flowdir_adj <- adjust_flow_dirs(flowdir, flowdir_extent, era5_extent, era5_dims)
+
+  expect_equal(dim(flowdir_adj), 2 * era5_dims)
+
+  # right column of flowdir grid moved to left
+  # (western extent moved from 0 to -0.125)
+  expect_equal(na.omit(flowdir_adj[, 1]), flowdir[, ncol(flowdir)], check.attributes = FALSE)
+  expect_equal(na.omit(flowdir_adj[, 2]), flowdir[, 1], check.attributes = FALSE)
+  expect_equal(na.omit(flowdir_adj[, ncol(flowdir_adj)]), flowdir[, ncol(flowdir) - 1], check.attributes = FALSE)
 })
 
 test_that('adjust_flow_dirs is a no-op when grids are the same', {
