@@ -79,9 +79,14 @@ class GLDASName:
 class GLDAS20_NoahConfig(ConfigBase):
 
     def __init__(self, source, derived):
+        fit_start, *_, fit_end = self.result_fit_years()
+
         self._source = source
-        self._workspace = paths.DefaultWorkspace(derived)
         self._static = GLDAS20_NoahStatic(source)
+        self._workspace = paths.DefaultWorkspace(derived,
+                                                 distribution=self.distribution,
+                                                 fit_start_year=fit_start,
+                                                 fit_end_year=fit_end)
 
     def global_prep(self):
         return self._static.global_prep_steps()

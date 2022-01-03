@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2022 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -307,10 +307,22 @@ class AgricultureStatic(metaclass=ABCMeta):
         pass
 
 
-
 class DefaultWorkspace:
 
-    def __init__(self, outputs: str, tempdir: Optional[str]=None):
+    def __init__(self, outputs: str, *,
+                 distribution: Optional[str] = None,
+                 fit_start_year: Optional[int] = None,
+                 fit_end_year: Optional[int] = None,
+                 tempdir: Optional[str] = None,
+                 distribution_subdir: Optional[bool] = True):
+        if distribution_subdir:
+            assert distribution is not None
+            assert fit_start_year is not None
+            assert fit_end_year is not None
+            self.distribution_subdir = f'{distribution}_{fit_start_year}_{fit_end_year}'
+        else:
+            self.distribution_subdir = None
+
         self.outputs = outputs
         if tempdir:
             self.tempdir = tempdir
@@ -351,27 +363,39 @@ class DefaultWorkspace:
             root = os.path.join(root, sector.value)
 
         ret = os.path.join(root,
-                            self.make_dirname(thing,
+                           self.make_dirname(thing,
+                                             sector=sector,
+                                             window=window,
+                                             basis=basis,
+                                             summary=summary,
+                                             annual=year is not None,
+                                             model=model,
+                                             method=method),
+                           self.make_filename(thing,
+                                              time=yearmon or year,
                                               window=window,
+                                              target=target,
+                                              member=member,
                                               basis=basis,
-                                              summary=summary,
-                                              annual=year is not None,
                                               model=model,
-                                              method=method),
-                            self.make_filename(thing,
-                                               time=yearmon or year,
-                                               window=window,
-                                               target=target,
-                                               member=member,
-                                               basis=basis,
-                                               model=model,
-                                               summary=summary))
+                                              summary=summary))
 
         # TODO normalize these paths?
         if thing in {'composite', 'composite_adjusted', 'composite_anom', 'composite_anom_rp'}:
             return ret.replace('_integrated', '').replace('_summary', '')
 
         return ret
+
+    @staticmethod
+    def is_derived_from_fit(thing: str, sector: Sector) -> bool:
+        if sector:
+            return True
+
+        if thing in {'forcing', 'results', 'state', 'spinup'}:
+            return False
+        if thing in {'anom', 'composite', 'composite_adjusted', 'composite_anom', 'composite_anom_rp', 'rp'}:
+            return True
+        raise Exception(f"Don't know how to make a path for {thing}")
 
     @staticmethod
     def make_stem(thing: str, *,
@@ -381,21 +405,26 @@ class DefaultWorkspace:
                   summary: Optional[bool] = False) -> str:
         return '_'.join(filter(None, (basis.value if basis else None, thing, method, 'summary' if summary else None, model)))
 
-    @staticmethod
-    def make_dirname(thing, *,
+    def make_dirname(self, thing, *,
+                     sector: Optional[Sector] = None,
                      window: int,
                      basis: Basis,
                      summary: bool,
                      annual: bool,
                      model: Optional[str] = None,
                      method: Method) -> str:
-        return '_'.join(filter(None, (basis.value if basis else None,
-                                      thing,
-                                      method.value if method else None,
-                                      'integrated' if window and window > 1 else None,
-                                      'summary' if summary else None,
-                                      'annual' if annual else None
-                                      )))
+        subdir = '_'.join(filter(None, (basis.value if basis else None,
+                                        thing,
+                                        method.value if method else None,
+                                        'integrated' if window and window > 1 else None,
+                                        'summary' if summary else None,
+                                        'annual' if annual else None
+                                        )))
+
+        if self.distribution_subdir and self.is_derived_from_fit(thing, sector):
+            return os.path.join(self.distribution_subdir, subdir)
+        else:
+            return subdir
 
     @staticmethod
     def make_filename(thing: str, *,
@@ -655,12 +684,16 @@ class DefaultWorkspace:
 
         filename += '.nc'
 
-        return os.path.join(self.outputs, 'fits', filename.format_map(locals()))
+        return os.path.join(self.outputs, self.fit_subdir(), filename.format_map(locals()))
+
+    def fit_subdir(self):
+        if self.distribution_subdir:
+            return os.path.join(self.distribution_subdir, 'fits')
+        else:
+            return 'fits'
 
     def fit_composite_anomalies(self, *, indicator: str, window: int) -> str:
         return os.path.join(self.outputs,
-                            'fits',
+                            self.fit_subdir(),
                             'composite_anom_{indicator}_{window}mo.nc'.format(window=window,
                                                                               indicator=indicator))
-
-

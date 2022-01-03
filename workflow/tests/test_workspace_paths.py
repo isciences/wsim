@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2022 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -19,7 +19,8 @@ from wsim_workflow.paths import Basis, DefaultWorkspace
 
 class TestWorkspacePaths(unittest.TestCase):
     root = '/tmp'
-    ws = DefaultWorkspace(root)
+    ws = DefaultWorkspace(root, distribution='pe3', fit_start_year=1980, fit_end_year=2009)
+    ws_flat = DefaultWorkspace(root, distribution_subdir=False)
 
     def test_state(self):
         # Observed data
@@ -58,7 +59,6 @@ class TestWorkspacePaths(unittest.TestCase):
             self.ws.forcing(yearmon='201612', target='201703', model='CFSv1', member='13', window=1)
         )
         
-
     def test_results(self):
         # Observed data
         self.assertEqual(
@@ -86,140 +86,144 @@ class TestWorkspacePaths(unittest.TestCase):
     def test_return_period(self):
         # Observed data
         self.assertEqual(
-            join(self.root, 'rp', 'rp_1mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'rp', 'rp_1mo_201612.nc'),
             self.ws.return_period(yearmon='201612', window=1)
+        )
+        self.assertEqual(
+            join(self.root, 'rp', 'rp_1mo_201612.nc'),
+            self.ws_flat.return_period(yearmon='201612', window=1)
         )
 
         # Observed data
         self.assertEqual(
-            join(self.root, 'rp_integrated', 'rp_24mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'rp_integrated', 'rp_24mo_201612.nc'),
             self.ws.return_period(yearmon='201612', window=24)
         )
 
         # Observed data (basins)
         self.assertEqual(
-            join(self.root, 'basin_rp', 'basin_rp_1mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'basin_rp', 'basin_rp_1mo_201612.nc'),
             self.ws.return_period(yearmon='201612', window=1, basis=Basis.BASIN)
         )
 
         # Observed data (basins)
         self.assertEqual(
-            join(self.root, 'basin_rp_integrated', 'basin_rp_24mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'basin_rp_integrated', 'basin_rp_24mo_201612.nc'),
             self.ws.return_period(yearmon='201612', window=24, basis=Basis.BASIN)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'rp', 'rp_1mo_201612_trgt201703_fcstcfsv2_13.nc'),
+            join(self.root, 'pe3_1980_2009', 'rp', 'rp_1mo_201612_trgt201703_fcstcfsv2_13.nc'),
             self.ws.return_period(yearmon='201612', target='201703', model='CFSv2', member='13', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'rp_integrated', 'rp_36mo_201612_trgt201703_fcstcancm4i_6.nc'),
+            join(self.root, 'pe3_1980_2009', 'rp_integrated', 'rp_36mo_201612_trgt201703_fcstcancm4i_6.nc'),
             self.ws.return_period(yearmon='201612', target='201703', model='CanCM4i', member='6', window=36)
         )
 
     def test_composite_anomaly(self):
         # Observed data
         self.assertEqual(
-            join(self.root, 'composite_anom', 'composite_anom_1mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_anom', 'composite_anom_1mo_201612.nc'),
             self.ws.composite_anomaly(yearmon='201612', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'composite_anom', 'composite_anom_36mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_anom', 'composite_anom_36mo_201612.nc'),
             self.ws.composite_anomaly(yearmon='201612', window=36)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'composite_anom', 'composite_anom_1mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_anom', 'composite_anom_1mo_201612_trgt201708.nc'),
             self.ws.composite_anomaly(yearmon='201612', target='201708', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'composite_anom', 'composite_anom_6mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_anom', 'composite_anom_6mo_201612_trgt201708.nc'),
             self.ws.composite_anomaly(yearmon='201612', target='201708', window=6)
         )
 
     def test_composite_anomaly_return_period(self):
         # Observed data
         self.assertEqual(
-            join(self.root, 'composite_anom_rp', 'composite_anom_rp_1mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_anom_rp', 'composite_anom_rp_1mo_201612.nc'),
             self.ws.composite_anomaly_return_period(yearmon='201612', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'composite_anom_rp', 'composite_anom_rp_36mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_anom_rp', 'composite_anom_rp_36mo_201612.nc'),
             self.ws.composite_anomaly_return_period(yearmon='201612', window=36)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'composite_anom_rp', 'composite_anom_rp_1mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_anom_rp', 'composite_anom_rp_1mo_201612_trgt201708.nc'),
             self.ws.composite_anomaly_return_period(yearmon='201612', target='201708', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'composite_anom_rp', 'composite_anom_rp_6mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_anom_rp', 'composite_anom_rp_6mo_201612_trgt201708.nc'),
             self.ws.composite_anomaly_return_period(yearmon='201612', target='201708', window=6)
         )
 
     def test_composite_summary(self):
         # Observed data
         self.assertEqual(
-            join(self.root, 'composite', 'composite_1mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite', 'composite_1mo_201612.nc'),
             self.ws.composite_summary(yearmon='201612', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'composite', 'composite_36mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite', 'composite_36mo_201612.nc'),
             self.ws.composite_summary(yearmon='201612', window=36)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'composite', 'composite_1mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite', 'composite_1mo_201612_trgt201708.nc'),
             self.ws.composite_summary(yearmon='201612', target='201708', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'composite', 'composite_6mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite', 'composite_6mo_201612_trgt201708.nc'),
             self.ws.composite_summary(yearmon='201612', target='201708', window=6)
         )
 
     def test_composite_summary_adjusted(self):
         # Observed data
         self.assertEqual(
-            join(self.root, 'composite_adjusted', 'composite_adjusted_1mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_adjusted', 'composite_adjusted_1mo_201612.nc'),
             self.ws.composite_summary_adjusted(yearmon='201612', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'composite_adjusted', 'composite_adjusted_36mo_201612.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_adjusted', 'composite_adjusted_36mo_201612.nc'),
             self.ws.composite_summary_adjusted(yearmon='201612', window=36)
         )
 
         # Forecast data
         self.assertEqual(
-            join(self.root, 'composite_adjusted', 'composite_adjusted_1mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_adjusted', 'composite_adjusted_1mo_201612_trgt201708.nc'),
             self.ws.composite_summary_adjusted(yearmon='201612', target='201708', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'composite_adjusted', 'composite_adjusted_6mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'composite_adjusted', 'composite_adjusted_6mo_201612_trgt201708.nc'),
             self.ws.composite_summary_adjusted(yearmon='201612', target='201708', window=6)
         )
 
     def test_return_period_summary(self):
         # Forecast data
         self.assertEqual(
-            join(self.root, 'rp_summary', 'rp_summary_1mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'rp_summary', 'rp_summary_1mo_201612_trgt201708.nc'),
             self.ws.return_period_summary(yearmon='201612', target='201708', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'rp_integrated_summary', 'rp_summary_6mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'rp_integrated_summary', 'rp_summary_6mo_201612_trgt201708.nc'),
             self.ws.return_period_summary(yearmon='201612', target='201708', window=6)
         )
 
@@ -237,23 +241,23 @@ class TestWorkspacePaths(unittest.TestCase):
 
     def test_standard_anomaly(self):
         self.assertEqual(
-            join(self.root, 'anom', 'anom_1mo_201612_trgt201708_fcstcfsv2_XYZ.nc'),
+            join(self.root, 'pe3_1980_2009', 'anom', 'anom_1mo_201612_trgt201708_fcstcfsv2_XYZ.nc'),
             self.ws.standard_anomaly(yearmon='201612', target='201708', model='CFSv2', member='XYZ', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'anom_integrated', 'anom_13mo_201612_trgt201708_fcstcfsv2_XYZ.nc'),
+            join(self.root, 'pe3_1980_2009', 'anom_integrated', 'anom_13mo_201612_trgt201708_fcstcfsv2_XYZ.nc'),
             self.ws.standard_anomaly(yearmon='201612', target='201708', model='CFSv2', member='XYZ', window=13)
         )
 
     def test_standard_anomaly_summary(self):
         self.assertEqual(
-            join(self.root, 'anom_summary', 'anom_summary_1mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'anom_summary', 'anom_summary_1mo_201612_trgt201708.nc'),
             self.ws.standard_anomaly_summary(yearmon='201612', target='201708', window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'anom_integrated_summary', 'anom_summary_13mo_201612_trgt201708.nc'),
+            join(self.root, 'pe3_1980_2009', 'anom_integrated_summary', 'anom_summary_13mo_201612_trgt201708.nc'),
             self.ws.standard_anomaly_summary(yearmon='201612', target='201708', window=13)
         )
 
@@ -265,22 +269,26 @@ class TestWorkspacePaths(unittest.TestCase):
 
     def test_fit_obs(self):
         self.assertEqual(
-            join(self.root, 'fits', 'E_sum_6mo_month_04.nc'),
+            join(self.root, 'pe3_1980_2009', 'fits', 'E_sum_6mo_month_04.nc'),
             self.ws.fit_obs(var='E', month=4, window=6, stat='sum')
+        )
+        self.assertEqual(
+            join(self.root, 'fits', 'E_sum_6mo_month_04.nc'),
+            self.ws_flat.fit_obs(var='E', month=4, window=6, stat='sum')
         )
 
         self.assertEqual(
-            join(self.root, 'fits', 'T_1mo_month_04.nc'),
+            join(self.root, 'pe3_1980_2009', 'fits', 'T_1mo_month_04.nc'),
             self.ws.fit_obs(var='T', month=4, window=1)
         )
 
         self.assertEqual(
-            join(self.root, 'fits', 'Bt_RO_sum_3mo_annual_min.nc'),
+            join(self.root, 'pe3_1980_2009', 'fits', 'Bt_RO_sum_3mo_annual_min.nc'),
             self.ws.fit_obs(var='Bt_RO', stat='sum', window=3, annual_stat='min')
         )
 
         self.assertEqual(
-            join(self.root, 'fits', 'basin_Bt_RO_sum_6mo_month_12.nc'),
+            join(self.root, 'pe3_1980_2009', 'fits', 'basin_Bt_RO_sum_6mo_month_12.nc'),
             self.ws.fit_obs(var='Bt_RO', stat='sum', window=6, month=12, basis=Basis.BASIN)
         )
 
@@ -294,7 +302,7 @@ class TestWorkspacePaths(unittest.TestCase):
     def test_results_annual(self):
         self.assertEqual(
             join(self.root, 'basin_results_annual', 'basin_results_1mo_1950.nc'),
-                 self.ws.results(year=1950, window=1, basis=Basis.BASIN)
+            self.ws.results(year=1950, window=1, basis=Basis.BASIN)
         )
 
         self.assertEqual(
@@ -314,4 +322,3 @@ class TestWorkspacePaths(unittest.TestCase):
         # Can't summarize when member is specified
         with self.assertRaises(AssertionError):
             self.ws.make_path('results', yearmon='201801', target='201804', member='abc', summary=True)
-

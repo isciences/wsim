@@ -24,11 +24,25 @@ from static.era5_static import ERA5Static
 
 class ERA5ClimateNormForecastConfig(ConfigBase):
 
-    def __init__(self, source, derived):
+    def __init__(self,
+                 source,
+                 derived,
+                 *,
+                 baseline_start_year: Optional[int] = None,
+                 baseline_stop_year: Optional[int] = None,
+                 integration_windows: Optional[int] = None):
+        self.set_fit_years(baseline_start_year, baseline_stop_year)
+        self.set_integration_windows(integration_windows)
+
+        fit_start, *_, fit_end = self.result_fit_years()
+
         self._observed = ERA5(source)
         self._forecast = {'climate_norm': ClimateNormForecast(source, derived, self._observed, 1980, 2009)}
         self._static = ERA5Static(source, self._observed.grid())
-        self._workspace = paths.DefaultWorkspace(derived)
+        self._workspace = paths.DefaultWorkspace(derived,
+                                                 distribution=self.distribution,
+                                                 fit_start_year=fit_start,
+                                                 fit_end_year=fit_end)
 
     def historical_years(self):
         return range(1950, 2021)

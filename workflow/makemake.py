@@ -76,6 +76,14 @@ def parse_args(args):
     parser.add_argument('--stop',
                         help='End date in YYYYMM format',
                         required=False)
+    parser.add_argument('--baseline-start-year',
+                        type=int,
+                        help='Override start of baseline period in specified configuration',
+                        required=False)
+    parser.add_argument('--baseline-stop-year',
+                        type=int,
+                        help='Override end of baseline period in specified configuration',
+                        required=False)
     parser.add_argument('--step',
                         help='Generate steps for every N months between start and stop [default: 1]',
                         default=1,
@@ -105,6 +113,9 @@ def parse_args(args):
     if parsed.forecasts not in ('all', 'none', 'latest'):
         sys.exit('--forecasts flag must be one of: all, none, latest')
 
+    if (parsed.baseline_start_year is None) != (parsed.baseline_stop_year is None):
+        sys.exit('Must provide both --baseline-start-year and --baseline-stop-year')
+
     return parsed
 
 
@@ -114,13 +125,27 @@ def main(raw_args):
     output_module = load_module(args.module)
     output_filename = args.makefile or output_module.DEFAULT_FILENAME
 
-    config = workflow.load_config(args.config, args.source, args.workspace)
+    config_options = {
+        'baseline_start_year': args.baseline_start_year,
+        'baseline_stop_year': args.baseline_stop_year,
+        'integration_windows' : args.only_windows
+    }
+    for k in config_options:
+        if config_options[k] is None:
+            del config_options[k]
+
+    config = workflow.load_config(args.config, args.source, args.workspace, config_options)
 
     if args.only_windows:
         for w in args.only_windows:
             if w not in config.integration_windows():
                 raise Exception("Integration windows specified by --only-windows must be a subset of: " + ','.join(str(m) for m in config.integration_windows()))
-        config.integration_windows = lambda: args.only_windows
+
+    if args.baseline_start_year:
+        orig_start, *_, orig_stop = config.result_fit_years()
+        new_start, new_stop = args.baseline_start_year, args.baseline_stop_year
+        print(f"Overriding baseline historical period of {orig_start}-{orig_stop} ({orig_stop-orig_start+1} years) "
+              f"with {new_start}-{new_stop} ({new_stop-new_start+1} years)")
 
     steps = workflow.generate_steps(config,
                                     start=args.start,

@@ -60,7 +60,7 @@ class BasicConfig(ConfigBase):
         return Static('fake')
 
     def workspace(self):
-        return DefaultWorkspace('tmp')
+        return DefaultWorkspace('tmp', distribution_subdir=False)
 
 
 class TestSpinup(unittest.TestCase):

@@ -27,11 +27,25 @@ from static.default_static import DefaultStatic
 
 class CFSConfig(ConfigBase):
 
-    def __init__(self, source, derived):
+    def __init__(self,
+                 source,
+                 derived,
+                 *,
+                 baseline_start_year: Optional[int] = None,
+                 baseline_stop_year: Optional[int] = None,
+                 integration_windows: Optional[int] = None):
+        self.set_fit_years(baseline_start_year, baseline_stop_year)
+        self.set_integration_windows(integration_windows)
+
+        fit_start, *_, fit_end = self.result_fit_years()
+
         self._observed = GHCN_CAMS_PRECL(source)
         self._forecast = {'CFSv2': CFSForecast(source, derived, self._observed)}
         self._static = DefaultStatic(source, self._observed.grid())
-        self._workspace = paths.DefaultWorkspace(derived)
+        self._workspace = paths.DefaultWorkspace(derived,
+                                                 distribution=self.distribution,
+                                                 fit_start_year=fit_start,
+                                                 fit_end_year=fit_end)
 
     def land_mask(self) -> Optional[paths.Vardef]:
         return paths.Vardef(
