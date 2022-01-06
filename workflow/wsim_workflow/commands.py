@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2021 ISciences, LLC.
+# Copyright (c) 2018-2022 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -418,6 +418,35 @@ def wsim_integrate(*,
     return Step(
         targets=output,
         dependencies=inputs,
+        commands=[cmd],
+        comment=comment
+    )
+
+
+def wsim_quantile(*,
+                  fits: Union[str, List[str]],
+                  sa: float,
+                  median_when_undefined: bool = False,
+                  output: str,
+                  comment: Optional[str] = None) -> Step:
+    cmd = [os.path.join('{BINDIR}', 'wsim_quantile.R')]
+
+    if type(fits) is str:
+        fits = [fits]
+
+    for fit in fits:
+        cmd += ['--fits', fit]
+
+    cmd += ['--sa', q(str(sa))]
+
+    if median_when_undefined:
+        cmd.append('--median-when-undefined')
+
+    cmd += ['--output', output]
+
+    return Step(
+        targets=output,
+        dependencies=fits,
         commands=[cmd],
         comment=comment
     )

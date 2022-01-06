@@ -33,7 +33,8 @@ class CFSConfig(ConfigBase):
                  *,
                  baseline_start_year: Optional[int] = None,
                  baseline_stop_year: Optional[int] = None,
-                 integration_windows: Optional[int] = None):
+                 integration_windows: Optional[int] = None,
+                 distribution_subdir: Optional[bool] = True):
         self.set_fit_years(baseline_start_year, baseline_stop_year)
         self.set_integration_windows(integration_windows)
 
@@ -43,6 +44,7 @@ class CFSConfig(ConfigBase):
         self._forecast = {'CFSv2': CFSForecast(source, derived, self._observed)}
         self._static = DefaultStatic(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived,
+                                                 distribution_subdir=distribution_subdir,
                                                  distribution=self.distribution,
                                                  fit_start_year=fit_start,
                                                  fit_end_year=fit_end)

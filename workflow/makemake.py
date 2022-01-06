@@ -128,11 +128,11 @@ def main(raw_args):
     config_options = {
         'baseline_start_year': args.baseline_start_year,
         'baseline_stop_year': args.baseline_stop_year,
-        'integration_windows' : args.only_windows
+        'integration_windows': args.only_windows
     }
-    for k in config_options:
-        if config_options[k] is None:
-            del config_options[k]
+    unused_options = [k for k in config_options if config_options[k] is None]
+    for k in unused_options:
+        del config_options[k]
 
     config = workflow.load_config(args.config, args.source, args.workspace, config_options)
 
@@ -144,8 +144,7 @@ def main(raw_args):
     if args.baseline_start_year:
         orig_start, *_, orig_stop = config.result_fit_years()
         new_start, new_stop = args.baseline_start_year, args.baseline_stop_year
-        print(f"Overriding baseline historical period of {orig_start}-{orig_stop} ({orig_stop-orig_start+1} years) "
-              f"with {new_start}-{new_stop} ({new_stop-new_start+1} years)")
+        print(f"Overriding baseline historical period with {new_start}-{new_stop} ({new_stop-new_start+1} years)")
 
     steps = workflow.generate_steps(config,
                                     start=args.start,

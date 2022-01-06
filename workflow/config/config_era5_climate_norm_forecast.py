@@ -17,6 +17,7 @@ from wsim_workflow.config_base import ConfigBase
 from wsim_workflow import dates
 from wsim_workflow import paths
 
+from forcing.cfsv2 import CFSForecast
 from forcing.era5 import ERA5
 from forcing.climate_norm import ClimateNormForecast
 from static.era5_static import ERA5Static
@@ -37,7 +38,19 @@ class ERA5ClimateNormForecastConfig(ConfigBase):
         fit_start, *_, fit_end = self.result_fit_years()
 
         self._observed = ERA5(source)
-        self._forecast = {'climate_norm': ClimateNormForecast(source, derived, self._observed, 1980, 2009)}
+
+        # Bring this in so we can derived names from the same distribution as is used for hindcast correction.
+        # Maybe this can be improved to use this object's fit_obs instead, but currently that doesn't give us\
+        # pWetDays.
+        cfs = CFSForecast(source, derived, self._observed)
+
+        self._forecast = {'climate_norm': ClimateNormForecast(source, derived,
+                                                              observed=self._observed,
+                                                              min_year=cfs.min_fit_year,
+                                                              max_year=cfs.max_fit_year,
+                                                              distribution=cfs.hindcast_distribution,
+                                                              stat='median')}
+
         self._static = ERA5Static(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived,
                                                  distribution=self.distribution,
