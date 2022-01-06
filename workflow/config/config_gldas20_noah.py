@@ -84,6 +84,7 @@ class GLDAS20_NoahConfig(ConfigBase):
         self._source = source
         self._static = GLDAS20_NoahStatic(source)
         self._workspace = paths.DefaultWorkspace(derived,
+                                                 distribution_subdir=False,
                                                  distribution=self.distribution,
                                                  fit_start_year=fit_start,
                                                  fit_end_year=fit_end)
