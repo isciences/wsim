@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2022 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -485,6 +485,12 @@ create_var <- function(dims, varname, vals, prec, compress) {
     vardims <- dims
   }
 
+  # Chunk into scanlines (applies to compressed outputs only)
+  chunksizes <- sapply(vardims, `[[`, 'len')
+  if (length(chunksizes) > 1) {
+    chunksizes[-1] <- 1
+  }
+
   # Put in blank strings for the units.  We will overwrite this
   # later with the actual units, if they have been passed in as
   # attributes.
@@ -493,7 +499,8 @@ create_var <- function(dims, varname, vals, prec, compress) {
                    dim=vardims,
                    missval=var_fill(varname, vals, prec),
                    prec=var_prec(varname, vals, prec),
-                   compression=ifelse(compress, 1, NA))
+                   compression=ifelse(compress, 1, NA),
+                   chunksizes=chunksizes)
 
 }
 
