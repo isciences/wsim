@@ -95,7 +95,7 @@ class CFSForecast(paths.ForecastForcing):
         return paths.Vardef(self.forecast_corrected(yearmon=yearmon, target=target, member=member), 'T')
 
     def precip_monthly(self, *, yearmon: str, target: str, member: str) -> paths.Vardef:
-        return paths.Vardef(self.forecast_corrected(yearmon=yearmon, target=target, member=member), 'Pr')
+        return paths.Vardef(self.forecast_corrected(yearmon=yearmon, target=target, member=member), 'Pr@clamp0')
 
     def p_wetdays(self, *, yearmon=None, target, member=None) -> paths.Vardef:
         _, month = dates.parse_yearmon(target)
