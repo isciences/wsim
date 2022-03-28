@@ -16,6 +16,7 @@
 wsim.io::logging_init('calc_era5_wetdays')
 
 suppressMessages({
+  library(Rcpp)
   library(abind)
   library(lubridate)
   library(ncdf4)
