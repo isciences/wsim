@@ -27,14 +27,14 @@ double get_sun_lat(int days_since_1900) {
   // "mean_obliquity" is mean obliquity of ecliptic (inclination of orbit)
   long double mean_anomaly = (358.475833 +
     fmodl((0.985600267 * days_since_1900),
-          360.) - 0.150E-3*tjsq - 0.3E-5*pow(tj,3)) * PI / 180;
+          360.) - 0.150E-3*tjsq - 0.3E-5*pow(tj,3)) * M_PI / 180;
 
-  mean_anomaly = fmodl(mean_anomaly, 2*PI);
+  mean_anomaly = fmodl(mean_anomaly, 2*M_PI);
 
   long double eccentricity = 0.01675104 - 0.4180E-4*tj - 0.126E-6*tjsq;
 
   long double mean_obliquity = (23.4522944 - 0.0130125*tj - 0.164E-5*tjsq +
-    0.503E-6*powl(tj,3)) * PI / 180;
+    0.503E-6*powl(tj,3)) *  M_PI / 180;
 
   // Compute true anomaly, mean longitude of perihelion
   //
@@ -55,9 +55,9 @@ double get_sun_lat(int days_since_1900) {
     (1097.0/960.0*powl(eccentricity, 5)) * sinl(5.0*mean_anomaly);
 
   long double peri_long = (281.220833 + 0.470684E-4*days_since_1900 +
-    0.453E-3*tjsq + 0.3E-5*powl(tj, 3)) * PI / 180;
+    0.453E-3*tjsq + 0.3E-5*powl(tj, 3)) * M_PI / 180;
 
-  long double true_longitude = fmodl(true_anomaly + peri_long, 2*PI);
+  long double true_longitude = fmodl(true_anomaly + peri_long, 2*M_PI);
 
   return mean_obliquity * sinl(true_longitude);
 }
@@ -96,7 +96,7 @@ double day_hours(double sun_lat, double earth_lat) {
   if (clon <= -1.0)
     return 24.0;
 
-  return 24.0 * acos(clon) / PI;
+  return 24.0 * acos(clon) / M_PI;
 }
 
 static const int MONTH_DAYS[] = { -1, 31, -1, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -142,7 +142,7 @@ NumericVector day_length(const NumericVector & latitudes, int year, int month, i
   NumericVector day_lengths(num_lats);
 
   for (int i = 0; i < num_lats; i++) {
-    day_lengths[i] = day_hours(sun_lat, latitudes[i] * PI / 180.0);
+    day_lengths[i] = day_hours(sun_lat, latitudes[i] * M_PI / 180.0);
   }
 
   return day_lengths;

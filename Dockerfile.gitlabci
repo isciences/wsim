@@ -5,7 +5,7 @@ FROM debian:buster-slim
 RUN apt-get update && apt-get install -y \
   gnupg
 
-RUN apt-key adv --keyserver keys.gnupg.net --recv-key 'E19F5F87128899B192B1A2C2AD5F960A256A04AF'
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7'
 RUN echo "deb http://cloud.r-project.org/bin/linux/debian buster-cran35/" >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -31,8 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   make \
   nco \
   netcdf-bin \
+  pandoc \
   python3 \
   python3-distutils \
+  python-gdal \
   r-base-core \
   r-base-dev \
   wget \
@@ -71,6 +73,7 @@ RUN Rscript -e 'tryCatch(install.packages(c( \
   "fasterize", \
   "futile.logger", \
   "geosphere", \
+  "remotes", \
   "lmom", \
   "lubridate", \
   "lwgeom", \
@@ -130,6 +133,9 @@ RUN wget -P /tmp https://github.com/isciences/exactextract/archive/master.zip &&
     make install && \
     cd /tmp && \
     rm -rf exactextract-master
+
+# Install dev version of exactextractr (we need 0.9)
+RUN R -e "remotes::install_github('isciences/exactextractr')"
     
 ADD https://s3.us-east-2.amazonaws.com/wsim-regression-data/testdata.tar.gz /
 RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
