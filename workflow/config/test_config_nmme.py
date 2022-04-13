@@ -18,8 +18,8 @@ from typing import List
 
 from wsim_workflow.step import Step
 
-from forcing.leaky_bucket import LeakyBucket
-from forcing.nmme import NMMEForecast
+from .forcing.leaky_bucket import LeakyBucket
+from .forcing.nmme import NMMEForecast
 
 
 def get_producing_step(target: str, steps: List[Step]) -> Step:

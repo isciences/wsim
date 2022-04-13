@@ -20,9 +20,9 @@ from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
 
-from forcing.ghcn_cams_precl import GHCN_CAMS_PRECL
-from forcing.cfsv2 import CFSForecast
-from static.default_static import DefaultStatic
+from .forcing.ghcn_cams_precl import GHCN_CAMS_PRECL
+from .forcing.cfsv2 import CFSForecast
+from .static.default_static import DefaultStatic
 
 
 class CFSConfig(ConfigBase):

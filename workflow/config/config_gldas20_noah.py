@@ -15,7 +15,7 @@ from wsim_workflow.step import Step
 from wsim_workflow import paths
 from wsim_workflow.grids import Grid
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.data_sources import ntsg_drt, hydrobasins
+from wsim_workflow.data_sources import ntsg_drt, gadm, gpw, hydrobasins
 
 import os
 
@@ -32,6 +32,7 @@ GLDAS_GRID = Grid("gldas_025",
 # This dataset is available from 1948-2014 at the following URL:
 # https://disc.sci.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_V2.0/summary?keywords=GLDAS
 
+
 class GLDAS20_NoahStatic(paths.Static):
     def __init__(self, source):
         super(GLDAS20_NoahStatic, self).__init__(source)
@@ -40,6 +41,7 @@ class GLDAS20_NoahStatic(paths.Static):
 
     def global_prep_steps(self):
         return \
+            gadm.prepare_admin_boundaries(self.source, [0, 1]) + \
             ntsg_drt.global_flow_direction(self.flowdir_raw, resolution=0.25) + self.extend_flowdir() + \
             hydrobasins.basins(source_dir=self.source, filename=self.basins().file, level=7) + \
             hydrobasins.downstream_ids(source_dir=self.source, basins_file=self.basins().file, ids_file=self.basin_downstream().file)
@@ -68,6 +70,14 @@ class GLDAS20_NoahStatic(paths.Static):
     def basin_downstream(self):
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07_downstream.nc'), 'next_down')
 
+    def countries(self) -> paths.Vardef:
+        return paths.Vardef(gadm.admin_boundaries(self.source, 0), None)
+
+    def provinces(self) -> paths.Vardef:
+        return paths.Vardef(gadm.admin_boundaries(self.source, 1), None)
+
+    def population_density(self) -> paths.Vardef:
+        return paths.Vardef(gpw.population_density(self.source, 2020, '30_sec'), '1')
 
 # Although the GLDAS configuration is rigged up in such a way that we have no
 # "observed" dataset, we still require an observed dataset name.

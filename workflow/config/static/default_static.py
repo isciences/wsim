@@ -118,10 +118,10 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
         return paths.Vardef(os.path.join(self.source, 'GPPD', 'gppd_inferred_cooling.nc'), None)
 
     def countries(self) -> paths.Vardef:
-        return paths.Vardef(gadm.admin_boundaries(0), None)
+        return paths.Vardef(gadm.admin_boundaries(self.source, 0), None)
 
     def provinces(self) -> paths.Vardef:
-        return paths.Vardef(gadm.admin_boundaries(1), None)
+        return paths.Vardef(gadm.admin_boundaries(self.source, 1), None)
 
     def crop_calendar(self, method: paths.Method) -> str:
         return os.path.join(self.source, 'MIRCA2000', 'crop_calendar_{}.nc'.format(method.value))

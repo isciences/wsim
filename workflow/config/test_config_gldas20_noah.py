@@ -18,7 +18,7 @@ import unittest
 from wsim_workflow.workflow import generate_steps, find_duplicate_targets
 from wsim_workflow.workflow import unbuildable_targets
 
-from config_gldas20_noah import GLDAS20_NoahConfig
+from .config_gldas20_noah import GLDAS20_NoahConfig
 
 
 def strip_existing_dependencies(step):

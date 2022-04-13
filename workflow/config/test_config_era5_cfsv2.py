@@ -12,8 +12,8 @@
 # limitations under the License.
 
 
-from config_era5_cfsv2 import ERA5CFSv2Config
-from test_config_cfs import TestCFSConfig
+from .config_era5_cfsv2 import ERA5CFSv2Config
+from .test_config_cfs import TestCFSConfig
 
 
 class TestERA5CFSv2Config(TestCFSConfig):

@@ -18,9 +18,9 @@ from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
 
-from forcing.era5 import ERA5
-from forcing.cfsv2 import CFSForecast
-from static.era5_static import ERA5Static
+from .forcing.era5 import ERA5
+from .forcing.cfsv2 import CFSForecast
+from .static.era5_static import ERA5Static
 
 
 class ERA5CFSv2Config(ConfigBase):
