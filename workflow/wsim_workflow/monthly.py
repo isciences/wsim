@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2022 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -29,6 +29,7 @@ from .actions import \
     run_lsm,\
     standard_anomaly_summary, \
     time_integrate
+from .polygon_summaries import compute_population_summary
 from .config_base import ConfigBase as Config
 from .dates import get_lead_months
 from .step import Step
@@ -94,6 +95,10 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
             meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
             if window == 1:
                 meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+
+            pop_summary_steps = compute_population_summary(config.workspace(), config.static_data(), yearmon=yearmon, window=window)
+            steps += pop_summary_steps
+            meta_steps['population_summaries'].require(pop_summary_steps)
 
     return steps
 
@@ -205,5 +210,9 @@ def monthly_forecast(config: Config,
             meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
             if window == 1:
                 meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+
+            pop_summary_steps = compute_population_summary(config.workspace(), config.static_data(), yearmon=yearmon, window=window, target=target)
+            steps += pop_summary_steps
+            meta_steps['population_summaries'].require(pop_summary_steps)
 
     return steps

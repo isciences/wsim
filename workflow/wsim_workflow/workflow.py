@@ -55,6 +55,7 @@ def get_meta_steps():
         'forcing_summaries',
         'prepare_forecasts',
         'results_summaries',
+        'population_summaries'
     )}
 
 

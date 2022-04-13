@@ -249,6 +249,12 @@ class Static(metaclass=ABCMeta):
     def elevation(self) -> Vardef:
         pass
 
+    def countries(self) -> Vardef:
+        pass
+
+    def population_density(self) -> Vardef:
+        pass
+
 
 class ElectricityStatic(metaclass=ABCMeta):
 
@@ -273,9 +279,6 @@ class ElectricityStatic(metaclass=ABCMeta):
     def power_plants(self) -> Vardef:
         pass
 
-    def countries(self) -> Vardef:
-        pass
-
     def provinces(self) -> Vardef:
         pass
 
@@ -298,9 +301,6 @@ class AgricultureStatic(metaclass=ABCMeta):
         pass
 
     def basins(self) -> Vardef:
-        pass
-
-    def countries(self) -> Vardef:
         pass
 
     def provinces(self) -> Vardef:
@@ -362,6 +362,11 @@ class DefaultWorkspace:
         if sector:
             root = os.path.join(root, sector.value)
 
+        if thing in {'composite_adjusted_population_summary'}:
+            suffix = '.csv'
+        else:
+            suffix = '.nc'
+
         ret = os.path.join(root,
                            self.make_dirname(thing,
                                              sector=sector,
@@ -378,7 +383,8 @@ class DefaultWorkspace:
                                               member=member,
                                               basis=basis,
                                               model=model,
-                                              summary=summary))
+                                              summary=summary,
+                                              suffix=suffix))
 
         # TODO normalize these paths?
         if thing in {'composite', 'composite_adjusted', 'composite_anom', 'composite_anom_rp'}:
@@ -393,7 +399,7 @@ class DefaultWorkspace:
 
         if thing in {'forcing', 'results', 'state', 'spinup'}:
             return False
-        if thing in {'anom', 'composite', 'composite_adjusted', 'composite_anom', 'composite_anom_rp', 'rp'}:
+        if thing in {'anom', 'composite', 'composite_adjusted', 'composite_anom', 'composite_anom_rp', 'rp', 'composite_adjusted_population_summary'}:
             return True
         raise Exception(f"Don't know how to make a path for {thing}")
 
@@ -435,6 +441,7 @@ class DefaultWorkspace:
                       member: Optional[str]=None,
                       basis: Optional[Basis]=None,
                       method: Optional[str]=None,
+                      suffix: Optional[str]='.nc',
                       summary: bool=False) -> str:
         filename = DefaultWorkspace.make_stem(thing, basis=basis, method=method, summary=summary)
 
@@ -451,7 +458,7 @@ class DefaultWorkspace:
         if member:
             filename += '_fcst{model}_{member}'
 
-        filename += '.nc'
+        filename += suffix
 
         return filename.format(thing=thing,
                                method=method,
@@ -473,6 +480,13 @@ class DefaultWorkspace:
 
     def composite_summary_adjusted(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('composite_adjusted',
+                              yearmon=yearmon,
+                              summary=target is not None,
+                              window=window,
+                              target=target)
+
+    def composite_summary_population(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
+        return self.make_path('composite_adjusted_population_summary',
                               yearmon=yearmon,
                               summary=target is not None,
                               window=window,

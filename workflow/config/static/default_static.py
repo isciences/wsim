@@ -19,6 +19,7 @@ from wsim_workflow.data_sources import \
     gadm,\
     gmted,\
     gppd,\
+    gpw,\
     grand,\
     hydrobasins,\
     isric,\
@@ -41,11 +42,12 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
             self.prepare_dams() + \
             self.prepare_elevation() + \
             self.prepare_flow_direction() + \
+            self.prepare_population_density() + \
             self.prepare_power_plants() + \
             self.prepare_soil_water_capacity()
 
     def prepare_admin_boundaries(self):
-        return gadm.admin_boundaries(source_dir=self.source, levels=[0, 1])
+        return gadm.prepare_admin_boundaries(source_dir=self.source, levels=[0, 1])
 
     def prepare_soil_water_capacity(self):
         return isric.global_tawc(source_dir=self.source, filename=self.wc().file, grid=self.grid)
@@ -57,6 +59,9 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
 
     def prepare_elevation(self):
         return gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, grid=self.grid)
+
+    def prepare_population_density(self):
+        return gpw.download(self.source, 2020, '30_sec')
 
     def prepare_power_plants(self):
         return gppd.power_plant_database(source_dir=self.source)
@@ -94,6 +99,9 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
     def elevation(self) -> paths.Vardef:
         return paths.Vardef(gmted.filename(self.source, self.grid.name), '1')
 
+    def population_density(self) -> paths.Vardef:
+        return paths.Vardef(gpw.population_density(self.source, 2020, '30_sec'), '1')
+
     def basins(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07.shp'), None)
 
@@ -110,10 +118,10 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
         return paths.Vardef(os.path.join(self.source, 'GPPD', 'gppd_inferred_cooling.nc'), None)
 
     def countries(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36_level_0.gpkg'), None)
+        return paths.Vardef(gadm.admin_boundaries(0), None)
 
     def provinces(self) -> paths.Vardef:
-        return paths.Vardef(os.path.join(self.source, 'GADM', 'gadm36_level_1.gpkg'), None)
+        return paths.Vardef(gadm.admin_boundaries(1), None)
 
     def crop_calendar(self, method: paths.Method) -> str:
         return os.path.join(self.source, 'MIRCA2000', 'crop_calendar_{}.nc'.format(method.value))
