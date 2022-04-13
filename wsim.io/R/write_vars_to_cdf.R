@@ -486,9 +486,13 @@ create_var <- function(dims, varname, vals, prec, compress) {
   }
 
   # Chunk into scanlines (applies to compressed outputs only)
-  chunksizes <- sapply(vardims, `[[`, 'len')
-  if (length(chunksizes) > 1) {
-    chunksizes[-1] <- 1
+  if (compress) {
+    chunksizes <- sapply(vardims, `[[`, 'len')
+    if (length(chunksizes) > 1) {
+      chunksizes[-1] <- 1
+    }
+  } else {
+    chunksizes <- NA
   }
 
   # Put in blank strings for the units.  We will overwrite this
