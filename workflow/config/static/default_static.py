@@ -33,6 +33,9 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
         super(DefaultStatic, self).__init__(source)
         self.grid = grid
 
+        self.gpw_year = 2020
+        self.gpw_res = '2pt5_min'
+
     def global_prep_steps(self):
         return \
             self.prepare_admin_boundaries() + \
@@ -42,7 +45,7 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
             self.prepare_dams() + \
             self.prepare_elevation() + \
             self.prepare_flow_direction() + \
-            self.prepare_population_density() + \
+            self.prepare_population_density(self.gpw_year, self.gpw_res) + \
             self.prepare_power_plants() + \
             self.prepare_soil_water_capacity()
 
@@ -60,8 +63,8 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
     def prepare_elevation(self):
         return gmted.global_elevation(source_dir=self.source, filename=self.elevation().file, grid=self.grid)
 
-    def prepare_population_density(self):
-        return gpw.download(self.source, 2020, '30_sec')
+    def prepare_population_density(self, year, res):
+        return gpw.download(self.source, year, res)
 
     def prepare_power_plants(self):
         return gppd.power_plant_database(source_dir=self.source)
@@ -100,7 +103,7 @@ class DefaultStatic(paths.Static, paths.ElectricityStatic, paths.AgricultureStat
         return paths.Vardef(gmted.filename(self.source, self.grid.name), '1')
 
     def population_density(self) -> paths.Vardef:
-        return paths.Vardef(gpw.population_density(self.source, 2020, '30_sec'), '1')
+        return paths.Vardef(gpw.population_density(self.source, self.gpw_year, self.gpw_res), '1')
 
     def basins(self) -> paths.Vardef:
         return paths.Vardef(os.path.join(self.source, 'HydroBASINS', 'basins_lev07.shp'), None)

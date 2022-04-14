@@ -48,10 +48,10 @@ class ERA5Static(DefaultStatic):
                ))
         return steps
 
-    def prepare_population_density(self) -> List[Step]:
-        steps = super().prepare_population_density()
+    def prepare_population_density(self, gpw_year: int, gpw_res: str) -> List[Step]:
+        steps = super().prepare_population_density(gpw_year, gpw_res)
 
-        infile = gpw.population_density(self.source, 2020, '30_sec')
+        infile = super().population_density().file
         outfile = self.population_density().file
 
         steps.append(Step(
