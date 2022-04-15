@@ -399,7 +399,7 @@ class DefaultWorkspace:
 
         if thing in {'forcing', 'results', 'state', 'spinup'}:
             return False
-        if thing in {'anom', 'composite', 'composite_adjusted', 'composite_anom', 'composite_anom_rp', 'rp', 'composite_adjusted_population_summary'}:
+        if thing in {'anom', 'composite', 'composite_adjusted', 'composite_anom', 'composite_anom_rp', 'rp', 'composite_adjusted_population'}:
             return True
         raise Exception(f"Don't know how to make a path for {thing}")
 
@@ -486,7 +486,7 @@ class DefaultWorkspace:
                               target=target)
 
     def composite_summary_population(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
-        return self.make_path('composite_adjusted_population_summary',
+        return self.make_path('composite_adjusted_population',
                               yearmon=yearmon,
                               summary=target is not None,
                               window=window,
