@@ -362,7 +362,7 @@ class DefaultWorkspace:
         if sector:
             root = os.path.join(root, sector.value)
 
-        if thing in {'composite_adjusted_population_summary'}:
+        if thing in {'composite_adjusted_population'}:
             suffix = '.csv'
         else:
             suffix = '.nc'
