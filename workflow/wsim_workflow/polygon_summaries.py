@@ -34,7 +34,7 @@ def compute_population_summary(workspace: DefaultWorkspace,
         values=[Vardef(composite_fname, 'surplus'),
                 Vardef(composite_fname, 'deficit@negate').read_as('deficit')],
         weights=static.population_density().read_as('population'),
-        append_cols=['GID_0', 'NAME_0'],
+        append_cols=['GID_0->country_iso', 'NAME_0->country_name'],
         output=workspace.composite_summary_population(yearmon=yearmon, target=target, window=window)
     )]
 

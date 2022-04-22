@@ -81,6 +81,14 @@ main <- function(raw_args) {
   wsim.io::infof('Read %d polygons from %s', nrow(polygons), args$polygons)
 
   append_cols <- stringr::str_split(args$append_cols, stringr::fixed(','))[[1]]
+  # handle columns renamed using -> notation by copying values column with new name
+  for (i in seq_along(append_cols)) {
+    from_to <- stringr::str_split(append_cols[i], stringr::fixed('->'))[[1]]
+    if (length(from_to) == 2) {
+      polygons[[from_to[2]]] <- polygons[[from_to[1]]]
+      append_cols[i] <- from_to[[2]]
+    }
+  }
 
   breaks <- sapply(stringr::str_split(args$breaks, stringr::fixed(','))[[1]], as.numeric)
   labels <- c(
