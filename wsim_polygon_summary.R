@@ -90,7 +90,7 @@ main <- function(raw_args) {
 
   # reclassify
   rcmat <- cbind(
-    breaks, c(breaks[-1], NA), seq_along(breaks)
+    breaks, c(breaks[-1], Inf), seq_along(breaks)
   )
   value_cat <- terra::classify(values, rcmat,
                                include.lowest = TRUE,
