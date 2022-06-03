@@ -101,6 +101,9 @@ class TestCFSConfig(unittest.TestCase):
                 self.fail('Unbuildable targets found')
 
     def test_complex_rules(self):
+        if os.environ.get('GITLAB_CI'):
+            self.skipTest('Skipping test on GitLab CI (memory limitations)')
+
         warnings.simplefilter("always")
 
         yearmon = '{year:04d}{month:02d}'.format(year=self.config.historical_years()[-1], month=1)
