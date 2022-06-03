@@ -162,18 +162,11 @@ def unbuildable_targets(steps) -> List[Step]:
 
 
 def load_config(path: str, source: str, derived: str, config_options: dict) -> ConfigBase:
-    dirname = os.path.dirname(path)
+    config_dirname = os.path.split(os.path.dirname(path))[-1]
+    config_name = os.path.splitext(os.path.basename(path))[0]
 
-    # Temporarily add config module directory to the system path
-    # This feels wrong, but I can't find another method that allows
-    # one config to derive from another (as config_fast inherits from
-    # config_cfs)
-    sys.path.insert(0, dirname)
-
-    loader = importlib.machinery.SourceFileLoader("config", path)
-    mod = types.ModuleType(loader.name)
-    loader.exec_module(mod)
-
-    sys.path.remove(dirname)
+    spec = importlib.util.spec_from_file_location(f"{config_dirname}.{config_name}", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
 
     return mod.config(source, derived, **config_options)
