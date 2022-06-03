@@ -16,7 +16,7 @@
 import os
 import sys
 import types
-import importlib.machinery
+import importlib.util
 
 from typing import List, Optional
 
