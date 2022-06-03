@@ -76,6 +76,9 @@ def parse_args(args):
     parser.add_argument('--stop',
                         help='End date in YYYYMM format',
                         required=False)
+    parser.add_argument('--distribution',
+                        help='Override statistical distribution in specified configuration',
+                        required=False)
     parser.add_argument('--baseline-start-year',
                         type=int,
                         help='Override start of baseline period in specified configuration',
@@ -128,7 +131,8 @@ def main(raw_args):
     config_options = {
         'baseline_start_year': args.baseline_start_year,
         'baseline_stop_year': args.baseline_stop_year,
-        'integration_windows': args.only_windows
+        'distribution': args.distribution,
+        'integration_windows': args.only_windows,
     }
     unused_options = [k for k in config_options if config_options[k] is None]
     for k in unused_options:
@@ -142,9 +146,11 @@ def main(raw_args):
                 raise Exception("Integration windows specified by --only-windows must be a subset of: " + ','.join(str(m) for m in config.integration_windows()))
 
     if args.baseline_start_year:
-        orig_start, *_, orig_stop = config.result_fit_years()
         new_start, new_stop = args.baseline_start_year, args.baseline_stop_year
         print(f"Overriding baseline historical period with {new_start}-{new_stop} ({new_stop-new_start+1} years)")
+
+    if args.distribution:
+        print(f"Overriding distribution with {args.distribution}")
 
     steps = workflow.generate_steps(config,
                                     start=args.start,

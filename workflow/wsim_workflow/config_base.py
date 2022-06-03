@@ -33,6 +33,10 @@ class ConfigBase(metaclass=abc.ABCMeta):
         if windows:
             self.integration_windows = lambda: windows
 
+    def set_distribution(self, distribution: Optional[str] = None):
+        if distribution:
+            self.distribution = distribution
+
     def land_mask(self) -> Optional[paths.Vardef]:
         """
         An optional land mask for composite outputs

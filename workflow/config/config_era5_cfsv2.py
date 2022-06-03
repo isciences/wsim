@@ -32,9 +32,11 @@ class ERA5CFSv2Config(ConfigBase):
                  baseline_start_year: Optional[int] = None,
                  baseline_stop_year: Optional[int] = None,
                  integration_windows: Optional[int] = None,
+                 distribution: Optional[str] = None,
                  distribution_subdir: Optional[bool] = True):
         self.set_fit_years(baseline_start_year, baseline_stop_year)
         self.set_integration_windows(integration_windows)
+        self.set_distribution(distribution)
 
         fit_start, *_, fit_end = self.result_fit_years()
         self._observed = ERA5(source)
