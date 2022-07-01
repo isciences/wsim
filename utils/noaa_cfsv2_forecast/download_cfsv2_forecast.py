@@ -98,7 +98,7 @@ def main(raw_args):
             'https://wsim-datasets.s3.us-east-2.amazonaws.com/CFSv2/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{GRIBFILE}'
         ]
 
-        rolling_url_pattern = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}'
+        rolling_url_pattern = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs.{YEAR:04d}{MONTH:02d}{DAY:02d}/{HOUR:02d}/monthly_grib_01/{GRIBFILE}'
 
         if timestamp_datetime > start_of_rolling_archive:
             print("Attempting rolling archive URL first")
