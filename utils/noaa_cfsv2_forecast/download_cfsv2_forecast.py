@@ -24,6 +24,7 @@ if sys.version_info.major < 3:
 import argparse
 import datetime
 import os
+import time
 from urllib.request import urlopen
 
 
@@ -121,6 +122,7 @@ def main(raw_args):
         except Exception as e:
             print("Failed to download from " + url + " with error: ", file=sys.stderr)
             print(e, file=sys.stderr)
+            time.sleep(2)
     sys.exit(1)
 
 
