@@ -103,7 +103,7 @@ main <- function(raw_args) {
   value_cat <- terra::classify(values, rcmat,
                                include.lowest = TRUE,
                                right = FALSE, # intervals open on right, closed on left [3, 5)
-                               othersNA = TRUE)
+                               others = NA)
   value_cat[is.na(value_cat)] <- 0
 
 
