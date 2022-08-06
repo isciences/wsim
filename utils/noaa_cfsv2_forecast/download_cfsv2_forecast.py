@@ -33,7 +33,7 @@ def parse_args(args):
 
     parser.add_argument('--timestamp',
                         help='Forecast timestamp in YYYYMMHH format',
-                        required=False)
+                        required=True)
     parser.add_argument('--target',
                         help='Target year and month of forecast in YYYYMM format',
                         required=True)
