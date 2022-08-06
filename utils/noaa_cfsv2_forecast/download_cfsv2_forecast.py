@@ -83,7 +83,7 @@ def main(raw_args):
 
     if hindcast:
         url_patterns = [
-            'https://www.ncei.noaa.gov/data/climate-forecast-system/access/reforecast/high-prioroty-subset/'
+            'https://www.ncei.noaa.gov/data/climate-forecast-system/access/reforecast/high-priority-subset/'
             'monthly-means-9-month/{YEAR:04d}/{YEAR:04d}{MONTH:02d}/{YEAR:04d}{MONTH:02d}{DAY:02d}/{GRIBFILE}'
         ]
     else:
