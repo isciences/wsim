@@ -72,7 +72,8 @@ def main(raw_args):
     day = int(args.timestamp[6:8])
     hour = int(args.timestamp[8:10])
 
-    hindcast = year <= 2009
+    yearmon = args.timestamp[:6]
+    hindcast = yearmon <= '201103'
 
     if hindcast:
         grib_pattern = "flxf{TIMESTAMP}.01.{TARGET}.avrg.grb2"
