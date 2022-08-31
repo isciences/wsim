@@ -14,6 +14,7 @@
 from . import dates
 
 import os
+import warnings
 
 from typing import Union, Optional, List, Iterable, Set
 
@@ -39,6 +40,25 @@ ZeroOrMoreStrings = Union[str, List[str], Set[str], None]
 
 
 class Step:
+
+    def __eq__(self, other):
+        if not isinstance(other, Step):
+            raise Exception("Cannot compare Step to non-Step")
+
+        mostly_equal = self.targets == other.targets \
+            and self.dependencies == other.dependencies \
+            and self.commands == other.commands
+
+        if not mostly_equal:
+            return False
+
+        if self.consumes != other.consumes or self.working_directories != other.working_directories or self.lock != other.lock:
+            warnings.warn("Almost-equal steps being compared for equality. This is not expected.")
+
+        return True
+
+    def __hash__(self):
+        return hash(tuple(sorted(self.targets)))
 
     def __init__(self, *,
                  targets: ZeroOrMoreStrings=None,
