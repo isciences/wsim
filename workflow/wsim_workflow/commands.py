@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2022 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -17,6 +17,7 @@ from typing import Union, Iterable, Optional, List, Mapping
 
 from .paths import Vardef, gdaldataset2filename
 from .step import Step
+from .grids import Grid
 from . import attributes
 
 
@@ -29,14 +30,15 @@ def validate_attr(attr: str) -> None:
         raise ValueError('Invalid attribute specification: ' + attr)
 
 
-def forecast_convert(infile: str, outfile: str, comment: Optional[str]=None) -> Step:
+def forecast_convert(infile: str, outfile: str, grid: Grid, comment: Optional[str] = None) -> Step:
     return Step(
         targets=outfile,
         dependencies=infile,
         commands=[
             [os.path.join('{BINDIR}', 'utils', 'noaa_cfsv2_forecast', 'convert_cfsv2_forecast.sh'),
              infile,
-             outfile]
+             outfile,
+             '"{}"'.format(grid.wgrib_def())]
         ],
         comment=comment
     )
@@ -416,6 +418,35 @@ def wsim_integrate(*,
     return Step(
         targets=output,
         dependencies=inputs,
+        commands=[cmd],
+        comment=comment
+    )
+
+
+def wsim_quantile(*,
+                  fits: Union[str, List[str]],
+                  sa: float,
+                  median_when_undefined: bool = False,
+                  output: str,
+                  comment: Optional[str] = None) -> Step:
+    cmd = [os.path.join('{BINDIR}', 'wsim_quantile.R')]
+
+    if type(fits) is str:
+        fits = [fits]
+
+    for fit in fits:
+        cmd += ['--fits', fit]
+
+    cmd += ['--sa', q(str(sa))]
+
+    if median_when_undefined:
+        cmd.append('--median-when-undefined')
+
+    cmd += ['--output', output]
+
+    return Step(
+        targets=output,
+        dependencies=fits,
         commands=[cmd],
         comment=comment
     )

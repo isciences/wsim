@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -51,6 +51,29 @@ test_that('we can read forcing from netCDF', {
   forcing2 <- read_forcing_from_cdf(fname)
 
   expect_equal(forcing2, forcing, check.attributes=FALSE)
+
+  file.remove(fname)
+})
+
+test_that('some forcing unit errors can be caught', {
+  fname <- tempfile(fileext = '.nc')
+
+  forcing <- make_forcing(
+    extent=c(-180, 180, -90, 90),
+    pWetDays=matrix(rep.int(1, 4), nrow=2),
+    T=matrix(runif(4, min = -17, max = 33), nrow=2),
+    Pr=matrix(runif(4), nrow=2)
+  )
+
+  # oops! values were already in degrees C, not Kelvin
+  forcing$T <- forcing$T - 273.15
+
+  wsim.lsm::write_lsm_values_to_cdf(forcing, fname, prec='double')
+
+  expect_error(
+    read_forcing_from_cdf(fname, '202109'),
+    '4 T values below allowable minimum'
+  )
 
   file.remove(fname)
 })

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 ISciences, LLC.
+// Copyright (c) 2018-2021 ISciences, LLC.
 // All rights reserved.
 //
 // WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -151,6 +151,66 @@ IntegerMatrix create_inward_dir_matrix(const IntegerMatrix & directions, bool wr
   return inwardDirs;
 }
 
+// [[Rcpp::export]]
+Rcpp::NumericMatrix aggregate_flows(const Rcpp::NumericMatrix & flows,
+                                    const Rcpp::IntegerMatrix & directions,
+                                    std::size_t factor, bool wrapX, bool wrapY) {
+  if (factor == 1) {
+    return flows;
+  }
+
+  auto rows = flows.rows();
+  auto cols = flows.cols();
+
+  Rcpp::NumericMatrix out = Rcpp::no_init(rows/factor, cols/factor);
+  std::fill(out.begin(), out.end(), NA_REAL);
+
+  for (decltype(cols) j = 0; j < cols; j++) {
+    for (decltype(rows) i = 0; i < rows; i++) {
+      auto& out_value = out(i/factor, j/factor);
+
+      if (!std::isnan(flows(i, j))) {
+        // skip flows that end up in another subcell of this same cell, to avoid
+        // double-counting.
+        Downstream ds = flow(directions, i, j, wrapX, wrapY);
+        if (ds.flows && (ds.row/factor == i/factor) && (ds.col/factor == j/factor)) {
+          continue;
+        }
+
+        if (std::isnan(out_value)) {
+          out_value = flows(i, j);
+        } else {
+          out_value += flows(i, j);
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
+// Disaggregate a matrix, dividing the contents of one cell evenly into the
+// subdivided cells
+// [[Rcpp::export]]
+Rcpp::NumericMatrix disaggregate_amount(const Rcpp::NumericMatrix & mat, size_t factor) {
+  auto rows = mat.rows();
+  auto cols = mat.cols();
+
+  Rcpp::NumericMatrix out = Rcpp::no_init(rows*factor, cols*factor);
+
+  for (decltype(cols) j = 0; j < cols; j++) {
+    for (decltype(rows) i = 0; i < rows; i++) {
+      for (size_t q = 0; q < factor; q++) {
+        for (size_t p = 0; p < factor; p++) {
+          out(i*factor + p, j*factor + q) = mat(i, j) / (factor * factor);
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
 //' Accumulate flow, given flow directions and weights.
 //'
 //' @param directions a matrix of flow directions, where directions are represented
@@ -178,7 +238,18 @@ IntegerMatrix create_inward_dir_matrix(const IntegerMatrix & directions, bool wr
 // [[Rcpp::export]]
 NumericMatrix accumulate_flow(const IntegerMatrix & directions, const NumericMatrix & weights, bool wrapX, bool wrapY) {
   IntegerMatrix inDirs = create_inward_dir_matrix(directions, wrapX, wrapY);
-  NumericMatrix flows = clone(weights);
+
+  if (directions.rows() % weights.rows() || directions.cols() % weights.cols()) {
+    Rcpp::stop("Direction matrix dimensions must be integer multiple of flow matrix dimensions.");
+  }
+
+  auto factor = directions.rows() / weights.rows();
+
+  if (directions.cols() / weights.cols() != factor) {
+    Rcpp::stop("Unexpected number of columns in flow matrix.");
+  }
+
+  NumericMatrix flows = disaggregate_amount(weights, factor);
 
   std::vector<std::pair<int, int>> upstream;
 
@@ -211,7 +282,7 @@ NumericMatrix accumulate_flow(const IntegerMatrix & directions, const NumericMat
           flows(ds.row, ds.col) = weight;
         } else {
           flows(ds.row, ds.col) += weight;
-        }
+          }
 
         inDirs(ds.row, ds.col) -= directions(i, j);
         if (inDirs(ds.row, ds.col) == 0) {
@@ -231,5 +302,5 @@ NumericMatrix accumulate_flow(const IntegerMatrix & directions, const NumericMat
     }
   }
 
-  return flows;
+  return aggregate_flows(flows, directions, factor, wrapX, wrapY);
 }

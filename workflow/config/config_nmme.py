@@ -33,7 +33,7 @@ class NMMEConfig(ConfigBase):
             'CFSv2':  CFSForecast(source, derived, self._observed),
             'CanCM4i': NMMEForecast(source, derived, self._observed, 'CanCM4i', 1982, 2010)
         }
-        self._static = DefaultStatic(source)
+        self._static = DefaultStatic(source, self._observed.grid())
         self._workspace = paths.DefaultWorkspace(derived)
 
     def historical_years(self):

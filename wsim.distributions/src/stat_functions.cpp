@@ -29,25 +29,43 @@ double cdf(double x, double location, double scale, double shape);
 
 template<typename distribution>
 NumericVector quaxxx(const NumericVector & data, const NumericVector & location, const NumericVector & scale, const NumericVector & shape) {
-  auto n = data.size();
-  NumericVector ret = no_init(n);
-  ret.attr("dim") = data.attr("dim");
-
-  if (n == location.size() && n == scale.size() && n == shape.size()) {
+  if (data.size() == location.size() && data.size() == scale.size() && data.size() == shape.size()) {
     // One set of distribution parameters for each observation.
+    auto n = data.size();
+    NumericVector ret = no_init(n);
+    ret.attr("dim") = data.attr("dim");
+
     for (decltype(n) i = 0; i < n; i++) {
       ret[i] = qua<distribution>(data[i], location[i], scale[i], shape[i]);
     }
+
+    return ret;
   } else if (location.size() == 1 && scale.size() == 1 && shape.size() == 1) {
     // Constant distribution parameters with multiple observations.
+    auto n = data.size();
+    NumericVector ret = no_init(n);
+    ret.attr("dim") = data.attr("dim");
+
     for (decltype(n) i = 0; i < n; i++) {
       ret[i] = qua<distribution>(data[i], location[0], scale[0], shape[0]);
     }
-  } else {
-    stop("Unexpected vector lengths.");
+
+    return ret;
+  } else if (data.size() == 1 && (location.size() == scale.size() && location.size() == shape.size())) {
+    // Constant observation, multiple distribution parameters
+    auto n = location.size();
+    NumericVector ret = no_init(n);
+    ret.attr("dim") = location.attr("dim");
+    n = location.size();
+
+    for (decltype(n) i = 0; i < n; i++) {
+      ret[i] = qua<distribution>(data[0], location[i], scale[i], shape[i]);
+    }
+
+    return ret;
   }
 
-  return ret;
+  stop("Unexpected vector lengths.");
 }
 
 // Define a family of functions that computes the quantiles at each location of a vector

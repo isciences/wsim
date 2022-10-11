@@ -94,7 +94,8 @@ def spinup(config, meta_steps):
 
             steps += composite_anomalies(config.workspace(),
                                          yearmon=yearmon,
-                                         window=window)
+                                         window=window,
+                                         mask=config.land_mask())
 
     # Fit distribution of composite anomalies
     for window in [1] + config.integration_windows():

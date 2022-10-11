@@ -1,4 +1,4 @@
-# Copyright (c) 2019 ISciences, LLC.
+# Copyright (c) 2019-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -15,10 +15,12 @@
 #'
 #' @param vardef       filename/variable to check
 #' @param exclude.dims dimensions to ignore in output
+#' @param exclude.degenerate if \code{TRUE}, do not return dimensions having
+#'                           length <= 1 in output
 #' @return a list with names representing dimension names and values
 #'         representing dimension values
 #' @export
-read_dimension_values <- function(vardef, exclude.dims=NULL) {
+read_dimension_values <- function(vardef, exclude.dims=NULL, exclude.degenerate=FALSE) {
   parsed_vardef <- parse_vardef(vardef)
 
   stopifnot(file.exists(parsed_vardef$filename))
@@ -36,9 +38,18 @@ read_dimension_values <- function(vardef, exclude.dims=NULL) {
   dimnames <- sapply(nc$var[[var]]$dim, function(d) d$name)
   dimnames <- dimnames[!dimnames %in% exclude.dims]
 
-  ret <- lapply(dimnames, function(d) ncdf4::ncvar_get(nc, d))
-  names(ret) <- dimnames
+  dimvalues <- lapply(dimnames, function(d) ncdf4::ncvar_get(nc, d))
+  names(dimvalues) <- dimnames
 
   ncdf4::nc_close(nc)
-  return(ret)
+
+  if (exclude.degenerate) {
+    for (name in names(dimvalues)) {
+      if (length(dimvalues[[name]]) <= 1) {
+        dimvalues[[name]] <- NULL
+      }
+    }
+  }
+
+  return(dimvalues)
 }

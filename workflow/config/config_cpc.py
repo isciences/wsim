@@ -26,12 +26,17 @@ from static.default_static import DefaultStatic
 
 class CPCConfig(ConfigBase):
     def __init__(self, source, derived):
+        fit_start, *_, fit_end = self.result_fit_years()
+
         self._observed = CPCGlobalDaily(source)
         self._forecast = {
             'CFSv2':  CFSForecast(source, derived, self._observed),
         }
-        self._static = DefaultStatic(source)
-        self._workspace = paths.DefaultWorkspace(derived)
+        self._static = DefaultStatic(source, self._observed.grid())
+        self._workspace = paths.DefaultWorkspace(derived,
+                                                 distribution=self.distribution,
+                                                 fit_start_year=fit_start,
+                                                 fit_end_year=fit_end)
 
     def result_fit_years(self) -> Iterable[int]:
         return range(1981, 2019)

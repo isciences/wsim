@@ -164,12 +164,12 @@ test_that('we can use extra_dims arg to read from a N-D array', {
 
   expect_error(
     enchilada <- read_vars_from_cdf(fname),
-    "Expected 2 extra dimensions but got 0"
+    "Expected 2 extra dimensions .* but got 0"
   )
 
   expect_error(
     slice <- read_vars_from_cdf(fname, extra_dims=list(elev=2.5)),
-    "Expected 2 extra dimensions but got 1"
+    "Expected 2 extra dimensions .* but got 1"
   )
 
   expect_error(

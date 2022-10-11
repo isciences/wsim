@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -13,24 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -eu
 
 display_usage() {
 	echo "Convert a CFS forecast from GRIB2 (Gaussian grid) to netCDF (0.5-degree grid)"
-	echo "convert_cfsv2_forecast.sh [in] [out]"
+	echo "convert_cfsv2_forecast.sh [in] [out] [wgrib_grid_def]"
 }
 
-if [ $# -le 1 ]
+if [ $# -le 2 ]
 then
 	display_usage
 	exit 1
 fi
 
-TEMP_GRB2=/tmp/regrid_halfdeg.$$.grb2
-TEMP_NC1=/tmp/`basename $2`.tmp1.$$.nc
-TEMP_NC2=/tmp/`basename $2`.tmp2.$$.nc
-TEMP_NC3=/tmp/`basename $2`.tmp3.$$.nc
-TEMP_NC4=/tmp/`basename $2`.tmp4.$$.nc
+INFILE=$1
+OUTFILE=$2
+WGRIB_GRID=$3
+
+TEMP_GRB2=/tmp/regrid.$$.grb2
+TEMP_NC1=/tmp/$(basename "$OUTFILE").tmp1.$$.nc
+TEMP_NC2=/tmp/$(basename "$OUTFILE").tmp2.$$.nc
+TEMP_NC3=/tmp/$(basename "$OUTFILE").tmp3.$$.nc
+TEMP_NC4=/tmp/$(basename "$OUTFILE").tmp4.$$.nc
 
 function cleanup {
   rm -f $TEMP_GRB2
@@ -41,7 +45,7 @@ function cleanup {
 }
 trap cleanup EXIT
 
-wgrib2 $1 -match "PRATE:surface|TMP:2 m" -new_grid latlon -179.75:720:0.5 -89.75:360:0.5 $TEMP_GRB2
+wgrib2 "$INFILE" -match "PRATE:surface|TMP:2 m" -new_grid latlon $WGRIB_GRID $TEMP_GRB2
 wgrib2 $TEMP_GRB2 -nc_grads -netcdf $TEMP_NC1
 
 # Rename each variable in separate commands

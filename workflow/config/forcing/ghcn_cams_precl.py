@@ -15,7 +15,7 @@ import os
 
 from typing import List
 
-from wsim_workflow import actions, dates, paths
+from wsim_workflow import actions, dates, grids, paths
 from wsim_workflow.paths import Vardef
 from wsim_workflow.step import Step
 from wsim_workflow.data_sources import cpc_daily_precipitation, ghcn_cams, precl
@@ -25,6 +25,12 @@ class GHCN_CAMS_PRECL(paths.ObservedForcing):
 
     def __init__(self, source):
         self.source = source
+
+    def name(self) -> str:
+        return 'GHCN_CAMS_PRECL'
+
+    def grid(self) -> grids.Grid:
+        return grids.GLOBAL_HALF_DEGREE
 
     def temp_monthly(self, *, yearmon: str) -> paths.Vardef:
         year, _ = dates.parse_yearmon(yearmon)

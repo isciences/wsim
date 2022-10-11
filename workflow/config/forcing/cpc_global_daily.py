@@ -15,7 +15,7 @@ import os
 
 from typing import List
 
-from wsim_workflow import actions, paths
+from wsim_workflow import actions, paths, grids
 from wsim_workflow.step import Step
 
 from wsim_workflow.data_sources import cpc_daily_temperature, cpc_daily_precipitation
@@ -28,6 +28,12 @@ class CPCGlobalDaily(paths.ObservedForcing):
 
         self.temp_workdir = os.path.join(self.source, 'CPC_Global_Daily_Temperature', 'raw')
         self.precip_workdir = os.path.join(self.source, 'CPC_Global_Daily_Precipitation', 'raw')
+
+    def name(self) -> str:
+        return 'CPC_Global_Daily'
+
+    def grid(self) -> grids.Grid:
+        return grids.GLOBAL_HALF_DEGREE
 
     def prep_steps(self, *, yearmon: str) -> List[Step]:
         return \

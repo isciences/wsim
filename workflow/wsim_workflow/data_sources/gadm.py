@@ -19,11 +19,14 @@ from ..commands import move
 from ..step import Step
 
 
-def admin_boundaries(source_dir: str, levels: List[int]) -> List[Step]:
+SUBDIR = 'GADM'
+
+
+def prepare_admin_boundaries(source_dir: str, levels: List[int]) -> List[Step]:
     for level in levels:
         assert 0 <= level <= 5
 
-    dirname = os.path.join(source_dir, 'GADM')
+    dirname = os.path.join(source_dir, SUBDIR)
     url = 'https://biogeo.ucdavis.edu/data/gadm3.6/gadm36_levels_shp.zip'
     zip_path = os.path.join(dirname, url.split('/')[-1])
 
@@ -46,7 +49,7 @@ def admin_boundaries(source_dir: str, levels: List[int]) -> List[Step]:
     # ogr2ogr has to switch from OGR to ESRI ring rules.
     for level in levels:
         temp_gpkg = tempfile.mktemp(suffix='.gpkg')
-        gpkg_path = os.path.join(dirname, 'gadm36_level_{}.gpkg'.format(level))
+        gpkg_path = admin_boundaries(source_dir, level)
 
         steps += [
             Step(
@@ -67,3 +70,7 @@ def admin_boundaries(source_dir: str, levels: List[int]) -> List[Step]:
         ]
 
     return steps
+
+
+def admin_boundaries(source_dir: str, level: int) -> str:
+    return os.path.join(source_dir, SUBDIR, 'gadm36_level_{}.gpkg'.format(level))
