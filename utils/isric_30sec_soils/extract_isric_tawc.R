@@ -180,7 +180,8 @@ main <- function(raw_args) {
                          function(vals) {
                            code_array[1 + vals]
                          },
-                         nodata=-3.4028234663852886e+38,
+                         nodata=NaN, # this value is needed to prevent subsequent gdalwarp resampling
+                                     # from removing pixels that have a single NODATA subpixel
                          datatype='Float32')
 
   info("Wrote TAWC values to", args$output)
