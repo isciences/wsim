@@ -14,7 +14,7 @@
 import os
 
 from .step import Step
-from .paths import Vardef, DefaultWorkspace, Static
+from .paths import Vardef, DefaultWorkspace, Static, Basis
 from .commands import q
 
 from typing import List, Optional, Union
@@ -29,14 +29,22 @@ def compute_population_summary(workspace: DefaultWorkspace,
 
     composite_fname = workspace.composite_summary_adjusted(yearmon=yearmon, target=target, window=window)
 
-    return [wsim_polygon_summary(
-        polygons=static.countries().file,
-        values=[Vardef(composite_fname, 'surplus'),
-                Vardef(composite_fname, 'deficit@negate').read_as('deficit')],
-        weights=static.population_density().read_as('population'),
-        append_cols=['GID_0->country_iso', 'NAME_0->country_name'],
-        output=workspace.composite_summary_population(yearmon=yearmon, target=target, window=window)
-    )]
+    return [
+        wsim_polygon_summary(
+            polygons=static.countries().file,
+            values=[Vardef(composite_fname, 'surplus'),
+                    Vardef(composite_fname, 'deficit@negate').read_as('deficit')],
+            weights=static.population_density().read_as('population'),
+            append_cols=['GID_0->country_iso', 'NAME_0->country_name'],
+            output=workspace.composite_summary_population(basis=Basis.COUNTRY, yearmon=yearmon, target=target, window=window)),
+        wsim_polygon_summary(
+            polygons=static.provinces().file,
+            values=[Vardef(composite_fname, 'surplus'),
+                    Vardef(composite_fname, 'deficit@negate').read_as('deficit')],
+            weights=static.population_density().read_as('population'),
+            append_cols=['GID_0->country_iso', 'NAME_0->country_name', 'NAME_1->province_name'],
+            output=workspace.composite_summary_population(basis=Basis.PROVINCE, yearmon=yearmon, target=target, window=window))
+    ]
 
 
 def wsim_polygon_summary(*,

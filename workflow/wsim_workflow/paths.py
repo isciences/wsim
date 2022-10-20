@@ -252,6 +252,9 @@ class Static(metaclass=ABCMeta):
     def countries(self) -> Vardef:
         pass
 
+    def provinces(self) -> Vardef:
+        pass
+
     def population_density(self) -> Vardef:
         pass
 
@@ -277,9 +280,6 @@ class ElectricityStatic(metaclass=ABCMeta):
         pass
 
     def power_plants(self) -> Vardef:
-        pass
-
-    def provinces(self) -> Vardef:
         pass
 
 
@@ -485,9 +485,10 @@ class DefaultWorkspace:
                               window=window,
                               target=target)
 
-    def composite_summary_population(self, *, yearmon: str, window: int, target: Optional[str]=None) -> str:
+    def composite_summary_population(self, *, basis: Basis, yearmon: str, window: int, target: Optional[str]=None) -> str:
         return self.make_path('composite_adjusted_population',
                               yearmon=yearmon,
+                              basis=basis,
                               summary=target is not None,
                               window=window,
                               target=target)
