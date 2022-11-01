@@ -34,11 +34,17 @@ def grep(string,list):
 def getLinks(url, pattern):
     import re
     # import urllib3
+    import ssl
     import urllib.request
     from bs4 import BeautifulSoup
     #print 'url = {}'.format(url)
     #print 'pattern = {}'.format(pattern)
-    page = urllib.request.urlopen(url)
+    #page = urllib.request.urlopen(url)
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    
+    page = urllib.request.urlopen(url, context=ctx)
     soup = BeautifulSoup(page, 'html.parser')
 
     # Find the anchor tags where href = True (represents a link)
