@@ -13,7 +13,7 @@
 
 import os
 
-from wsim_workflow import dates, paths
+from wsim_workflow import dates, paths, grids
 from wsim_workflow.paths import Vardef, ObservedForcing
 
 from wsim_workflow.commands import wsim_integrate
@@ -23,6 +23,12 @@ class PerfectForecast(paths.ForecastForcing):
 
     def __init__(self, observed: paths.ObservedForcing):
         self._observed = observed
+
+    def name(self) -> str:
+        return 'perfect_forecast_' + self._observed.name()
+
+    def grid(self) -> grids.Grid:
+        return self._observed.grid()
 
     @staticmethod
     def requires_bias_correction() -> bool:

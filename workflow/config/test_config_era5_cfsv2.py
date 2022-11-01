@@ -1,4 +1,4 @@
-# Copyright (c) 2020 ISciences, LLC.
+# Copyright (c) 2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -11,12 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from config_cfs import CFSConfig
+
+from .config_era5_cfsv2 import ERA5CFSv2Config
+from .test_config_cfs import TestCFSConfig
 
 
-class CFSConfigNonParametric(CFSConfig):
+class TestERA5CFSv2Config(TestCFSConfig):
+    @classmethod
+    def setUpClass(cls):
+        #  create a shared config that can be used for multiple tests
+        cls.config = ERA5CFSv2Config(cls.source, cls.derived)
 
-    distribution = "nonparametric"
-
-
-config = CFSConfigNonParametric
+        # create a shared dictionary for generated steps that can be used for multiple tests
+        cls.steps = {}

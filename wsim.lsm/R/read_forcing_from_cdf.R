@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -33,10 +33,28 @@ read_forcing_from_cdf <- function(fname, yearmon) {
     attr(contents$data$Pr, 'units') <- 'mm'
   }
 
+  check_value_range(contents$data, 'pWetDays', 0, 1)
+  check_value_range(contents$data, 'T', -80, 80) # GHCN+CAMS has values between -55 and +63 degrees C
+  check_value_range(contents$data, 'Pr', 0, 5000) # PREC/L max is 3059 mm
+
   args <- c(contents["extent"],
             contents$data[c("pWetDays", "T", "Pr")])
 
   return(do.call(make_forcing, args))
+}
+
+check_value_range <- function(m, var, allowed_min, allowed_max) {
+  x <- m[[var]]
+
+  too_low <- which(x < allowed_min)
+  if (length(too_low) > 0) {
+    stop(sprintf('%d %s values below allowable minimum of %f', length(too_low), var, allowed_min))
+  }
+
+  too_high <- which(x > allowed_max)
+  if (length(too_high) > 0) {
+    stop(sprintf('%d %s values above allowable maximum of %f', length(too_high), var, allowed_max))
+  }
 }
 
 #' Convert temperature to degrees Celsius

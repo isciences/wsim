@@ -113,6 +113,7 @@ expand_dates <- function(fname) {
 #' @param step  number of months between range
 #'              elements.
 #' @return a vector of dates in YYYYMM format
+#' @export
 date_range <- function(start, stop, step) {
   dates <- c()
 

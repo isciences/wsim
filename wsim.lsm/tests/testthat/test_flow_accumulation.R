@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISciences, LLC.
+# Copyright (c) 2018-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -35,6 +35,13 @@ IN_NORTHWEST <- 2;
 IN_NORTH <- 4;
 IN_NORTHEAST <- 8;
 IN_NONE <- 0;
+
+# Helper function to disaggregate a flow direction matrix
+disaggregate_directions <- function(dirs, factor) {
+  ret <- disaggregate_amount(dirs, factor) * factor * factor
+  mode(ret) <- 'integer'
+  ret
+}
 
 test_that('Downstream cells are identified', {
   directions <- rbind(
@@ -77,7 +84,6 @@ test_that('Downstream cells are identified with wrapping', {
 
 
 test_that('Flow accumulates correctly without wrapping', {
-
   weights <- rbind(
     c( 1,  2, 4  ),
     c( 8, 16, 32 )
@@ -206,4 +212,78 @@ test_that('Headwater NAs are not conveyed downstream', {
     c( 5,  4 ),
     c( 4, NA )
   ))
+})
+
+test_that('Direction matrix can be integer multiple of flow matrix', {
+  weights <- rbind(
+    c( 1,  2, 4  ),
+    c( 8, 16, 32 )
+  )
+
+  directions <- rbind(
+    c( OUT_EAST,   OUT_SOUTH, OUT_WEST  ),
+    c( OUT_NODATA, OUT_WEST,  OUT_NORTH )
+  )
+
+  directions3 <- disaggregate_directions(directions, 3)
+
+  expect_equal(
+    accumulate_flow(directions, weights, FALSE, FALSE),
+    accumulate_flow(directions3, weights, FALSE, FALSE)
+  )
+})
+
+test_that('Global 0.125-degree flow direction grid can be shifted and extended to match +/- 180 0.25-degree ERA5 grid', {
+  flowdir <- matrix(1L:(2880L*1120L), nrow=1120)
+  flowdir_extent <- c(-180, 180, -56, 84)
+
+  era5_extent <- c(-179.875, 180.125, -90.125, 90.125)
+  era5_dims <- c(721, 1440)
+
+  flowdir_adj <- adjust_flow_dirs(flowdir, flowdir_extent, era5_extent, era5_dims)
+
+  expect_equal(dim(flowdir_adj), 2 * era5_dims)
+  expect_true(is.integer(flowdir_adj))
+
+  filled_northern_lats <- (90.125 - 84) / 0.125
+  filled_southern_lats <- (90.125 - 56) / 0.125 - 1
+
+  # northern latitudes filled with NA
+  expect_true(all(is.na(flowdir_adj[seq(1, filled_northern_lats), ])))
+
+  # southern latitudes filled with NA
+  expect_true(all(is.na(flowdir_adj[seq(nrow(flowdir_adj) - filled_southern_lats, nrow(flowdir_adj), )])))
+
+  # leftmost column of flowdir grid moved to right
+  # (western extent moved from -180 to -179.875)
+  expect_equal(na.omit(flowdir_adj[, 1]), 1121:2240, check.attributes = FALSE)
+  expect_equal(na.omit(flowdir_adj[, 2880]), 1:1120, check.attributes = FALSE)
+})
+
+test_that('Global 0.125-degree flow direction grid can be shifted and extended to match 0-360 0.25-degree ERA5 grid', {
+  flowdir <- matrix(1L:(2880L*1120L), nrow=1120)
+  flowdir_extent <- c(0, 360, -56, 84)
+
+  era5_extent <- c(-0.125, 359.875, -90.125, 90.125)
+  era5_dims <- c(721, 1440)
+
+  flowdir_adj <- adjust_flow_dirs(flowdir, flowdir_extent, era5_extent, era5_dims)
+
+  expect_equal(dim(flowdir_adj), 2 * era5_dims)
+
+  # right column of flowdir grid moved to left
+  # (western extent moved from 0 to -0.125)
+  expect_equal(na.omit(flowdir_adj[, 1]), flowdir[, ncol(flowdir)], check.attributes = FALSE)
+  expect_equal(na.omit(flowdir_adj[, 2]), flowdir[, 1], check.attributes = FALSE)
+  expect_equal(na.omit(flowdir_adj[, ncol(flowdir_adj)]), flowdir[, ncol(flowdir) - 1], check.attributes = FALSE)
+})
+
+test_that('adjust_flow_dirs is a no-op when grids are the same', {
+  flowdir <- matrix(1L:(360L*720L), nrow=360)
+  flowdir_extent <- c(-180, 180, -90, 90)
+
+  flowdir_adj <- adjust_flow_dirs(flowdir, flowdir_extent, flowdir_extent, dim(flowdir))
+
+  expect_equal(flowdir, flowdir_adj)
+  expect_true(is.integer(flowdir_adj))
 })

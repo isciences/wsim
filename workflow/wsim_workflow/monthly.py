@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 ISciences, LLC.
+# Copyright (c) 2018-2022 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -29,13 +29,14 @@ from .actions import \
     run_lsm,\
     standard_anomaly_summary, \
     time_integrate
+from .polygon_summaries import compute_population_summary
 from .config_base import ConfigBase as Config
 from .dates import get_lead_months
 from .step import Step
 
 
 def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) -> List[Step]:
-    print('Generating steps for', yearmon, 'observed data')
+    print('Generating steps for', yearmon, config.observed_data().name(), 'observed data')
 
     steps = []
 
@@ -72,7 +73,7 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
         # Don't write composite steps for a window that extends back too early.
         if yearmon >= config.historical_yearmons()[window-1]:
-            composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon)
+            composite_indicator_steps = composite_indicators(config.workspace(), window=window, yearmon=yearmon, mask=config.land_mask())
             steps += composite_indicator_steps
 
             meta_steps['all_composites'].require(composite_indicator_steps)
@@ -80,7 +81,7 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
                 meta_steps['all_monthly_composites'].require(composite_indicator_steps)
 
             if yearmon not in config.historical_yearmons():
-                steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon)
+                steps += composite_anomalies(config.workspace(), window=window, yearmon=yearmon, mask=config.land_mask())
 
             # Express composite anomalies in terms of a return period
             # (relative to historical composite anomalies)
@@ -94,6 +95,10 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
             meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
             if window == 1:
                 meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+
+            pop_summary_steps = compute_population_summary(config.workspace(), config.static_data(), yearmon=yearmon, window=window)
+            steps += pop_summary_steps
+            meta_steps['population_summaries'].require(pop_summary_steps)
 
     return steps
 
@@ -184,10 +189,12 @@ def monthly_forecast(config: Config,
 
             # Generate composite indicators from summarized ensemble data
             steps += composite_anomalies(config.workspace(),
-                                         window=window, yearmon=yearmon, target=target, quantile=50)
+                                         window=window, yearmon=yearmon, target=target, quantile=50,
+                                         mask=config.land_mask())
 
             composite_indicator_steps = composite_indicators(config.workspace(),
-                                                             window=window, yearmon=yearmon, target=target, quantile=50)
+                                                             window=window, yearmon=yearmon, target=target, quantile=50,
+                                                             mask=config.land_mask())
             steps += composite_indicator_steps
 
             meta_steps['all_composites'].require(composite_indicator_steps)
@@ -203,5 +210,9 @@ def monthly_forecast(config: Config,
             meta_steps['all_adjusted_composites'].require(adjusted_indicator_steps)
             if window == 1:
                 meta_steps['all_adjusted_monthly_composites'].require(adjusted_indicator_steps)
+
+            pop_summary_steps = compute_population_summary(config.workspace(), config.static_data(), yearmon=yearmon, window=window, target=target)
+            steps += pop_summary_steps
+            meta_steps['population_summaries'].require(pop_summary_steps)
 
     return steps

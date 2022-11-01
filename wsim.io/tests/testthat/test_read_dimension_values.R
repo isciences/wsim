@@ -1,4 +1,4 @@
-# Copyright (c) 2019 ISciences, LLC.
+# Copyright (c) 2019-2021 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -36,17 +36,22 @@ test_that('We get a list with dimension names and values', {
                     fname,
                     extent=c(0, 1, 0, 1),
                     extra_dims=list(crop=c('peanuts', 'cashews'),
-                                    stress=c('surplus', 'deficit')),
-                    write_slice=list(crop='cashews', stress='deficit'))
+                                    stress=c('surplus', 'deficit'),
+                                    method='irrigated'),
+                    write_slice=list(crop='cashews', stress='deficit', method='irrigated'))
 
   dims <- read_dimension_values(fname)
 
-  expect_setequal(names(dims), c('lat', 'lon', 'crop', 'stress'))
+  expect_setequal(names(dims), c('lat', 'lon', 'crop', 'stress', 'method'))
   expect_equal(dims$crop, c('peanuts', 'cashews'), check.attributes=FALSE)
   expect_equal(dims$stress, c('surplus', 'deficit'), check.attributes=FALSE)
+  expect_equal(dims$method, 'irrigated', check.attributes=FALSE)
 
   some_dims <- read_dimension_values(paste0(fname, '::', 'level'), exclude.dims=c('lon', 'stress'))
-  expect_setequal(names(some_dims), c('lat', 'crop'))
+  expect_setequal(names(some_dims), c('lat', 'crop', 'method'))
+
+  real_dims <- read_dimension_values(fname, exclude.degenerate = TRUE)
+  expect_setequal(names(real_dims), c('lat', 'lon', 'crop', 'stress'))
 
   file.remove(fname)
 })

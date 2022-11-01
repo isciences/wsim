@@ -16,7 +16,7 @@
 #' Apply named transformations to data
 #'
 #' @param data       a numeric vector or matrix
-#' @param transforms a character vector of transformaiton
+#' @param transforms a character vector of transformation
 #'                   descriptions
 #' @return a transformed version of \code{data}
 perform_transforms <- function(data, transforms) {
@@ -25,6 +25,8 @@ perform_transforms <- function(data, transforms) {
       data <- -data
     } else if (transform == "fill0") {
       data[is.na(data)] <- 0
+    } else if (transform == "clamp0") {
+      data[data < 0] <- 0
     } else if (startsWith(transform, '[') && endsWith(transform, ']')) {
       body <- substr(transform, 2, nchar(transform) - 1)
 

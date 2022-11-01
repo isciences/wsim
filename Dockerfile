@@ -16,7 +16,6 @@ WORKDIR /wsim/wsim.io
 RUN sed -i 's/Version:.*/Version: '"$WSIM_VERSION"'/' DESCRIPTION
 RUN echo ".WSIM_VERSION <- '$WSIM_VERSION'\n.WSIM_GIT_COMMIT <- '$GIT_COMMIT'" > R/version.R
 RUN make install
-
 COPY wsim.lsm /wsim/wsim.lsm
 WORKDIR /wsim/wsim.lsm
 RUN sed -i 's/Version:.*/Version: '"$WSIM_VERSION"'/' DESCRIPTION
@@ -42,6 +41,12 @@ WORKDIR /wsim/wsim.gldas
 RUN sed -i 's/Version:.*/Version: '"$WSIM_VERSION"'/' DESCRIPTION
 RUN make install
 
+COPY docs /wsim/docs
+WORKDIR /wsim
+
+COPY Makefile /wsim/
+RUN make html
+
 COPY workflow /wsim/workflow
 WORKDIR /wsim/workflow
 RUN sed -i 's/__version__.*/__version__ = "'"$WSIM_VERSION"'"/' wsim_workflow/version.py
@@ -50,9 +55,5 @@ RUN make install
 COPY utils /wsim/utils
 COPY *.R /wsim/
 
-COPY docs /wsim/docs
-COPY Makefile /wsim/
-
 WORKDIR /wsim
-RUN make html
 

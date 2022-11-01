@@ -59,9 +59,6 @@ def spinup(config: ConfigBase, meta_steps: Mapping[str, Step]) -> List[Step]:
     # Compute upstream storage of each basin
     steps += compute_basin_integration_windows(config.workspace(), config.static_data())
 
-    # Compute baseline water stress for each basin
-    steps += compute_basin_water_stress(config.workspace(), config.static_data())
-
     # Prepare power-plant data
     steps += prepare_power_plants(config.workspace(), config.static_data())
 

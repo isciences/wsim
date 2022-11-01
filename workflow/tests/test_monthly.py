@@ -14,9 +14,24 @@
 import unittest
 
 from wsim_workflow.config_base import ConfigBase
-from wsim_workflow.paths import DefaultWorkspace, Static
+from wsim_workflow.paths import DefaultWorkspace, Static, Vardef
 from wsim_workflow.monthly import monthly_observed
 from wsim_workflow.workflow import get_meta_steps
+
+
+class FakeForcing:
+
+    def name(self):
+        return 'fake_forcing'
+
+
+class FakeStatic(Static):
+
+    def countries(self) -> Vardef:
+        return Vardef('', '')
+
+    def population_density(self) -> Vardef:
+        return Vardef('', '')
 
 
 class BasicConfig(ConfigBase):
@@ -28,13 +43,13 @@ class BasicConfig(ConfigBase):
         return range(1950, 2010)  # 1950-2009
 
     def observed_data(self):
-        pass
+        return FakeForcing()
 
     def static_data(self):
-        return Static('fake')
+        return FakeStatic('fake')
 
     def workspace(self):
-        return DefaultWorkspace('tmp')
+        return DefaultWorkspace('tmp', distribution_subdir=False)
 
 
 class TestMonthly(unittest.TestCase):

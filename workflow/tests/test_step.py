@@ -15,6 +15,7 @@ import unittest
 
 from wsim_workflow.step import Step
 
+
 class TestStep(unittest.TestCase):
 
     def test_empty_inputs_ignored(self):
@@ -27,6 +28,20 @@ class TestStep(unittest.TestCase):
         self.assertEqual(2, len(s.targets))
         self.assertEqual(1, len(s.dependencies))
         self.assertEqual(2, len(s.commands))
+
+    def test_equality(self):
+        s1 = Step(targets=['a', 'b'],
+                  dependencies=['c', 'd'],
+                  commands=[['e']])
+
+        s2 = Step(targets=['a', 'b'],
+                  dependencies=['c', 'd'],
+                  commands=[['e']])
+
+        self.assertEqual(s1, s2)
+
+        step_set = {s1, s2}
+        self.assertEqual(len(step_set), 1)
 
     def test_filenames_expanded(self):
         s = Step(targets='fit.nc',

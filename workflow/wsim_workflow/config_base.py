@@ -24,6 +24,25 @@ class ConfigBase(metaclass=abc.ABCMeta):
 
     distribution = "gev"
 
+    def set_fit_years(self, start_year: Optional[int], end_year: Optional[int]):
+        assert (start_year is None) == (end_year is None)
+        if start_year:
+            self.result_fit_years = lambda: range(start_year, end_year + 1)
+
+    def set_integration_windows(self, windows):
+        if windows:
+            self.integration_windows = lambda: windows
+
+    def set_distribution(self, distribution: Optional[str] = None):
+        if distribution:
+            self.distribution = distribution
+
+    def land_mask(self) -> Optional[paths.Vardef]:
+        """
+        An optional land mask for composite outputs
+        """
+        return None
+
     @abc.abstractmethod
     def historical_years(self):
         """

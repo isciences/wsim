@@ -14,8 +14,10 @@
 from ..step import Step
 from typing import List
 
+SUBDIR = 'NTSG_DRT'
 
-def global_flow_direction(filename: str, resolution: float) -> List[Step]:
+
+def filename(resolution: float) -> str:
     if resolution == 2:
         res_txt = '2'
     elif resolution == 1:
@@ -35,15 +37,19 @@ def global_flow_direction(filename: str, resolution: float) -> List[Step]:
     else:
         raise ValueError('The DRT flow direction dataset is not available in {}-degree resolution.')
 
-    url = 'http://files.ntsg.umt.edu/data/DRT/upscaled_global_hydrography/by_HydroSHEDS_Hydro1k/flow_direction/DRT_{}_FDR_globe.asc'.format(res_txt)  # noqa
+    return 'DRT_{}_FDR_globe.asc'.format(res_txt)
+
+
+def global_flow_direction(dest_filename: str, resolution: float) -> List[Step]:
+    url = 'http://files.ntsg.umt.edu/data/DRT/upscaled_global_hydrography/by_HydroSHEDS_Hydro1k/flow_direction/{}'.format(filename(resolution))
 
     return [
         # Download flow grid
         Step(
-            targets=filename,
+            targets=dest_filename,
             dependencies=[],
             commands=[
-                ['wget', '-O', filename, url]
+                ['wget', '-O', dest_filename, url]
             ]
         )
     ]

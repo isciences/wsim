@@ -20,18 +20,41 @@ from wsim_workflow import paths
 
 from wsim_workflow.config_base import ConfigBase
 
-from forcing.ghcn_cams_precl import GHCN_CAMS_PRECL
-from forcing.cfsv2 import CFSForecast
-from static.default_static import DefaultStatic
+from .forcing.ghcn_cams_precl import GHCN_CAMS_PRECL
+from .forcing.cfsv2 import CFSForecast
+from .static.default_static import DefaultStatic
 
 
 class CFSConfig(ConfigBase):
 
-    def __init__(self, source, derived):
+    def __init__(self,
+                 source,
+                 derived,
+                 *,
+                 baseline_start_year: Optional[int] = None,
+                 baseline_stop_year: Optional[int] = None,
+                 integration_windows: Optional[int] = None,
+                 distribution: Optional[str] = None,
+                 distribution_subdir: Optional[bool] = True):
+        self.set_fit_years(baseline_start_year, baseline_stop_year)
+        self.set_integration_windows(integration_windows)
+        self.set_distribution(distribution)
+
+        fit_start, *_, fit_end = self.result_fit_years()
+
         self._observed = GHCN_CAMS_PRECL(source)
         self._forecast = {'CFSv2': CFSForecast(source, derived, self._observed)}
-        self._static = DefaultStatic(source)
-        self._workspace = paths.DefaultWorkspace(derived)
+        self._static = DefaultStatic(source, self._observed.grid())
+        self._workspace = paths.DefaultWorkspace(derived,
+                                                 distribution_subdir=distribution_subdir,
+                                                 distribution=self.distribution,
+                                                 fit_start_year=fit_start,
+                                                 fit_end_year=fit_end)
+
+    def land_mask(self) -> Optional[paths.Vardef]:
+        return paths.Vardef(
+            self._workspace.return_period(yearmon='195001', window=1),
+            'Ws_rp')
 
     def historical_years(self):
         return range(1948, 2020)  # 1948-2019

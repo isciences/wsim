@@ -1,6 +1,5 @@
 check:
-	cd tests && python3 -m unittest -v
-	cd config && python3 -m unittest -v
+	python3 -m unittest -v
 
 install:
 	./setup.py install

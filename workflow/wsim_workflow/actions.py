@@ -264,7 +264,6 @@ def composite_vars(*, method: str, window: int, quantile: Optional[int]) -> Dict
             'RO_mm_{rp_or_sa}{quantile}->RO_mm',
             'Bt_RO_{rp_or_sa}{quantile}->Bt_RO'
         ]
-        mask = 'Ws_{rp_or_sa}{quantile}'
     else:
         deficit = [
             'PETmE_sum_{rp_or_sa}{quantile}@fill0@negate->Neg_PETmE',
@@ -275,7 +274,6 @@ def composite_vars(*, method: str, window: int, quantile: Optional[int]) -> Dict
             'RO_mm_sum_{rp_or_sa}{quantile}->RO_mm',
             'Bt_RO_sum_{rp_or_sa}{quantile}->Bt_RO'
         ]
-        mask = 'Ws_ave_{rp_or_sa}{quantile}'
 
     def fmt(x):
         return x.format(quantile=quantile_text, rp_or_sa=rp_or_sa)
@@ -283,7 +281,6 @@ def composite_vars(*, method: str, window: int, quantile: Optional[int]) -> Dict
     return {
         'deficit': [fmt(d) for d in deficit],
         'surplus': [fmt(s) for s in surplus],
-        'mask': fmt(mask)
     }
 
 
@@ -292,7 +289,8 @@ def composite_indicators(workspace: DefaultWorkspace,
                          yearmon: str,
                          window: Optional[int] = None,
                          target: Optional[str] = None,
-                         quantile: Optional[int] = None) -> List[Step]:
+                         quantile: Optional[int] = None,
+                         mask: Optional[Vardef] = None) -> List[Step]:
     # If we're working with a forecast, we should have also have the desired
     # quantile of the ensemble members
     assert (quantile is None) == (target is None)
@@ -309,7 +307,7 @@ def composite_indicators(workspace: DefaultWorkspace,
             surplus=[infile + '::' + var for var in cvars['surplus']],
             deficit=[infile + '::' + var for var in cvars['deficit']],
             both_threshold=3,
-            mask=infile + '::' + cvars['mask'],
+            mask=mask,
             output=workspace.composite_summary(yearmon=yearmon, target=target, window=window),
             clamp=60,
             attrs=standard_attrs(yearmon=yearmon, target=target, window=window, model=None, member=None)
@@ -360,7 +358,8 @@ def composite_anomalies(workspace: DefaultWorkspace,
                         yearmon: str,
                         window: Optional[int] = None,
                         target: Optional[str] = None,
-                        quantile: Optional[int] = None) -> List[Step]:
+                        quantile: Optional[int] = None,
+                        mask: Optional[Vardef]) -> List[Step]:
     cvars = composite_vars(method='standard_anomaly', window=window, quantile=quantile)
 
     if target:
@@ -375,7 +374,7 @@ def composite_anomalies(workspace: DefaultWorkspace,
             surplus=[infile + '::' + var for var in cvars['surplus']],
             deficit=[infile + '::' + var for var in cvars['deficit']],
             both_threshold=0.4307273,  # corresponds with rp of 3
-            mask=infile + '::' + cvars['mask'],
+            mask=mask,
             output=outfile,
             attrs=standard_attrs(yearmon=yearmon, target=target, window=window, model=None, member=None)
         )
