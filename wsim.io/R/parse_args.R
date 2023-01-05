@@ -44,6 +44,14 @@ parse_args <- function(usage, args=commandArgs(TRUE), types=list()) {
           logical=as.logical
         )
 
+        if (typ == 'integer') {
+          # make sure that we throw an error if a non-integer is
+          # passed to an arg expecting an integer
+          if(as.integer(parsed[[arg]]) != as.numeric(parsed[[arg]])) {
+            stop(sprintf('Argument %s expected an integer value but received %s', arg, parsed[[arg]]))
+          }
+        }
+
         parsed[[arg]] <- cast_fn(parsed[[arg]])
       }
     }
