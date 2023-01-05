@@ -50,8 +50,8 @@ vals_for_depth_index <- function(arr, depth) {
 main <- function(raw_args) {
   args <- wsim.io::parse_args(usage,
                               raw_args,
-                              types=list(both_threshold= 'integer',
-                                         clamp= 'integer'))
+                              types=list(both_threshold= 'numeric',
+                                         clamp='numeric'))
   
   attrs <- lapply(args$attr, wsim.io::parse_attr)
 
