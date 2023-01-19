@@ -54,7 +54,14 @@ def getLinks(url, pattern):
     return sorted(links)
 
 def getFile(url, filename):
-    if not os.path.exists(filename):
+    ## check for corrupted (very small) files here.
+    if os.path.exists(filename): 
+         file_stats = os.stat(filename)
+         if file_stats.st_size < 5000: #file size less than 5 Kb
+             print("incomplete file found... {}  \n\tdeleting it".format(os.path.basename(filename)))
+             os.remove(filename)
+    
+    if not os.path.exists(filename):    
         print('\n Downloading {}\n to {}\n'.format(url, filename))
         fp = open(filename, "wb")
         curl = pycurl.Curl()
