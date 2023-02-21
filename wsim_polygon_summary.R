@@ -60,7 +60,7 @@ main <- function(raw_args) {
       # general case: read into memory
       x <- wsim.io::read_vars(vardef)
       ex <- terra::ext(x$extent)
-      r <- terra::rast(lapply(x$data, terra::rast, crs = 'EPSG:4326', extent = ex))
+      r <- terra::rast(lapply(x$data, terra::rast, crs = 'wgs84', extent = ex))
       names(r) <- names(x$data)
       return(r)
     }))
