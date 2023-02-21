@@ -47,13 +47,21 @@ check_value_range <- function(m, var, allowed_min, allowed_max) {
   x <- m[[var]]
 
   too_low <- which(x < allowed_min)
+  too_low_msg <- sprintf('%d %s values below allowable minimum of %f (%s)', length(too_low), var, allowed_min, paste(head(too_low, 5), collapse=', '))
+  if (length(too_low) > 5) {
+    stop(too_low_msg)
+  }
   if (length(too_low) > 0) {
-    stop(sprintf('%d %s values below allowable minimum of %f', length(too_low), var, allowed_min))
+    warning(too_low_msg)
   }
 
   too_high <- which(x > allowed_max)
+  too_high_msg <- sprintf('%d %s values above allowable maximum of %f (%s)', length(too_high), var, allowed_max, paste(head(too_high, 5), collapse=', '))
+  if (length(too_high) > 5) {
+    stop(too_high_msg)
+  }
   if (length(too_high) > 0) {
-    stop(sprintf('%d %s values above allowable maximum of %f', length(too_high), var, allowed_max))
+    warning(too_high_msg)
   }
 }
 
