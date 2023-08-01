@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2021 ISciences, LLC.
+# Copyright (c) 2021-2023 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -26,28 +26,15 @@ from typing import List
 
 def get_dataset(duration: str, year: int) -> dict:
     if duration == 'month':
-        if year >= 1979:
-            return {
-                'dataset_short_name': 'reanalysis-era5-single-levels-monthly-means',
-                'product_type':  'monthly_averaged_reanalysis'
-            }
-        else:
-            return {
-                'dataset_short_name': 'reanalysis-era5-single-levels-monthly-means-preliminary-back-extension',
-                'product_type': 'reanalysis-monthly-means-of-daily-means'
-            }
+        return {
+            'dataset_short_name': 'reanalysis-era5-single-levels-monthly-means',
+            'product_type':  'monthly_averaged_reanalysis'
+        }
     if duration == 'hour':
-        if year >= 1979:
-            return {
-                'dataset_short_name': 'reanalysis-era5-single-levels',
-                'product_type': 'reanalysis'
-            }
-        else:
-            return {
-                'dataset_short_name': 'reanalysis-era5-single-levels-preliminary-back-extension',
-                'product_type': 'reanalysis'
-            }
-
+        return {
+            'dataset_short_name': 'reanalysis-era5-single-levels',
+            'product_type': 'reanalysis'
+        }
 
 def get_era5(outfile: str, duration: str, variables: List[str], year: int, month: int) -> None:
     # format options are GRIB and netCDF. Files are the same size.
