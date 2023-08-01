@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 ISciences, LLC.
+# Copyright (c) 2021-2023 ISciences, LLC.
 # All rights reserved.
 #
 # WSIM is licensed under the Apache License, Version 2.0 (the "License").
@@ -52,10 +52,10 @@ class ERA5CFSv2Config(ConfigBase):
         return self._observed.land_mask()
 
     def historical_years(self):
-        return range(1950, 2021)  # 1950-2021
+        return range(1940, 2023)  # 1940-2022
 
     def result_fit_years(self):
-        return range(1952, 2012)  # 1952-2011
+        return range(1981, 2021)  # 1981-2020
 
     def models(self):
         return ['CFSv2']
