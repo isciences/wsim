@@ -7,7 +7,7 @@ check:
 	Rscript -e "results <- devtools::check(); stopifnot(length(results[['errors']]) == 0)"
 
 install:
-	Rscript -e "pkgbuild::compile_dll(); devtools::document(); devtools::install()"
+	Rscript -e "pkgbuild::compile_dll(); devtools::document(); devtools::install(dependencies=FALSE)"
 
 html:
 	Rscript -e "pkgbuild::compile_dll(); devtools::document(); pkgdown::build_site()"
