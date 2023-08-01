@@ -12,36 +12,40 @@ stages:
 variables:
         CONTAINER_TEST_IMAGE: isciences/wsim:$CI_COMMIT_REF_NAME
         CONTAINER_RELEASE_IMAGE: isciences/wsim:latest
-        WSIM_VERSION_BASE: "2.0"
+        WSIM_VERSION_BASE: "3.0"
+        WSIM_VERSION_FIRST_COMMIT: "a690138d84872dcd853d2248aebe5c05987487c2"
         WSIM_ALL_TESTS: "YES"
 
-before_script:
-        - docker login -u ci4isciences -p $DOCKERHUB_PW
 
 build:
         stage: build
         script:
                 - docker build --pull 
-                  --build-arg WSIM_VERSION=$(test master = $CI_COMMIT_REF_NAME && echo -n ${WSIM_VERSION_BASE}. && docker run --rm -v $(pwd):/git alpine/git rev-list --count HEAD || echo "0.0")
+                  --build-arg WSIM_VERSION=$(test master = $CI_COMMIT_REF_NAME && echo -n ${WSIM_VERSION_BASE}. && docker run --rm -v $(pwd):/git alpine/git rev-list --count ^${WSIM_VERSION_FIRST_COMMIT} HEAD || echo "0.0")
                   --build-arg GIT_COMMIT=$(docker run --rm -v $(pwd):/git alpine/git rev-parse HEAD)
                   -t $CONTAINER_TEST_IMAGE 
                   .
-                - docker push $CONTAINER_TEST_IMAGE
-
+                - mkdir image
+                - docker save $CONTAINER_TEST_IMAGE > image/wsim.tar
+        artifacts:
+          paths:
+            - image
+                
 test:
         stage: test
         script: 
-                - docker pull $CONTAINER_TEST_IMAGE
+                - docker load -i image/wsim.tar
                 - docker run $CONTAINER_TEST_IMAGE make check
 
 release-image:
         stage: release
         script:
-                - docker pull $CONTAINER_TEST_IMAGE
+                - docker login -u ci4isciences -p $DOCKERHUB_PW
+                - docker load -i image/wsim.tar
                 - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
                 - docker push $CONTAINER_RELEASE_IMAGE
-                - docker tag $CONTAINER_TEST_IMAGE isciences/wsim:${WSIM_VERSION_BASE}.$(docker run --rm -v $(pwd):/git alpine/git rev-list --count HEAD)
-                - docker push isciences/wsim:${WSIM_VERSION_BASE}.$(docker run --rm -v $(pwd):/git alpine/git rev-list --count HEAD)
+                - docker tag $CONTAINER_TEST_IMAGE isciences/wsim:${WSIM_VERSION_BASE}.$(docker run --rm -v $(pwd):/git alpine/git rev-list --count ^${WSIM_VERSION_FIRST_COMMIT} HEAD)
+                - docker push isciences/wsim:${WSIM_VERSION_BASE}.$(docker run --rm -v $(pwd):/git alpine/git rev-list --count ^${WSIM_VERSION_FIRST_COMMIT} HEAD)
 
         only:
                 - master
