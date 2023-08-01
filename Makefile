@@ -1,3 +1,5 @@
+GIT_COMMIT := $(shell git rev-parse HEAD)
+
 install:
 	for s in wsim.io wsim.distributions wsim.lsm wsim.electricity wsim.agriculture wsim.gldas; do \
 		$(MAKE) -C $${s} $@ || exit 1; \
@@ -23,7 +25,7 @@ push-ci:
 	docker push isciences/wsim-gitlabci:latest
 
 build-dev:
-	docker build --pull --build-arg WSIM_VERSION=0.0 -t isciences/wsim:dev .
+	docker build --pull --build-arg WSIM_VERSION=0.0 --build-arg GIT_COMMIT=$(GIT_COMMIT) -t isciences/wsim:dev .
 
 push-dev:
 	docker push isciences/wsim:dev
