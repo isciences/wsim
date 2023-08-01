@@ -70,7 +70,7 @@ test_that('some forcing unit errors can be caught', {
 
   wsim.lsm::write_lsm_values_to_cdf(forcing, fname, prec='double')
 
-  expect_error(
+  expect_warning(
     read_forcing_from_cdf(fname, '202109'),
     '4 T values below allowable minimum'
   )
