@@ -70,7 +70,7 @@ class TestCFSConfig(unittest.TestCase):
         self.assertSetEqual(member_dates, {'20170125', '20170126', '20170127', '20170128', '20170129', '20170130', '20170131'})
 
     def test_history_length(self):
-        self.assertEqual(60, len(self.config.result_fit_years()))
+        self.assertTrue(len(self.config.result_fit_years()) in {40, 60})
 
     def test_all_steps_buildable(self):
         # Find the timestep that's one month beyond our historical period

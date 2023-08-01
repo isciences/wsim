@@ -30,6 +30,9 @@ class FakeStatic(Static):
     def countries(self) -> Vardef:
         return Vardef('', '')
 
+    def provinces(self) -> Vardef:
+        return Vardef('', '')
+
     def population_density(self) -> Vardef:
         return Vardef('', '')
 
