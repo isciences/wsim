@@ -49,4 +49,5 @@ release-image:
 
         only:
                 - master
+                - pre-release
 
