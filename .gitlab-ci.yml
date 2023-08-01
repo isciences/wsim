@@ -35,7 +35,7 @@ test:
         stage: test
         script: 
                 - docker load -i image/wsim.tar
-                - docker run $CONTAINER_TEST_IMAGE make check
+                - docker run --workdir /wsim $CONTAINER_TEST_IMAGE make check
 
 release-image:
         stage: release
