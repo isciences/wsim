@@ -48,5 +48,16 @@ release-image:
 
         only:
                 - master
+
+
+release-image-prerelease:
+        stage: release
+        script:
+                - docker login -u ci4isciences -p $DOCKERHUB_PW
+                - docker load -i image/wsim.tar
+                - docker tag $CONTAINER_TEST_IMAGE isciences/wsim:${WSIM_VERSION_BASE}.$(docker run --rm -v $(pwd):/git alpine/git rev-list --count ^${WSIM_VERSION_FIRST_COMMIT} HEAD)-pre
+                - docker push isciences/wsim:${WSIM_VERSION_BASE}.$(docker run --rm -v $(pwd):/git alpine/git rev-list --count ^${WSIM_VERSION_FIRST_COMMIT} HEAD)-pre
+
+        only:
                 - pre-release
 
