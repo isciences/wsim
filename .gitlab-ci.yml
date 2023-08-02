@@ -1,8 +1,7 @@
 image: docker:latest
 
 services:
-        # peg version of Docker to prevent hanging build: https://stackoverflow.com/a/60248545/2171894
-        - docker:19.03.5-dind
+        - docker:24-dind
 
 stages:
         - build
