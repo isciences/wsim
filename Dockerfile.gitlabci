@@ -1,16 +1,9 @@
-FROM debian:buster-slim
+FROM ubuntu:22.04
 
-# Add the CRAN debian repository. Despite the name, it contains R 3.6 which is required
-# by a dependency of the ranger package.
-RUN apt-get update && apt-get install -y \
-  gnupg
-
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7'
-RUN echo "deb http://cloud.r-project.org/bin/linux/debian buster-cran35/" >> /etc/apt/sources.list
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
+  cmake \
   curl \
-  enchant \
   g++ \
   gcc \
   gdal-bin \
@@ -28,13 +21,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libssh2-1-dev \
   libudunits2-dev \
   libxml2-dev \
+  locales \
   make \
   nco \
   netcdf-bin \
   pandoc \
   python3 \
   python3-distutils \
-  python-gdal \
+  python3-enchant \
+  python3-gdal \
   r-base-core \
   r-base-dev \
   wget \
@@ -42,6 +37,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Make GDAL work
 ENV GDAL_DATA=/usr/share/gdal
+
+# Install en_US.UTF-8. This avoids an R CMD check failure.
+RUN sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen && \
+    locale-gen
 
 # Set locale to C.UTF-8. This avoids R CMD check failures with a locale error
 ENV LANG C.UTF-8
@@ -116,10 +115,6 @@ RUN wget -P /tmp https://bootstrap.pypa.io/get-pip.py && \
       sphinxcontrib.spelling \
       sphinxcontrib.bibtex
  
-RUN wget -O /tmp/cmake.tar.gz https://github.com/Kitware/CMake/releases/download/v3.14.1/cmake-3.14.1-Linux-x86_64.tar.gz --progress=dot:giga && \
-    tar --strip-components=1 -xzvf /tmp/cmake.tar.gz -C /usr && \
-    rm /tmp/cmake.tar.gz
-
 # Install exactextract
 RUN wget -P /tmp https://github.com/isciences/exactextract/archive/master.zip && \
     cd /tmp && \
@@ -134,9 +129,6 @@ RUN wget -P /tmp https://github.com/isciences/exactextract/archive/master.zip &&
     cd /tmp && \
     rm -rf exactextract-master
 
-# Install dev version of exactextractr (we need 0.9)
-RUN R -e "remotes::install_github('isciences/exactextractr')"
-    
 ADD https://s3.us-east-2.amazonaws.com/wsim-regression-data/testdata.tar.gz /
 RUN tar xzvf testdata.tar.gz && mv testdata wsim_testdata
 
