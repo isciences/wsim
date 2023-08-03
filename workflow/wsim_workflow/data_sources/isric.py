@@ -49,9 +49,9 @@ def global_tawc(*, source_dir: str, filename: str, grid: Grid) -> List[Step]:
             commands=[
                 [
                     'unzip', '-j', zip_path, '-d', dirname,
-                    'wise_30sec_v1/Interchangeable_format/HW30s_FULL.txt',
-                    'wise_30sec_v1/Interchangeable_format/wise_30sec_v1.tif',
-                    'wise_30sec_v1/Interchangeable_format/wise_30sec_v1.tsv'
+                    'WISE30sec/Interchangeable_format/HW30s_FULL.txt',
+                    'WISE30sec/Interchangeable_format/wise_30sec_v1.tif',
+                    'WISE30sec/Interchangeable_format/wise_30sec_v1.tsv'
                 ],
                 ['touch', raw_file]
             ]
