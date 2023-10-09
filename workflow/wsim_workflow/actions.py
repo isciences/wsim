@@ -237,7 +237,7 @@ def compute_return_periods(workspace: DefaultWorkspace, *,
                 read_vars(workspace.forcing(yearmon=yearmon, model=model, target=target, window=window, member=member),
                           *forcing_vars)
                 if forcing_vars else None,
-                read_vars(workspace.state(yearmon=yearmon), *state_vars) if state_vars else None
+                read_vars(workspace.state(yearmon=yearmon, model=model, target=get_next_yearmon(target) if target else None, member=member), *state_vars) if state_vars else None
             ],
             rp=workspace.return_period(**args),
             sa=workspace.standard_anomaly(**args),
