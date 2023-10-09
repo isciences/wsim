@@ -186,8 +186,10 @@ def monthly_forecast(config: Config,
                 result_summary(config, yearmon=yearmon, target=target, window=window))
             steps += meta_steps['forcing_summaries'].require(
                 forcing_summary(config, yearmon=yearmon, target=target, window=window))
-            steps += return_period_summary(config, yearmon=yearmon, target=target, window=window)
-            steps += standard_anomaly_summary(config, yearmon=yearmon, target=target, window=window)
+            steps += meta_steps['return_periods'].require(
+                    return_period_summary(config, yearmon=yearmon, target=target, window=window))
+            steps += meta_steps['return_periods'].require(
+                    standard_anomaly_summary(config, yearmon=yearmon, target=target, window=window))
 
             # Generate composite indicators from summarized ensemble data
             steps += composite_anomalies(config.workspace(),
