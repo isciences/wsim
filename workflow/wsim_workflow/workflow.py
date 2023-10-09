@@ -54,6 +54,7 @@ def get_meta_steps():
         'electric_power_assessment',
         'forcing_summaries',
         'prepare_forecasts',
+        'return_periods',
         'results_summaries',
         'population_summaries'
     )}

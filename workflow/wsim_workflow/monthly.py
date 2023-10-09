@@ -61,12 +61,13 @@ def monthly_observed(config: Config, yearmon: str, meta_steps: Dict[str, Step]) 
 
         # Compute return periods
         for window in [1] + config.integration_windows():
-            steps += compute_return_periods(config.workspace(),
-                                            result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
-                                            forcing_vars=config.forcing_rp_vars() if window==1 else config.forcing_integrated_var_names(),
-                                            state_vars=config.state_rp_vars() if window==1 else None,
-                                            yearmon=yearmon,
-                                            window=window)
+            steps += meta_steps['return_periods'].require(
+                    compute_return_periods(config.workspace(),
+                        result_vars=config.lsm_rp_vars() if window == 1 else config.lsm_integrated_var_names(),
+                        forcing_vars=config.forcing_rp_vars() if window==1 else config.forcing_integrated_var_names(),
+                        state_vars=config.state_rp_vars() if window==1 else None,
+                        yearmon=yearmon,
+                        window=window))
 
     # Compute composite indicators
     for window in [1] + config.integration_windows():
@@ -163,15 +164,16 @@ def monthly_forecast(config: Config,
 
                 # Compute return periods
                 for window in [1] + config.integration_windows():
-                    steps += compute_return_periods(config.workspace(),
-                                                    forcing_vars=config.forcing_rp_vars() if window==1 else config.forcing_integrated_var_names(),
-                                                    result_vars=config.lsm_rp_vars() if window==1 else config.lsm_integrated_var_names(),
-                                                    state_vars=config.state_rp_vars() if window==1 else None,
-                                                    yearmon=yearmon,
-                                                    window=window,
-                                                    model=model,
-                                                    target=target,
-                                                    member=member)
+                    steps += meta_steps['return_periods'].require(
+                            compute_return_periods(config.workspace(),
+                                forcing_vars=config.forcing_rp_vars() if window==1 else config.forcing_integrated_var_names(),
+                                result_vars=config.lsm_rp_vars() if window==1 else config.lsm_integrated_var_names(),
+                                state_vars=config.state_rp_vars() if window==1 else None,
+                                yearmon=yearmon,
+                                window=window,
+                                model=model,
+                                target=target,
+                                member=member))
 
         del model
 
