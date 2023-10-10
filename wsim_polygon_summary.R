@@ -122,7 +122,8 @@ main <- function(raw_args) {
                              }
                              label = labels[fun_value + 1]
                              stringr::str_glue('{weights}_{fun_name}_{values}_{label}')
-                           })
+                           },
+                           progress = FALSE)
 
   wsim.io::infof('Writing results to %s', args$output)
   write.csv(results, args$output, row.names = FALSE)
