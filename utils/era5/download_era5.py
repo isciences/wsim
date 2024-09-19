@@ -115,11 +115,26 @@ def main(raw_args):
                         fname
         ])
 
+    # rename "valid_time" variable (CDS beta) to "time" (original CDS)
+    subprocess.run(['ncrename',
+                    '-d', '.valid_time,time',
+                    '-v', '.valid_time,time',
+                    fname])
+
+    # probe whether the file has a time dimension
+    dump = subprocess.run(['ncdump', '-h', fname], check=True, capture_output=True).stdout.decode().split('\n')
+    dimensions = {line.split(' ')[0] for line in dump[dump.index('dimensions:') + 1:dump.index('variables:')]}
+
+    # set chunk size for better compression and optimal access by time
+    chunkspec = 'latitude/721,longitude/1440'
+    if 'time' in dimensions:
+        chunkspec = 'time/1,' + chunkspec
+
     subprocess.run(['nccopy',
-                    '-7',   # netCDF 4 classic
+                    '-4',   # netCDF 4
                     '-d1',  # level 1 deflate,
                     '-s',   # shuffle bits for better compression
-                    '-c', 'time/1,latitude/721,longitude/1440',  # set chunk size for better compression and optimal access by time
+                    '-c', chunkspec,  
                     fname,
                     args.outfile],
                    check=True)

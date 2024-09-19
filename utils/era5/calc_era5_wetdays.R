@@ -40,10 +40,19 @@ main <- function(raw_args) {
 
   nc <- nc_open(args$input)
 
-  # time dimension is expressed as hours relate to an intial time
-  initial_time <- ymd_hms(ncatt_get(nc, 'time', 'units')$value)
-
-  hours <- nc$dim$time$vals
+  # with files downloaded from CDS, time dimension is expressed as hours since
+  # an initial time. Files downloaded from CDS-Beta use seconds since a different
+  # initial time.
+  time_units <- ncatt_get(nc, 'time', 'units')$value
+  times <- nc$dim$time$vals
+  if (startsWith(time_units, "seconds")) {
+    initial_time <- ymd(time_units)
+    hours <- times / 3600
+  } else {
+    initial_time <- ymd_hms(time_units)
+    hours <- times
+  }
+  
   days <- hours %/% 24
 
   # if a file contains a mix of ERA5 and ERA5T data, then an `expver`
@@ -53,46 +62,58 @@ main <- function(raw_args) {
   has_expver <- !is.null(nc$dim$expver)
 
   # read the first hour to get the grid extent
-  test_read_extra_dims <- list(time = hours[1])
+  test_read_extra_dims <- list(time = times[1])
   if (has_expver) {
     test_read_extra_dims$expver <- 1
   }
-  extent <- wsim.io::read_vars_from_cdf(args$input,
-                                        vars = 'tp',
-                                        extra_dims = test_read_extra_dims)$extent
+  # ncdf4 library prints a bunch of messages (yes, using "print()") when it
+  # encounters a 64-bit attribute, even if we are not reading that attribute
+  capture.output({
+    extent <- wsim.io::read_vars_from_cdf(args$input,
+                                          vars = 'tp',
+                                          extra_dims = test_read_extra_dims)$extent
+  })
 
   infof('Reading hourly data for %d days from %s', length(unique(days)), args$input)
 
   daily_precip_m <- abind(lapply(unique(days), function(day) {
-    hours_since_initial_time = hours[days == day]
+    timesteps = times[days == day]
 
-    if (length(hours_since_initial_time) != 24) {
+    if (length(timesteps) != 24) {
       # ERA5 dataset starts at 7 AM UTC on 1979-01-01, so we don't have 24
       # hours for that date.
       if (initial_time + lubridate::days(day) != make_date(1979, 1, 1)) {
         stop(sprintf('Only found %d hours of data for %s',
-                     length(hours_since_initial_time),
+                     length(timesteps),
                      initial_time + lubridate::days(day)))
       }
     }
 
-    hourly_precip <- abind(lapply(hours_since_initial_time, function(hour) {
+    hourly_precip <- abind(lapply(timesteps, function(time) {
       if (has_expver) {
-        era5 <- read_vars_from_cdf(args$input,
-                           vars = 'tp',
-                           extra_dims = list(time = hour, expver = 1))$data$tp
+        capture.output({
+          era5 <- read_vars_from_cdf(args$input,
+                             vars = 'tp',
+                             extra_dims = list(time = time,
+                                               expver = 1))$data$tp
+        })
         if (all(is.na(era5))) {
-          era5t <-read_vars_from_cdf(args$input,
-                                     vars = 'tp',
-                                     extra_dims = list(time = hour, expver = 5))$data$tp
+          capture.output({
+            era5t <-read_vars_from_cdf(args$input,
+                                       vars = 'tp',
+                                       extra_dims = list(time = time,
+                                                         expver = 5))$data$tp
+          })
           return(era5t)
         } else {
           return(era5)
         }
       } else {
-        return(read_vars_from_cdf(args$input,
-                                  vars = 'tp',
-                                  extra_dims = list(time = hour))$data$tp)
+        capture.output({
+          return(read_vars_from_cdf(args$input,
+                                    vars = 'tp',
+                                    extra_dims = list(time = time))$data$tp)
+        })
       }
     }), along = 3)
 
@@ -107,6 +128,6 @@ main <- function(raw_args) {
                     extent = extent)
 }
 
-tryCatch(
+#tryCatch(
 main(commandArgs(trailingOnly=TRUE))
-,error=wsim.io::die_with_message)
+#,error=wsim.io::die_with_message)
