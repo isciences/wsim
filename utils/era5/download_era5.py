@@ -23,6 +23,7 @@ import tempfile
 
 from typing import List
 
+from remap_era5 import remap_era5
 
 def get_dataset(duration: str, year: int) -> dict:
     if duration == 'month':
@@ -108,36 +109,13 @@ def main(raw_args):
     os.close(fh)
     get_era5(fname, args.timestep, args.var, args.year, args.month)
 
+    attrs = {}
+
     if args.timestep == 'month' and 'total_precipitation' in args.var:
         # ERA5 monthly average precipitation netCDFs have a unit of "m" but the stored values are actually "m/day"
-        subprocess.run(['ncatted',
-                        '-a', 'units,tp,m,c,m/day',
-                        fname
-        ])
+        attrs['tp'] = { 'units' : 'm/day' }
 
-    # rename "valid_time" variable (CDS beta) to "time" (original CDS)
-    subprocess.run(['ncrename',
-                    '-d', '.valid_time,time',
-                    '-v', '.valid_time,time',
-                    fname])
-
-    # probe whether the file has a time dimension
-    dump = subprocess.run(['ncdump', '-h', fname], check=True, capture_output=True).stdout.decode().split('\n')
-    dimensions = {line.split(' ')[0] for line in dump[dump.index('dimensions:') + 1:dump.index('variables:')]}
-
-    # set chunk size for better compression and optimal access by time
-    chunkspec = 'latitude/721,longitude/1440'
-    if 'time' in dimensions:
-        chunkspec = 'time/1,' + chunkspec
-
-    subprocess.run(['nccopy',
-                    '-4',   # netCDF 4
-                    '-d1',  # level 1 deflate,
-                    '-s',   # shuffle bits for better compression
-                    '-c', chunkspec,  
-                    fname,
-                    args.outfile],
-                   check=True)
+    remap_era5(fname, args.outfile, attrs=attrs)
 
     os.remove(fname)
 
