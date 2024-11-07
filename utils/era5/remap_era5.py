@@ -9,7 +9,7 @@ import sys
 names = { 'valid_time' : 'time', 'number': None }
 
 # destination variable type overrides
-types = { 'time' : "float64" , 'expver' : 'int8' }
+types = { 'date' : "float64", 'time' : "float64" , 'expver' : 'int8' }
 
 def main(args):
 
