@@ -49,7 +49,7 @@ def get_era5(outfile: str, duration: str, variables: List[str], year: int, month
         'variable': variables,
         'year':  '{:04d}'.format(year),
         'month': '{:02d}'.format(month),
-        'format': 'netcdf'
+        'format': 'netcdf_legacy'
     }
 
     if duration == 'month':
