@@ -70,7 +70,8 @@ def remap_era5(src_fname, dst_fname, *, attrs = None):
                 x.setncatts(dst_attrs)
 
                 # copy values
-                x[:] = variable[:]
+                for i in range(x.shape[0]):
+                    x[i] = variable[i]
 
 
 if __name__ == "__main__":
