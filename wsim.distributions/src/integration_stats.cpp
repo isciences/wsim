@@ -13,6 +13,7 @@
 
 // [[Rcpp::plugins(cpp14)]]
 #include <Rcpp.h>
+#include <array>
 using namespace Rcpp;
 
 // This file provides optimized implementations of various
