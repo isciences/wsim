@@ -23,6 +23,7 @@ import tempfile
 
 from typing import List
 
+from remap_era5 import remap_era5
 
 def get_dataset(duration: str, year: int) -> dict:
     if duration == 'month':
@@ -48,7 +49,7 @@ def get_era5(outfile: str, duration: str, variables: List[str], year: int, month
         'variable': variables,
         'year':  '{:04d}'.format(year),
         'month': '{:02d}'.format(month),
-        'format': 'netcdf'
+        'format': 'netcdf_legacy'
     }
 
     if duration == 'month':
@@ -108,21 +109,13 @@ def main(raw_args):
     os.close(fh)
     get_era5(fname, args.timestep, args.var, args.year, args.month)
 
+    attrs = {}
+
     if args.timestep == 'month' and 'total_precipitation' in args.var:
         # ERA5 monthly average precipitation netCDFs have a unit of "m" but the stored values are actually "m/day"
-        subprocess.run(['ncatted',
-                        '-a', 'units,tp,m,c,m/day',
-                        fname
-        ])
+        attrs['tp'] = { 'units' : 'm/day' }
 
-    subprocess.run(['nccopy',
-                    '-7',   # netCDF 4 classic
-                    '-d1',  # level 1 deflate,
-                    '-s',   # shuffle bits for better compression
-                    '-c', 'time/1,latitude/721,longitude/1440',  # set chunk size for better compression and optimal access by time
-                    fname,
-                    args.outfile],
-                   check=True)
+    remap_era5(fname, args.outfile, attrs=attrs)
 
     os.remove(fname)
 
